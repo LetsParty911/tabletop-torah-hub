@@ -50,6 +50,71 @@ function AdminPage() {
   const [file, setFile] = useState<File | null>(null);
 
   const accessToken = session?.access_token ?? null;
+  const { parshaKey: currentParshaKey, displayLabel: currentParshaLabel } = useCurrentParsha();
+
+  // Skipped-this-week state, keyed by parsha. Stored in localStorage.
+  const skipStorageKey = currentParshaKey ? `weekly-skips:${currentParshaKey}` : null;
+  const [skipped, setSkipped] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!skipStorageKey) return;
+    try {
+      const raw = localStorage.getItem(skipStorageKey);
+      if (raw) {
+        const arr = JSON.parse(raw) as string[];
+        setSkipped(new Set(arr.map((s) => s.toLowerCase())));
+      } else {
+        setSkipped(new Set());
+      }
+    } catch {
+      setSkipped(new Set());
+    }
+  }, [skipStorageKey]);
+
+  const persistSkips = (next: Set<string>) => {
+    setSkipped(next);
+    if (skipStorageKey) {
+      try {
+        localStorage.setItem(skipStorageKey, JSON.stringify(Array.from(next)));
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  const toggleSkip = (title: string) => {
+    const key = title.toLowerCase();
+    const next = new Set(skipped);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    persistSkips(next);
+  };
+
+  // Determine which expected titles are uploaded for the current parsha.
+  const uploadedTitlesForCurrent = new Set(
+    pdfs
+      .filter((p) => currentParshaKey && p.parsha_key.toLowerCase() === currentParshaKey.toLowerCase())
+      .map((p) => p.title.trim().toLowerCase()),
+  );
+
+  type ChecklistStatus = "uploaded" | "skipped" | "missing";
+  const checklist: Array<{ title: string; status: ChecklistStatus }> = EXPECTED_WEEKLY_PDFS.map(
+    (title) => {
+      const key = title.toLowerCase();
+      if (uploadedTitlesForCurrent.has(key)) return { title, status: "uploaded" as const };
+      if (skipped.has(key)) return { title, status: "skipped" as const };
+      return { title, status: "missing" as const };
+    },
+  );
+  const uploadedCount = checklist.filter((c) => c.status === "uploaded").length;
+  const countableTotal = checklist.filter((c) => c.status !== "skipped").length;
+
+  const useExpectedTitle = (title: string) => {
+    setTitle(title);
+    if (currentParshaKey) setParshaKey(currentParshaKey);
+    document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
 
   useEffect(() => {
     (async () => {
