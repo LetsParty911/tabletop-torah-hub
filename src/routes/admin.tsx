@@ -277,7 +277,12 @@ function AdminPage() {
                     const f = e.target.files?.[0] ?? null;
                     setFile(f);
                     if (f && !title.trim()) {
-                      setTitle(f.name.replace(/\.pdf$/i, ""));
+                      const cleaned = f.name
+                        .replace(/\.pdf$/i, "")
+                        .replace(/_/g, " ")
+                        .replace(/\s+/g, " ")
+                        .trim();
+                      setTitle(cleaned);
                     }
                   }}
                   className="mt-1 w-full"
