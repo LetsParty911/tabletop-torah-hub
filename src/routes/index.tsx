@@ -2,6 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { FileText, Download, Eye } from "lucide-react";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
+import {
+  listPublishedPdfs,
+  getParshaOverride,
+  subscribeEmail,
+} from "@/integrations/supabase/api.functions";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -29,65 +34,84 @@ type Resource = {
   url: string;
 };
 
-// Placeholder content. Replace with data from your own Supabase backend.
-const SAMPLE_RESOURCES: Resource[] = [
-  {
-    id: "1",
-    title: "A Sample Devar Torah",
-    subtitle: "Connect your Supabase to load real PDFs",
-    url: "#",
-  },
-  {
-    id: "2",
-    title: "Another Weekly Insight",
-    subtitle: "Placeholder content",
-    url: "#",
-  },
-];
-
 function Index() {
   const [email, setEmail] = useState("");
+  const [signupMsg, setSignupMsg] = useState<string | null>(null);
   const [currentLabel, setCurrentLabel] = useState<string>("Loading…");
-  const [resources] = useState<Resource[]>(SAMPLE_RESOURCES);
+  const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       let displayLabel = "Parshas Hashavua";
+      let parshaKey: string | null = null;
+
+      // 1. Check manual override first
       try {
-        const res = await fetch(
-          "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
-        );
-        const data = await res.json();
-        const items: Array<{
-          title: string;
-          category: string;
-          subcat?: string;
-          date: string;
-        }> = data?.items ?? [];
-
-        const parsha = items.find((i) => i.category === "parashat");
-        const yomTovOnShabbos = parsha
-          ? items.find(
-              (i) =>
-                i.category === "holiday" &&
-                i.subcat === "major" &&
-                i.date.slice(0, 10) === parsha.date.slice(0, 10),
-            )
-          : undefined;
-
-        if (yomTovOnShabbos) {
-          const ytKey = hebcalYomTovToKey(yomTovOnShabbos.title);
-          displayLabel = ytKey ?? yomTovOnShabbos.title;
-        } else if (parsha) {
-          displayLabel = `Parshas ${hebcalToParshaKey(parsha.title)}`;
+        const o = await getParshaOverride();
+        if (o.override) {
+          parshaKey = o.override;
+          displayLabel = o.override.startsWith("Parshas") ? o.override : `Parshas ${o.override}`;
+          // For yom tovim stored without "Parshas" prefix:
+          const knownYomTov = ["Rosh Hashanah", "Yom Kippur", "Sukkos", "Shemini Atzeres", "Simchas Torah", "Pesach", "Shavuos"];
+          if (knownYomTov.includes(o.override)) displayLabel = o.override;
         }
       } catch {
-        // fall through with default label
+        // ignore
       }
+
+      // 2. Otherwise, Hebcal
+      if (!parshaKey) {
+        try {
+          const res = await fetch(
+            "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
+          );
+          const data = await res.json();
+          const items: Array<{
+            title: string;
+            category: string;
+            subcat?: string;
+            date: string;
+          }> = data?.items ?? [];
+
+          const parsha = items.find((i) => i.category === "parashat");
+          const yomTovOnShabbos = parsha
+            ? items.find(
+                (i) =>
+                  i.category === "holiday" &&
+                  i.subcat === "major" &&
+                  i.date.slice(0, 10) === parsha.date.slice(0, 10),
+              )
+            : undefined;
+
+          if (yomTovOnShabbos) {
+            const ytKey = hebcalYomTovToKey(yomTovOnShabbos.title);
+            parshaKey = ytKey ?? yomTovOnShabbos.title;
+            displayLabel = parshaKey;
+          } else if (parsha) {
+            parshaKey = hebcalToParshaKey(parsha.title);
+            displayLabel = `Parshas ${parshaKey}`;
+          }
+        } catch {
+          // fall through
+        }
+      }
+
+      // 3. Fetch PDFs for parsha key
+      let fetchedResources: Resource[] = [];
+      if (parshaKey) {
+        try {
+          const r = await listPublishedPdfs({ data: { parshaKey } });
+          fetchedResources = r.resources;
+        } catch (e) {
+          console.error("Failed to load PDFs", e);
+        }
+      }
+
       if (!cancelled) {
         setCurrentLabel(displayLabel);
+        setResources(fetchedResources);
         setLoading(false);
       }
     })();
@@ -95,6 +119,22 @@ function Index() {
       cancelled = true;
     };
   }, []);
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignupMsg(null);
+    try {
+      const r = await subscribeEmail({ data: { email } });
+      if (r.ok) {
+        setSignupMsg("Thanks! You're on the list.");
+        setEmail("");
+      } else {
+        setSignupMsg(r.error ?? "Something went wrong.");
+      }
+    } catch {
+      setSignupMsg("Something went wrong.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -131,13 +171,7 @@ function Index() {
             <p className="mt-3 text-muted-foreground md:text-lg">
               Join the list for a curated weekly collection of Torah PDFs for Shabbos and Yom Tov.
             </p>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setEmail("");
-              }}
-              className="mt-6 flex flex-col sm:flex-row gap-3"
-            >
+            <form onSubmit={handleSignup} className="mt-6 flex flex-col sm:flex-row gap-3">
               <input
                 type="email"
                 required
@@ -153,6 +187,7 @@ function Index() {
                 Join the List
               </button>
             </form>
+            {signupMsg && <p className="mt-3 text-sm text-accent">{signupMsg}</p>}
           </div>
         </section>
 
