@@ -407,7 +407,10 @@ function AdminPage() {
                 <span className="text-sm font-medium">Parsha</span>
                 <select
                   value={parshaKey}
-                  onChange={(e) => setParshaKey(e.target.value)}
+                  onChange={(e) => {
+                    setParshaKey(e.target.value);
+                    setParshaUserTouched(true);
+                  }}
                   className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
                 >
                   {PARSHIYOS.map((p) => (
