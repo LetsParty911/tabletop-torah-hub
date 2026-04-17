@@ -26,8 +26,9 @@ export const Route = createFileRoute("/view/$id")({
 
 function ViewPdf() {
   const { pdf } = Route.useLoaderData();
-  // Use PDF.js viewer params for a cleaner inline display, with download via separate link
-  const viewerSrc = `${pdf.url}#toolbar=1&navpanes=0&view=FitH`;
+  // Serve via our own inline route so the browser's PDF viewer shows the clean title
+  // as the filename instead of the raw uploaded file name from the PDF's /Title metadata.
+  const viewerSrc = `/view/${pdf.id}/inline#toolbar=1&navpanes=0&view=FitH`;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ViewIdRouteImport } from './routes/view.$id'
+import { Route as ViewIdInlineRouteImport } from './routes/view.$id.inline'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
 
 const AdminRoute = AdminRouteImport.update({
@@ -29,6 +30,11 @@ const ViewIdRoute = ViewIdRouteImport.update({
   path: '/view/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ViewIdInlineRoute = ViewIdInlineRouteImport.update({
+  id: '/inline',
+  path: '/inline',
+  getParentRoute: () => ViewIdRoute,
+} as any)
 const ViewIdDownloadRoute = ViewIdDownloadRouteImport.update({
   id: '/download',
   path: '/download',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
+  '/view/$id/inline': typeof ViewIdInlineRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
+  '/view/$id/inline': typeof ViewIdInlineRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,25 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
+  '/view/$id/inline': typeof ViewIdInlineRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/view/$id' | '/view/$id/download'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/view/$id'
+    | '/view/$id/download'
+    | '/view/$id/inline'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/view/$id' | '/view/$id/download'
-  id: '__root__' | '/' | '/admin' | '/view/$id' | '/view/$id/download'
+  to: '/' | '/admin' | '/view/$id' | '/view/$id/download' | '/view/$id/inline'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/view/$id'
+    | '/view/$id/download'
+    | '/view/$id/inline'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -91,6 +111,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ViewIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/view/$id/inline': {
+      id: '/view/$id/inline'
+      path: '/inline'
+      fullPath: '/view/$id/inline'
+      preLoaderRoute: typeof ViewIdInlineRouteImport
+      parentRoute: typeof ViewIdRoute
+    }
     '/view/$id/download': {
       id: '/view/$id/download'
       path: '/download'
@@ -103,10 +130,12 @@ declare module '@tanstack/react-router' {
 
 interface ViewIdRouteChildren {
   ViewIdDownloadRoute: typeof ViewIdDownloadRoute
+  ViewIdInlineRoute: typeof ViewIdInlineRoute
 }
 
 const ViewIdRouteChildren: ViewIdRouteChildren = {
   ViewIdDownloadRoute: ViewIdDownloadRoute,
+  ViewIdInlineRoute: ViewIdInlineRoute,
 }
 
 const ViewIdRouteWithChildren =
@@ -120,3 +149,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
