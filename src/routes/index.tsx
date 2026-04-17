@@ -258,7 +258,7 @@ function Index() {
             </h2>
             <div className="mt-5 space-y-2 font-serif text-lg md:text-xl text-foreground">
               <p>קאפל דוב בן יצחק אייזיק ז"ל</p>
-              <p>אסתר בת אליה ע"ה</p>
+              <p>אסתר בת אליהו ע"ה</p>
               <p>גבריאל בן שלום ז"ל</p>
               <p>שמעון בן גבריאל ז"ל</p>
             </div>
