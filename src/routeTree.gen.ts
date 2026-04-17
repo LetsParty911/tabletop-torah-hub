@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ViewIdRouteImport } from './routes/view.$id'
+import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
 
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
@@ -28,35 +29,43 @@ const ViewIdRoute = ViewIdRouteImport.update({
   path: '/view/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ViewIdDownloadRoute = ViewIdDownloadRouteImport.update({
+  id: '/download',
+  path: '/download',
+  getParentRoute: () => ViewIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/view/$id': typeof ViewIdRoute
+  '/view/$id': typeof ViewIdRouteWithChildren
+  '/view/$id/download': typeof ViewIdDownloadRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/view/$id': typeof ViewIdRoute
+  '/view/$id': typeof ViewIdRouteWithChildren
+  '/view/$id/download': typeof ViewIdDownloadRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/view/$id': typeof ViewIdRoute
+  '/view/$id': typeof ViewIdRouteWithChildren
+  '/view/$id/download': typeof ViewIdDownloadRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/view/$id'
+  fullPaths: '/' | '/admin' | '/view/$id' | '/view/$id/download'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/view/$id'
-  id: '__root__' | '/' | '/admin' | '/view/$id'
+  to: '/' | '/admin' | '/view/$id' | '/view/$id/download'
+  id: '__root__' | '/' | '/admin' | '/view/$id' | '/view/$id/download'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
-  ViewIdRoute: typeof ViewIdRoute
+  ViewIdRoute: typeof ViewIdRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -82,13 +91,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ViewIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/view/$id/download': {
+      id: '/view/$id/download'
+      path: '/download'
+      fullPath: '/view/$id/download'
+      preLoaderRoute: typeof ViewIdDownloadRouteImport
+      parentRoute: typeof ViewIdRoute
+    }
   }
 }
+
+interface ViewIdRouteChildren {
+  ViewIdDownloadRoute: typeof ViewIdDownloadRoute
+}
+
+const ViewIdRouteChildren: ViewIdRouteChildren = {
+  ViewIdDownloadRoute: ViewIdDownloadRoute,
+}
+
+const ViewIdRouteWithChildren =
+  ViewIdRoute._addFileChildren(ViewIdRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
-  ViewIdRoute: ViewIdRoute,
+  ViewIdRoute: ViewIdRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
