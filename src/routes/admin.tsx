@@ -44,6 +44,7 @@ function AdminPage() {
 
   // Upload form
   const [parshaKey, setParshaKey] = useState(PARSHIYOS[0]);
+  const [parshaUserTouched, setParshaUserTouched] = useState(false);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [published, setPublished] = useState(true);
@@ -51,6 +52,17 @@ function AdminPage() {
 
   const accessToken = session?.access_token ?? null;
   const { parshaKey: currentParshaKey, displayLabel: currentParshaLabel } = useCurrentParsha();
+
+  // Default the upload form parsha to the current parsha (override or Hebcal),
+  // unless the admin has manually changed it.
+  useEffect(() => {
+    if (parshaUserTouched) return;
+    if (!currentParshaKey) return;
+    const match = PARSHIYOS.find(
+      (p) => p.toLowerCase() === currentParshaKey.toLowerCase(),
+    );
+    if (match && match !== parshaKey) setParshaKey(match);
+  }, [currentParshaKey, parshaUserTouched, parshaKey]);
 
   // Skipped-this-week state, keyed by parsha. Stored in localStorage.
   const skipStorageKey = currentParshaKey ? `weekly-skips:${currentParshaKey}` : null;
@@ -111,7 +123,15 @@ function AdminPage() {
 
   const useExpectedTitle = (title: string) => {
     setTitle(title);
-    if (currentParshaKey) setParshaKey(currentParshaKey);
+    if (currentParshaKey) {
+      const match = PARSHIYOS.find(
+        (p) => p.toLowerCase() === currentParshaKey.toLowerCase(),
+      );
+      if (match) {
+        setParshaKey(match);
+        setParshaUserTouched(false);
+      }
+    }
     document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -387,7 +407,10 @@ function AdminPage() {
                 <span className="text-sm font-medium">Parsha</span>
                 <select
                   value={parshaKey}
-                  onChange={(e) => setParshaKey(e.target.value)}
+                  onChange={(e) => {
+                    setParshaKey(e.target.value);
+                    setParshaUserTouched(true);
+                  }}
                   className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
                 >
                   {PARSHIYOS.map((p) => (
