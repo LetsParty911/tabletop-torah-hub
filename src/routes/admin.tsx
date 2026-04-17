@@ -298,8 +298,88 @@ function AdminPage() {
           </div>
         </section>
 
-        {/* Upload */}
+        {/* Weekly Upload Checklist */}
         <section className="parchment-frame">
+          <div className="parchment-panel">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <h2 className="font-serif text-2xl font-semibold text-primary">
+                  Weekly Upload Checklist
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Tracking <span className="font-medium text-foreground">{currentParshaLabel}</span>
+                  {currentParshaKey ? ` (${currentParshaKey})` : ""}
+                </p>
+              </div>
+              <div className="text-sm font-medium text-primary">
+                {uploadedCount} of {countableTotal} uploaded this week
+                {checklist.length - countableTotal > 0 && (
+                  <span className="text-muted-foreground font-normal">
+                    {" "}
+                    · {checklist.length - countableTotal} skipped
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <ul className="mt-4 divide-y divide-accent/30">
+              {checklist.map((item) => (
+                <li key={item.title} className="flex items-center justify-between gap-3 py-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {item.status === "uploaded" && (
+                      <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
+                    )}
+                    {item.status === "missing" && (
+                      <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
+                    )}
+                    {item.status === "skipped" && (
+                      <MinusCircle className="h-5 w-5 text-muted-foreground shrink-0" />
+                    )}
+                    <span className="font-medium truncate">{item.title}</span>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
+                        item.status === "uploaded"
+                          ? "bg-primary/10 text-primary"
+                          : item.status === "skipped"
+                            ? "bg-muted text-muted-foreground"
+                            : "bg-accent/20 text-foreground"
+                      }`}
+                    >
+                      {item.status === "uploaded"
+                        ? "Uploaded"
+                        : item.status === "skipped"
+                          ? "Skipped"
+                          : "Missing"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {item.status === "missing" && (
+                      <button
+                        type="button"
+                        onClick={() => useExpectedTitle(item.title)}
+                        className="text-xs underline text-primary"
+                      >
+                        Use this title
+                      </button>
+                    )}
+                    {item.status !== "uploaded" && (
+                      <button
+                        type="button"
+                        onClick={() => toggleSkip(item.title)}
+                        className="text-xs rounded border border-accent/60 px-2 py-1 hover:bg-accent/10"
+                      >
+                        {item.status === "skipped" ? "Unskip" : "Skip this week"}
+                      </button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* Upload */}
+        <section id="upload-section" className="parchment-frame">
           <div className="parchment-panel">
             <h2 className="font-serif text-2xl font-semibold text-primary">Upload PDF</h2>
             <form onSubmit={handleUpload} className="mt-4 grid gap-4 md:grid-cols-2">
