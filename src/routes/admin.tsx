@@ -332,13 +332,11 @@ function AdminPage() {
                 </p>
               </div>
               <div className="text-sm font-medium text-primary">
-                {uploadedCount} of {countableTotal} uploaded this week
-                {checklist.length - countableTotal > 0 && (
-                  <span className="text-muted-foreground font-normal">
-                    {" "}
-                    · {checklist.length - countableTotal} skipped
-                  </span>
-                )}
+                {uploadedCount} uploaded
+                <span className="text-muted-foreground font-normal">
+                  {" "}· {checklist.length - countableTotal} skipped ·{" "}
+                  {countableTotal - uploadedCount} remaining
+                </span>
               </div>
             </div>
 
