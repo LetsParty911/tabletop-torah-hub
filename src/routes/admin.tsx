@@ -273,7 +273,13 @@ function AdminPage() {
                   required
                   type="file"
                   accept="application/pdf"
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    setFile(f);
+                    if (f && !title.trim()) {
+                      setTitle(f.name.replace(/\.pdf$/i, ""));
+                    }
+                  }}
                   className="mt-1 w-full"
                 />
               </label>
