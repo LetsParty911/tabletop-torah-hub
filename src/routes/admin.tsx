@@ -123,7 +123,15 @@ function AdminPage() {
 
   const useExpectedTitle = (title: string) => {
     setTitle(title);
-    if (currentParshaKey) setParshaKey(currentParshaKey);
+    if (currentParshaKey) {
+      const match = PARSHIYOS.find(
+        (p) => p.toLowerCase() === currentParshaKey.toLowerCase(),
+      );
+      if (match) {
+        setParshaKey(match);
+        setParshaUserTouched(false);
+      }
+    }
     document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
