@@ -35,6 +35,34 @@ export const listPublishedPdfs = createServerFn({ method: "GET" })
     return { resources };
   });
 
+// ---------- Public: get a single PDF (signed URL + title) by id ----------
+export const getPdfById = createServerFn({ method: "GET" })
+  .inputValidator((input: { id: string }) =>
+    z.object({ id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const admin = getSupabaseAdmin();
+    const { data: row, error } = await admin
+      .from("pdfs")
+      .select("id, title, subtitle, file_path, published")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error || !row || !row.published) {
+      return { pdf: null as null | { id: string; title: string; subtitle: string | null; url: string } };
+    }
+    const { data: signed } = await admin.storage
+      .from("pdfs")
+      .createSignedUrl(row.file_path, 60 * 60);
+    return {
+      pdf: {
+        id: row.id,
+        title: row.title,
+        subtitle: row.subtitle,
+        url: signed?.signedUrl ?? "",
+      },
+    };
+  });
+
 // ---------- Public: read parsha override ----------
 export const getParshaOverride = createServerFn({ method: "GET" }).handler(async () => {
   const admin = getSupabaseAdmin();
