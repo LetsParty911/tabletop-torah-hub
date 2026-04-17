@@ -12,6 +12,9 @@ import {
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { PARSHIYOS } from "@/lib/parshiyos";
+import { EXPECTED_WEEKLY_PDFS } from "@/lib/expected-pdfs";
+import { useCurrentParsha } from "@/hooks/use-current-parsha";
+import { CheckCircle2, Circle, MinusCircle } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -47,6 +50,71 @@ function AdminPage() {
   const [file, setFile] = useState<File | null>(null);
 
   const accessToken = session?.access_token ?? null;
+  const { parshaKey: currentParshaKey, displayLabel: currentParshaLabel } = useCurrentParsha();
+
+  // Skipped-this-week state, keyed by parsha. Stored in localStorage.
+  const skipStorageKey = currentParshaKey ? `weekly-skips:${currentParshaKey}` : null;
+  const [skipped, setSkipped] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!skipStorageKey) return;
+    try {
+      const raw = localStorage.getItem(skipStorageKey);
+      if (raw) {
+        const arr = JSON.parse(raw) as string[];
+        setSkipped(new Set(arr.map((s) => s.toLowerCase())));
+      } else {
+        setSkipped(new Set());
+      }
+    } catch {
+      setSkipped(new Set());
+    }
+  }, [skipStorageKey]);
+
+  const persistSkips = (next: Set<string>) => {
+    setSkipped(next);
+    if (skipStorageKey) {
+      try {
+        localStorage.setItem(skipStorageKey, JSON.stringify(Array.from(next)));
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  const toggleSkip = (title: string) => {
+    const key = title.toLowerCase();
+    const next = new Set(skipped);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    persistSkips(next);
+  };
+
+  // Determine which expected titles are uploaded for the current parsha.
+  const uploadedTitlesForCurrent = new Set(
+    pdfs
+      .filter((p) => currentParshaKey && p.parsha_key.toLowerCase() === currentParshaKey.toLowerCase())
+      .map((p) => p.title.trim().toLowerCase()),
+  );
+
+  type ChecklistStatus = "uploaded" | "skipped" | "missing";
+  const checklist: Array<{ title: string; status: ChecklistStatus }> = EXPECTED_WEEKLY_PDFS.map(
+    (title) => {
+      const key = title.toLowerCase();
+      if (uploadedTitlesForCurrent.has(key)) return { title, status: "uploaded" as const };
+      if (skipped.has(key)) return { title, status: "skipped" as const };
+      return { title, status: "missing" as const };
+    },
+  );
+  const uploadedCount = checklist.filter((c) => c.status === "uploaded").length;
+  const countableTotal = checklist.filter((c) => c.status !== "skipped").length;
+
+  const useExpectedTitle = (title: string) => {
+    setTitle(title);
+    if (currentParshaKey) setParshaKey(currentParshaKey);
+    document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
 
   useEffect(() => {
     (async () => {
@@ -230,8 +298,88 @@ function AdminPage() {
           </div>
         </section>
 
-        {/* Upload */}
+        {/* Weekly Upload Checklist */}
         <section className="parchment-frame">
+          <div className="parchment-panel">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <h2 className="font-serif text-2xl font-semibold text-primary">
+                  Weekly Upload Checklist
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Tracking <span className="font-medium text-foreground">{currentParshaLabel}</span>
+                  {currentParshaKey ? ` (${currentParshaKey})` : ""}
+                </p>
+              </div>
+              <div className="text-sm font-medium text-primary">
+                {uploadedCount} of {countableTotal} uploaded this week
+                {checklist.length - countableTotal > 0 && (
+                  <span className="text-muted-foreground font-normal">
+                    {" "}
+                    · {checklist.length - countableTotal} skipped
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <ul className="mt-4 divide-y divide-accent/30">
+              {checklist.map((item) => (
+                <li key={item.title} className="flex items-center justify-between gap-3 py-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {item.status === "uploaded" && (
+                      <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
+                    )}
+                    {item.status === "missing" && (
+                      <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
+                    )}
+                    {item.status === "skipped" && (
+                      <MinusCircle className="h-5 w-5 text-muted-foreground shrink-0" />
+                    )}
+                    <span className="font-medium truncate">{item.title}</span>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
+                        item.status === "uploaded"
+                          ? "bg-primary/10 text-primary"
+                          : item.status === "skipped"
+                            ? "bg-muted text-muted-foreground"
+                            : "bg-accent/20 text-foreground"
+                      }`}
+                    >
+                      {item.status === "uploaded"
+                        ? "Uploaded"
+                        : item.status === "skipped"
+                          ? "Skipped"
+                          : "Missing"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {item.status === "missing" && (
+                      <button
+                        type="button"
+                        onClick={() => useExpectedTitle(item.title)}
+                        className="text-xs underline text-primary"
+                      >
+                        Use this title
+                      </button>
+                    )}
+                    {item.status !== "uploaded" && (
+                      <button
+                        type="button"
+                        onClick={() => toggleSkip(item.title)}
+                        className="text-xs rounded border border-accent/60 px-2 py-1 hover:bg-accent/10"
+                      >
+                        {item.status === "skipped" ? "Unskip" : "Skip this week"}
+                      </button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* Upload */}
+        <section id="upload-section" className="parchment-frame">
           <div className="parchment-panel">
             <h2 className="font-serif text-2xl font-semibold text-primary">Upload PDF</h2>
             <form onSubmit={handleUpload} className="mt-4 grid gap-4 md:grid-cols-2">
