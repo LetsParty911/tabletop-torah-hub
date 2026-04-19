@@ -365,6 +365,25 @@ function AdminPage() {
     await refresh();
   };
 
+  const handleSourceTitleChange = async (id: string, title: string) => {
+    if (!accessToken) return;
+    const trimmed = title.trim();
+    if (!trimmed) {
+      setMsg({ kind: "error", text: "Title cannot be empty." });
+      await refresh();
+      return;
+    }
+    try {
+      await adminUpdateChecklistSource({ data: { accessToken, id, title: trimmed } });
+      await refresh();
+    } catch (err) {
+      setMsg({
+        kind: "error",
+        text: `Rename failed: ${err instanceof Error ? err.message : "unknown error"}`,
+      });
+    }
+  };
+
   const handleDeleteSource = async (id: string, title: string) => {
     if (!accessToken) return;
     if (!confirm(`Delete checklist source "${title}"? Use Inactive instead to keep history.`)) return;
@@ -611,7 +630,25 @@ function AdminPage() {
                           className="w-16 rounded border border-accent/60 bg-background px-2 py-1"
                         />
                       </td>
-                      <td className="py-2 pr-3 font-medium">{s.title}</td>
+                      <td className="py-2 pr-3">
+                        <input
+                          type="text"
+                          defaultValue={s.title}
+                          onBlur={(e) => {
+                            const v = e.target.value;
+                            if (v.trim() !== s.title) {
+                              handleSourceTitleChange(s.id, v);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              (e.target as HTMLInputElement).blur();
+                            }
+                          }}
+                          className="w-full rounded border border-accent/60 bg-background px-2 py-1 font-medium"
+                        />
+                      </td>
                       <td className="py-2 pr-3">
                         <button
                           onClick={() => handleToggleSourceActive(s.id, !s.active)}
