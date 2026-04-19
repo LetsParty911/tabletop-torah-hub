@@ -36,9 +36,6 @@ export const Route = createFileRoute("/archive")({
           </Link>
         </div>
       </div>
-    </div>
-    </div>
-    );
   },
   notFoundComponent: () => (
     <div className="min-h-screen flex items-center justify-center">
