@@ -8,6 +8,9 @@ import {
   adminDeletePdf,
   adminSetParshaOverride,
   adminListSubscribers,
+  adminListWeeklySkips,
+  adminAddWeeklySkip,
+  adminRemoveWeeklySkip,
   checkIsAdmin,
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
@@ -133,42 +136,70 @@ function AdminPage() {
     }
   }, [resolvedCurrentParsha, parshaUserTouched, parshaKey]);
 
-  // Skipped-this-week state, keyed by parsha. Stored in localStorage.
-  const skipStorageKey = currentParshaKey ? `weekly-skips:${currentParshaKey}` : null;
+  // Skipped-this-week state, keyed by parsha + jewish_year, persisted in DB.
+  const [jewishYear, setJewishYear] = useState<number | null>(null);
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
 
+  // Resolve the current Jewish year once.
   useEffect(() => {
-    if (!skipStorageKey) return;
-    try {
-      const raw = localStorage.getItem(skipStorageKey);
-      if (raw) {
-        const arr = JSON.parse(raw) as string[];
-        setSkipped(new Set(arr.map((s) => s.toLowerCase())));
-      } else {
-        setSkipped(new Set());
-      }
-    } catch {
-      setSkipped(new Set());
-    }
-  }, [skipStorageKey]);
-
-  const persistSkips = (next: Set<string>) => {
-    setSkipped(next);
-    if (skipStorageKey) {
+    let cancelled = false;
+    (async () => {
       try {
-        localStorage.setItem(skipStorageKey, JSON.stringify(Array.from(next)));
+        const y = await getCurrentJewishYear();
+        if (!cancelled) setJewishYear(y);
       } catch {
         // ignore
       }
-    }
-  };
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const toggleSkip = (title: string) => {
-    const key = title.toLowerCase();
+  // Load skips for current parsha + year whenever they change.
+  useEffect(() => {
+    if (!accessToken || !currentParshaKey || jewishYear == null) {
+      setSkipped(new Set());
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await adminListWeeklySkips({
+          data: { accessToken, parshaKey: currentParshaKey, jewishYear },
+        });
+        if (!cancelled) setSkipped(new Set(r.titleKeys.map((s) => s.toLowerCase())));
+      } catch {
+        if (!cancelled) setSkipped(new Set());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, currentParshaKey, jewishYear]);
+
+  const toggleSkip = async (title: string) => {
+    if (!accessToken || !currentParshaKey || jewishYear == null) return;
+    const titleKey = title.toLowerCase();
+    const prev = new Set(skipped);
     const next = new Set(skipped);
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    persistSkips(next);
+    const wasSkipped = next.has(titleKey);
+    if (wasSkipped) next.delete(titleKey);
+    else next.add(titleKey);
+    setSkipped(next); // optimistic
+    try {
+      if (wasSkipped) {
+        await adminRemoveWeeklySkip({
+          data: { accessToken, parshaKey: currentParshaKey, titleKey, jewishYear },
+        });
+      } else {
+        await adminAddWeeklySkip({
+          data: { accessToken, parshaKey: currentParshaKey, titleKey, jewishYear },
+        });
+      }
+    } catch {
+      setSkipped(prev); // revert on failure
+    }
   };
 
   // Determine which expected titles are uploaded for the current parsha.

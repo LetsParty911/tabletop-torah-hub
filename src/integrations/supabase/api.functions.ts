@@ -264,3 +264,90 @@ export const adminListSubscribers = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { subscribers: rows ?? [] };
   });
+
+// ---------- Admin: list weekly skips for parsha+year ----------
+export const adminListWeeklySkips = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; parshaKey: string; jewishYear: number }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        parshaKey: z.string().min(1).max(120),
+        jewishYear: z.number().int().min(5000).max(7000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { data: rows, error } = await admin
+      .from("weekly_skips")
+      .select("title_key")
+      .eq("parsha_key", data.parshaKey)
+      .eq("jewish_year", data.jewishYear);
+    if (error) throw new Error(error.message);
+    return { titleKeys: (rows ?? []).map((r) => r.title_key as string) };
+  });
+
+// ---------- Admin: add a weekly skip ----------
+export const adminAddWeeklySkip = createServerFn({ method: "POST" })
+  .inputValidator((input: {
+    accessToken: string;
+    parshaKey: string;
+    titleKey: string;
+    jewishYear: number;
+  }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        parshaKey: z.string().min(1).max(120),
+        titleKey: z.string().min(1).max(300),
+        jewishYear: z.number().int().min(5000).max(7000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { userId } = await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { error } = await admin
+      .from("weekly_skips")
+      .insert({
+        parsha_key: data.parshaKey,
+        title_key: data.titleKey.toLowerCase(),
+        jewish_year: data.jewishYear,
+        created_by: userId,
+      });
+    if (error && !error.message.toLowerCase().includes("duplicate")) {
+      throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+// ---------- Admin: remove a weekly skip ----------
+export const adminRemoveWeeklySkip = createServerFn({ method: "POST" })
+  .inputValidator((input: {
+    accessToken: string;
+    parshaKey: string;
+    titleKey: string;
+    jewishYear: number;
+  }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        parshaKey: z.string().min(1).max(120),
+        titleKey: z.string().min(1).max(300),
+        jewishYear: z.number().int().min(5000).max(7000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { error } = await admin
+      .from("weekly_skips")
+      .delete()
+      .eq("parsha_key", data.parshaKey)
+      .eq("title_key", data.titleKey.toLowerCase())
+      .eq("jewish_year", data.jewishYear);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
