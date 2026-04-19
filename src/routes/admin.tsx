@@ -124,6 +124,10 @@ function AdminPage() {
   const [contactMessages, setContactMessages] = useState<ContactMessageRow[]>([]);
   const [contactMessagesError, setContactMessagesError] = useState<string | null>(null);
   const [override, setOverride] = useState<string>("");
+  const [annEnabled, setAnnEnabled] = useState(false);
+  const [annText, setAnnText] = useState("");
+  const [annLinkUrl, setAnnLinkUrl] = useState("");
+  const [annLinkLabel, setAnnLinkLabel] = useState("");
   const [busy, setBusy] = useState(false);
   const [yearFilter, setYearFilter] = useState<string>("all");
   const [msg, setMsg] = useState<{ kind: "success" | "error"; text: string } | null>(null);
@@ -291,7 +295,7 @@ function AdminPage() {
 
   const refresh = async () => {
     if (!accessToken || !isAdmin) return;
-    const [p, s, o, cs, cm] = await Promise.all([
+    const [p, s, o, cs, cm, ann] = await Promise.all([
       adminListPdfs({ data: { accessToken } }),
       adminListSubscribers({ data: { accessToken } }),
       getParshaOverride(),
@@ -300,11 +304,16 @@ function AdminPage() {
         (r) => ({ ok: true as const, messages: r.messages as ContactMessageRow[] }),
         (e: unknown) => ({ ok: false as const, error: e instanceof Error ? e.message : "unknown" }),
       ),
+      getAnnouncementBanner(),
     ]);
     setPdfs(p.pdfs as PdfRow[]);
     setSubscribers(s.subscribers as Subscriber[]);
     setOverride(o.override ?? "");
     setSources(cs.sources as ChecklistSource[]);
+    setAnnEnabled(ann.enabled);
+    setAnnText(ann.text ?? "");
+    setAnnLinkUrl(ann.linkUrl ?? "");
+    setAnnLinkLabel(ann.linkLabel ?? "");
     if (cm.ok) {
       setContactMessages(cm.messages);
       setContactMessagesError(null);
