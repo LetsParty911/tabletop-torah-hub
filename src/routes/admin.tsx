@@ -455,6 +455,32 @@ function AdminPage() {
     }
   };
 
+  const handleSaveAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accessToken) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      await adminSetAnnouncementBanner({
+        data: {
+          accessToken,
+          enabled: annEnabled,
+          text: annText.trim() ? annText.trim() : null,
+          linkUrl: annLinkUrl.trim() ? annLinkUrl.trim() : null,
+          linkLabel: annLinkLabel.trim() ? annLinkLabel.trim() : null,
+        },
+      });
+      setMsg({ kind: "success", text: "Announcement banner saved." });
+    } catch (err) {
+      setMsg({
+        kind: "error",
+        text: `Save failed: ${err instanceof Error ? err.message : "unknown error"}`,
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleOverride = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!accessToken) return;
