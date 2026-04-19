@@ -330,7 +330,45 @@ function AdminPage() {
     await refresh();
   };
 
-  const handleOverride = async (e: React.FormEvent) => {
+  const handleAddSource = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accessToken || !newSourceTitle.trim()) return;
+    const nextOrder = sources.length
+      ? Math.max(...sources.map((s) => s.sort_order)) + 10
+      : 10;
+    setBusy(true);
+    try {
+      await adminAddChecklistSource({
+        data: { accessToken, title: newSourceTitle.trim(), sortOrder: nextOrder },
+      });
+      setNewSourceTitle("");
+      await refresh();
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Could not add source");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleToggleSourceActive = async (id: string, active: boolean) => {
+    if (!accessToken) return;
+    await adminUpdateChecklistSource({ data: { accessToken, id, active } });
+    await refresh();
+  };
+
+  const handleSourceSortChange = async (id: string, sortOrder: number) => {
+    if (!accessToken) return;
+    await adminUpdateChecklistSource({ data: { accessToken, id, sortOrder } });
+    await refresh();
+  };
+
+  const handleDeleteSource = async (id: string, title: string) => {
+    if (!accessToken) return;
+    if (!confirm(`Delete checklist source "${title}"? Use Inactive instead to keep history.`)) return;
+    await adminDeleteChecklistSource({ data: { accessToken, id } });
+    await refresh();
+  };
+
     e.preventDefault();
     if (!accessToken) return;
     setBusy(true);
