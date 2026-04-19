@@ -369,6 +369,7 @@ function AdminPage() {
     await refresh();
   };
 
+  const handleOverride = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!accessToken) return;
     setBusy(true);
