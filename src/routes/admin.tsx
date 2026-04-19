@@ -450,6 +450,12 @@ function AdminPage() {
                     ))}
                   </select>
                 )}
+                <div className="mt-2 text-[11px] font-mono text-muted-foreground space-y-0.5 break-all">
+                  <div>raw key: {String(currentParshaKey)}</div>
+                  <div>raw label: {currentParshaLabel}</div>
+                  <div>normalized: {String(resolvedCurrentParsha)}</div>
+                  <div>dropdown value: {parshaKey || "(empty)"}</div>
+                </div>
               </label>
               <label className="block">
                 <span className="text-sm font-medium">Title</span>
