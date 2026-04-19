@@ -310,10 +310,11 @@ function AdminPage() {
       setFile(null);
       (document.getElementById("pdf-file-input") as HTMLInputElement | null)?.value &&
         ((document.getElementById("pdf-file-input") as HTMLInputElement).value = "");
-      setMsg("Uploaded.");
+      setMsg({ kind: "success", text: "Uploaded." });
       await refresh();
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : "Upload failed");
+      const detail = err instanceof Error ? err.message : "Unknown error";
+      setMsg({ kind: "error", text: `Upload failed: ${detail}` });
     } finally {
       setBusy(false);
     }
@@ -346,7 +347,7 @@ function AdminPage() {
       setNewSourceTitle("");
       await refresh();
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : "Could not add source");
+      setMsg({ kind: "error", text: err instanceof Error ? err.message : "Could not add source" });
     } finally {
       setBusy(false);
     }
@@ -379,7 +380,7 @@ function AdminPage() {
       await adminSetParshaOverride({
         data: { accessToken, override: override.trim() ? override.trim() : null },
       });
-      setMsg("Override saved.");
+      setMsg({ kind: "success", text: "Override saved." });
     } finally {
       setBusy(false);
     }
@@ -438,8 +439,15 @@ function AdminPage() {
         </header>
 
         {msg && (
-          <div className="rounded-lg border border-accent/40 bg-accent/10 px-4 py-2 text-sm text-foreground">
-            {msg}
+          <div
+            className={
+              msg.kind === "error"
+                ? "rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive"
+                : "rounded-lg border border-accent/40 bg-accent/10 px-4 py-2 text-sm text-foreground"
+            }
+            role={msg.kind === "error" ? "alert" : "status"}
+          >
+            {msg.text}
           </div>
         )}
 
