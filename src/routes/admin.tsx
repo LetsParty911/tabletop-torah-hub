@@ -12,10 +12,13 @@ import {
   adminAddWeeklySkip,
   adminRemoveWeeklySkip,
   checkIsAdmin,
+  adminListChecklistSources,
+  adminAddChecklistSource,
+  adminUpdateChecklistSource,
+  adminDeleteChecklistSource,
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
-import { EXPECTED_WEEKLY_PDFS } from "@/lib/expected-pdfs";
 import { useCurrentParsha } from "@/hooks/use-current-parsha";
 import { getCurrentJewishYear } from "@/lib/jewish-year";
 import { CheckCircle2, Circle, MinusCircle } from "lucide-react";
@@ -106,6 +109,17 @@ function AdminPage() {
   const [override, setOverride] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  // Checklist sources (admin-managed)
+  type ChecklistSource = {
+    id: string;
+    title: string;
+    active: boolean;
+    sort_order: number;
+    created_at: string;
+  };
+  const [sources, setSources] = useState<ChecklistSource[]>([]);
+  const [newSourceTitle, setNewSourceTitle] = useState("");
 
   // Upload form
   const [parshaKey, setParshaKey] = useState<string>("");
@@ -210,7 +224,8 @@ function AdminPage() {
   );
 
   type ChecklistStatus = "uploaded" | "skipped" | "missing";
-  const checklist: Array<{ title: string; status: ChecklistStatus }> = EXPECTED_WEEKLY_PDFS.map(
+  const activeSourceTitles = sources.filter((s) => s.active).map((s) => s.title);
+  const checklist: Array<{ title: string; status: ChecklistStatus }> = activeSourceTitles.map(
     (title) => {
       const key = title.toLowerCase();
       if (uploadedTitlesForCurrent.has(key)) return { title, status: "uploaded" as const };
@@ -244,14 +259,16 @@ function AdminPage() {
 
   const refresh = async () => {
     if (!accessToken || !isAdmin) return;
-    const [p, s, o] = await Promise.all([
+    const [p, s, o, cs] = await Promise.all([
       adminListPdfs({ data: { accessToken } }),
       adminListSubscribers({ data: { accessToken } }),
       getParshaOverride(),
+      adminListChecklistSources({ data: { accessToken } }),
     ]);
     setPdfs(p.pdfs as PdfRow[]);
     setSubscribers(s.subscribers as Subscriber[]);
     setOverride(o.override ?? "");
+    setSources(cs.sources as ChecklistSource[]);
   };
 
   useEffect(() => {
@@ -310,6 +327,45 @@ function AdminPage() {
     if (!accessToken) return;
     if (!confirm("Delete this PDF? This cannot be undone.")) return;
     await adminDeletePdf({ data: { accessToken, id } });
+    await refresh();
+  };
+
+  const handleAddSource = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accessToken || !newSourceTitle.trim()) return;
+    const nextOrder = sources.length
+      ? Math.max(...sources.map((s) => s.sort_order)) + 10
+      : 10;
+    setBusy(true);
+    try {
+      await adminAddChecklistSource({
+        data: { accessToken, title: newSourceTitle.trim(), sortOrder: nextOrder },
+      });
+      setNewSourceTitle("");
+      await refresh();
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Could not add source");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleToggleSourceActive = async (id: string, active: boolean) => {
+    if (!accessToken) return;
+    await adminUpdateChecklistSource({ data: { accessToken, id, active } });
+    await refresh();
+  };
+
+  const handleSourceSortChange = async (id: string, sortOrder: number) => {
+    if (!accessToken) return;
+    await adminUpdateChecklistSource({ data: { accessToken, id, sortOrder } });
+    await refresh();
+  };
+
+  const handleDeleteSource = async (id: string, title: string) => {
+    if (!accessToken) return;
+    if (!confirm(`Delete checklist source "${title}"? Use Inactive instead to keep history.`)) return;
+    await adminDeleteChecklistSource({ data: { accessToken, id } });
     await refresh();
   };
 
@@ -493,7 +549,94 @@ function AdminPage() {
           </div>
         </section>
 
-        {/* Upload */}
+        {/* Manage Weekly Checklist Sources */}
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <h2 className="font-serif text-2xl font-semibold text-primary">
+              Manage Weekly Checklist Sources
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              The list below controls what appears in the Weekly Upload Checklist. Lower sort order
+              shows first. Inactive sources are hidden but kept for history.
+            </p>
+
+            <form onSubmit={handleAddSource} className="mt-4 flex flex-col sm:flex-row gap-2">
+              <input
+                value={newSourceTitle}
+                onChange={(e) => setNewSourceTitle(e.target.value)}
+                placeholder="New source title (e.g., Torah Wellsprings)"
+                className="flex-1 rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+              />
+              <button
+                disabled={busy || !newSourceTitle.trim()}
+                className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
+              >
+                Add source
+              </button>
+            </form>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left border-b">
+                  <tr>
+                    <th className="py-2 pr-3 w-20">Order</th>
+                    <th className="py-2 pr-3">Title</th>
+                    <th className="py-2 pr-3 w-28">Active</th>
+                    <th className="py-2 w-20"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sources.map((s) => (
+                    <tr key={s.id} className="border-b">
+                      <td className="py-2 pr-3">
+                        <input
+                          type="number"
+                          defaultValue={s.sort_order}
+                          onBlur={(e) => {
+                            const v = parseInt(e.target.value, 10);
+                            if (!Number.isNaN(v) && v !== s.sort_order) {
+                              handleSourceSortChange(s.id, v);
+                            }
+                          }}
+                          className="w-16 rounded border border-accent/60 bg-background px-2 py-1"
+                        />
+                      </td>
+                      <td className="py-2 pr-3 font-medium">{s.title}</td>
+                      <td className="py-2 pr-3">
+                        <button
+                          onClick={() => handleToggleSourceActive(s.id, !s.active)}
+                          className={`px-2 py-1 rounded text-xs ${
+                            s.active
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-foreground"
+                          }`}
+                        >
+                          {s.active ? "Active" : "Inactive"}
+                        </button>
+                      </td>
+                      <td className="py-2 text-right">
+                        <button
+                          onClick={() => handleDeleteSource(s.id, s.title)}
+                          className="text-destructive underline text-xs"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {sources.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-6 text-center text-muted-foreground">
+                        No checklist sources yet. Add one above.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
         <section id="upload-section" className="parchment-frame">
           <div className="parchment-panel">
             <h2 className="font-serif text-2xl font-semibold text-primary">Upload PDF</h2>

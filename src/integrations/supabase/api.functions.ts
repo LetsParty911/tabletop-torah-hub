@@ -387,6 +387,109 @@ export const adminAddWeeklySkip = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- Public: list active checklist source titles (ordered) ----------
+export const listChecklistSources = createServerFn({ method: "GET" }).handler(async () => {
+  const admin = getSupabaseAdmin();
+  const { data, error } = await admin
+    .from("checklist_sources")
+    .select("title")
+    .eq("active", true)
+    .order("sort_order", { ascending: true })
+    .order("title", { ascending: true });
+  if (error) {
+    console.error("listChecklistSources error", error);
+    return { titles: [] as string[] };
+  }
+  return { titles: (data ?? []).map((r) => r.title as string) };
+});
+
+// ---------- Admin: list ALL checklist sources ----------
+export const adminListChecklistSources = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string }) =>
+    z.object({ accessToken: z.string().min(10) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { data: rows, error } = await admin
+      .from("checklist_sources")
+      .select("id, title, active, sort_order, created_at")
+      .order("sort_order", { ascending: true })
+      .order("title", { ascending: true });
+    if (error) throw new Error(error.message);
+    return { sources: rows ?? [] };
+  });
+
+// ---------- Admin: add checklist source ----------
+export const adminAddChecklistSource = createServerFn({ method: "POST" })
+  .inputValidator((input: {
+    accessToken: string;
+    title: string;
+    sortOrder: number;
+  }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        title: z.string().min(1).max(200),
+        sortOrder: z.number().int().min(0).max(100000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { error } = await admin
+      .from("checklist_sources")
+      .insert({ title: data.title.trim(), sort_order: data.sortOrder, active: true });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------- Admin: update checklist source (title / active / sort_order) ----------
+export const adminUpdateChecklistSource = createServerFn({ method: "POST" })
+  .inputValidator((input: {
+    accessToken: string;
+    id: string;
+    title?: string;
+    active?: boolean;
+    sortOrder?: number;
+  }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        id: z.string().uuid(),
+        title: z.string().min(1).max(200).optional(),
+        active: z.boolean().optional(),
+        sortOrder: z.number().int().min(0).max(100000).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const patch: Record<string, unknown> = {};
+    if (data.title !== undefined) patch.title = data.title.trim();
+    if (data.active !== undefined) patch.active = data.active;
+    if (data.sortOrder !== undefined) patch.sort_order = data.sortOrder;
+    if (Object.keys(patch).length === 0) return { ok: true };
+    const { error } = await admin.from("checklist_sources").update(patch).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------- Admin: delete checklist source ----------
+export const adminDeleteChecklistSource = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; id: string }) =>
+    z.object({ accessToken: z.string().min(10), id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { error } = await admin.from("checklist_sources").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ---------- Admin: remove a weekly skip ----------
 export const adminRemoveWeeklySkip = createServerFn({ method: "POST" })
   .inputValidator((input: {
