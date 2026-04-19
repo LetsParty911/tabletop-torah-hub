@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileText, Download, Eye } from "lucide-react";
-import { listArchive } from "@/integrations/supabase/api.functions";
+import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
 
 export const Route = createFileRoute("/archive")({
   component: ArchivePage,
@@ -44,9 +44,10 @@ export const Route = createFileRoute("/archive")({
 });
 
 function ArchivePage() {
-  const { years } = Route.useLoaderData();
+  const { years } = Route.useLoaderData() as { years: ArchiveYear[] };
   const totalPdfs = years.reduce(
-    (sum, y) => sum + y.parshiyos.reduce((s, p) => s + p.pdfs.length, 0),
+    (sum: number, y: ArchiveYear) =>
+      sum + y.parshiyos.reduce((s: number, p: ArchiveParsha) => s + p.pdfs.length, 0),
     0,
   );
 
@@ -89,7 +90,7 @@ function ArchivePage() {
             </div>
           </section>
         ) : (
-          years.map((y) => (
+          years.map((y: ArchiveYear) => (
             <section key={y.year} className="parchment-frame">
               <div className="parchment-panel">
                 <div className="flex items-baseline justify-between gap-4 border-b-2 border-accent/30 pb-4 mb-6">
@@ -101,13 +102,13 @@ function ArchivePage() {
                   </span>
                 </div>
                 <div className="space-y-8">
-                  {y.parshiyos.map((p) => (
+                  {y.parshiyos.map((p: ArchiveParsha) => (
                     <div key={`${y.year}-${p.parshaKey}`}>
                       <h3 className="font-serif text-xl sm:text-2xl font-semibold text-primary mb-4">
                         Parshas {p.parshaKey}
                       </h3>
                       <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                        {p.pdfs.map((r) => (
+                        {p.pdfs.map((r: ArchivePdf) => (
                           <article
                             key={r.id}
                             className="rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent transition-colors flex flex-col"
