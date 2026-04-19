@@ -56,14 +56,18 @@ function AdminPage() {
     displayLabel: currentParshaLabel,
     loading: currentParshaLoading,
   } = useCurrentParsha();
-  const resolvedCurrentParsha = currentParshaKey
-    ? PARSHIYOS.find(
-        (p) =>
-          p.toLowerCase() ===
-          hebcalToParshaKey(currentParshaKey).toLowerCase(),
-      )
-    : null;
-  const uploadParshaReady = Boolean(resolvedCurrentParsha || parshaUserTouched);
+  const normalizeParshaSelection = (value: string | null | undefined) => {
+    if (!value) return null;
+    const cleaned = value.replace(/^Parshas\s+/i, "").trim();
+    const normalized = hebcalToParshaKey(cleaned);
+    return (
+      PARSHIYOS.find((p) => p.toLowerCase() === normalized.toLowerCase()) ?? null
+    );
+  };
+  const resolvedCurrentParsha =
+    normalizeParshaSelection(currentParshaKey) ??
+    normalizeParshaSelection(currentParshaLabel);
+  const uploadParshaReady = Boolean(resolvedCurrentParsha || parshaUserTouched || !currentParshaLoading);
 
   // Default the upload form parsha to the current parsha (override or Hebcal),
   // unless the admin has manually changed it.
@@ -134,14 +138,9 @@ function AdminPage() {
 
   const useExpectedTitle = (title: string) => {
     setTitle(title);
-    if (currentParshaKey) {
-      const match = PARSHIYOS.find(
-        (p) => p.toLowerCase() === currentParshaKey.toLowerCase(),
-      );
-      if (match) {
-        setParshaKey(match);
-        setParshaUserTouched(false);
-      }
+    if (resolvedCurrentParsha) {
+      setParshaKey(resolvedCurrentParsha);
+      setParshaUserTouched(false);
     }
     document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -420,6 +419,7 @@ function AdminPage() {
                   </div>
                 ) : (
                   <select
+                    required
                     value={parshaKey}
                     onChange={(e) => {
                       setParshaKey(e.target.value);
@@ -427,6 +427,11 @@ function AdminPage() {
                     }}
                     className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
                   >
+                    {!parshaKey && (
+                      <option value="" disabled>
+                        Select a parsha
+                      </option>
+                    )}
                     {PARSHIYOS.map((p) => (
                       <option key={p} value={p}>
                         {p}
