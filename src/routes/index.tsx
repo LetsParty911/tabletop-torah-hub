@@ -158,6 +158,14 @@ function Index() {
             <p className="mt-2 sm:mt-3 font-serif text-xl sm:text-2xl md:text-4xl text-primary whitespace-nowrap">
               {currentLabel}
             </p>
+            <div className="mt-5 sm:mt-6">
+              <Link
+                to="/archive"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-primary transition-colors"
+              >
+                Browse Archive →
+              </Link>
+            </div>
           </div>
         </section>
 
