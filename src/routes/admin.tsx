@@ -730,57 +730,98 @@ function AdminPage() {
         {/* PDFs list */}
         <section className="parchment-frame">
           <div className="parchment-panel">
-            <h2 className="font-serif text-2xl font-semibold text-primary">All PDFs ({pdfs.length})</h2>
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-left border-b">
-                  <tr>
-                    <th className="py-2 pr-3">Parsha</th>
-                    <th className="py-2 pr-3">Title</th>
-                    <th className="py-2 pr-3">Published</th>
-                    <th className="py-2 pr-3">Created</th>
-                    <th className="py-2"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pdfs.map((p) => (
-                    <tr key={p.id} className="border-b">
-                      <td className="py-2 pr-3">{p.parsha_key}</td>
-                      <td className="py-2 pr-3">
-                        <div className="font-medium">{p.title}</div>
-                        {p.subtitle && <div className="text-muted-foreground text-xs">{p.subtitle}</div>}
-                      </td>
-                      <td className="py-2 pr-3">
-                        <button
-                          onClick={() => handleToggle(p.id, !p.published)}
-                          className={`px-2 py-1 rounded text-xs ${p.published ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}
+            {(() => {
+              const availableYears = Array.from(
+                new Set(pdfs.map((p) => p.jewish_year).filter((y): y is number => !!y)),
+              ).sort((a, b) => b - a);
+              const filteredPdfs =
+                yearFilter === "all"
+                  ? pdfs
+                  : pdfs.filter((p) => String(p.jewish_year ?? "") === yearFilter);
+              return (
+                <>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="font-serif text-2xl font-semibold text-primary">
+                      All PDFs ({filteredPdfs.length}
+                      {yearFilter !== "all" ? ` of ${pdfs.length}` : ""})
+                    </h2>
+                    {availableYears.length > 0 && (
+                      <label className="flex items-center gap-2 text-sm">
+                        <span className="text-muted-foreground">Jewish Year:</span>
+                        <select
+                          value={yearFilter}
+                          onChange={(e) => setYearFilter(e.target.value)}
+                          className="border rounded px-2 py-1 bg-background"
                         >
-                          {p.published ? "Yes" : "No"}
-                        </button>
-                      </td>
-                      <td className="py-2 pr-3 text-muted-foreground">
-                        {new Date(p.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="py-2 text-right">
-                        <button
-                          onClick={() => handleDelete(p.id)}
-                          className="text-destructive underline text-xs"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {pdfs.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="py-6 text-center text-muted-foreground">
-                        No PDFs yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                          <option value="all">All years</option>
+                          {availableYears.map((y) => (
+                            <option key={y} value={String(y)}>
+                              {y}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                  </div>
+                  <div className="mt-4 overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="text-left border-b">
+                        <tr>
+                          <th className="py-2 pr-3">Parsha</th>
+                          <th className="py-2 pr-3">Year</th>
+                          <th className="py-2 pr-3">Title</th>
+                          <th className="py-2 pr-3">Published</th>
+                          <th className="py-2 pr-3">Created</th>
+                          <th className="py-2"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredPdfs.map((p) => (
+                          <tr key={p.id} className="border-b">
+                            <td className="py-2 pr-3">{p.parsha_key}</td>
+                            <td className="py-2 pr-3 text-muted-foreground">
+                              {p.jewish_year ?? "—"}
+                            </td>
+                            <td className="py-2 pr-3">
+                              <div className="font-medium">{p.title}</div>
+                              {p.subtitle && (
+                                <div className="text-muted-foreground text-xs">{p.subtitle}</div>
+                              )}
+                            </td>
+                            <td className="py-2 pr-3">
+                              <button
+                                onClick={() => handleToggle(p.id, !p.published)}
+                                className={`px-2 py-1 rounded text-xs ${p.published ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}
+                              >
+                                {p.published ? "Yes" : "No"}
+                              </button>
+                            </td>
+                            <td className="py-2 pr-3 text-muted-foreground">
+                              {new Date(p.created_at).toLocaleDateString()}
+                            </td>
+                            <td className="py-2 text-right">
+                              <button
+                                onClick={() => handleDelete(p.id)}
+                                className="text-destructive underline text-xs"
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {filteredPdfs.length === 0 && (
+                          <tr>
+                            <td colSpan={6} className="py-6 text-center text-muted-foreground">
+                              {pdfs.length === 0 ? "No PDFs yet." : "No PDFs for this year."}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </section>
 
