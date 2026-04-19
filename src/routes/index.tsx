@@ -256,7 +256,7 @@ function Index() {
                         rel="noopener noreferrer"
                         className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-full border-2 border-accent/70 px-3 py-2.5 sm:py-2 text-sm font-medium text-accent hover:bg-accent hover:text-accent-foreground transition-colors"
                       >
-                        <Printer className="h-4 w-4" /> Print
+                        <Printer className="h-4 w-4" /> Print PDF
                       </a>
                     </div>
                   </article>
