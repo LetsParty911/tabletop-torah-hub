@@ -723,13 +723,25 @@ function AdminPage() {
                 <input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} />
                 <span className="text-sm">Published</span>
               </label>
-              <div className="md:col-span-2">
+              <div className="md:col-span-2 flex flex-wrap items-center gap-3">
                 <button
                   disabled={busy}
                   className="rounded-full bg-primary px-6 py-2 text-primary-foreground disabled:opacity-50"
                 >
                   {busy ? "Uploading…" : "Upload"}
                 </button>
+                {msg && (
+                  <span
+                    className={
+                      msg.kind === "error"
+                        ? "text-sm text-destructive"
+                        : "text-sm text-muted-foreground"
+                    }
+                    role={msg.kind === "error" ? "alert" : "status"}
+                  >
+                    {msg.text}
+                  </span>
+                )}
               </div>
             </form>
           </div>
