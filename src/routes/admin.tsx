@@ -110,7 +110,7 @@ function AdminPage() {
   const [override, setOverride] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [yearFilter, setYearFilter] = useState<string>("all");
-  const [msg, setMsg] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
   // Checklist sources (admin-managed)
   type ChecklistSource = {
