@@ -430,6 +430,20 @@ function AdminPage() {
     await refresh();
   };
 
+  const handleDeleteContactMessage = async (id: string) => {
+    if (!accessToken) return;
+    if (!confirm("Delete this contact message?")) return;
+    try {
+      await adminDeleteContactMessage({ data: { accessToken, id } });
+      await refresh();
+    } catch (err) {
+      setMsg({
+        kind: "error",
+        text: `Could not delete message: ${err instanceof Error ? err.message : "unknown error"}`,
+      });
+    }
+  };
+
   const handleOverride = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!accessToken) return;
