@@ -590,7 +590,77 @@ function AdminPage() {
           </div>
         </section>
 
-        {/* Weekly Upload Checklist */}
+        {/* Announcement Banner */}
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <h2 className="font-serif text-2xl font-semibold text-primary">
+              Announcement Banner
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              A slim banner at the top of the homepage. When disabled, nothing renders.
+            </p>
+            <form onSubmit={handleSaveAnnouncement} className="mt-4 space-y-4">
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={annEnabled}
+                  onChange={(e) => setAnnEnabled(e.target.checked)}
+                  className="h-4 w-4 accent-primary"
+                />
+                <span className="font-medium">Enable banner</span>
+              </label>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Banner Text</label>
+                <textarea
+                  value={annText}
+                  onChange={(e) => setAnnText(e.target.value)}
+                  rows={2}
+                  maxLength={500}
+                  placeholder="e.g., Wishing all our readers a Gut Shabbos."
+                  className="w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Link URL (optional)</label>
+                  <input
+                    type="url"
+                    value={annLinkUrl}
+                    onChange={(e) => setAnnLinkUrl(e.target.value)}
+                    placeholder="https://…"
+                    className="w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Link Label (optional)</label>
+                  <input
+                    type="text"
+                    value={annLinkLabel}
+                    onChange={(e) => setAnnLinkLabel(e.target.value)}
+                    maxLength={120}
+                    placeholder="Read more"
+                    className="w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                  />
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Link only appears on the homepage when both URL and Label are filled in.
+              </p>
+
+              <button
+                disabled={busy}
+                className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
+              >
+                Save banner
+              </button>
+            </form>
+          </div>
+        </section>
+
+
         <section className="parchment-frame">
           <div className="parchment-panel">
             <div className="flex items-start justify-between gap-4 flex-wrap">
