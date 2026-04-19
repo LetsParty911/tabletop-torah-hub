@@ -31,7 +31,7 @@ export const Route = createFileRoute("/view/$id")({
 
 function ViewPdf() {
   const { pdf } = Route.useLoaderData();
-  const viewerSrc = `/view/${pdf.id}/inline#toolbar=1&navpanes=0&view=FitH`;
+  const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=FitH`;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

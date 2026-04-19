@@ -13,7 +13,7 @@ import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ViewIdRouteImport } from './routes/view.$id'
-import { Route as ViewIdInlineRouteImport } from './routes/view.$id.inline'
+import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
 
 const ArchiveRoute = ArchiveRouteImport.update({
@@ -36,9 +36,9 @@ const ViewIdRoute = ViewIdRouteImport.update({
   path: '/view/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ViewIdInlineRoute = ViewIdInlineRouteImport.update({
-  id: '/inline',
-  path: '/inline',
+const ViewIdPdfRoute = ViewIdPdfRouteImport.update({
+  id: '/pdf',
+  path: '/pdf',
   getParentRoute: () => ViewIdRoute,
 } as any)
 const ViewIdDownloadRoute = ViewIdDownloadRouteImport.update({
@@ -53,7 +53,7 @@ export interface FileRoutesByFullPath {
   '/archive': typeof ArchiveRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
-  '/view/$id/inline': typeof ViewIdInlineRoute
+  '/view/$id/pdf': typeof ViewIdPdfRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -61,7 +61,7 @@ export interface FileRoutesByTo {
   '/archive': typeof ArchiveRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
-  '/view/$id/inline': typeof ViewIdInlineRoute
+  '/view/$id/pdf': typeof ViewIdPdfRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -70,7 +70,7 @@ export interface FileRoutesById {
   '/archive': typeof ArchiveRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
-  '/view/$id/inline': typeof ViewIdInlineRoute
+  '/view/$id/pdf': typeof ViewIdPdfRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -80,7 +80,7 @@ export interface FileRouteTypes {
     | '/archive'
     | '/view/$id'
     | '/view/$id/download'
-    | '/view/$id/inline'
+    | '/view/$id/pdf'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -88,7 +88,7 @@ export interface FileRouteTypes {
     | '/archive'
     | '/view/$id'
     | '/view/$id/download'
-    | '/view/$id/inline'
+    | '/view/$id/pdf'
   id:
     | '__root__'
     | '/'
@@ -96,7 +96,7 @@ export interface FileRouteTypes {
     | '/archive'
     | '/view/$id'
     | '/view/$id/download'
-    | '/view/$id/inline'
+    | '/view/$id/pdf'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -136,11 +136,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ViewIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/view/$id/inline': {
-      id: '/view/$id/inline'
-      path: '/inline'
-      fullPath: '/view/$id/inline'
-      preLoaderRoute: typeof ViewIdInlineRouteImport
+    '/view/$id/pdf': {
+      id: '/view/$id/pdf'
+      path: '/pdf'
+      fullPath: '/view/$id/pdf'
+      preLoaderRoute: typeof ViewIdPdfRouteImport
       parentRoute: typeof ViewIdRoute
     }
     '/view/$id/download': {
@@ -155,12 +155,12 @@ declare module '@tanstack/react-router' {
 
 interface ViewIdRouteChildren {
   ViewIdDownloadRoute: typeof ViewIdDownloadRoute
-  ViewIdInlineRoute: typeof ViewIdInlineRoute
+  ViewIdPdfRoute: typeof ViewIdPdfRoute
 }
 
 const ViewIdRouteChildren: ViewIdRouteChildren = {
   ViewIdDownloadRoute: ViewIdDownloadRoute,
-  ViewIdInlineRoute: ViewIdInlineRoute,
+  ViewIdPdfRoute: ViewIdPdfRoute,
 }
 
 const ViewIdRouteWithChildren =
@@ -175,12 +175,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
