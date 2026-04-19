@@ -33,6 +33,67 @@ type PdfRow = {
 
 type Subscriber = { id: string; email: string; created_at: string };
 
+const PARSHA_PREFIX_RE = /^(parshas|parashat|parsha)\s+/i;
+const PARSHA_VARIANT_REPLACEMENTS: Array<[RegExp, string]> = [
+  [/\bachrei\b/g, "acharei"],
+  [/\bmot\b/g, "mos"],
+  [/\bshmini\b/g, "shemini"],
+  [/\bsimchat\b/g, "simchas"],
+  [/\bsukkot\b/g, "sukkos"],
+  [/\bshavuot\b/g, "shavuos"],
+  [/\bbechukotai\b/g, "bechukosai"],
+  [/\bchukat\b/g, "chukas"],
+  [/\bmatot\b/g, "matos"],
+  [/\bvaetchanan\b/g, "vaeschanan"],
+  [/\bvayelech\b/g, "vayeilech"],
+  [/\bshlach\b/g, "shelach"],
+  [/\btoldot\b/g, "toldos"],
+  [/\bbereshit\b/g, "bereishis"],
+  [/\bshemot\b/g, "shemos"],
+  [/\bchayei\s+sara\b/g, "chayei sarah"],
+  [/\bki\s+teitzei\b/g, "ki seitzei"],
+  [/\bki\s+tavo\b/g, "ki savo"],
+  [/\bhaazinu\b/g, "haazinu"],
+];
+
+const toParshaComparableKey = (value: string) => {
+  let normalized = value
+    .normalize("NFKD")
+    .replace(PARSHA_PREFIX_RE, "")
+    .replace(/[’'`]/g, "")
+    .replace(/\s*-\s*/g, "-")
+    .replace(/[^a-zA-Z\s-]/g, " ")
+    .toLowerCase()
+    .trim();
+
+  for (const [pattern, replacement] of PARSHA_VARIANT_REPLACEMENTS) {
+    normalized = normalized.replace(pattern, replacement);
+  }
+
+  return normalized.replace(/[\s-]+/g, "");
+};
+
+const normalizeParshaSelection = (value: string | null | undefined) => {
+  if (!value) return null;
+
+  const cleaned = value.replace(PARSHA_PREFIX_RE, "").trim();
+  const direct = PARSHIYOS.find((p) => p.toLowerCase() === cleaned.toLowerCase());
+  if (direct) return direct;
+
+  const hebcalNormalized = hebcalToParshaKey(cleaned);
+  const exactHebcal = PARSHIYOS.find(
+    (p) => p.toLowerCase() === hebcalNormalized.toLowerCase(),
+  );
+  if (exactHebcal) return exactHebcal;
+
+  const targetKeys = [toParshaComparableKey(cleaned), toParshaComparableKey(hebcalNormalized)];
+  return (
+    PARSHIYOS.find((p) =>
+      targetKeys.some((targetKey) => targetKey && toParshaComparableKey(p) === targetKey),
+    ) ?? null
+  );
+};
+
 function AdminPage() {
   const { session, loading, signInWithGitHub, signOut } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -56,25 +117,6 @@ function AdminPage() {
     displayLabel: currentParshaLabel,
     loading: currentParshaLoading,
   } = useCurrentParsha();
-  const fuzz = (s: string) =>
-    s.toLowerCase().replace(/['’`]/g, "").replace(/[\s\-]+/g, "");
-  const normalizeParshaSelection = (value: string | null | undefined) => {
-    if (!value) return null;
-    const cleaned = value.replace(/^Parshas\s+/i, "").trim();
-    const normalized = hebcalToParshaKey(cleaned);
-    const target = fuzz(normalized);
-    // Exact (case-insensitive) match first
-    const exact = PARSHIYOS.find((p) => p.toLowerCase() === normalized.toLowerCase());
-    if (exact) return exact;
-    // Fuzzy: ignore apostrophes / spaces / dashes
-    const fuzzy = PARSHIYOS.find((p) => fuzz(p) === target);
-    if (fuzzy) return fuzzy;
-    // Try swapping each token via hebcalToParshaKey (handles "Achrei" vs "Acharei" combo names)
-    const parts = cleaned.split(/\s*-\s*/).map((s) => hebcalToParshaKey(s.trim()));
-    const recombined = parts.join("-");
-    const recombinedFuzzy = PARSHIYOS.find((p) => fuzz(p) === fuzz(recombined));
-    return recombinedFuzzy ?? null;
-  };
   const resolvedCurrentParsha =
     normalizeParshaSelection(currentParshaKey) ??
     normalizeParshaSelection(currentParshaLabel);
