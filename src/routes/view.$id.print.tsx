@@ -15,7 +15,9 @@ export const Route = createFileRoute("/view/$id/print")({
   notFoundComponent: () => (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
       <h1 className="font-serif text-3xl text-primary">Resource Not Found</h1>
-      <Link to="/" className="text-accent underline">Back to Home</Link>
+      <Link to="/" className="text-accent underline">
+        Back to Home
+      </Link>
     </div>
   ),
   component: PrintPdf,
@@ -23,31 +25,19 @@ export const Route = createFileRoute("/view/$id/print")({
 
 function PrintPdf() {
   const { pdf } = Route.useLoaderData();
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const triggeredRef = useRef(false);
+  const hasAutoPrintedRef = useRef(false);
 
   const triggerPrint = () => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-    try {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-    } catch {
-      window.print();
-    }
+    window.print();
   };
 
   useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-    const onLoad = () => {
-      if (triggeredRef.current) return;
-      triggeredRef.current = true;
-      // Small delay to ensure PDF is rendered in viewer before print
-      setTimeout(triggerPrint, 600);
-    };
-    iframe.addEventListener("load", onLoad);
-    return () => iframe.removeEventListener("load", onLoad);
+    if (hasAutoPrintedRef.current) return;
+    hasAutoPrintedRef.current = true;
+    const timeoutId = window.setTimeout(() => {
+      window.print();
+    }, 500);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   return (
@@ -76,15 +66,14 @@ function PrintPdf() {
           </button>
         </div>
         <p className="mx-auto max-w-6xl px-3 sm:px-6 pb-3 text-xs text-muted-foreground">
-          The print dialog should open automatically. If it doesn't, click "Print again".
+          The browser print dialog should open automatically. If it doesn't, click "Print again".
         </p>
       </header>
-      <main className="flex-1 flex">
+      <main className="flex-1 flex bg-muted/40">
         <iframe
-          ref={iframeRef}
-          src={`/view/${pdf.id}/inline`}
+          src={`/view/${pdf.id}/inline#toolbar=1&navpanes=0&view=FitH`}
           title={pdf.title}
-          className="w-full h-[calc(100vh-96px)] border-0 bg-muted print:h-screen"
+          className="w-full h-[calc(100vh-96px)] border-0 bg-muted"
         />
       </main>
     </div>
