@@ -289,16 +289,27 @@ function AdminPage() {
 
   const refresh = async () => {
     if (!accessToken || !isAdmin) return;
-    const [p, s, o, cs] = await Promise.all([
+    const [p, s, o, cs, cm] = await Promise.all([
       adminListPdfs({ data: { accessToken } }),
       adminListSubscribers({ data: { accessToken } }),
       getParshaOverride(),
       adminListChecklistSources({ data: { accessToken } }),
+      adminListContactMessages({ data: { accessToken } }).then(
+        (r) => ({ ok: true as const, messages: r.messages as ContactMessageRow[] }),
+        (e: unknown) => ({ ok: false as const, error: e instanceof Error ? e.message : "unknown" }),
+      ),
     ]);
     setPdfs(p.pdfs as PdfRow[]);
     setSubscribers(s.subscribers as Subscriber[]);
     setOverride(o.override ?? "");
     setSources(cs.sources as ChecklistSource[]);
+    if (cm.ok) {
+      setContactMessages(cm.messages);
+      setContactMessagesError(null);
+    } else {
+      setContactMessages([]);
+      setContactMessagesError("Could not load contact messages.");
+    }
   };
 
   useEffect(() => {
