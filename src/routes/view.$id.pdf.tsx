@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseAdmin } from "@/integrations/supabase/client.server";
 
-export const Route = createFileRoute("/view/$id/inline")({
+export const Route = createFileRoute("/view/$id/pdf")({
   server: {
     handlers: {
       GET: async ({ params }) => {
