@@ -63,21 +63,17 @@ function AdminPage() {
           hebcalToParshaKey(currentParshaKey).toLowerCase(),
       )
     : null;
-  const showParshaLoadingState =
-    !parshaUserTouched && (!parshaKey || currentParshaLoading) && !resolvedCurrentParsha;
+  const uploadParshaReady = Boolean(resolvedCurrentParsha || parshaUserTouched);
 
   // Default the upload form parsha to the current parsha (override or Hebcal),
   // unless the admin has manually changed it.
   useEffect(() => {
     if (parshaUserTouched) return;
-    if (resolvedCurrentParsha) {
-      if (resolvedCurrentParsha !== parshaKey) setParshaKey(resolvedCurrentParsha);
-      return;
+    if (!resolvedCurrentParsha) return;
+    if (resolvedCurrentParsha !== parshaKey) {
+      setParshaKey(resolvedCurrentParsha);
     }
-    if (!currentParshaLoading && !parshaKey) {
-      setParshaKey(PARSHIYOS[0]);
-    }
-  }, [resolvedCurrentParsha, currentParshaLoading, parshaUserTouched, parshaKey]);
+  }, [resolvedCurrentParsha, parshaUserTouched, parshaKey]);
 
   // Skipped-this-week state, keyed by parsha. Stored in localStorage.
   const skipStorageKey = currentParshaKey ? `weekly-skips:${currentParshaKey}` : null;
@@ -418,7 +414,7 @@ function AdminPage() {
             <form onSubmit={handleUpload} className="mt-4 grid gap-4 md:grid-cols-2">
               <label className="block">
                 <span className="text-sm font-medium">Parsha</span>
-                {showParshaLoadingState ? (
+                {!uploadParshaReady ? (
                   <div className="mt-1 rounded-md border-2 border-accent/60 bg-background px-3 py-2 text-sm text-muted-foreground">
                     Loading current parsha…
                   </div>
