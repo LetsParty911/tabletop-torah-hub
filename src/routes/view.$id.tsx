@@ -1,8 +1,16 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, Download } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { ArrowLeft, Download, Printer } from "lucide-react";
+import { z } from "zod";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { getPdfById } from "@/integrations/supabase/api.functions";
 
+const searchSchema = z.object({
+  print: fallback(z.coerce.boolean(), false).default(false),
+});
+
 export const Route = createFileRoute("/view/$id")({
+  validateSearch: zodValidator(searchSchema),
   loader: async ({ params }) => {
     const r = await getPdfById({ data: { id: params.id } });
     if (!r.pdf) throw notFound();
@@ -31,13 +39,22 @@ export const Route = createFileRoute("/view/$id")({
 
 function ViewPdf() {
   const { pdf } = Route.useLoaderData();
-  // Serve via our own inline route so the browser's PDF viewer shows the clean title
-  // as the filename instead of the raw uploaded file name from the PDF's /Title metadata.
+  const { print: printMode } = Route.useSearch();
+  const hasAutoPrintedRef = useRef(false);
   const viewerSrc = `/view/${pdf.id}/inline#toolbar=1&navpanes=0&view=FitH`;
+
+  const triggerPrint = () => window.print();
+
+  useEffect(() => {
+    if (!printMode || hasAutoPrintedRef.current) return;
+    hasAutoPrintedRef.current = true;
+    const t = window.setTimeout(() => window.print(), 800);
+    return () => window.clearTimeout(t);
+  }, [printMode]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <header className="border-b border-accent/30 bg-background/80 backdrop-blur sticky top-0 z-10">
+      <header className="border-b border-accent/30 bg-background/80 backdrop-blur sticky top-0 z-10 print:hidden">
         <div className="mx-auto max-w-6xl px-3 sm:px-6 py-3 flex items-center gap-3">
           <Link
             to="/"
@@ -53,19 +70,33 @@ function ViewPdf() {
               <p className="text-xs text-muted-foreground truncate">{pdf.subtitle}</p>
             )}
           </div>
-          <a
-            href={`/view/${pdf.id}/download`}
-            className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
-          >
-            <Download className="h-4 w-4" /> Download
-          </a>
+          {printMode ? (
+            <button
+              onClick={triggerPrint}
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+            >
+              <Printer className="h-4 w-4" /> Print again
+            </button>
+          ) : (
+            <a
+              href={`/view/${pdf.id}/download`}
+              className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+            >
+              <Download className="h-4 w-4" /> Download
+            </a>
+          )}
         </div>
+        {printMode && (
+          <p className="mx-auto max-w-6xl px-3 sm:px-6 pb-2 text-xs text-muted-foreground">
+            The print dialog should open automatically. If it doesn't, click "Print again".
+          </p>
+        )}
       </header>
       <main className="flex-1 flex">
         <iframe
           src={viewerSrc}
           title={pdf.title}
-          className="w-full h-[calc(100vh-64px)] border-0 bg-muted"
+          className={`w-full border-0 bg-muted ${printMode ? "h-[calc(100vh-96px)]" : "h-[calc(100vh-64px)]"}`}
         />
       </main>
     </div>
