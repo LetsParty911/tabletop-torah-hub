@@ -20,12 +20,14 @@ export const Route = createFileRoute("/archive")({
       },
     ],
   }),
-  errorComponent: ({ error }) => (
+  errorComponent: ({ error }) => {
+    console.error("Archive load error", error);
+    return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="parchment-frame max-w-md w-full">
         <div className="parchment-panel text-center">
           <h1 className="font-serif text-2xl text-primary">Archive unavailable</h1>
-          <p className="mt-3 text-sm text-muted-foreground">{error.message}</p>
+          <p className="mt-3 text-sm text-muted-foreground">Could not load archive right now. Please try again later.</p>
           <Link
             to="/"
             className="mt-6 inline-flex rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
