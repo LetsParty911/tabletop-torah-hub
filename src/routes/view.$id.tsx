@@ -8,12 +8,17 @@ export const Route = createFileRoute("/view/$id")({
     if (!r.pdf) throw notFound();
     return { pdf: r.pdf };
   },
-  head: ({ loaderData }) => ({
-    meta: [
-      { title: loaderData?.pdf?.title ?? "View PDF" },
-      { name: "description", content: loaderData?.pdf?.subtitle ?? "Torah resource" },
-    ],
-  }),
+  head: ({ loaderData }) => {
+    const title = loaderData?.pdf?.title ?? "View PDF";
+    const subtitle = loaderData?.pdf?.subtitle;
+    const pageTitle = subtitle ? `${title} — ${subtitle}` : title;
+    return {
+      meta: [
+        { title: pageTitle },
+        { name: "description", content: subtitle ?? "Torah resource" },
+      ],
+    };
+  },
   notFoundComponent: () => (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
       <h1 className="font-serif text-3xl text-primary">Resource Not Found</h1>
