@@ -102,6 +102,8 @@ const normalizeParshaSelection = (value: string | null | undefined) => {
   );
 };
 
+const normalizeTitleKey = (value: string) => value.trim().replace(/\s+/g, " ").toLowerCase();
+
 function AdminPage() {
   const { session, loading, signInWithGitHub, signOut } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -218,18 +220,32 @@ function AdminPage() {
     }
   };
 
-  // Determine which expected titles are uploaded for the current parsha.
+  const checklistParshaComparableKey = resolvedCurrentParsha
+    ? toParshaComparableKey(resolvedCurrentParsha)
+    : currentParshaKey
+      ? toParshaComparableKey(currentParshaKey)
+      : currentParshaLabel
+        ? toParshaComparableKey(currentParshaLabel)
+        : null;
+
+  // Determine which expected titles are uploaded for the current parsha + Jewish year.
   const uploadedTitlesForCurrent = new Set(
     pdfs
-      .filter((p) => currentParshaKey && p.parsha_key.toLowerCase() === currentParshaKey.toLowerCase())
-      .map((p) => p.title.trim().toLowerCase()),
+      .filter(
+        (p) =>
+          checklistParshaComparableKey &&
+          jewishYear != null &&
+          p.jewish_year === jewishYear &&
+          toParshaComparableKey(p.parsha_key) === checklistParshaComparableKey,
+      )
+      .map((p) => normalizeTitleKey(p.title)),
   );
 
   type ChecklistStatus = "uploaded" | "skipped" | "missing";
   const activeSourceTitles = sources.filter((s) => s.active).map((s) => s.title);
   const checklist: Array<{ title: string; status: ChecklistStatus }> = activeSourceTitles.map(
     (title) => {
-      const key = title.toLowerCase();
+      const key = normalizeTitleKey(title);
       if (uploadedTitlesForCurrent.has(key)) return { title, status: "uploaded" as const };
       if (skipped.has(key)) return { title, status: "skipped" as const };
       return { title, status: "missing" as const };
