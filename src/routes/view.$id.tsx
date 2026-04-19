@@ -7,7 +7,11 @@ type ViewSearch = { print: boolean };
 
 export const Route = createFileRoute("/view/$id")({
   validateSearch: (search: Record<string, unknown>): ViewSearch => ({
-    print: search.print === "1" || search.print === true || search.print === "true",
+    print:
+      search.print === 1 ||
+      search.print === "1" ||
+      search.print === true ||
+      search.print === "true",
   }),
   loader: async ({ params }) => {
     const r = await getPdfById({ data: { id: params.id } });
