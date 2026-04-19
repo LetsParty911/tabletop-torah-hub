@@ -12,10 +12,13 @@ import {
   adminAddWeeklySkip,
   adminRemoveWeeklySkip,
   checkIsAdmin,
+  adminListChecklistSources,
+  adminAddChecklistSource,
+  adminUpdateChecklistSource,
+  adminDeleteChecklistSource,
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
-import { EXPECTED_WEEKLY_PDFS } from "@/lib/expected-pdfs";
 import { useCurrentParsha } from "@/hooks/use-current-parsha";
 import { getCurrentJewishYear } from "@/lib/jewish-year";
 import { CheckCircle2, Circle, MinusCircle } from "lucide-react";
