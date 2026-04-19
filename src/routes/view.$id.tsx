@@ -14,11 +14,6 @@ export const Route = createFileRoute("/view/$id")({
     if (!r.pdf) throw notFound();
     return { pdf: r.pdf };
   },
-  loader: async ({ params }) => {
-    const r = await getPdfById({ data: { id: params.id } });
-    if (!r.pdf) throw notFound();
-    return { pdf: r.pdf };
-  },
   head: ({ loaderData }) => {
     const title = loaderData?.pdf?.title ?? "View PDF";
     const subtitle = loaderData?.pdf?.subtitle;
