@@ -83,11 +83,17 @@ create table if not exists public.pdfs (
   subtitle text,
   file_path text not null,
   week_of date,
+  jewish_year integer,
   published boolean not null default true,
   created_at timestamptz not null default now(),
   created_by uuid references auth.users(id) on delete set null
 );
+-- Add jewish_year column for archival grouping (parsha names repeat each year).
+alter table public.pdfs add column if not exists jewish_year integer;
+-- Backfill existing rows to current Hebrew year (5786) since the site is brand new.
+update public.pdfs set jewish_year = 5786 where jewish_year is null;
 create index if not exists pdfs_parsha_published_idx on public.pdfs (parsha_key, published);
+create index if not exists pdfs_jewish_year_idx on public.pdfs (jewish_year);
 
 alter table public.pdfs enable row level security;
 
