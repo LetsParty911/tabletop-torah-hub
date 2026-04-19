@@ -16,6 +16,8 @@ import {
   adminAddChecklistSource,
   adminUpdateChecklistSource,
   adminDeleteChecklistSource,
+  adminListContactMessages,
+  adminDeleteContactMessage,
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
