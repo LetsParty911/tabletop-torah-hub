@@ -13,7 +13,6 @@ import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ViewIdRouteImport } from './routes/view.$id'
-import { Route as ViewIdPrintRouteImport } from './routes/view.$id.print'
 import { Route as ViewIdInlineRouteImport } from './routes/view.$id.inline'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
 
@@ -37,11 +36,6 @@ const ViewIdRoute = ViewIdRouteImport.update({
   path: '/view/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ViewIdPrintRoute = ViewIdPrintRouteImport.update({
-  id: '/print',
-  path: '/print',
-  getParentRoute: () => ViewIdRoute,
-} as any)
 const ViewIdInlineRoute = ViewIdInlineRouteImport.update({
   id: '/inline',
   path: '/inline',
@@ -60,7 +54,6 @@ export interface FileRoutesByFullPath {
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/inline': typeof ViewIdInlineRoute
-  '/view/$id/print': typeof ViewIdPrintRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -69,7 +62,6 @@ export interface FileRoutesByTo {
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/inline': typeof ViewIdInlineRoute
-  '/view/$id/print': typeof ViewIdPrintRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -79,7 +71,6 @@ export interface FileRoutesById {
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/inline': typeof ViewIdInlineRoute
-  '/view/$id/print': typeof ViewIdPrintRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -90,7 +81,6 @@ export interface FileRouteTypes {
     | '/view/$id'
     | '/view/$id/download'
     | '/view/$id/inline'
-    | '/view/$id/print'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -99,7 +89,6 @@ export interface FileRouteTypes {
     | '/view/$id'
     | '/view/$id/download'
     | '/view/$id/inline'
-    | '/view/$id/print'
   id:
     | '__root__'
     | '/'
@@ -108,7 +97,6 @@ export interface FileRouteTypes {
     | '/view/$id'
     | '/view/$id/download'
     | '/view/$id/inline'
-    | '/view/$id/print'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -148,13 +136,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ViewIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/view/$id/print': {
-      id: '/view/$id/print'
-      path: '/print'
-      fullPath: '/view/$id/print'
-      preLoaderRoute: typeof ViewIdPrintRouteImport
-      parentRoute: typeof ViewIdRoute
-    }
     '/view/$id/inline': {
       id: '/view/$id/inline'
       path: '/inline'
@@ -175,13 +156,11 @@ declare module '@tanstack/react-router' {
 interface ViewIdRouteChildren {
   ViewIdDownloadRoute: typeof ViewIdDownloadRoute
   ViewIdInlineRoute: typeof ViewIdInlineRoute
-  ViewIdPrintRoute: typeof ViewIdPrintRoute
 }
 
 const ViewIdRouteChildren: ViewIdRouteChildren = {
   ViewIdDownloadRoute: ViewIdDownloadRoute,
   ViewIdInlineRoute: ViewIdInlineRoute,
-  ViewIdPrintRoute: ViewIdPrintRoute,
 }
 
 const ViewIdRouteWithChildren =
