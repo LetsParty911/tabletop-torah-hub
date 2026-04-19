@@ -151,6 +151,7 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     published: boolean;
     fileName: string;
     fileBase64: string;
+    jewishYear: number;
   }) =>
     z
       .object({
@@ -161,6 +162,7 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
         published: z.boolean(),
         fileName: z.string().min(1).max(255),
         fileBase64: z.string().min(10),
+        jewishYear: z.number().int().min(5000).max(7000),
       })
       .parse(input),
   )
@@ -180,6 +182,7 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
       subtitle: data.subtitle,
       file_path: path,
       published: data.published,
+      jewish_year: data.jewishYear,
       created_by: userId,
     });
     if (insErr) {

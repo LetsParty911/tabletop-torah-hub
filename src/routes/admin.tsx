@@ -14,6 +14,7 @@ import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
 import { EXPECTED_WEEKLY_PDFS } from "@/lib/expected-pdfs";
 import { useCurrentParsha } from "@/hooks/use-current-parsha";
+import { getCurrentJewishYear } from "@/lib/jewish-year";
 import { CheckCircle2, Circle, MinusCircle } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
@@ -241,6 +242,7 @@ function AdminPage() {
         bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
       }
       const fileBase64 = btoa(bin);
+      const jewishYear = await getCurrentJewishYear();
       await adminUploadPdf({
         data: {
           accessToken,
@@ -250,6 +252,7 @@ function AdminPage() {
           published,
           fileName: file.name,
           fileBase64,
+          jewishYear,
         },
       });
       setTitle("");
