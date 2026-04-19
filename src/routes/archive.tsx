@@ -143,7 +143,7 @@ function ArchivePage() {
                                 <Download className="h-4 w-4" /> Download
                               </a>
                               <a
-                                href={`/view/${r.id}/inline`}
+                                href={`/view/${r.id}/pdf`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-full border-2 border-accent/70 px-3 py-2 text-sm font-medium text-accent hover:bg-accent hover:text-accent-foreground transition-colors"
