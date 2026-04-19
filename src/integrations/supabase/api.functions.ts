@@ -36,51 +36,63 @@ export const listPublishedPdfs = createServerFn({ method: "GET" })
   });
 
 // ---------- Public: archive — all published PDFs grouped by year + parsha ----------
-export const listArchive = createServerFn({ method: "GET" }).handler(async () => {
-  const admin = getSupabaseAdmin();
-  const { data: rows, error } = await admin
-    .from("pdfs")
-    .select("id, title, subtitle, parsha_key, jewish_year, created_at")
-    .eq("published", true)
-    .order("jewish_year", { ascending: false })
-    .order("created_at", { ascending: false });
-  if (error) {
-    console.error("listArchive error", error);
-    return { years: [] as Array<{ year: number; parshiyos: Array<{ parshaKey: string; pdfs: Array<{ id: string; title: string; subtitle: string | null }> }> }> };
-  }
-  // Group: year -> parshaKey -> pdfs[]
-  const yearMap = new Map<number, Map<string, Array<{ id: string; title: string; subtitle: string | null; created_at: string }>>>();
-  for (const r of rows ?? []) {
-    const year = (r.jewish_year ?? 0) as number;
-    if (!year) continue;
-    if (!yearMap.has(year)) yearMap.set(year, new Map());
-    const pmap = yearMap.get(year)!;
-    if (!pmap.has(r.parsha_key)) pmap.set(r.parsha_key, []);
-    pmap.get(r.parsha_key)!.push({
-      id: r.id,
-      title: r.title,
-      subtitle: r.subtitle,
-      created_at: r.created_at,
-    });
-  }
-  const years = Array.from(yearMap.entries())
-    .sort((a, b) => b[0] - a[0])
-    .map(([year, pmap]) => ({
-      year,
-      parshiyos: Array.from(pmap.entries())
-        .map(([parshaKey, pdfs]) => {
-          const latest = pdfs.reduce((m, p) => (p.created_at > m ? p.created_at : m), pdfs[0].created_at);
-          return {
-            parshaKey,
-            latest,
-            pdfs: pdfs.map(({ id, title, subtitle }) => ({ id, title, subtitle })),
-          };
-        })
-        .sort((a, b) => (a.latest < b.latest ? 1 : -1))
-        .map(({ parshaKey, pdfs }) => ({ parshaKey, pdfs })),
-    }));
-  return { years };
-});
+export type ArchivePdf = { id: string; title: string; subtitle: string | null };
+export type ArchiveParsha = { parshaKey: string; pdfs: ArchivePdf[] };
+export type ArchiveYear = { year: number; parshiyos: ArchiveParsha[] };
+export type ArchiveResult = { years: ArchiveYear[] };
+
+export const listArchive = createServerFn({ method: "GET" }).handler(
+  async (): Promise<ArchiveResult> => {
+    const admin = getSupabaseAdmin();
+    const { data: rows, error } = await admin
+      .from("pdfs")
+      .select("id, title, subtitle, parsha_key, jewish_year, created_at")
+      .eq("published", true)
+      .order("jewish_year", { ascending: false })
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("listArchive error", error);
+      return { years: [] };
+    }
+    const yearMap = new Map<
+      number,
+      Map<string, Array<ArchivePdf & { created_at: string }>>
+    >();
+    for (const r of rows ?? []) {
+      const year = (r.jewish_year ?? 0) as number;
+      if (!year) continue;
+      if (!yearMap.has(year)) yearMap.set(year, new Map());
+      const pmap = yearMap.get(year)!;
+      if (!pmap.has(r.parsha_key)) pmap.set(r.parsha_key, []);
+      pmap.get(r.parsha_key)!.push({
+        id: r.id,
+        title: r.title,
+        subtitle: r.subtitle,
+        created_at: r.created_at,
+      });
+    }
+    const years: ArchiveYear[] = Array.from(yearMap.entries())
+      .sort((a, b) => b[0] - a[0])
+      .map(([year, pmap]) => ({
+        year,
+        parshiyos: Array.from(pmap.entries())
+          .map(([parshaKey, pdfs]) => {
+            const latest = pdfs.reduce(
+              (m, p) => (p.created_at > m ? p.created_at : m),
+              pdfs[0].created_at,
+            );
+            return {
+              parshaKey,
+              latest,
+              pdfs: pdfs.map(({ id, title, subtitle }) => ({ id, title, subtitle })),
+            };
+          })
+          .sort((a, b) => (a.latest < b.latest ? 1 : -1))
+          .map(({ parshaKey, pdfs }) => ({ parshaKey, pdfs })),
+      }));
+    return { years };
+  },
+);
 
 // ---------- Public: get a single PDF (signed URL + title) by id ----------
 export const getPdfById = createServerFn({ method: "GET" })
