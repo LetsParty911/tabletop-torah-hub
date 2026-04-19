@@ -831,6 +831,7 @@ function AdminPage() {
                           <th className="py-2 pr-3">Title</th>
                           <th className="py-2 pr-3">Published</th>
                           <th className="py-2 pr-3">Created</th>
+                          <th className="py-2 pr-3">Actions</th>
                           <th className="py-2"></th>
                         </tr>
                       </thead>
@@ -858,6 +859,32 @@ function AdminPage() {
                             <td className="py-2 pr-3 text-muted-foreground">
                               {new Date(p.created_at).toLocaleDateString()}
                             </td>
+                            <td className="py-2 pr-3">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <a
+                                  href={`/view/${p.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-full border border-primary/60 px-2 py-1 text-xs font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                                >
+                                  <Eye className="h-3 w-3" /> View
+                                </a>
+                                <a
+                                  href={`/view/${p.id}/download`}
+                                  className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                                >
+                                  <Download className="h-3 w-3" /> Download
+                                </a>
+                                <a
+                                  href={`/view/${p.id}/pdf`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-full border border-accent/70 px-2 py-1 text-xs font-medium text-accent hover:bg-accent hover:text-accent-foreground transition-colors"
+                                >
+                                  <Printer className="h-3 w-3" /> Print PDF
+                                </a>
+                              </div>
+                            </td>
                             <td className="py-2 text-right">
                               <button
                                 onClick={() => handleDelete(p.id)}
@@ -870,7 +897,7 @@ function AdminPage() {
                         ))}
                         {filteredPdfs.length === 0 && (
                           <tr>
-                            <td colSpan={6} className="py-6 text-center text-muted-foreground">
+                            <td colSpan={7} className="py-6 text-center text-muted-foreground">
                               {pdfs.length === 0 ? "No PDFs yet." : "No PDFs for this year."}
                             </td>
                           </tr>
