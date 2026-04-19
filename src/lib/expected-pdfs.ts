@@ -6,5 +6,4 @@ export const EXPECTED_WEEKLY_PDFS: string[] = [
   "Torah Sweets",
   "Aderaba",
   "Toras Avigdor",
-  "Living Lessons",
 ];
