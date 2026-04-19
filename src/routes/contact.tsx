@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Mail, Send } from "lucide-react";
 import { submitContactMessage } from "@/integrations/supabase/api.functions";
 
-const CONTACT_EMAIL = "contact@torahforthetable.com";
+const CONTACT_EMAIL = "hello@torahforthetable.org";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
