@@ -200,7 +200,7 @@ export const adminListPdfs = createServerFn({ method: "POST" })
     const admin = getSupabaseAdmin();
     const { data: rows, error } = await admin
       .from("pdfs")
-      .select("id, parsha_key, title, subtitle, file_path, published, created_at")
+      .select("id, parsha_key, title, subtitle, file_path, published, jewish_year, created_at")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return { pdfs: rows ?? [] };
