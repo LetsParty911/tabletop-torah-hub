@@ -544,6 +544,70 @@ export const adminDeleteContactMessage = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- Public: read announcement banner ----------
+export type AnnouncementBanner = {
+  enabled: boolean;
+  text: string | null;
+  linkUrl: string | null;
+  linkLabel: string | null;
+};
+
+export const getAnnouncementBanner = createServerFn({ method: "GET" }).handler(
+  async (): Promise<AnnouncementBanner> => {
+    const admin = getSupabaseAdmin();
+    const { data, error } = await admin
+      .from("settings")
+      .select("announcement_enabled, announcement_text, announcement_link_url, announcement_link_label")
+      .eq("id", 1)
+      .maybeSingle();
+    if (error || !data) {
+      return { enabled: false, text: null, linkUrl: null, linkLabel: null };
+    }
+    return {
+      enabled: Boolean(data.announcement_enabled),
+      text: (data.announcement_text ?? null) as string | null,
+      linkUrl: (data.announcement_link_url ?? null) as string | null,
+      linkLabel: (data.announcement_link_label ?? null) as string | null,
+    };
+  },
+);
+
+// ---------- Admin: update announcement banner ----------
+export const adminSetAnnouncementBanner = createServerFn({ method: "POST" })
+  .inputValidator((input: {
+    accessToken: string;
+    enabled: boolean;
+    text: string | null;
+    linkUrl: string | null;
+    linkLabel: string | null;
+  }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        enabled: z.boolean(),
+        text: z.string().trim().max(500).nullable(),
+        linkUrl: z.string().trim().url().max(500).nullable().or(z.literal("").transform(() => null)),
+        linkLabel: z.string().trim().max(120).nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { error } = await admin
+      .from("settings")
+      .update({
+        announcement_enabled: data.enabled,
+        announcement_text: data.text && data.text.length > 0 ? data.text : null,
+        announcement_link_url: data.linkUrl && data.linkUrl.length > 0 ? data.linkUrl : null,
+        announcement_link_label: data.linkLabel && data.linkLabel.length > 0 ? data.linkLabel : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", 1);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ---------- Admin: remove a weekly skip ----------
 export const adminRemoveWeeklySkip = createServerFn({ method: "POST" })
   .inputValidator((input: {
