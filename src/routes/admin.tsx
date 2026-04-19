@@ -224,7 +224,8 @@ function AdminPage() {
   );
 
   type ChecklistStatus = "uploaded" | "skipped" | "missing";
-  const checklist: Array<{ title: string; status: ChecklistStatus }> = EXPECTED_WEEKLY_PDFS.map(
+  const activeSourceTitles = sources.filter((s) => s.active).map((s) => s.title);
+  const checklist: Array<{ title: string; status: ChecklistStatus }> = activeSourceTitles.map(
     (title) => {
       const key = title.toLowerCase();
       if (uploadedTitlesForCurrent.has(key)) return { title, status: "uploaded" as const };
