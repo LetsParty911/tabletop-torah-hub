@@ -1,26 +1,32 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseAdmin, getSupabaseForUser } from "@/integrations/supabase/client.server";
+import { toParshaComparableKey } from "@/lib/parsha-normalize";
 
 // ---------- Public: list published PDFs for a parsha key ----------
+// Filters by canonical comparable key so spelling variants between the
+// homepage's resolved parsha and the stored admin parsha_key always match.
 export const listPublishedPdfs = createServerFn({ method: "GET" })
   .inputValidator((input: { parshaKey: string }) =>
     z.object({ parshaKey: z.string().min(1).max(120) }).parse(input),
   )
   .handler(async ({ data }) => {
     const admin = getSupabaseAdmin();
+    const target = toParshaComparableKey(data.parshaKey);
     const { data: rows, error } = await admin
       .from("pdfs")
       .select("id, title, subtitle, file_path, parsha_key")
-      .eq("parsha_key", data.parshaKey)
       .eq("published", true)
       .order("created_at", { ascending: false });
     if (error) {
       console.error("listPublishedPdfs error", error);
       return { resources: [] as Array<{ id: string; title: string; subtitle: string | null; url: string }> };
     }
+    const matched = (rows ?? []).filter(
+      (r) => toParshaComparableKey(r.parsha_key) === target,
+    );
     const resources = await Promise.all(
-      (rows ?? []).map(async (r) => {
+      matched.map(async (r) => {
         const { data: signed } = await admin.storage
           .from("pdfs")
           .createSignedUrl(r.file_path, 60 * 60);
