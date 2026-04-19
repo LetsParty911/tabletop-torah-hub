@@ -110,6 +110,17 @@ function AdminPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
+  // Checklist sources (admin-managed)
+  type ChecklistSource = {
+    id: string;
+    title: string;
+    active: boolean;
+    sort_order: number;
+    created_at: string;
+  };
+  const [sources, setSources] = useState<ChecklistSource[]>([]);
+  const [newSourceTitle, setNewSourceTitle] = useState("");
+
   // Upload form
   const [parshaKey, setParshaKey] = useState<string>("");
   const [parshaUserTouched, setParshaUserTouched] = useState(false);
