@@ -515,6 +515,35 @@ export const adminDeleteChecklistSource = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- Admin: list contact messages ----------
+export const adminListContactMessages = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string }) =>
+    z.object({ accessToken: z.string().min(10) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { data: rows, error } = await admin
+      .from("contact_messages")
+      .select("id, name, email, message, created_at")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return { messages: rows ?? [] };
+  });
+
+// ---------- Admin: delete a contact message ----------
+export const adminDeleteContactMessage = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; id: string }) =>
+    z.object({ accessToken: z.string().min(10), id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { error } = await admin.from("contact_messages").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ---------- Admin: remove a weekly skip ----------
 export const adminRemoveWeeklySkip = createServerFn({ method: "POST" })
   .inputValidator((input: {

@@ -16,6 +16,8 @@ import {
   adminAddChecklistSource,
   adminUpdateChecklistSource,
   adminDeleteChecklistSource,
+  adminListContactMessages,
+  adminDeleteContactMessage,
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
@@ -40,6 +42,14 @@ type PdfRow = {
 };
 
 type Subscriber = { id: string; email: string; created_at: string };
+
+type ContactMessageRow = {
+  id: string;
+  name: string | null;
+  email: string;
+  message: string;
+  created_at: string;
+};
 
 const PARSHA_PREFIX_RE = /^(parshas|parashat|parsha)\s+/i;
 const PARSHA_VARIANT_REPLACEMENTS: Array<[RegExp, string]> = [
@@ -109,6 +119,8 @@ function AdminPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [pdfs, setPdfs] = useState<PdfRow[]>([]);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [contactMessages, setContactMessages] = useState<ContactMessageRow[]>([]);
+  const [contactMessagesError, setContactMessagesError] = useState<string | null>(null);
   const [override, setOverride] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [yearFilter, setYearFilter] = useState<string>("all");
@@ -277,16 +289,27 @@ function AdminPage() {
 
   const refresh = async () => {
     if (!accessToken || !isAdmin) return;
-    const [p, s, o, cs] = await Promise.all([
+    const [p, s, o, cs, cm] = await Promise.all([
       adminListPdfs({ data: { accessToken } }),
       adminListSubscribers({ data: { accessToken } }),
       getParshaOverride(),
       adminListChecklistSources({ data: { accessToken } }),
+      adminListContactMessages({ data: { accessToken } }).then(
+        (r) => ({ ok: true as const, messages: r.messages as ContactMessageRow[] }),
+        (e: unknown) => ({ ok: false as const, error: e instanceof Error ? e.message : "unknown" }),
+      ),
     ]);
     setPdfs(p.pdfs as PdfRow[]);
     setSubscribers(s.subscribers as Subscriber[]);
     setOverride(o.override ?? "");
     setSources(cs.sources as ChecklistSource[]);
+    if (cm.ok) {
+      setContactMessages(cm.messages);
+      setContactMessagesError(null);
+    } else {
+      setContactMessages([]);
+      setContactMessagesError("Could not load contact messages.");
+    }
   };
 
   useEffect(() => {
@@ -405,6 +428,20 @@ function AdminPage() {
     if (!confirm(`Delete checklist source "${title}"? Use Inactive instead to keep history.`)) return;
     await adminDeleteChecklistSource({ data: { accessToken, id } });
     await refresh();
+  };
+
+  const handleDeleteContactMessage = async (id: string) => {
+    if (!accessToken) return;
+    if (!confirm("Delete this contact message?")) return;
+    try {
+      await adminDeleteContactMessage({ data: { accessToken, id } });
+      await refresh();
+    } catch (err) {
+      setMsg({
+        kind: "error",
+        text: `Could not delete message: ${err instanceof Error ? err.message : "unknown error"}`,
+      });
+    }
   };
 
   const handleOverride = async (e: React.FormEvent) => {
@@ -946,6 +983,60 @@ function AdminPage() {
                 <li className="text-muted-foreground">No subscribers yet.</li>
               )}
             </ul>
+          </div>
+        </section>
+
+        {/* Contact Messages */}
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <h2 className="font-serif text-2xl font-semibold text-primary">
+              Contact Messages ({contactMessages.length})
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Messages submitted from the public Contact page.
+            </p>
+            {contactMessagesError ? (
+              <p className="mt-4 text-sm text-destructive">{contactMessagesError}</p>
+            ) : contactMessages.length === 0 ? (
+              <p className="mt-4 text-muted-foreground">No contact messages yet.</p>
+            ) : (
+              <ul className="mt-4 space-y-3">
+                {contactMessages.map((m) => (
+                  <li
+                    key={m.id}
+                    className="rounded-md border border-border/60 bg-background/40 p-4"
+                  >
+                    <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
+                      <div className="space-x-2">
+                        <span className="font-medium text-foreground">
+                          {m.name && m.name.trim().length > 0 ? m.name : "—"}
+                        </span>
+                        <a
+                          href={`mailto:${m.email}`}
+                          className="text-primary underline underline-offset-2"
+                        >
+                          {m.email}
+                        </a>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(m.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/90">
+                      {m.message}
+                    </p>
+                    <div className="mt-3 text-right">
+                      <button
+                        onClick={() => handleDeleteContactMessage(m.id)}
+                        className="text-destructive underline text-xs"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </section>
       </div>
