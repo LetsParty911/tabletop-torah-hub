@@ -51,18 +51,28 @@ function AdminPage() {
   const [file, setFile] = useState<File | null>(null);
 
   const accessToken = session?.access_token ?? null;
-  const { parshaKey: currentParshaKey, displayLabel: currentParshaLabel } = useCurrentParsha();
+  const {
+    parshaKey: currentParshaKey,
+    displayLabel: currentParshaLabel,
+    loading: currentParshaLoading,
+  } = useCurrentParsha();
+  const resolvedCurrentParsha = currentParshaKey
+    ? PARSHIYOS.find(
+        (p) =>
+          p.toLowerCase() ===
+          hebcalToParshaKey(currentParshaKey).toLowerCase(),
+      )
+    : null;
+  const showParshaLoadingState =
+    currentParshaLoading && !parshaUserTouched && !resolvedCurrentParsha;
 
   // Default the upload form parsha to the current parsha (override or Hebcal),
   // unless the admin has manually changed it.
   useEffect(() => {
     if (parshaUserTouched) return;
-    if (!currentParshaKey) return;
-    const match = PARSHIYOS.find(
-      (p) => p.toLowerCase() === currentParshaKey.toLowerCase(),
-    );
-    if (match && match !== parshaKey) setParshaKey(match);
-  }, [currentParshaKey, parshaUserTouched, parshaKey]);
+    if (!resolvedCurrentParsha) return;
+    if (resolvedCurrentParsha !== parshaKey) setParshaKey(resolvedCurrentParsha);
+  }, [resolvedCurrentParsha, parshaUserTouched, parshaKey]);
 
   // Skipped-this-week state, keyed by parsha. Stored in localStorage.
   const skipStorageKey = currentParshaKey ? `weekly-skips:${currentParshaKey}` : null;
@@ -403,20 +413,26 @@ function AdminPage() {
             <form onSubmit={handleUpload} className="mt-4 grid gap-4 md:grid-cols-2">
               <label className="block">
                 <span className="text-sm font-medium">Parsha</span>
-                <select
-                  value={parshaKey}
-                  onChange={(e) => {
-                    setParshaKey(e.target.value);
-                    setParshaUserTouched(true);
-                  }}
-                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                >
-                  {PARSHIYOS.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
+                {showParshaLoadingState ? (
+                  <div className="mt-1 rounded-md border-2 border-accent/60 bg-background px-3 py-2 text-sm text-muted-foreground">
+                    Loading current parsha…
+                  </div>
+                ) : (
+                  <select
+                    value={parshaKey}
+                    onChange={(e) => {
+                      setParshaKey(e.target.value);
+                      setParshaUserTouched(true);
+                    }}
+                    className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                  >
+                    {PARSHIYOS.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </label>
               <label className="block">
                 <span className="text-sm font-medium">Title</span>
