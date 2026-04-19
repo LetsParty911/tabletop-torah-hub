@@ -43,6 +43,14 @@ type PdfRow = {
 
 type Subscriber = { id: string; email: string; created_at: string };
 
+type ContactMessageRow = {
+  id: string;
+  name: string | null;
+  email: string;
+  message: string;
+  created_at: string;
+};
+
 const PARSHA_PREFIX_RE = /^(parshas|parashat|parsha)\s+/i;
 const PARSHA_VARIANT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bachrei\b/g, "acharei"],
