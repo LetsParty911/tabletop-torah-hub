@@ -110,7 +110,7 @@ function AdminPage() {
   const [override, setOverride] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [yearFilter, setYearFilter] = useState<string>("all");
-  const [msg, setMsg] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
   // Checklist sources (admin-managed)
   type ChecklistSource = {
@@ -310,10 +310,11 @@ function AdminPage() {
       setFile(null);
       (document.getElementById("pdf-file-input") as HTMLInputElement | null)?.value &&
         ((document.getElementById("pdf-file-input") as HTMLInputElement).value = "");
-      setMsg("Uploaded.");
+      setMsg({ kind: "success", text: "Uploaded." });
       await refresh();
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : "Upload failed");
+      const detail = err instanceof Error ? err.message : "Unknown error";
+      setMsg({ kind: "error", text: `Upload failed: ${detail}` });
     } finally {
       setBusy(false);
     }
@@ -346,7 +347,7 @@ function AdminPage() {
       setNewSourceTitle("");
       await refresh();
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : "Could not add source");
+      setMsg({ kind: "error", text: err instanceof Error ? err.message : "Could not add source" });
     } finally {
       setBusy(false);
     }
@@ -379,7 +380,7 @@ function AdminPage() {
       await adminSetParshaOverride({
         data: { accessToken, override: override.trim() ? override.trim() : null },
       });
-      setMsg("Override saved.");
+      setMsg({ kind: "success", text: "Override saved." });
     } finally {
       setBusy(false);
     }
@@ -438,8 +439,15 @@ function AdminPage() {
         </header>
 
         {msg && (
-          <div className="rounded-lg border border-accent/40 bg-accent/10 px-4 py-2 text-sm text-foreground">
-            {msg}
+          <div
+            className={
+              msg.kind === "error"
+                ? "rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive"
+                : "rounded-lg border border-accent/40 bg-accent/10 px-4 py-2 text-sm text-foreground"
+            }
+            role={msg.kind === "error" ? "alert" : "status"}
+          >
+            {msg.text}
           </div>
         )}
 
@@ -715,13 +723,25 @@ function AdminPage() {
                 <input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} />
                 <span className="text-sm">Published</span>
               </label>
-              <div className="md:col-span-2">
+              <div className="md:col-span-2 flex flex-wrap items-center gap-3">
                 <button
                   disabled={busy}
                   className="rounded-full bg-primary px-6 py-2 text-primary-foreground disabled:opacity-50"
                 >
                   {busy ? "Uploading…" : "Upload"}
                 </button>
+                {msg && (
+                  <span
+                    className={
+                      msg.kind === "error"
+                        ? "text-sm text-destructive"
+                        : "text-sm text-muted-foreground"
+                    }
+                    role={msg.kind === "error" ? "alert" : "status"}
+                  >
+                    {msg.text}
+                  </span>
+                )}
               </div>
             </form>
           </div>
