@@ -43,7 +43,7 @@ function AdminPage() {
   const [msg, setMsg] = useState<string | null>(null);
 
   // Upload form
-  const [parshaKey, setParshaKey] = useState(PARSHIYOS[0]);
+  const [parshaKey, setParshaKey] = useState<string>("");
   const [parshaUserTouched, setParshaUserTouched] = useState(false);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
@@ -64,15 +64,20 @@ function AdminPage() {
       )
     : null;
   const showParshaLoadingState =
-    currentParshaLoading && !parshaUserTouched && !resolvedCurrentParsha;
+    !parshaUserTouched && (!parshaKey || currentParshaLoading) && !resolvedCurrentParsha;
 
   // Default the upload form parsha to the current parsha (override or Hebcal),
   // unless the admin has manually changed it.
   useEffect(() => {
     if (parshaUserTouched) return;
-    if (!resolvedCurrentParsha) return;
-    if (resolvedCurrentParsha !== parshaKey) setParshaKey(resolvedCurrentParsha);
-  }, [resolvedCurrentParsha, parshaUserTouched, parshaKey]);
+    if (resolvedCurrentParsha) {
+      if (resolvedCurrentParsha !== parshaKey) setParshaKey(resolvedCurrentParsha);
+      return;
+    }
+    if (!currentParshaLoading && !parshaKey) {
+      setParshaKey(PARSHIYOS[0]);
+    }
+  }, [resolvedCurrentParsha, currentParshaLoading, parshaUserTouched, parshaKey]);
 
   // Skipped-this-week state, keyed by parsha. Stored in localStorage.
   const skipStorageKey = currentParshaKey ? `weekly-skips:${currentParshaKey}` : null;
