@@ -11,7 +11,7 @@ import {
   checkIsAdmin,
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
-import { PARSHIYOS } from "@/lib/parshiyos";
+import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
 import { EXPECTED_WEEKLY_PDFS } from "@/lib/expected-pdfs";
 import { useCurrentParsha } from "@/hooks/use-current-parsha";
 import { CheckCircle2, Circle, MinusCircle } from "lucide-react";
