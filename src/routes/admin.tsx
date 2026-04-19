@@ -985,6 +985,60 @@ function AdminPage() {
             </ul>
           </div>
         </section>
+
+        {/* Contact Messages */}
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <h2 className="font-serif text-2xl font-semibold text-primary">
+              Contact Messages ({contactMessages.length})
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Messages submitted from the public Contact page.
+            </p>
+            {contactMessagesError ? (
+              <p className="mt-4 text-sm text-destructive">{contactMessagesError}</p>
+            ) : contactMessages.length === 0 ? (
+              <p className="mt-4 text-muted-foreground">No contact messages yet.</p>
+            ) : (
+              <ul className="mt-4 space-y-3">
+                {contactMessages.map((m) => (
+                  <li
+                    key={m.id}
+                    className="rounded-md border border-border/60 bg-background/40 p-4"
+                  >
+                    <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
+                      <div className="space-x-2">
+                        <span className="font-medium text-foreground">
+                          {m.name && m.name.trim().length > 0 ? m.name : "—"}
+                        </span>
+                        <a
+                          href={`mailto:${m.email}`}
+                          className="text-primary underline underline-offset-2"
+                        >
+                          {m.email}
+                        </a>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(m.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/90">
+                      {m.message}
+                    </p>
+                    <div className="mt-3 text-right">
+                      <button
+                        onClick={() => handleDeleteContactMessage(m.id)}
+                        className="text-destructive underline text-xs"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );
