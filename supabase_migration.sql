@@ -150,6 +150,27 @@ drop policy if exists "subscribers_admin_delete" on public.subscribers;
 create policy "subscribers_admin_delete" on public.subscribers
   for delete to authenticated using (public.has_role(auth.uid(), 'admin'));
 
+-- ---------- weekly_skips (admin checklist "skip this week" state, per parsha+year) ----------
+create table if not exists public.weekly_skips (
+  id uuid primary key default gen_random_uuid(),
+  parsha_key text not null,
+  title_key text not null,        -- lowercased expected newsletter title
+  jewish_year integer not null,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  unique (parsha_key, title_key, jewish_year)
+);
+create index if not exists weekly_skips_lookup_idx
+  on public.weekly_skips (parsha_key, jewish_year);
+
+alter table public.weekly_skips enable row level security;
+
+drop policy if exists "weekly_skips_admin_all" on public.weekly_skips;
+create policy "weekly_skips_admin_all" on public.weekly_skips
+  for all to authenticated
+  using (public.has_role(auth.uid(), 'admin'))
+  with check (public.has_role(auth.uid(), 'admin'));
+
 -- ---------- Storage bucket: pdfs (private) ----------
 insert into storage.buckets (id, name, public)
 values ('pdfs', 'pdfs', false)
