@@ -21,7 +21,7 @@ import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
 import { useCurrentParsha } from "@/hooks/use-current-parsha";
 import { getCurrentJewishYear } from "@/lib/jewish-year";
-import { CheckCircle2, Circle, MinusCircle } from "lucide-react";
+import { CheckCircle2, Circle, MinusCircle, Eye, Download, Printer } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
