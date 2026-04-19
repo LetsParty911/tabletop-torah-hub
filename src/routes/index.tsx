@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { FileText, Download, Eye } from "lucide-react";
+import { FileText, Download, Eye, Printer } from "lucide-react";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 import {
   listPublishedPdfs,
@@ -240,15 +240,23 @@ function Index() {
                       <Link
                         to="/view/$id"
                         params={{ id: r.id }}
-                        className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-full border-2 border-primary/70 px-4 py-2.5 sm:py-2 text-sm font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                        className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-full border-2 border-primary/70 px-3 py-2.5 sm:py-2 text-sm font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
                       >
-                        <Eye className="h-4 w-4" /> View PDF
+                        <Eye className="h-4 w-4" /> View
                       </Link>
                       <a
                         href={`/view/${r.id}/download`}
-                        className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 sm:py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                        className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-3 py-2.5 sm:py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
                       >
                         <Download className="h-4 w-4" /> Download
+                      </a>
+                      <a
+                        href={`/view/${r.id}/print`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-full border-2 border-accent/70 px-3 py-2.5 sm:py-2 text-sm font-medium text-accent hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <Printer className="h-4 w-4" /> Print
                       </a>
                     </div>
                   </article>
