@@ -634,9 +634,11 @@ function AdminPage() {
                         <input
                           type="text"
                           defaultValue={s.title}
+                          placeholder="Edit title…"
+                          title="Click to edit. Press Enter or click away to save."
                           onBlur={(e) => {
                             const v = e.target.value;
-                            if (v.trim() !== s.title) {
+                            if (v.trim() && v.trim() !== s.title) {
                               handleSourceTitleChange(s.id, v);
                             }
                           }}
@@ -646,7 +648,7 @@ function AdminPage() {
                               (e.target as HTMLInputElement).blur();
                             }
                           }}
-                          className="w-full rounded border border-accent/60 bg-background px-2 py-1 font-medium"
+                          className="w-full rounded-md border-2 border-accent bg-background px-3 py-1.5 font-medium text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                         />
                       </td>
                       <td className="py-2 pr-3">
