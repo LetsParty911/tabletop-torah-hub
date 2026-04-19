@@ -35,6 +35,7 @@ type PdfRow = {
   subtitle: string | null;
   file_path: string;
   published: boolean;
+  jewish_year: number | null;
   created_at: string;
 };
 
