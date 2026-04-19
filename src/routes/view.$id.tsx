@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, Printer } from "lucide-react";
 import { getPdfById } from "@/integrations/supabase/api.functions";
 
 export const Route = createFileRoute("/view/$id")({
@@ -51,12 +51,22 @@ function ViewPdf() {
               <p className="text-xs text-muted-foreground truncate">{pdf.subtitle}</p>
             )}
           </div>
-          <a
-            href={`/view/${pdf.id}/download`}
-            className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
-          >
-            <Download className="h-4 w-4" /> Download
-          </a>
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href={`/view/${pdf.id}/download`}
+              className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              <Download className="h-4 w-4" /> Download
+            </a>
+            <a
+              href={`/view/${pdf.id}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline-flex items-center gap-2 rounded-full border-2 border-accent/70 px-4 py-1.5 text-sm font-medium text-accent hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <Printer className="h-4 w-4" /> Print PDF
+            </a>
+          </div>
         </div>
       </header>
       <main className="flex-1 flex">
