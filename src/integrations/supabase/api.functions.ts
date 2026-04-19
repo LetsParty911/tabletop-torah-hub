@@ -160,6 +160,31 @@ export const subscribeEmail = createServerFn({ method: "POST" })
     return { ok: true, error: null };
   });
 
+// ---------- Public: contact form submission ----------
+export const submitContactMessage = createServerFn({ method: "POST" })
+  .inputValidator((input: { name?: string; email: string; message: string }) =>
+    z
+      .object({
+        name: z.string().trim().max(120).optional(),
+        email: z.string().trim().email().max(254),
+        message: z.string().trim().min(1, "Message is required").max(5000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const admin = getSupabaseAdmin();
+    const { error } = await admin.from("contact_messages").insert({
+      name: data.name && data.name.length > 0 ? data.name : null,
+      email: data.email.toLowerCase(),
+      message: data.message,
+    });
+    if (error) {
+      console.error("submitContactMessage error", error);
+      return { ok: false, error: "Could not send your message. Please try again." };
+    }
+    return { ok: true, error: null };
+  });
+
 // ---------- Helper: verify user is admin from access token ----------
 async function requireAdmin(accessToken: string | null) {
   if (!accessToken) throw new Error("Not authenticated");
