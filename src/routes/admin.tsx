@@ -56,13 +56,24 @@ function AdminPage() {
     displayLabel: currentParshaLabel,
     loading: currentParshaLoading,
   } = useCurrentParsha();
+  const fuzz = (s: string) =>
+    s.toLowerCase().replace(/['’`]/g, "").replace(/[\s\-]+/g, "");
   const normalizeParshaSelection = (value: string | null | undefined) => {
     if (!value) return null;
     const cleaned = value.replace(/^Parshas\s+/i, "").trim();
     const normalized = hebcalToParshaKey(cleaned);
-    return (
-      PARSHIYOS.find((p) => p.toLowerCase() === normalized.toLowerCase()) ?? null
-    );
+    const target = fuzz(normalized);
+    // Exact (case-insensitive) match first
+    const exact = PARSHIYOS.find((p) => p.toLowerCase() === normalized.toLowerCase());
+    if (exact) return exact;
+    // Fuzzy: ignore apostrophes / spaces / dashes
+    const fuzzy = PARSHIYOS.find((p) => fuzz(p) === target);
+    if (fuzzy) return fuzzy;
+    // Try swapping each token via hebcalToParshaKey (handles "Achrei" vs "Acharei" combo names)
+    const parts = cleaned.split(/\s*-\s*/).map((s) => hebcalToParshaKey(s.trim()));
+    const recombined = parts.join("-");
+    const recombinedFuzzy = PARSHIYOS.find((p) => fuzz(p) === fuzz(recombined));
+    return recombinedFuzzy ?? null;
   };
   const resolvedCurrentParsha =
     normalizeParshaSelection(currentParshaKey) ??
@@ -439,6 +450,12 @@ function AdminPage() {
                     ))}
                   </select>
                 )}
+                <div className="mt-2 text-[11px] font-mono text-muted-foreground space-y-0.5 break-all">
+                  <div>raw key: {String(currentParshaKey)}</div>
+                  <div>raw label: {currentParshaLabel}</div>
+                  <div>normalized: {String(resolvedCurrentParsha)}</div>
+                  <div>dropdown value: {parshaKey || "(empty)"}</div>
+                </div>
               </label>
               <label className="block">
                 <span className="text-sm font-medium">Title</span>
