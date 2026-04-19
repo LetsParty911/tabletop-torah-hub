@@ -1,16 +1,19 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { ArrowLeft, Download, Printer } from "lucide-react";
-import { z } from "zod";
-import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { getPdfById } from "@/integrations/supabase/api.functions";
 
-const searchSchema = z.object({
-  print: fallback(z.coerce.boolean(), false).default(false),
-});
+type ViewSearch = { print: boolean };
 
 export const Route = createFileRoute("/view/$id")({
-  validateSearch: zodValidator(searchSchema),
+  validateSearch: (search: Record<string, unknown>): ViewSearch => ({
+    print: search.print === "1" || search.print === true || search.print === "true",
+  }),
+  loader: async ({ params }) => {
+    const r = await getPdfById({ data: { id: params.id } });
+    if (!r.pdf) throw notFound();
+    return { pdf: r.pdf };
+  },
   loader: async ({ params }) => {
     const r = await getPdfById({ data: { id: params.id } });
     if (!r.pdf) throw notFound();
