@@ -119,6 +119,8 @@ function AdminPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [pdfs, setPdfs] = useState<PdfRow[]>([]);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [contactMessages, setContactMessages] = useState<ContactMessageRow[]>([]);
+  const [contactMessagesError, setContactMessagesError] = useState<string | null>(null);
   const [override, setOverride] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [yearFilter, setYearFilter] = useState<string>("all");
