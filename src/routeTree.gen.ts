@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ViewIdRouteImport } from './routes/view.$id'
 import { Route as ViewIdInlineRouteImport } from './routes/view.$id.inline'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
 
+const ArchiveRoute = ArchiveRouteImport.update({
+  id: '/archive',
+  path: '/archive',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -44,6 +50,7 @@ const ViewIdDownloadRoute = ViewIdDownloadRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/archive': typeof ArchiveRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/inline': typeof ViewIdInlineRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/archive': typeof ArchiveRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/inline': typeof ViewIdInlineRoute
@@ -59,6 +67,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/archive': typeof ArchiveRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/inline': typeof ViewIdInlineRoute
@@ -68,15 +77,23 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/archive'
     | '/view/$id'
     | '/view/$id/download'
     | '/view/$id/inline'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/view/$id' | '/view/$id/download' | '/view/$id/inline'
+  to:
+    | '/'
+    | '/admin'
+    | '/archive'
+    | '/view/$id'
+    | '/view/$id/download'
+    | '/view/$id/inline'
   id:
     | '__root__'
     | '/'
     | '/admin'
+    | '/archive'
     | '/view/$id'
     | '/view/$id/download'
     | '/view/$id/inline'
@@ -85,11 +102,19 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  ArchiveRoute: typeof ArchiveRoute
   ViewIdRoute: typeof ViewIdRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/archive': {
+      id: '/archive'
+      path: '/archive'
+      fullPath: '/archive'
+      preLoaderRoute: typeof ArchiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -144,6 +169,7 @@ const ViewIdRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  ArchiveRoute: ArchiveRoute,
   ViewIdRoute: ViewIdRouteWithChildren,
 }
 export const routeTree = rootRouteImport
