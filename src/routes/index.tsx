@@ -281,8 +281,16 @@ function Index() {
           </div>
         </section>
 
-        <footer className="text-center text-sm text-muted-foreground py-4">
-          © {new Date().getFullYear()} Torah for the Table
+        <footer className="text-center text-sm text-muted-foreground py-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          <Link to="/archive" className="hover:text-primary transition-colors">
+            Browse Archive
+          </Link>
+          <span aria-hidden>·</span>
+          <Link to="/contact" className="hover:text-primary transition-colors">
+            Contact
+          </Link>
+          <span aria-hidden>·</span>
+          <span>© {new Date().getFullYear()} Torah for the Table</span>
         </footer>
       </div>
     </div>
