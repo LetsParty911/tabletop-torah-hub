@@ -259,14 +259,16 @@ function AdminPage() {
 
   const refresh = async () => {
     if (!accessToken || !isAdmin) return;
-    const [p, s, o] = await Promise.all([
+    const [p, s, o, cs] = await Promise.all([
       adminListPdfs({ data: { accessToken } }),
       adminListSubscribers({ data: { accessToken } }),
       getParshaOverride(),
+      adminListChecklistSources({ data: { accessToken } }),
     ]);
     setPdfs(p.pdfs as PdfRow[]);
     setSubscribers(s.subscribers as Subscriber[]);
     setOverride(o.override ?? "");
+    setSources(cs.sources as ChecklistSource[]);
   };
 
   useEffect(() => {
