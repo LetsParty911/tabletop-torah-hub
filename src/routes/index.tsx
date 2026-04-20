@@ -176,10 +176,10 @@ function Index() {
           <div className="parchment-panel">
             <div className="h-1 w-12 bg-accent rounded-full mb-6" />
             <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold text-primary">
-              Get Weekly Torah by Email
+              Be Notified When This Week’s Divrei Torah Are Ready
             </h2>
             <p className="mt-3 text-muted-foreground md:text-lg">
-              Join the list for a curated weekly collection of Torah PDFs for Shabbos and Yom Tov.
+              Receive a weekly email when the latest Divrei Torah for Shabbos and Yom Tov are uploaded and available to view or download on the site.
             </p>
             <form onSubmit={handleSignup} className="mt-6 flex flex-col sm:flex-row gap-3">
               <input
@@ -194,9 +194,12 @@ function Index() {
                 type="submit"
                 className="rounded-full bg-primary px-7 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors shadow-md"
               >
-                Join the List
+                Notify Me
               </button>
             </form>
+            <p className="mt-3 text-center text-xs text-muted-foreground/80">
+              We’ll only email when new Divrei Torah are posted. No spam.
+            </p>
             {signupMsg && <p className="mt-3 text-sm text-accent">{signupMsg}</p>}
           </div>
         </section>
