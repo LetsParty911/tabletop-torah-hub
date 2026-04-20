@@ -100,9 +100,14 @@ function ArchivePage() {
                   <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-primary">
                     {y.year}
                   </h2>
-                  <span className="font-sans text-xs sm:text-sm uppercase tracking-[0.2em] text-accent">
-                    {y.parshiyos.length} {y.parshiyos.length === 1 ? "Parsha" : "Parshiyos"}
-                  </span>
+                  {(() => {
+                    const pdfCount = y.parshiyos.reduce((s: number, p: ArchiveParsha) => s + p.pdfs.length, 0);
+                    return (
+                      <span className="font-sans text-xs sm:text-sm uppercase tracking-[0.2em] text-accent">
+                        {y.parshiyos.length} {y.parshiyos.length === 1 ? "Parsha" : "Parshiyos"} · {pdfCount} {pdfCount === 1 ? "Devar" : "Divrei"} Torah
+                      </span>
+                    );
+                  })()}
                 </div>
                 <div className="space-y-8">
                   {y.parshiyos.map((p: ArchiveParsha) => (
