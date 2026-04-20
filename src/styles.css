@@ -189,7 +189,7 @@
     background: linear-gradient(
       to right,
       transparent,
-      var(--accent),
+      var(--gold-decorative),
       transparent
     );
   }
@@ -197,7 +197,7 @@
     width: 6px;
     height: 6px;
     border-radius: 9999px;
-    background-color: var(--accent);
+    background-color: var(--gold-decorative);
     opacity: 0.85;
   }
 }
