@@ -280,11 +280,26 @@ function Index() {
 
         {/* Memorial */}
         <section className="parchment-frame">
-          <div className="parchment-panel text-center" dir="rtl">
-            <h2 className="font-serif text-3xl md:text-4xl font-semibold text-primary">
+          <div
+            className="parchment-panel text-center bg-card shadow-sm"
+            dir="rtl"
+            style={{ borderTop: "1px solid var(--gold-decorative)" }}
+          >
+            <h2
+              className="font-serif font-semibold text-primary"
+              style={{ fontSize: "1.25rem", letterSpacing: "0.04em" }}
+            >
               לעילוי נשמת
             </h2>
-            <div className="mt-5 space-y-2 font-serif text-lg md:text-xl text-foreground">
+            <div
+              className="mt-5 space-y-2 font-serif"
+              style={{
+                fontSize: "1.05rem",
+                fontWeight: 500,
+                letterSpacing: "0.015em",
+                color: "color-mix(in oklab, var(--primary) 85%, transparent)",
+              }}
+            >
               <p>קאפל דוב בן יצחק אייזיק ז"ל</p>
               <p>אסתר בת אליהו ע"ה</p>
               <p>גבריאל בן שלום ז"ל</p>
