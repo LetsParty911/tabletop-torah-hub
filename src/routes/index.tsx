@@ -148,7 +148,7 @@ function Index() {
               Torah for the Table
             </h1>
             <p className="mt-4 sm:mt-6 font-serif italic text-base sm:text-xl md:text-2xl text-accent max-w-2xl mx-auto">
-              Weekly Divrei Torah for a more meaningful Shabbos and Yom Tov table.
+              A weekly collection of downloadable Divrei Torah for Shabbos and Yom Tov.
             </p>
             <div className="mt-6 sm:mt-10 flex items-center justify-center gap-3 sm:gap-4 text-accent">
               <span aria-hidden className="h-px w-8 sm:w-16 bg-accent/60" />
@@ -165,7 +165,7 @@ function Index() {
                 to="/archive"
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-primary transition-colors"
               >
-                Browse Archive →
+                Browse This Week’s Divrei Torah →
               </Link>
             </div>
           </div>
