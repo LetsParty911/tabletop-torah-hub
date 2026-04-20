@@ -171,6 +171,8 @@ function Index() {
           </div>
         </section>
 
+        <div className="gold-divider" aria-hidden><span className="gold-divider-dot" /></div>
+
         {/* Email signup */}
         <section className="parchment-frame">
           <div className="parchment-panel text-center">
@@ -194,7 +196,7 @@ function Index() {
               />
               <button
                 type="submit"
-                className="rounded-full bg-primary px-7 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors shadow-md"
+                className="rounded-full bg-primary px-8 py-3.5 font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md"
               >
                 Join the List
               </button>
@@ -204,6 +206,8 @@ function Index() {
             )}
           </div>
         </section>
+
+        <div className="gold-divider" aria-hidden><span className="gold-divider-dot" /></div>
 
         {/* Resource collection */}
         <section className="parchment-frame">
@@ -271,6 +275,8 @@ function Index() {
             )}
           </div>
         </section>
+
+        <div className="gold-divider" aria-hidden><span className="gold-divider-dot" /></div>
 
         {/* Memorial */}
         <section className="parchment-frame">
