@@ -173,15 +173,17 @@ function Index() {
 
         {/* Email signup */}
         <section className="parchment-frame">
-          <div className="parchment-panel">
-            <div className="h-1 w-12 bg-accent rounded-full mb-6" />
+          <div className="parchment-panel text-center">
             <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold text-primary">
-              Be Notified When This Week’s Divrei Torah Are Ready
+              Get Weekly Torah by Email
             </h2>
-            <p className="mt-3 text-muted-foreground md:text-lg">
-              Receive a weekly email when the latest Divrei Torah for Shabbos and Yom Tov are uploaded and available to view or download on the site.
+            <p className="mt-3 text-muted-foreground md:text-lg max-w-xl mx-auto">
+              Receive a weekly email when the latest Divrei Torah are available.
             </p>
-            <form onSubmit={handleSignup} className="mt-6 flex flex-col sm:flex-row gap-3">
+            <form
+              onSubmit={handleSignup}
+              className="mt-6 flex flex-col sm:flex-row gap-3 max-w-lg mx-auto"
+            >
               <input
                 type="email"
                 required
@@ -194,13 +196,12 @@ function Index() {
                 type="submit"
                 className="rounded-full bg-primary px-7 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors shadow-md"
               >
-                Notify Me
+                Join the List
               </button>
             </form>
-            <p className="mt-3 text-center text-xs text-muted-foreground/80">
-              We’ll only email when new Divrei Torah are posted. No spam.
-            </p>
-            {signupMsg && <p className="mt-3 text-sm text-accent">{signupMsg}</p>}
+            {signupMsg && (
+              <p className="mt-4 text-sm text-accent">{signupMsg}</p>
+            )}
           </div>
         </section>
 
