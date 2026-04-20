@@ -215,11 +215,11 @@ function Index() {
             <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold text-primary text-center">
               This Week's Collection
             </h2>
-            <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent">
-              {loading
-                ? "Loading…"
-                : `${resources.length} ${resources.length === 1 ? "Devar" : "Divrei"} Torah this week`}
-            </p>
+            {!loading && resources.length > 0 && (
+              <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent">
+                {resources.length} {resources.length === 1 ? "Devar" : "Divrei"} Torah this week
+              </p>
+            )}
             {!loading && resources.length === 0 ? (
               <p className="mt-8 text-center text-muted-foreground">
                 No resources published yet for {currentLabel}. Check back soon.
