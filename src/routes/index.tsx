@@ -127,7 +127,7 @@ function Index() {
     try {
       const r = await subscribeEmail({ data: { email } });
       if (r.ok) {
-        setSignupMsg("Thanks! You're on the list.");
+        setSignupMsg("You’re all set — we’ll email you when new Divrei Torah are uploaded and ready to view or download.");
         setEmail("");
       } else {
         setSignupMsg(r.error ?? "Something went wrong.");
