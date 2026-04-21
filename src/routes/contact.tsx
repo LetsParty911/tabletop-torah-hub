@@ -82,10 +82,10 @@ function ContactPage() {
             ← Back to Home
           </Link>
           <h1 className="mt-4 font-serif text-4xl sm:text-5xl font-bold text-primary">
-            Questions, Suggestions, or Submissions
+            Get in Touch
           </h1>
           <p className="mt-3 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
-            Have feedback, a correction, or a Divrei Torah PDF to share? Send us a message.
+            Have a question, suggestion, correction, or a Divrei Torah PDF to share? Send us a message.
           </p>
         </header>
 

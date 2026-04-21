@@ -88,7 +88,7 @@ function ArchivePage() {
           <section className="parchment-frame">
             <div className="parchment-panel text-center">
               <p className="text-muted-foreground">
-                The archive is empty. Check back as new Divrei Torah are published.
+                New Divrei Torah are added each week. Bookmark this page or join the email list to stay updated.
               </p>
             </div>
           </section>
