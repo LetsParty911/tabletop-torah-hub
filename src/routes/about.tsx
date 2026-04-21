@@ -49,11 +49,11 @@ function AboutPage() {
               </p>
               <p>
                 Each week features a curated selection of downloadable PDFs, organized by
-                parsha and yom tov, alongside a growing archive for revisiting earlier weeks.
-                The goal is simple: make it easy to bring more Torah to the table.
+                parsha and Yom Tov, alongside a growing archive of earlier weeks. The goal
+                is simple: to make it easier to have a Dvar Torah ready for the table each week.
               </p>
               <p className="text-muted-foreground text-sm sm:text-base">
-                Have a Devar Torah to share, a correction, or a suggestion?{" "}
+                Have a Dvar Torah to share, a correction, or a suggestion?{" "}
                 <Link to="/contact" className="text-accent hover:text-primary underline">
                   Get in touch
                 </Link>
