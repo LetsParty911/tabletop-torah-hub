@@ -185,10 +185,13 @@ function Index() {
         <section className="parchment-frame">
           <div className="parchment-panel text-center">
             <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold text-primary">
-              Get Weekly Torah by Email
+              Weekly Torah Notifications
             </h2>
             <p className="mt-3 text-muted-foreground md:text-lg max-w-xl mx-auto">
-              A short weekly email with a link to the newest uploads.
+              Get an email when the latest Divrei Torah are uploaded.
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground max-w-xl mx-auto">
+              One short email each week when new Divrei Torah are uploaded.
             </p>
             <form
               onSubmit={handleSignup}
