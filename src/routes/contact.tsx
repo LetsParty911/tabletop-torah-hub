@@ -85,7 +85,7 @@ function ContactPage() {
             Get in Touch
           </h1>
           <p className="mt-3 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
-            Have a question, suggestion, correction, or a Divrei Torah PDF to share? Send us a message.
+            Have a question, correction, suggestion, or a Dvar Torah to share? Send us a message below.
           </p>
         </header>
 
