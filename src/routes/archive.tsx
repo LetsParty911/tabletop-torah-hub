@@ -175,6 +175,10 @@ function ArchivePage() {
             Home
           </Link>
           <span aria-hidden>·</span>
+          <Link to="/about" className="hover:text-primary transition-colors">
+            About
+          </Link>
+          <span aria-hidden>·</span>
           <Link to="/contact" className="hover:text-primary transition-colors">
             Contact
           </Link>
