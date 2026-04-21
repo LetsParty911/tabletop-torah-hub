@@ -157,17 +157,25 @@ function Index() {
               </span>
               <span aria-hidden className="h-px w-8 sm:w-16 bg-accent/60" />
             </div>
-            <p className="mt-2 sm:mt-3 font-serif text-xl sm:text-2xl md:text-4xl text-primary whitespace-nowrap">
-              {currentLabel}
-            </p>
-            <div className="mt-5 sm:mt-6">
-              <Link
-                to="/archive"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-primary transition-colors"
-              >
-                Browse This Week’s Divrei Torah →
-              </Link>
-            </div>
+            {loading ? (
+              <div className="mt-2 sm:mt-3 flex justify-center">
+                <div className="h-8 sm:h-10 md:h-12 w-56 sm:w-72 md:w-96 rounded-md bg-primary/10 animate-pulse" aria-label="Loading this week's parsha" />
+              </div>
+            ) : (
+              <p className="mt-2 sm:mt-3 font-serif text-xl sm:text-2xl md:text-4xl text-primary whitespace-nowrap">
+                {currentLabel}
+              </p>
+            )}
+            {!loading && resources.length > 0 && (
+              <div className="mt-5 sm:mt-6">
+                <Link
+                  to="/archive"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-primary transition-colors"
+                >
+                  Browse This Week’s Divrei Torah →
+                </Link>
+              </div>
+            )}
           </div>
         </section>
 
@@ -285,8 +293,15 @@ function Index() {
             dir="rtl"
             style={{ borderTop: "1px solid var(--gold-decorative)" }}
           >
+            <div className="flex items-center justify-center gap-3 text-accent">
+              <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
+              <span className="font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.3em]" dir="ltr">
+                Dedication
+              </span>
+              <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
+            </div>
             <h2
-              className="font-serif font-semibold text-primary"
+              className="mt-4 font-serif font-semibold text-primary"
               style={{ fontSize: "1.25rem", letterSpacing: "0.04em" }}
             >
               לעילוי נשמת
@@ -309,6 +324,10 @@ function Index() {
         </section>
 
         <footer className="text-center text-sm text-muted-foreground py-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          <Link to="/about" className="hover:text-primary transition-colors">
+            About
+          </Link>
+          <span aria-hidden>·</span>
           <Link to="/archive" className="hover:text-primary transition-colors">
             Browse Archive
           </Link>

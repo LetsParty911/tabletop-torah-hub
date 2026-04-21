@@ -82,10 +82,10 @@ function ContactPage() {
             ← Back to Home
           </Link>
           <h1 className="mt-4 font-serif text-4xl sm:text-5xl font-bold text-primary">
-            Questions, Suggestions, or Submissions
+            Get in Touch
           </h1>
           <p className="mt-3 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
-            Have feedback, a correction, or a Divrei Torah PDF to share? Send us a message.
+            Have a question, suggestion, correction, or a Divrei Torah PDF to share? Send us a message.
           </p>
         </header>
 
@@ -190,13 +190,11 @@ function ContactPage() {
         </section>
 
         <footer className="text-center text-sm text-muted-foreground py-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-          <Link to="/archive" className="hover:text-primary transition-colors">
-            Browse Archive
-          </Link>
+          <Link to="/" className="hover:text-primary transition-colors">Home</Link>
           <span aria-hidden>·</span>
-          <Link to="/contact" className="hover:text-primary transition-colors">
-            Contact
-          </Link>
+          <Link to="/about" className="hover:text-primary transition-colors">About</Link>
+          <span aria-hidden>·</span>
+          <Link to="/archive" className="hover:text-primary transition-colors">Browse Archive</Link>
           <span aria-hidden>·</span>
           <span>© {new Date().getFullYear()} Torah for the Table</span>
         </footer>

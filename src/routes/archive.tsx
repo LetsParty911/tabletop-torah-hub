@@ -88,7 +88,7 @@ function ArchivePage() {
           <section className="parchment-frame">
             <div className="parchment-panel text-center">
               <p className="text-muted-foreground">
-                The archive is empty. Check back as new Divrei Torah are published.
+                New Divrei Torah are added each week. Bookmark this page or join the email list to stay updated.
               </p>
             </div>
           </section>
@@ -173,6 +173,10 @@ function ArchivePage() {
         <footer className="text-center text-sm text-muted-foreground py-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           <Link to="/" className="hover:text-primary transition-colors">
             Home
+          </Link>
+          <span aria-hidden>·</span>
+          <Link to="/about" className="hover:text-primary transition-colors">
+            About
           </Link>
           <span aria-hidden>·</span>
           <Link to="/contact" className="hover:text-primary transition-colors">
