@@ -148,7 +148,7 @@ function Index() {
               Torah for the Table
             </h1>
             <p className="mt-4 sm:mt-6 font-serif italic text-base sm:text-xl md:text-2xl text-accent max-w-2xl mx-auto">
-              A weekly collection of downloadable Divrei Torah for Shabbos and Yom Tov, curated for the Shabbos table.
+              A weekly collection of Divrei Torah for the Shabbos table.
             </p>
             <div className="mt-6 sm:mt-10 flex items-center justify-center gap-3 sm:gap-4 text-accent">
               <span aria-hidden className="h-px w-8 sm:w-16 bg-accent/60" />
