@@ -290,6 +290,16 @@ function Index() {
                 ))}
               </div>
             )}
+            {!loading && resources.length > 0 && (
+              <div className="mt-6 sm:mt-8 text-center">
+                <Link
+                  to="/archive"
+                  className="inline-flex items-center gap-1.5 font-serif italic text-sm sm:text-base text-accent hover:text-primary transition-colors"
+                >
+                  Browse Archive →
+                </Link>
+              </div>
+            )}
           </div>
         </section>
 
