@@ -168,12 +168,18 @@ function Index() {
             )}
             {!loading && resources.length > 0 && (
               <div className="mt-5 sm:mt-6">
-                <Link
-                  to="/archive"
+                <a
+                  href="#this-weeks-collection"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document
+                      .getElementById("this-weeks-collection")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
                   className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-primary transition-colors"
                 >
-                  Browse This Week’s Divrei Torah →
-                </Link>
+                  Jump to This Week’s Collection ↓
+                </a>
               </div>
             )}
           </div>
@@ -221,7 +227,7 @@ function Index() {
         <div className="gold-divider" aria-hidden><span className="gold-divider-dot" /></div>
 
         {/* Resource collection */}
-        <section className="parchment-frame">
+        <section id="this-weeks-collection" className="parchment-frame scroll-mt-8">
           <div className="parchment-panel">
             <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold text-primary text-center">
               This Week's Collection
