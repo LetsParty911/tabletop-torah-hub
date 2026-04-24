@@ -341,6 +341,25 @@ export const subscribeEmail = createServerFn({ method: "POST" })
       .eq("email", email)
       .maybeSingle();
 
+    // Helper: convert a welcome-email result into the subscribe response.
+    // Subscription save already succeeded by the time we call this, so we keep
+    // the row in the DB but surface the email failure to the frontend.
+    const respondFromWelcome = (r: WelcomeEmailResult) => {
+      if (r.attempted === false) {
+        return {
+          ok: false as const,
+          error: `Welcome email not sent: missing ${r.missing.join(", ")}. Subscription saved.`,
+        };
+      }
+      if (r.ok === false) {
+        return {
+          ok: false as const,
+          error: `Welcome email failed (status ${r.status}): ${r.errorSnippet || "no body"}. Subscription saved.`,
+        };
+      }
+      return { ok: true as const, error: null };
+    };
+
     if (existing) {
       if (!existing.active) {
         const { error: upErr } = await admin
@@ -358,13 +377,13 @@ export const subscribeEmail = createServerFn({ method: "POST" })
         console.log(`${tag} reactivated -> sending welcome`);
         const r = await sendWelcomeEmailSafe(email, existing.unsubscribe_token ?? null);
         console.log(`${tag} welcome result`, r);
-      } else {
-        console.log(`${tag} email saved to database successfully`, {
-          mode: "already_active_existing",
-          subscriberId: existing.id,
-        });
-        console.log(`${tag} already active -> welcome skipped (not a new subscription)`);
+        return respondFromWelcome(r);
       }
+      console.log(`${tag} email saved to database successfully`, {
+        mode: "already_active_existing",
+        subscriberId: existing.id,
+      });
+      console.log(`${tag} already active -> welcome skipped (not a new subscription)`);
       return { ok: true, error: null };
     }
 
@@ -394,7 +413,7 @@ export const subscribeEmail = createServerFn({ method: "POST" })
     const r = await sendWelcomeEmailSafe(email, fresh?.unsubscribe_token ?? null);
     console.log(`${tag} welcome result`, r);
 
-    return { ok: true, error: null };
+    return respondFromWelcome(r);
   });
 
 // ---------- Internal: welcome email for new subscribers ----------
