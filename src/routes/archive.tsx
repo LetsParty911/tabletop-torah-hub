@@ -11,7 +11,7 @@ export const Route = createFileRoute("/archive")({
       "Browse the archive of past weekly Divrei Torah collections for Shabbos and Yom Tov.";
     const url = "https://torahforthetable.com/archive";
     const image =
-      "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/66d66607-a406-4b1e-ba15-ef8cb13eba06/id-preview-d1f0526a--ecc2dc14-06c9-413d-8b78-6436ae57c98e.lovable.app-1776630884092.png";
+      "https://torahforthetable.com/og-image.png";
     return {
       meta: [
         { title },
