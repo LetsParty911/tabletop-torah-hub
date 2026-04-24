@@ -135,6 +135,23 @@ function AdminPage() {
   const [yearFilter, setYearFilter] = useState<string>("all");
   const [msg, setMsg] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
+  // Weekly email state
+  type WeeklyPreview = Awaited<ReturnType<typeof adminGetWeeklyEmailPreview>>;
+  type WeeklySend = {
+    id: string;
+    parsha_key: string;
+    jewish_year: number;
+    subject: string;
+    sent_at: string;
+    sent_count: number;
+    provider: string | null;
+    notes: string | null;
+  };
+  const [weekly, setWeekly] = useState<WeeklyPreview | null>(null);
+  const [weeklyLoading, setWeeklyLoading] = useState(false);
+  const [weeklySending, setWeeklySending] = useState(false);
+  const [weeklyHistory, setWeeklyHistory] = useState<WeeklySend[]>([]);
+
   // Checklist sources (admin-managed)
   type ChecklistSource = {
     id: string;
