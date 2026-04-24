@@ -6,22 +6,31 @@ import { submitContactMessage } from "@/integrations/supabase/api.functions";
 const CONTACT_EMAIL = "hello@torahforthetable.org";
 
 export const Route = createFileRoute("/contact")({
-  head: () => ({
-    meta: [
-      { title: "Contact Us — Torah for the Table" },
-      {
-        name: "description",
-        content:
-          "Questions, feedback, sponsorship inquiries, or weekly Torah source inquiries? Get in touch with Torah for the Table.",
-      },
-      { property: "og:title", content: "Contact Us — Torah for the Table" },
-      {
-        property: "og:description",
-        content:
-          "Reach out with questions, feedback, or sponsorship inquiries for Torah for the Table.",
-      },
-    ],
-  }),
+  head: () => {
+    const title = "Contact | Torah for the Table";
+    const description =
+      "Get in touch with Torah for the Table for questions, suggestions, submissions, or corrections.";
+    const url = "https://torahforthetable.com/contact";
+    const image =
+      "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/66d66607-a406-4b1e-ba15-ef8cb13eba06/id-preview-d1f0526a--ecc2dc14-06c9-413d-8b78-6436ae57c98e.lovable.app-1776630884092.png";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
+        { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:image", content: image },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: image },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   component: ContactPage,
 });
 

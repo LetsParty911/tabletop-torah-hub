@@ -5,21 +5,31 @@ import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } fr
 export const Route = createFileRoute("/archive")({
   component: ArchivePage,
   loader: () => listArchive(),
-  head: () => ({
-    meta: [
-      { title: "Archive — Torah for the Table" },
-      {
-        name: "description",
-        content:
-          "Browse past weeks' Divrei Torah by Jewish year and parsha — a growing archive for Shabbos and Yom Tov.",
-      },
-      { property: "og:title", content: "Archive — Torah for the Table" },
-      {
-        property: "og:description",
-        content: "Past weeks' Divrei Torah, organized by Jewish year and parsha.",
-      },
-    ],
-  }),
+  head: () => {
+    const title = "Archive | Torah for the Table";
+    const description =
+      "Browse the archive of past weekly Divrei Torah collections for Shabbos and Yom Tov.";
+    const url = "https://torahforthetable.com/archive";
+    const image =
+      "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/66d66607-a406-4b1e-ba15-ef8cb13eba06/id-preview-d1f0526a--ecc2dc14-06c9-413d-8b78-6436ae57c98e.lovable.app-1776630884092.png";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
+        { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:image", content: image },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: image },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   errorComponent: ({ error }) => {
     console.error("Archive load error", error);
     return (

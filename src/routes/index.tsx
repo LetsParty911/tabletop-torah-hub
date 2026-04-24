@@ -11,21 +11,31 @@ import {
 
 export const Route = createFileRoute("/")({
   component: Index,
-  head: () => ({
-    meta: [
-      { title: "Torah for the Table — Weekly Torah Resources" },
-      {
-        name: "description",
-        content:
-          "Weekly Torah resources for a more meaningful Shabbos and Yom Tov table. Curated PDFs in one place.",
-      },
-      { property: "og:title", content: "Torah for the Table" },
-      {
-        property: "og:description",
-        content: "Weekly Torah PDFs curated for Shabbos and Yom Tov.",
-      },
-    ],
-  }),
+  head: () => {
+    const title = "Torah for the Table | Weekly Divrei Torah for Shabbos & Yom Tov";
+    const description =
+      "A weekly collection of Divrei Torah for Shabbos and Yom Tov — thoughtfully gathered in one quiet, uncluttered place for the Shabbos table.";
+    const url = "https://torahforthetable.com/";
+    const image =
+      "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/66d66607-a406-4b1e-ba15-ef8cb13eba06/id-preview-d1f0526a--ecc2dc14-06c9-413d-8b78-6436ae57c98e.lovable.app-1776630884092.png";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
+        { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:image", content: image },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: image },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
 });
 
 type Resource = {
