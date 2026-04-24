@@ -33,20 +33,32 @@ export const Route = createFileRoute("/sitemap.xml")({
 
         try {
           const admin = getSupabaseAdmin();
-          const { data: rows, error } = await admin
+          // Try to include updated_at if the column exists; fall back to created_at only.
+          let rows:
+            | Array<{ id: string; created_at: string | null; updated_at?: string | null }>
+            | null = null;
+          const withUpdated = await admin
             .from("pdfs")
             .select("id, created_at, updated_at")
             .eq("published", true);
-          if (error) {
-            console.error("sitemap pdfs query error", error);
-          } else {
-            for (const r of rows ?? []) {
-              const row = r as { id: string; created_at: string | null; updated_at: string | null };
-              urls.push({
-                loc: `${SITE_URL}/view/${row.id}`,
-                lastmod: toLastmod(row.updated_at ?? row.created_at, today),
-              });
+          if (withUpdated.error) {
+            const fallback = await admin
+              .from("pdfs")
+              .select("id, created_at")
+              .eq("published", true);
+            if (fallback.error) {
+              console.error("sitemap pdfs query error", fallback.error);
+            } else {
+              rows = (fallback.data ?? []) as typeof rows;
             }
+          } else {
+            rows = (withUpdated.data ?? []) as typeof rows;
+          }
+          for (const row of rows ?? []) {
+            urls.push({
+              loc: `${SITE_URL}/view/${row.id}`,
+              lastmod: toLastmod(row.updated_at ?? row.created_at, today),
+            });
           }
         } catch (e) {
           console.error("sitemap pdfs unexpected error", e);
