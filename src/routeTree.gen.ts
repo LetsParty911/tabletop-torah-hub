@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -22,6 +23,11 @@ import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/archive'
     | '/contact'
+    | '/robots.txt'
     | '/sitemap.xml'
     | '/view/$id'
     | '/view/$id/download'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/archive'
     | '/contact'
+    | '/robots.txt'
     | '/sitemap.xml'
     | '/view/$id'
     | '/view/$id/download'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/archive'
     | '/contact'
+    | '/robots.txt'
     | '/sitemap.xml'
     | '/view/$id'
     | '/view/$id/download'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ArchiveRoute: typeof ArchiveRoute
   ContactRoute: typeof ContactRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ViewIdRoute: typeof ViewIdRouteWithChildren
 }
@@ -152,6 +165,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -232,6 +252,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   ArchiveRoute: ArchiveRoute,
   ContactRoute: ContactRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ViewIdRoute: ViewIdRouteWithChildren,
 }
