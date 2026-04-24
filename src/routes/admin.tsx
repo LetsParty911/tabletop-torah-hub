@@ -541,6 +541,12 @@ function AdminPage() {
     );
   }
 
+  // Session exists but admin status is still being verified — keep the
+  // loader up rather than briefly showing the dashboard to a non-admin.
+  if (isAdmin === null) {
+    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Verifying access…</div>;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-4 py-8 space-y-8">
