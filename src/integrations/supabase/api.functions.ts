@@ -477,6 +477,63 @@ async function sendWelcomeEmailSafe(
 }
 
 
+// ---------- Admin: send TEST welcome email to any address ----------
+// Lets an admin trigger the welcome email on demand for QA, without
+// touching the subscribers table. Does NOT create a subscription row.
+export const adminSendTestWelcomeEmail = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; email: string }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        email: z.string().trim().email().max(254),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const email = data.email.toLowerCase();
+
+    // If this email already exists as a subscriber, reuse its real
+    // unsubscribe token so the test link actually works. Otherwise send
+    // without an unsubscribe link (still safe — footer explains).
+    const admin = getSupabaseAdmin();
+    const { data: existing } = await admin
+      .from("subscribers")
+      .select("unsubscribe_token")
+      .eq("email", email)
+      .maybeSingle();
+
+    const tag = `[admin-test-welcome:${email.replace(/(.{2}).+(@.+)/, "$1***$2")}]`;
+    console.log(`${tag} sending test welcome (hasToken=${Boolean(existing?.unsubscribe_token)})`);
+    const result = await sendWelcomeEmailSafe(email, existing?.unsubscribe_token ?? null);
+    console.log(`${tag} result`, result);
+    return { ok: true, result };
+  });
+
+// ---------- Admin: reset my subscriber row (for retesting the welcome flow) ----------
+// Deletes the subscribers row for a given email so the next subscribe is
+// treated as a brand-new signup and triggers the welcome email path.
+export const adminResetSubscriber = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; email: string }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        email: z.string().trim().email().max(254),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const email = data.email.toLowerCase();
+    const { error, count } = await admin
+      .from("subscribers")
+      .delete({ count: "exact" })
+      .eq("email", email);
+    if (error) throw new Error(error.message);
+    return { ok: true, deleted: count ?? 0 };
+  });
+
 // ---------- Public: contact form submission ----------
 export const submitContactMessage = createServerFn({ method: "POST" })
   .inputValidator((input: { name?: string; email: string; message: string }) =>
