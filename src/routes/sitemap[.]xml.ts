@@ -12,10 +12,10 @@ function escapeXml(s: string): string {
     .replace(/'/g, "&apos;");
 }
 
-function toLastmod(value: string | null | undefined, fallback: string): string {
-  if (!value) return fallback;
+function toLastmod(value: string | null | undefined): string | null {
+  if (!value) return null;
   const d = new Date(value);
-  if (isNaN(d.getTime())) return fallback;
+  if (isNaN(d.getTime())) return null;
   return d.toISOString().split("T")[0];
 }
 
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/sitemap.xml")({
     handlers: {
       GET: async () => {
         const today = new Date().toISOString().split("T")[0];
-        const urls: Array<{ loc: string; lastmod: string }> = [
+        const urls: Array<{ loc: string; lastmod: string | null }> = [
           { loc: `${SITE_URL}/`, lastmod: today },
           { loc: `${SITE_URL}/archive`, lastmod: today },
           { loc: `${SITE_URL}/about`, lastmod: today },
@@ -33,30 +33,48 @@ export const Route = createFileRoute("/sitemap.xml")({
 
         try {
           const admin = getSupabaseAdmin();
-          // Try to include updated_at if the column exists; fall back to created_at only.
-          type PdfRow = { id: string; created_at: string | null; updated_at?: string | null };
+          // Prefer updated_at > week_of > created_at. updated_at / week_of may
+          // not exist in all environments; fall back progressively.
+          type PdfRow = {
+            id: string;
+            created_at: string | null;
+            week_of?: string | null;
+            updated_at?: string | null;
+          };
           let rows: PdfRow[] = [];
-          const withUpdated = await admin
+          const full = await admin
             .from("pdfs")
-            .select("id, created_at, updated_at")
+            .select("id, created_at, week_of, updated_at")
             .eq("published", true);
-          if (withUpdated.error) {
-            const fallback = await admin
+          if (full.error) {
+            const noUpdated = await admin
               .from("pdfs")
-              .select("id, created_at")
+              .select("id, created_at, week_of")
               .eq("published", true);
-            if (fallback.error) {
-              console.error("sitemap pdfs query error", fallback.error);
+            if (noUpdated.error) {
+              const base = await admin
+                .from("pdfs")
+                .select("id, created_at")
+                .eq("published", true);
+              if (base.error) {
+                console.error("sitemap pdfs query error", base.error);
+              } else {
+                rows = (base.data ?? []) as unknown as PdfRow[];
+              }
             } else {
-              rows = (fallback.data ?? []) as unknown as PdfRow[];
+              rows = (noUpdated.data ?? []) as unknown as PdfRow[];
             }
           } else {
-            rows = (withUpdated.data ?? []) as unknown as PdfRow[];
+            rows = (full.data ?? []) as unknown as PdfRow[];
           }
           for (const row of rows) {
+            const best =
+              toLastmod(row.updated_at) ??
+              toLastmod(row.week_of) ??
+              toLastmod(row.created_at);
             urls.push({
               loc: `${SITE_URL}/view/${row.id}`,
-              lastmod: toLastmod(row.updated_at ?? row.created_at, today),
+              lastmod: best,
             });
           }
         } catch (e) {
@@ -66,10 +84,12 @@ export const Route = createFileRoute("/sitemap.xml")({
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls
-  .map(
-    (u) =>
-      `  <url>\n    <loc>${escapeXml(u.loc)}</loc>\n    <lastmod>${u.lastmod}</lastmod>\n  </url>`,
-  )
+  .map((u) => {
+    const lastmodTag = u.lastmod
+      ? `\n    <lastmod>${u.lastmod}</lastmod>`
+      : "";
+    return `  <url>\n    <loc>${escapeXml(u.loc)}</loc>${lastmodTag}\n  </url>`;
+  })
   .join("\n")}
 </urlset>
 `;
