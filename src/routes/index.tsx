@@ -50,6 +50,7 @@ function Index() {
   const [email, setEmail] = useState("");
   const [signupMsg, setSignupMsg] = useState<string | null>(null);
   const [currentLabel, setCurrentLabel] = useState<string>("Loading…");
+  const [currentParshaKey, setCurrentParshaKey] = useState<string | null>(null);
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
 
