@@ -239,19 +239,55 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
 );
 
 // ---------- Public: get a single PDF (signed URL + title) by id ----------
+export type PublicPdf = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  url: string;
+  createdAt: string | null;
+  updatedAt: string | null;
+  weekOf: string | null;
+};
+
 export const getPdfById = createServerFn({ method: "GET" })
   .inputValidator((input: { id: string }) =>
     z.object({ id: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data }) => {
     const admin = getSupabaseAdmin();
-    const { data: row, error } = await admin
+    // Try selecting updated_at (may not exist in all environments); fall back
+    // to the base set of columns if that column is missing.
+    type PdfRow = {
+      id: string;
+      title: string;
+      subtitle: string | null;
+      file_path: string;
+      published: boolean;
+      created_at: string | null;
+      week_of: string | null;
+      updated_at?: string | null;
+    };
+    let row: PdfRow | null = null;
+    const withUpdated = await admin
       .from("pdfs")
-      .select("id, title, subtitle, file_path, published")
+      .select("id, title, subtitle, file_path, published, created_at, week_of, updated_at")
       .eq("id", data.id)
       .maybeSingle();
-    if (error || !row || !row.published) {
-      return { pdf: null as null | { id: string; title: string; subtitle: string | null; url: string } };
+    if (withUpdated.error) {
+      const fallback = await admin
+        .from("pdfs")
+        .select("id, title, subtitle, file_path, published, created_at, week_of")
+        .eq("id", data.id)
+        .maybeSingle();
+      if (fallback.error) {
+        return { pdf: null as null | PublicPdf };
+      }
+      row = (fallback.data ?? null) as PdfRow | null;
+    } else {
+      row = (withUpdated.data ?? null) as PdfRow | null;
+    }
+    if (!row || !row.published) {
+      return { pdf: null as null | PublicPdf };
     }
     const { data: signed } = await admin.storage
       .from("pdfs")
@@ -262,7 +298,10 @@ export const getPdfById = createServerFn({ method: "GET" })
         title: row.title,
         subtitle: row.subtitle,
         url: signed?.signedUrl ?? "",
-      },
+        createdAt: row.created_at ?? null,
+        updatedAt: row.updated_at ?? null,
+        weekOf: row.week_of ?? null,
+      } as PublicPdf,
     };
   });
 
