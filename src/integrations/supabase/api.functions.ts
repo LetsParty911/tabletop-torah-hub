@@ -328,6 +328,9 @@ export const subscribeEmail = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const admin = getSupabaseAdmin();
     const email = data.email.toLowerCase();
+    // Do NOT log full email addresses. Use a short redacted tag for correlation.
+    const tag = `[subscribe:${email.slice(0, 2)}***@${email.split("@")[1] ?? "?"}]`;
+
     // Look up an existing row first so we can reactivate cleanly instead of
     // hitting a duplicate-key error or leaving an unsubscribed row inactive.
     const { data: existing } = await admin
@@ -343,23 +346,25 @@ export const subscribeEmail = createServerFn({ method: "POST" })
           .update({ active: true, unsubscribed_at: null })
           .eq("id", existing.id);
         if (upErr) {
-          console.error("subscribeEmail reactivate error", upErr);
+          console.error(`${tag} reactivate error`, upErr);
           return { ok: false, error: "Could not subscribe. Please try again." };
         }
-        // Reactivation = they're newly subscribed again; send welcome.
-        await sendWelcomeEmailSafe(email, existing.unsubscribe_token ?? null);
+        console.log(`${tag} reactivated -> sending welcome`);
+        const r = await sendWelcomeEmailSafe(email, existing.unsubscribe_token ?? null);
+        console.log(`${tag} welcome result`, r);
+      } else {
+        console.log(`${tag} already active -> welcome skipped (not a new subscription)`);
       }
-      // Already active: do NOT send a duplicate welcome email.
       return { ok: true, error: null };
     }
 
     const { error } = await admin.from("subscribers").insert({ email });
     if (error) {
       if (error.message.toLowerCase().includes("duplicate")) {
-        // Race: row appeared between SELECT and INSERT. Treat as already subscribed.
+        console.log(`${tag} insert race duplicate -> welcome skipped`);
         return { ok: true, error: null };
       }
-      console.error("subscribeEmail error", error);
+      console.error(`${tag} insert error`, error);
       return { ok: false, error: "Could not subscribe. Please try again." };
     }
 
@@ -370,49 +375,62 @@ export const subscribeEmail = createServerFn({ method: "POST" })
       .select("unsubscribe_token")
       .eq("email", email)
       .maybeSingle();
-    await sendWelcomeEmailSafe(email, fresh?.unsubscribe_token ?? null);
+    console.log(`${tag} new subscriber -> sending welcome (hasToken=${Boolean(fresh?.unsubscribe_token)})`);
+    const r = await sendWelcomeEmailSafe(email, fresh?.unsubscribe_token ?? null);
+    console.log(`${tag} welcome result`, r);
 
     return { ok: true, error: null };
   });
 
 // ---------- Internal: welcome email for new subscribers ----------
 // Best-effort: a send failure must NEVER break the subscribe flow.
+// Returns a small status object so callers can log what happened without
+// exposing secrets or full email addresses.
+type WelcomeEmailResult =
+  | { attempted: false; reason: "not_configured"; missing: string[] }
+  | { attempted: true; ok: true; status: number }
+  | { attempted: true; ok: false; status: number; errorSnippet: string }
+  | { attempted: true; ok: false; status: 0; errorSnippet: string };
+
 async function sendWelcomeEmailSafe(
   email: string,
   unsubscribeToken: string | null,
-): Promise<void> {
-  try {
-    const apiKey = process.env.RESEND_API_KEY;
-    const fromAddress = process.env.EMAIL_FROM_ADDRESS;
-    if (!apiKey || !fromAddress) {
-      // Email not configured in this environment — skip silently.
-      return;
-    }
+): Promise<WelcomeEmailResult> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromAddress = process.env.EMAIL_FROM_ADDRESS;
+  const missing: string[] = [];
+  if (!apiKey) missing.push("RESEND_API_KEY");
+  if (!fromAddress) missing.push("EMAIL_FROM_ADDRESS");
+  if (missing.length > 0) {
+    // Email not configured in this environment — skip, but surface WHY.
+    console.warn(`welcome email skipped: missing env ${missing.join(",")}`);
+    return { attempted: false, reason: "not_configured", missing };
+  }
 
-    const SITE_URL = "https://torahforthetable.com";
-    const unsubscribeUrl = unsubscribeToken
-      ? `${SITE_URL}/unsubscribe/${unsubscribeToken}`
-      : null;
+  const SITE_URL = "https://torahforthetable.com";
+  const unsubscribeUrl = unsubscribeToken
+    ? `${SITE_URL}/unsubscribe/${unsubscribeToken}`
+    : null;
 
-    const subject = "Welcome to Torah for the Table";
+  const subject = "Welcome to Torah for the Table";
 
-    const textLines = [
-      "Shalom and welcome to Torah for the Table.",
-      "",
-      "Thank you for subscribing. You're now on the list to receive our weekly Divrei Torah collection.",
-      "",
-      "Expect a new email each week, usually Thursday or Friday, with that week's parsha resources ready for your Shabbos table.",
-      "",
-      unsubscribeUrl
-        ? `You can unsubscribe anytime using the link at the bottom of any email, or directly here: ${unsubscribeUrl}`
-        : "You can unsubscribe anytime using the link at the bottom of any email we send you.",
-      "",
-      "— Torah for the Table",
-      SITE_URL,
-    ];
-    const text = textLines.join("\n");
+  const textLines = [
+    "Shalom and welcome to Torah for the Table.",
+    "",
+    "Thank you for subscribing. You're now on the list to receive our weekly Divrei Torah collection.",
+    "",
+    "Expect a new email each week, usually Thursday or Friday, with that week's parsha resources ready for your Shabbos table.",
+    "",
+    unsubscribeUrl
+      ? `You can unsubscribe anytime using the link at the bottom of any email, or directly here: ${unsubscribeUrl}`
+      : "You can unsubscribe anytime using the link at the bottom of any email we send you.",
+    "",
+    "— Torah for the Table",
+    SITE_URL,
+  ];
+  const text = textLines.join("\n");
 
-    const html = `<!doctype html>
+  const html = `<!doctype html>
 <html><body style="margin:0;padding:0;background:#ffffff;font-family:Georgia,'Times New Roman',serif;color:#2a1a0a;">
   <div style="max-width:560px;margin:0 auto;padding:32px 24px;line-height:1.55;">
     <h1 style="font-size:22px;margin:0 0 16px;color:#5a3a1f;">Welcome to Torah for the Table</h1>
@@ -426,9 +444,10 @@ async function sendWelcomeEmailSafe(
   </div>
 </body></html>`;
 
-    const headers: Record<string, string> = {};
-    if (unsubscribeUrl) headers["List-Unsubscribe"] = `<${unsubscribeUrl}>`;
+  const headers: Record<string, string> = {};
+  if (unsubscribeUrl) headers["List-Unsubscribe"] = `<${unsubscribeUrl}>`;
 
+  try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -445,11 +464,15 @@ async function sendWelcomeEmailSafe(
       }),
     });
     if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      console.error("welcome email send failed", res.status, errText.slice(0, 200));
+      const errText = (await res.text().catch(() => "")).slice(0, 200);
+      console.error(`welcome email send failed status=${res.status}`, errText);
+      return { attempted: true, ok: false, status: res.status, errorSnippet: errText };
     }
+    return { attempted: true, ok: true, status: res.status };
   } catch (e) {
-    console.error("welcome email unexpected error", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("welcome email network error", msg);
+    return { attempted: true, ok: false, status: 0, errorSnippet: msg.slice(0, 200) };
   }
 }
 
