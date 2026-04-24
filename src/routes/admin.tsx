@@ -495,7 +495,14 @@ function AdminPage() {
     }
   };
 
-  if (loading) {
+  // While auth is hydrating, or while we're still resolving an OAuth
+  // callback in the URL, show a loader instead of flashing the sign-in screen.
+  const hasAuthCallbackInUrl =
+    typeof window !== "undefined" &&
+    (window.location.hash.includes("access_token=") ||
+      window.location.search.includes("code="));
+
+  if (loading || hasAuthCallbackInUrl) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
   }
 
