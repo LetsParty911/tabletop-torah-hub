@@ -501,6 +501,7 @@ async function sendWelcomeEmailSafe(
       to: resendPayload.to,
       hasHeaders: Boolean(unsubscribeUrl),
     });
+    console.log(`SENDING_WELCOME_EMAIL from=${resendPayload.from} to=${resendPayload.to}`);
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -524,6 +525,7 @@ async function sendWelcomeEmailSafe(
       statusText: res.statusText,
       body: parsedResponseBody,
     });
+    console.log(`RESEND_RESULT status=${res.status} body=${rawResponseBody}`);
     if (!res.ok) {
       const errText = rawResponseBody.slice(0, 200);
       console.error(`welcome email send failed status=${res.status}`, errText);
