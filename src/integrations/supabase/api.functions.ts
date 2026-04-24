@@ -281,17 +281,38 @@ export const getParshaOverride = createServerFn({ method: "GET" }).handler(async
   return { override: (data?.parsha_override ?? null) as string | null };
 });
 
-// ---------- Public: subscribe email ----------
+// ---------- Public: subscribe email (unsubscribe-aware reactivation) ----------
 export const subscribeEmail = createServerFn({ method: "POST" })
   .inputValidator((input: { email: string }) =>
     z.object({ email: z.string().email().max(254) }).parse(input),
   )
   .handler(async ({ data }) => {
     const admin = getSupabaseAdmin();
-    const { error } = await admin
+    const email = data.email.toLowerCase();
+    // Look up an existing row first so we can reactivate cleanly instead of
+    // hitting a duplicate-key error or leaving an unsubscribed row inactive.
+    const { data: existing } = await admin
       .from("subscribers")
-      .insert({ email: data.email.toLowerCase() });
-    if (error && !error.message.includes("duplicate")) {
+      .select("id, active")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (existing) {
+      if (!existing.active) {
+        const { error: upErr } = await admin
+          .from("subscribers")
+          .update({ active: true, unsubscribed_at: null })
+          .eq("id", existing.id);
+        if (upErr) {
+          console.error("subscribeEmail reactivate error", upErr);
+          return { ok: false, error: "Could not subscribe. Please try again." };
+        }
+      }
+      return { ok: true, error: null };
+    }
+
+    const { error } = await admin.from("subscribers").insert({ email });
+    if (error && !error.message.toLowerCase().includes("duplicate")) {
       console.error("subscribeEmail error", error);
       return { ok: false, error: "Could not subscribe. Please try again." };
     }
