@@ -137,8 +137,85 @@ function Index() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setSignupMsg(null);
+    const requestPayload = { email };
+    console.log("[newsletter-signup] form submitted");
+    console.log("[newsletter-signup] entered email", email);
+    console.log("[newsletter-signup] logical request payload", requestPayload);
+
+    const originalFetch = globalThis.fetch.bind(globalThis);
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+      const method =
+        init?.method ??
+        (typeof input === "string" || input instanceof URL ? "GET" : input.method);
+      const isServerFnRequest = url.includes("/_serverFn/");
+
+      if (isServerFnRequest) {
+        const rawRequestBody =
+          typeof init?.body === "string"
+            ? init.body
+            : !init?.body && typeof input !== "string" && !(input instanceof URL)
+              ? await input.clone().text().catch(() => "")
+              : "";
+
+        let requestBody: unknown = rawRequestBody || null;
+        if (rawRequestBody) {
+          try {
+            requestBody = JSON.parse(rawRequestBody);
+          } catch {
+            requestBody = rawRequestBody;
+          }
+        }
+
+        console.log("[newsletter-signup] transport request", {
+          url,
+          method,
+          payload: requestBody,
+        });
+      }
+
+      try {
+        const response = await originalFetch(input, init);
+
+        if (isServerFnRequest) {
+          const rawResponseBody = await response.clone().text().catch(() => "");
+          let responseBody: unknown = rawResponseBody || null;
+          if (rawResponseBody) {
+            try {
+              responseBody = JSON.parse(rawResponseBody);
+            } catch {
+              responseBody = rawResponseBody;
+            }
+          }
+
+          console.log("[newsletter-signup] transport response", {
+            url,
+            status: response.status,
+            statusText: response.statusText,
+            body: responseBody,
+          });
+        }
+
+        return response;
+      } catch (fetchError) {
+        if (isServerFnRequest) {
+          console.error("[newsletter-signup] transport error", fetchError);
+        }
+        throw fetchError;
+      }
+    }) as typeof fetch;
+
     try {
-      const r = await subscribeEmail({ data: { email } });
+      const r = await subscribeEmail({ data: requestPayload });
+      console.log("[newsletter-signup] server function result", {
+        status: r.ok ? "ok" : "error",
+        body: r,
+      });
       if (r.ok) {
         setSignupMsg("You’re all set — we’ll email you when new Divrei Torah are uploaded and ready to view or download.");
         setEmail("");
@@ -149,8 +226,11 @@ function Index() {
       } else {
         setSignupMsg(r.error ?? "Something went wrong.");
       }
-    } catch {
+    } catch (error) {
+      console.error("[newsletter-signup] frontend error", error);
       setSignupMsg("Something went wrong.");
+    } finally {
+      globalThis.fetch = originalFetch;
     }
   };
 
