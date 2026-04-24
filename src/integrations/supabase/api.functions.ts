@@ -4,6 +4,32 @@ import { getSupabaseAdmin, getSupabaseForUser } from "@/integrations/supabase/cl
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 
+// Build a map of normalized title -> sort_order from checklist_sources.
+// This is the same admin-managed order shown in the admin UI (10/20/30/40…).
+// Nulls / unknown titles should be sorted last by callers.
+async function getTitleSortOrderMap(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+): Promise<Map<string, number>> {
+  const map = new Map<string, number>();
+  try {
+    const { data, error } = await admin
+      .from("checklist_sources")
+      .select("title, sort_order");
+    if (error) {
+      console.error("getTitleSortOrderMap error", error);
+      return map;
+    }
+    for (const row of data ?? []) {
+      const t = (row.title as string | null)?.trim().toLowerCase();
+      const v = row.sort_order as number | null;
+      if (t && typeof v === "number") map.set(t, v);
+    }
+  } catch (e) {
+    console.error("getTitleSortOrderMap unexpected", e);
+  }
+  return map;
+}
+
 // Resolve the currently-featured parsha (key + Hebrew year) the same way the
 // homepage does: settings override first, otherwise Hebcal. Used to exclude
 // the live week from the archive.
