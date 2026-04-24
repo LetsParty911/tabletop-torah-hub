@@ -9,14 +9,52 @@ export const Route = createFileRoute("/view/$id")({
     if (!r.pdf) throw notFound();
     return { pdf: r.pdf };
   },
-  head: ({ loaderData }) => {
+  head: ({ loaderData, params }) => {
     const title = loaderData?.pdf?.title ?? "View PDF";
     const subtitle = loaderData?.pdf?.subtitle;
     const pageTitle = subtitle ? `${title} — ${subtitle}` : title;
+    const description = subtitle ?? "Torah resource";
+    const url = `https://torahforthetable.com/view/${params.id}`;
+    const image = "https://torahforthetable.com/og-image.png";
+
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: title,
+      name: title,
+      description,
+      url,
+      image,
+      isPartOf: "https://torahforthetable.com",
+      publisher: {
+        "@type": "Organization",
+        name: "Torah for the Table",
+        url: "https://torahforthetable.com",
+        logo: "https://torahforthetable.com/favicon.png",
+      },
+    };
+
     return {
       meta: [
         { title: pageTitle },
-        { name: "description", content: subtitle ?? "Torah resource" },
+        { name: "description", content: description },
+        { property: "og:type", content: "article" },
+        { property: "og:title", content: pageTitle },
+        { property: "og:description", content: description },
+        { property: "og:url", content: url },
+        { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:image", content: image },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: pageTitle },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: image },
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify(jsonLd),
+        },
       ],
     };
   },
