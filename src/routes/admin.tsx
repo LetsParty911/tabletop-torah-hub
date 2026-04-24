@@ -1486,9 +1486,18 @@ function WelcomeEmailTester({
         >
           {busy === "reset" ? "Resetting…" : "Reset subscriber row"}
         </button>
+        <button
+          type="button"
+          onClick={preflight}
+          disabled={busy !== null}
+          className="rounded border border-input px-3 py-1 text-sm disabled:opacity-50"
+        >
+          {busy === "preflight" ? "Checking…" : "Preflight Resend config"}
+        </button>
       </div>
-      {status && <div className="text-xs text-muted-foreground">{status}</div>}
+      {status && <div className="text-xs text-muted-foreground whitespace-pre-wrap">{status}</div>}
       <div className="text-xs text-muted-foreground">
+        "Preflight Resend config" verifies RESEND_API_KEY works and checks whether the domain in EMAIL_FROM_ADDRESS is verified in Resend — no email is sent.
         "Send test welcome" calls the same welcome email path used by new subscriptions (without creating a row).
         "Reset subscriber row" deletes that email from the subscribers table so the next signup is treated as brand-new.
       </div>
