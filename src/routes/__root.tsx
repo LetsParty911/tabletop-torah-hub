@@ -40,11 +40,24 @@ function GoogleAnalytics() {
 }
 
 function NotFoundComponent() {
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    let tag = document.querySelector('meta[name="robots"][data-notfound="1"]') as HTMLMetaElement | null;
+    if (!tag) {
+      tag = document.createElement("meta");
+      tag.setAttribute("name", "robots");
+      tag.setAttribute("data-notfound", "1");
+      document.head.appendChild(tag);
+    }
+    tag.setAttribute("content", "noindex");
+    return () => {
+      tag?.parentNode?.removeChild(tag);
+    };
+  }, []);
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <head>
-        <meta name="robots" content="noindex" />
-      </head>
+
       <div className="max-w-md text-center">
         <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
           404
