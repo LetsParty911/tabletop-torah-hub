@@ -1,6 +1,43 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouterState } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
+
+const GA_MEASUREMENT_ID = "G-18CZTJF2FS";
+
+declare global {
+  interface Window {
+    dataLayer: unknown[];
+    gtag: (...args: unknown[]) => void;
+  }
+}
+
+function GoogleAnalytics() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
+
+  useEffect(() => {
+    if (isAdmin) return;
+    if (typeof window === "undefined") return;
+    if (document.getElementById("ga4-src")) return;
+
+    const s = document.createElement("script");
+    s.id = "ga4-src";
+    s.async = true;
+    s.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+    document.head.appendChild(s);
+
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function gtag() {
+      // eslint-disable-next-line prefer-rest-params
+      window.dataLayer.push(arguments);
+    };
+    window.gtag("js", new Date());
+    window.gtag("config", GA_MEASUREMENT_ID);
+  }, [isAdmin]);
+
+  return null;
+}
 
 function NotFoundComponent() {
   return (
@@ -76,5 +113,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <>
+      <GoogleAnalytics />
+      <Outlet />
+    </>
+  );
 }
