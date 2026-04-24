@@ -281,17 +281,38 @@ export const getParshaOverride = createServerFn({ method: "GET" }).handler(async
   return { override: (data?.parsha_override ?? null) as string | null };
 });
 
-// ---------- Public: subscribe email ----------
+// ---------- Public: subscribe email (unsubscribe-aware reactivation) ----------
 export const subscribeEmail = createServerFn({ method: "POST" })
   .inputValidator((input: { email: string }) =>
     z.object({ email: z.string().email().max(254) }).parse(input),
   )
   .handler(async ({ data }) => {
     const admin = getSupabaseAdmin();
-    const { error } = await admin
+    const email = data.email.toLowerCase();
+    // Look up an existing row first so we can reactivate cleanly instead of
+    // hitting a duplicate-key error or leaving an unsubscribed row inactive.
+    const { data: existing } = await admin
       .from("subscribers")
-      .insert({ email: data.email.toLowerCase() });
-    if (error && !error.message.includes("duplicate")) {
+      .select("id, active")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (existing) {
+      if (!existing.active) {
+        const { error: upErr } = await admin
+          .from("subscribers")
+          .update({ active: true, unsubscribed_at: null })
+          .eq("id", existing.id);
+        if (upErr) {
+          console.error("subscribeEmail reactivate error", upErr);
+          return { ok: false, error: "Could not subscribe. Please try again." };
+        }
+      }
+      return { ok: true, error: null };
+    }
+
+    const { error } = await admin.from("subscribers").insert({ email });
+    if (error && !error.message.toLowerCase().includes("duplicate")) {
       console.error("subscribeEmail error", error);
       return { ok: false, error: "Could not subscribe. Please try again." };
     }
@@ -774,4 +795,461 @@ export const adminRemoveWeeklySkip = createServerFn({ method: "POST" })
       .eq("jewish_year", data.jewishYear);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+// =====================================================================
+// Weekly Email System v1
+// =====================================================================
+
+const SITE_URL = "https://torahforthetable.com";
+
+type WeeklyEmailResource = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+};
+
+type WeeklyEmailContent = {
+  ready: boolean;
+  reason: string | null;
+  parshaKey: string | null;
+  parshaLabel: string | null;
+  jewishYear: number | null;
+  subject: string;
+  intro: string;
+  resources: WeeklyEmailResource[];
+  alreadySent: {
+    sentAt: string;
+    sentCount: number;
+    subject: string;
+  } | null;
+  activeSubscriberCount: number;
+  emailConfigured: boolean;
+};
+
+function buildIntro(): string {
+  return "This week's Divrei Torah are now available to view or download.";
+}
+
+function buildSubject(parshaLabel: string): string {
+  return `This Week's Divrei Torah for Shabbos — ${parshaLabel}`;
+}
+
+function emailHtml(params: {
+  parshaLabel: string;
+  intro: string;
+  resources: WeeklyEmailResource[];
+  unsubscribeUrl: string;
+}): string {
+  const { parshaLabel, intro, resources, unsubscribeUrl } = params;
+  const items = resources
+    .map((r) => {
+      const view = `${SITE_URL}/view/${r.id}`;
+      const download = `${SITE_URL}/view/${r.id}/download`;
+      const sub = r.subtitle
+        ? `<div style="color:#6b6358;font-size:13px;margin-top:2px;">${escapeHtml(r.subtitle)}</div>`
+        : "";
+      return `
+        <li style="margin:0 0 18px 0;">
+          <div style="font-weight:600;color:#2c2418;font-size:15px;">${escapeHtml(r.title)}</div>
+          ${sub}
+          <div style="margin-top:6px;font-size:14px;">
+            <a href="${view}" style="color:#5a3a1f;text-decoration:underline;margin-right:14px;">View</a>
+            <a href="${download}" style="color:#5a3a1f;text-decoration:underline;">Download</a>
+          </div>
+        </li>`;
+    })
+    .join("");
+
+  return `<!doctype html>
+<html><body style="margin:0;padding:0;background:#ffffff;">
+  <div style="max-width:600px;margin:0 auto;padding:32px 24px;font-family:Georgia,'Times New Roman',serif;color:#2c2418;line-height:1.55;">
+    <h1 style="font-size:22px;margin:0 0 6px 0;color:#2c2418;">${escapeHtml(parshaLabel)}</h1>
+    <p style="margin:0 0 20px 0;font-size:15px;color:#3a2f22;">${escapeHtml(intro)}</p>
+    <ul style="list-style:none;padding:0;margin:0 0 28px 0;">${items}</ul>
+    <hr style="border:none;border-top:1px solid #e5dfd2;margin:24px 0;" />
+    <p style="font-size:13px;color:#6b6358;margin:0 0 8px 0;">
+      <a href="${SITE_URL}/" style="color:#5a3a1f;text-decoration:underline;margin-right:12px;">Homepage</a>
+      <a href="${SITE_URL}/archive" style="color:#5a3a1f;text-decoration:underline;margin-right:12px;">Archive</a>
+      <a href="${unsubscribeUrl}" style="color:#6b6358;text-decoration:underline;">Unsubscribe</a>
+    </p>
+  </div>
+</body></html>`;
+}
+
+function emailText(params: {
+  parshaLabel: string;
+  intro: string;
+  resources: WeeklyEmailResource[];
+  unsubscribeUrl: string;
+}): string {
+  const { parshaLabel, intro, resources, unsubscribeUrl } = params;
+  const lines = [parshaLabel, "", intro, ""];
+  for (const r of resources) {
+    lines.push(r.title);
+    if (r.subtitle) lines.push(r.subtitle);
+    lines.push(`View: ${SITE_URL}/view/${r.id}`);
+    lines.push(`Download: ${SITE_URL}/view/${r.id}/download`);
+    lines.push("");
+  }
+  lines.push("---");
+  lines.push(`Homepage: ${SITE_URL}/`);
+  lines.push(`Archive: ${SITE_URL}/archive`);
+  lines.push(`Unsubscribe: ${unsubscribeUrl}`);
+  return lines.join("\n");
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Resolve current parsha display label (mirrors homepage / use-current-parsha
+// without importing client-only code).
+async function resolveCurrentParshaLabel(): Promise<{
+  parshaKey: string | null;
+  parshaLabel: string | null;
+  jewishYear: number | null;
+}> {
+  const featured = await resolveCurrentFeatured();
+  if (!featured.comparableKey) {
+    return { parshaKey: null, parshaLabel: null, jewishYear: featured.jewishYear };
+  }
+  // We need the "human" parsha key (not normalized). Re-derive from override
+  // or Hebcal — same logic as resolveCurrentFeatured but keep raw label.
+  const admin = getSupabaseAdmin();
+  let rawKey: string | null = null;
+  try {
+    const { data: s } = await admin
+      .from("settings")
+      .select("parsha_override")
+      .eq("id", 1)
+      .maybeSingle();
+    if (s?.parsha_override) rawKey = s.parsha_override;
+  } catch { /* ignore */ }
+
+  if (!rawKey) {
+    try {
+      const res = await fetch("https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on");
+      const data = (await res.json()) as {
+        items?: Array<{ title: string; category: string; subcat?: string; date: string }>;
+      };
+      const items = data?.items ?? [];
+      const parsha = items.find((i) => i.category === "parashat");
+      const yomTov = parsha
+        ? items.find(
+            (i) =>
+              i.category === "holiday" &&
+              i.subcat === "major" &&
+              i.date.slice(0, 10) === parsha.date.slice(0, 10),
+          )
+        : undefined;
+      if (yomTov) {
+        rawKey = hebcalYomTovToKey(yomTov.title) ?? yomTov.title;
+      } else if (parsha) {
+        rawKey = hebcalToParshaKey(parsha.title);
+      }
+    } catch { /* ignore */ }
+  }
+
+  const KNOWN_YOM_TOV = [
+    "Rosh Hashanah", "Yom Kippur", "Sukkos", "Shemini Atzeres",
+    "Simchas Torah", "Pesach", "Shavuos",
+  ];
+  let label: string | null = null;
+  if (rawKey) {
+    if (rawKey.startsWith("Parshas")) label = rawKey;
+    else if (KNOWN_YOM_TOV.includes(rawKey)) label = rawKey;
+    else label = `Parshas ${rawKey}`;
+  }
+  return { parshaKey: rawKey, parshaLabel: label, jewishYear: featured.jewishYear };
+}
+
+async function getWeeklyEmailContentInternal(): Promise<WeeklyEmailContent> {
+  const admin = getSupabaseAdmin();
+  const { parshaKey, parshaLabel, jewishYear } = await resolveCurrentParshaLabel();
+
+  const emailConfigured =
+    Boolean(process.env.RESEND_API_KEY) && Boolean(process.env.EMAIL_FROM_ADDRESS);
+
+  // Active subscriber count
+  const { count: activeCount } = await admin
+    .from("subscribers")
+    .select("id", { count: "exact", head: true })
+    .eq("active", true);
+  const activeSubscriberCount = activeCount ?? 0;
+
+  if (!parshaKey || !parshaLabel || !jewishYear) {
+    return {
+      ready: false,
+      reason: "Could not determine the current week's parsha.",
+      parshaKey,
+      parshaLabel,
+      jewishYear,
+      subject: "",
+      intro: buildIntro(),
+      resources: [],
+      alreadySent: null,
+      activeSubscriberCount,
+      emailConfigured,
+    };
+  }
+
+  // Already-sent lookup
+  const { data: sentRow } = await admin
+    .from("weekly_email_sends")
+    .select("sent_at, sent_count, subject")
+    .eq("parsha_key", parshaKey)
+    .eq("jewish_year", jewishYear)
+    .maybeSingle();
+  const alreadySent = sentRow
+    ? {
+        sentAt: sentRow.sent_at as string,
+        sentCount: (sentRow.sent_count as number) ?? 0,
+        subject: (sentRow.subject as string) ?? "",
+      }
+    : null;
+
+  // Pull current week's published PDFs (same comparable-key match as homepage)
+  const target = toParshaComparableKey(parshaKey);
+  const { data: rows } = await admin
+    .from("pdfs")
+    .select("id, title, subtitle, parsha_key, jewish_year, created_at")
+    .eq("published", true)
+    .order("created_at", { ascending: false });
+  const matched = (rows ?? []).filter(
+    (r) => toParshaComparableKey(r.parsha_key) === target,
+  );
+  const orderMap = await getTitleSortOrderMap(admin);
+  const orderFor = (t: string) => {
+    const v = orderMap.get(t.trim().toLowerCase());
+    return typeof v === "number" ? v : 999999;
+  };
+  matched.sort((a, b) => orderFor(a.title) - orderFor(b.title));
+  const resources: WeeklyEmailResource[] = matched.map((r) => ({
+    id: r.id as string,
+    title: r.title as string,
+    subtitle: (r.subtitle as string | null) ?? null,
+  }));
+
+  const subject = buildSubject(parshaLabel);
+  const intro = buildIntro();
+
+  let reason: string | null = null;
+  if (!emailConfigured) reason = "Email is not configured yet (RESEND_API_KEY / EMAIL_FROM_ADDRESS missing).";
+  else if (resources.length === 0) reason = "No published PDFs for this week yet.";
+  else if (activeSubscriberCount === 0) reason = "No active subscribers.";
+  else if (alreadySent) reason = "This week's email has already been sent.";
+
+  return {
+    ready: reason === null,
+    reason,
+    parshaKey,
+    parshaLabel,
+    jewishYear,
+    subject,
+    intro,
+    resources,
+    alreadySent,
+    activeSubscriberCount,
+    emailConfigured,
+  };
+}
+
+// ---------- Admin: preview current week's email ----------
+export const adminGetWeeklyEmailPreview = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string }) =>
+    z.object({ accessToken: z.string().min(10) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    return await getWeeklyEmailContentInternal();
+  });
+
+// ---------- Admin: list weekly send history ----------
+export const adminListWeeklyEmailSends = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string }) =>
+    z.object({ accessToken: z.string().min(10) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { data: rows, error } = await admin
+      .from("weekly_email_sends")
+      .select("id, parsha_key, jewish_year, subject, sent_at, sent_count, provider, notes")
+      .order("sent_at", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+    return { sends: rows ?? [] };
+  });
+
+// ---------- Admin: send the weekly email ----------
+export const adminSendWeeklyEmail = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string }) =>
+    z.object({ accessToken: z.string().min(10) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { userId } = await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+
+    const content = await getWeeklyEmailContentInternal();
+    if (!content.ready || !content.parshaKey || !content.jewishYear) {
+      return { ok: false, error: content.reason ?? "Cannot send right now." };
+    }
+
+    const apiKey = process.env.RESEND_API_KEY;
+    const fromAddress = process.env.EMAIL_FROM_ADDRESS;
+    if (!apiKey || !fromAddress) {
+      return { ok: false, error: "Email is not configured (missing RESEND_API_KEY / EMAIL_FROM_ADDRESS)." };
+    }
+
+    // Pull active subscribers (email + token) for personalized unsubscribe links.
+    const { data: subs, error: subsErr } = await admin
+      .from("subscribers")
+      .select("email, unsubscribe_token")
+      .eq("active", true);
+    if (subsErr) {
+      return { ok: false, error: `Could not load subscribers: ${subsErr.message}` };
+    }
+    const recipients = (subs ?? []).filter(
+      (s) => typeof s.email === "string" && typeof s.unsubscribe_token === "string",
+    );
+    if (recipients.length === 0) {
+      return { ok: false, error: "No active subscribers." };
+    }
+
+    let sentCount = 0;
+    let firstMessageId: string | null = null;
+    const failures: string[] = [];
+
+    for (const r of recipients) {
+      const unsubscribeUrl = `${SITE_URL}/unsubscribe/${r.unsubscribe_token}`;
+      const html = emailHtml({
+        parshaLabel: content.parshaLabel!,
+        intro: content.intro,
+        resources: content.resources,
+        unsubscribeUrl,
+      });
+      const text = emailText({
+        parshaLabel: content.parshaLabel!,
+        intro: content.intro,
+        resources: content.resources,
+        unsubscribeUrl,
+      });
+      try {
+        const res = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            from: fromAddress,
+            to: r.email,
+            subject: content.subject,
+            html,
+            text,
+            headers: { "List-Unsubscribe": `<${unsubscribeUrl}>` },
+          }),
+        });
+        if (!res.ok) {
+          const errText = await res.text().catch(() => "");
+          failures.push(`${r.email}: ${res.status} ${errText.slice(0, 120)}`);
+        } else {
+          sentCount++;
+          if (!firstMessageId) {
+            try {
+              const j = (await res.json()) as { id?: string };
+              if (j?.id) firstMessageId = j.id;
+            } catch { /* ignore */ }
+          }
+        }
+      } catch (e) {
+        failures.push(`${r.email}: ${e instanceof Error ? e.message : "send failed"}`);
+      }
+    }
+
+    if (sentCount === 0) {
+      return {
+        ok: false,
+        error: `All sends failed. First error: ${failures[0] ?? "unknown"}`,
+      };
+    }
+
+    // Record the send. Unique constraint protects against duplicates if
+    // somehow invoked twice in parallel.
+    const { error: insErr } = await admin.from("weekly_email_sends").insert({
+      parsha_key: content.parshaKey,
+      jewish_year: content.jewishYear,
+      subject: content.subject,
+      sent_count: sentCount,
+      created_by: userId,
+      provider: "resend",
+      provider_message_id: firstMessageId,
+      notes: failures.length > 0 ? `Partial: ${failures.length} failed` : null,
+    });
+    if (insErr) {
+      // Send happened but logging failed — surface as warning, do not fail UI.
+      return {
+        ok: true,
+        sentCount,
+        failedCount: failures.length,
+        warning: `Sent ${sentCount} but could not record history: ${insErr.message}`,
+      };
+    }
+
+    return {
+      ok: true,
+      sentCount,
+      failedCount: failures.length,
+      warning: failures.length > 0
+        ? `${failures.length} send(s) failed but ${sentCount} succeeded.`
+        : null,
+    };
+  });
+
+// ---------- Public: validate unsubscribe token (no-op read) ----------
+export const lookupUnsubscribe = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string }) =>
+    z.object({ token: z.string().min(8).max(128) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const admin = getSupabaseAdmin();
+    const { data: row } = await admin
+      .from("subscribers")
+      .select("email, active")
+      .eq("unsubscribe_token", data.token)
+      .maybeSingle();
+    if (!row) return { found: false, alreadyInactive: false, email: null as string | null };
+    return {
+      found: true,
+      alreadyInactive: !row.active,
+      email: row.email as string,
+    };
+  });
+
+// ---------- Public: confirm unsubscribe ----------
+export const confirmUnsubscribe = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string }) =>
+    z.object({ token: z.string().min(8).max(128) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const admin = getSupabaseAdmin();
+    const { data: row } = await admin
+      .from("subscribers")
+      .select("id, active")
+      .eq("unsubscribe_token", data.token)
+      .maybeSingle();
+    if (!row) return { ok: false, alreadyInactive: false, error: "Link is invalid." };
+    if (!row.active) return { ok: true, alreadyInactive: true, error: null };
+    const { error } = await admin
+      .from("subscribers")
+      .update({ active: false, unsubscribed_at: new Date().toISOString() })
+      .eq("id", row.id);
+    if (error) return { ok: false, alreadyInactive: false, error: "Could not unsubscribe. Please try again." };
+    return { ok: true, alreadyInactive: false, error: null };
   });
