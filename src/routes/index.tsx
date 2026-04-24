@@ -142,6 +142,10 @@ function Index() {
       if (r.ok) {
         setSignupMsg("You’re all set — we’ll email you when new Divrei Torah are uploaded and ready to view or download.");
         setEmail("");
+        trackEvent("email_signup", {
+          location: currentPathname(),
+          form_name: "weekly_torah_notifications",
+        });
       } else {
         setSignupMsg(r.error ?? "Something went wrong.");
       }
@@ -149,6 +153,13 @@ function Index() {
       setSignupMsg("Something went wrong.");
     }
   };
+
+  const pdfParams = (r: Resource) => ({
+    location: currentPathname(),
+    pdf_id: r.id,
+    pdf_title: r.title,
+    parsha_key: currentParshaKey ?? undefined,
+  });
 
   return (
     <div className="min-h-screen bg-background">
