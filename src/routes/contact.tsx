@@ -4,7 +4,7 @@ import { Mail, Send } from "lucide-react";
 import { submitContactMessage } from "@/integrations/supabase/api.functions";
 import { trackEvent, currentPathname } from "@/lib/analytics";
 
-const CONTACT_EMAIL = "hello@torahforthetable.org";
+const CONTACT_EMAIL = "hello@torahforthetable.com";
 
 export const Route = createFileRoute("/contact")({
   head: () => {
