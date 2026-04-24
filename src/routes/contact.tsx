@@ -71,6 +71,10 @@ function ContactPage() {
         setName("");
         setEmail("");
         setMessage("");
+        trackEvent("contact_submit", {
+          location: currentPathname(),
+          form_name: "contact_form",
+        });
       } else {
         setStatus({ kind: "err", text: res.error ?? "Something went wrong." });
       }
