@@ -1372,3 +1372,91 @@ function AdminPage() {
     </div>
   );
 }
+
+function WelcomeEmailTester({
+  accessToken,
+  onResetDone,
+}: {
+  accessToken: string | null;
+  onResetDone: () => void | Promise<void>;
+}) {
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState<"send" | "reset" | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+
+  const send = async () => {
+    if (!accessToken || !email.trim()) return;
+    setBusy("send");
+    setStatus(null);
+    try {
+      const r = await adminSendTestWelcomeEmail({
+        data: { accessToken, email: email.trim() },
+      });
+      const res = (r as { result?: unknown }).result as
+        | { attempted: boolean; ok?: boolean; status?: number; reason?: string; missing?: string[]; errorSnippet?: string }
+        | undefined;
+      if (!res) setStatus("Sent (no details).");
+      else if (!res.attempted)
+        setStatus(`Skipped — email not configured. Missing: ${(res.missing ?? []).join(", ")}`);
+      else if (res.ok) setStatus(`Sent ✓ (Resend status ${res.status})`);
+      else setStatus(`Failed (status ${res.status}): ${res.errorSnippet ?? ""}`);
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const reset = async () => {
+    if (!accessToken || !email.trim()) return;
+    if (!confirm(`Delete subscriber row for ${email.trim()}? They can re-subscribe to re-test the welcome flow.`)) return;
+    setBusy("reset");
+    setStatus(null);
+    try {
+      const r = await adminResetSubscriber({
+        data: { accessToken, email: email.trim() },
+      });
+      setStatus(`Deleted ${(r as { deleted: number }).deleted} row(s). Now re-subscribe from the public site to test.`);
+      await onResetDone();
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2 items-center">
+        <input
+          type="email"
+          placeholder="email@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="flex-1 min-w-[200px] rounded border border-input bg-background px-2 py-1 text-sm"
+        />
+        <button
+          type="button"
+          onClick={send}
+          disabled={busy !== null || !email.trim()}
+          className="rounded bg-primary px-3 py-1 text-sm text-primary-foreground disabled:opacity-50"
+        >
+          {busy === "send" ? "Sending…" : "Send test welcome"}
+        </button>
+        <button
+          type="button"
+          onClick={reset}
+          disabled={busy !== null || !email.trim()}
+          className="rounded border border-destructive px-3 py-1 text-sm text-destructive disabled:opacity-50"
+        >
+          {busy === "reset" ? "Resetting…" : "Reset subscriber row"}
+        </button>
+      </div>
+      {status && <div className="text-xs text-muted-foreground">{status}</div>}
+      <div className="text-xs text-muted-foreground">
+        "Send test welcome" calls the same welcome email path used by new subscriptions (without creating a row).
+        "Reset subscriber row" deletes that email from the subscribers table so the next signup is treated as brand-new.
+      </div>
+    </div>
+  );
+}
