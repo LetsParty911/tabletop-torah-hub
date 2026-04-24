@@ -124,6 +124,7 @@ function Index() {
 
       if (!cancelled) {
         setCurrentLabel(displayLabel);
+        setCurrentParshaKey(parshaKey);
         setResources(fetchedResources);
         setLoading(false);
       }
