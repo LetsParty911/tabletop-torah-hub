@@ -99,6 +99,14 @@ export const listPublishedPdfs = createServerFn({ method: "GET" })
     const matched = (rows ?? []).filter(
       (r) => toParshaComparableKey(r.parsha_key) === target,
     );
+    // Sort by admin-managed display order from checklist_sources.sort_order
+    // (joined by title, case-insensitive). Nulls go last.
+    const orderMap = await getTitleSortOrderMap(admin);
+    const orderFor = (title: string): number => {
+      const v = orderMap.get(title.trim().toLowerCase());
+      return typeof v === "number" ? v : 999999;
+    };
+    matched.sort((a, b) => orderFor(a.title) - orderFor(b.title));
     const resources = await Promise.all(
       matched.map(async (r) => {
         const { data: signed } = await admin.storage
