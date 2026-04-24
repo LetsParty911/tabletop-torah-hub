@@ -10,6 +10,8 @@ export const Route = createFileRoute("/sitemap.xml")({
         const urls = [
           { loc: `${SITE_URL}/`, lastmod: today },
           { loc: `${SITE_URL}/archive`, lastmod: today },
+          { loc: `${SITE_URL}/about`, lastmod: today },
+          { loc: `${SITE_URL}/contact`, lastmod: today },
         ];
 
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
