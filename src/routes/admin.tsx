@@ -341,6 +341,68 @@ function AdminPage() {
       setContactMessages([]);
       setContactMessagesError("Could not load contact messages.");
     }
+    // Weekly email preview + history (don't block other admin loads on error)
+    setWeeklyLoading(true);
+    try {
+      const [wp, wh] = await Promise.all([
+        adminGetWeeklyEmailPreview({ data: { accessToken } }),
+        adminListWeeklyEmailSends({ data: { accessToken } }),
+      ]);
+      setWeekly(wp);
+      setWeeklyHistory(wh.sends as WeeklySend[]);
+    } catch {
+      // ignore — UI will show "Could not load"
+    } finally {
+      setWeeklyLoading(false);
+    }
+  };
+
+  const handleSendWeeklyEmail = async () => {
+    if (!accessToken || !weekly?.ready) return;
+    if (
+      !confirm(
+        `Send this week's email to ${weekly.activeSubscriberCount} active subscriber${weekly.activeSubscriberCount === 1 ? "" : "s"}?`,
+      )
+    ) {
+      return;
+    }
+    setWeeklySending(true);
+    setMsg(null);
+    try {
+      const r = await adminSendWeeklyEmail({ data: { accessToken } });
+      if (!r.ok) {
+        setMsg({ kind: "error", text: r.error ?? "Send failed." });
+      } else {
+        const sent = (r as { sentCount?: number }).sentCount ?? 0;
+        const failed = (r as { failedCount?: number }).failedCount ?? 0;
+        const warning = (r as { warning?: string | null }).warning ?? null;
+        setMsg({
+          kind: "success",
+          text: warning
+            ? `Sent ${sent}. ${warning}`
+            : `Weekly email sent to ${sent} subscriber${sent === 1 ? "" : "s"}.${failed ? ` ${failed} failed.` : ""}`,
+        });
+        try {
+          (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag?.(
+            "event",
+            "weekly_email_send",
+            {
+              parsha_key: weekly.parshaKey,
+              jewish_year: weekly.jewishYear,
+              sent_count: sent,
+            },
+          );
+        } catch { /* ignore */ }
+      }
+      await refresh();
+    } catch (err) {
+      setMsg({
+        kind: "error",
+        text: `Send failed: ${err instanceof Error ? err.message : "unknown error"}`,
+      });
+    } finally {
+      setWeeklySending(false);
+    }
   };
 
   useEffect(() => {
