@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Mail, Send } from "lucide-react";
 import { submitContactMessage } from "@/integrations/supabase/api.functions";
+import { trackEvent, currentPathname } from "@/lib/analytics";
 
 const CONTACT_EMAIL = "hello@torahforthetable.org";
 
