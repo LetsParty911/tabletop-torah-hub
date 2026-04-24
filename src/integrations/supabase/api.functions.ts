@@ -534,6 +534,134 @@ export const adminResetSubscriber = createServerFn({ method: "POST" })
     return { ok: true, deleted: count ?? 0 };
   });
 
+// ---------- Admin: preflight Resend / From address verification ----------
+// Validates env presence and calls Resend's GET /domains to check whether
+// the domain inside EMAIL_FROM_ADDRESS appears verified for sending.
+// Never returns secret values.
+export const adminResendPreflight = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string }) =>
+    z.object({ accessToken: z.string().min(10) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+
+    const apiKey = process.env.RESEND_API_KEY;
+    const fromRaw = process.env.EMAIL_FROM_ADDRESS ?? "";
+
+    const missing: string[] = [];
+    if (!apiKey) missing.push("RESEND_API_KEY");
+    if (!fromRaw) missing.push("EMAIL_FROM_ADDRESS");
+    if (missing.length > 0) {
+      return {
+        ok: false as const,
+        step: "env" as const,
+        missing,
+        message: `Missing env: ${missing.join(", ")}`,
+      };
+    }
+
+    // Parse "Name <addr@domain>" or plain "addr@domain"
+    const m = fromRaw.match(/<\s*([^<>@\s]+@[^<>@\s]+)\s*>/);
+    const fromAddr = (m?.[1] ?? fromRaw).trim();
+    const fromDomain = fromAddr.split("@")[1]?.toLowerCase() ?? "";
+    const fromDisplay = fromRaw.includes("<") ? fromRaw : fromAddr;
+
+    if (!fromDomain) {
+      return {
+        ok: false as const,
+        step: "parse" as const,
+        fromDisplay,
+        message: `Could not parse a domain from EMAIL_FROM_ADDRESS.`,
+      };
+    }
+
+    // Special-case Resend's shared sandbox sender.
+    if (fromDomain === "resend.dev") {
+      return {
+        ok: true as const,
+        step: "sandbox" as const,
+        fromDisplay,
+        fromDomain,
+        verified: true,
+        sandbox: true,
+        message:
+          "Using Resend sandbox sender (resend.dev). Deliverable ONLY to the Resend account owner's email. Switch to a verified domain for real subscribers.",
+      };
+    }
+
+    // Ask Resend for the list of domains on this account.
+    let domainsResp: Response;
+    try {
+      domainsResp = await fetch("https://api.resend.com/domains", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return {
+        ok: false as const,
+        step: "network" as const,
+        fromDisplay,
+        fromDomain,
+        message: `Network error calling Resend: ${msg.slice(0, 200)}`,
+      };
+    }
+
+    if (!domainsResp.ok) {
+      const errText = (await domainsResp.text().catch(() => "")).slice(0, 300);
+      return {
+        ok: false as const,
+        step: "resend_auth" as const,
+        status: domainsResp.status,
+        fromDisplay,
+        fromDomain,
+        message:
+          domainsResp.status === 401 || domainsResp.status === 403
+            ? "Resend rejected the API key (401/403). Double-check RESEND_API_KEY."
+            : `Resend /domains returned ${domainsResp.status}.`,
+        errorSnippet: errText,
+      };
+    }
+
+    type RDomain = { name?: string; status?: string; region?: string };
+    const body = (await domainsResp.json().catch(() => ({}))) as {
+      data?: RDomain[];
+    };
+    const domains = Array.isArray(body.data) ? body.data : [];
+
+    const match = domains.find(
+      (d) => (d.name ?? "").toLowerCase() === fromDomain,
+    );
+
+    if (!match) {
+      return {
+        ok: false as const,
+        step: "domain_missing" as const,
+        fromDisplay,
+        fromDomain,
+        availableDomains: domains.map((d) => ({
+          name: d.name ?? "",
+          status: d.status ?? "",
+        })),
+        message: `Domain "${fromDomain}" is NOT on this Resend account. Add & verify it in Resend, or change EMAIL_FROM_ADDRESS to a domain that is.`,
+      };
+    }
+
+    const status = (match.status ?? "").toLowerCase();
+    const verified = status === "verified";
+    return {
+      ok: verified,
+      step: "domain_status" as const,
+      fromDisplay,
+      fromDomain,
+      status: match.status ?? "unknown",
+      verified,
+      sandbox: false,
+      message: verified
+        ? `Domain "${fromDomain}" is VERIFIED in Resend. Production-ready.`
+        : `Domain "${fromDomain}" exists in Resend but status is "${match.status}". Finish DNS verification before sending to real subscribers.`,
+    };
+  });
+
 // ---------- Public: contact form submission ----------
 export const submitContactMessage = createServerFn({ method: "POST" })
   .inputValidator((input: { name?: string; email: string; message: string }) =>
