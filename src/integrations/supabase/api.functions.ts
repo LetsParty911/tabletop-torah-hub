@@ -4,6 +4,32 @@ import { getSupabaseAdmin, getSupabaseForUser } from "@/integrations/supabase/cl
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 
+// Build a map of normalized title -> sort_order from checklist_sources.
+// This is the same admin-managed order shown in the admin UI (10/20/30/40…).
+// Nulls / unknown titles should be sorted last by callers.
+async function getTitleSortOrderMap(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+): Promise<Map<string, number>> {
+  const map = new Map<string, number>();
+  try {
+    const { data, error } = await admin
+      .from("checklist_sources")
+      .select("title, sort_order");
+    if (error) {
+      console.error("getTitleSortOrderMap error", error);
+      return map;
+    }
+    for (const row of data ?? []) {
+      const t = (row.title as string | null)?.trim().toLowerCase();
+      const v = row.sort_order as number | null;
+      if (t && typeof v === "number") map.set(t, v);
+    }
+  } catch (e) {
+    console.error("getTitleSortOrderMap unexpected", e);
+  }
+  return map;
+}
+
 // Resolve the currently-featured parsha (key + Hebrew year) the same way the
 // homepage does: settings override first, otherwise Hebcal. Used to exclude
 // the live week from the archive.
@@ -99,6 +125,14 @@ export const listPublishedPdfs = createServerFn({ method: "GET" })
     const matched = (rows ?? []).filter(
       (r) => toParshaComparableKey(r.parsha_key) === target,
     );
+    // Sort by admin-managed display order from checklist_sources.sort_order
+    // (joined by title, case-insensitive). Nulls go last.
+    const orderMap = await getTitleSortOrderMap(admin);
+    const orderFor = (title: string): number => {
+      const v = orderMap.get(title.trim().toLowerCase());
+      return typeof v === "number" ? v : 999999;
+    };
+    matched.sort((a, b) => orderFor(a.title) - orderFor(b.title));
     const resources = await Promise.all(
       matched.map(async (r) => {
         const { data: signed } = await admin.storage
@@ -135,6 +169,11 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
       return { years: [] };
     }
     const current = await resolveCurrentFeatured();
+    const orderMap = await getTitleSortOrderMap(admin);
+    const orderFor = (title: string): number => {
+      const v = orderMap.get(title.trim().toLowerCase());
+      return typeof v === "number" ? v : 999999;
+    };
     const liveCandidates = (rows ?? []).filter(
       (r) =>
         current.comparableKey &&
@@ -183,10 +222,13 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
               (m, p) => (p.created_at > m ? p.created_at : m),
               pdfs[0].created_at,
             );
+            const sortedPdfs = [...pdfs].sort(
+              (a, b) => orderFor(a.title) - orderFor(b.title),
+            );
             return {
               parshaKey,
               latest,
-              pdfs: pdfs.map(({ id, title, subtitle }) => ({ id, title, subtitle })),
+              pdfs: sortedPdfs.map(({ id, title, subtitle }) => ({ id, title, subtitle })),
             };
           })
           .sort((a, b) => (a.latest < b.latest ? 1 : -1))
