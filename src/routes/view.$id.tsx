@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, Download, Printer } from "lucide-react";
 import { getPdfById } from "@/integrations/supabase/api.functions";
+import { trackEvent, currentPathname } from "@/lib/analytics";
 
 export const Route = createFileRoute("/view/$id")({
   loader: async ({ params }) => {
