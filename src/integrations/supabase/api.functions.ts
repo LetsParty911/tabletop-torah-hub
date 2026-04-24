@@ -134,6 +134,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
       console.error("listArchive error", error);
       return { years: [] };
     }
+    const current = await resolveCurrentFeatured();
     const yearMap = new Map<
       number,
       Map<string, Array<ArchivePdf & { created_at: string }>>
@@ -141,6 +142,14 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
     for (const r of rows ?? []) {
       const year = (r.jewish_year ?? 0) as number;
       if (!year) continue;
+      // Exclude the currently-featured live week (same parsha + same Hebrew year).
+      if (
+        current.comparableKey &&
+        current.jewishYear === year &&
+        toParshaComparableKey(r.parsha_key) === current.comparableKey
+      ) {
+        continue;
+      }
       if (!yearMap.has(year)) yearMap.set(year, new Map());
       const pmap = yearMap.get(year)!;
       if (!pmap.has(r.parsha_key)) pmap.set(r.parsha_key, []);
