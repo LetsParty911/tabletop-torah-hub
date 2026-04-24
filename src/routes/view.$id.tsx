@@ -17,7 +17,17 @@ export const Route = createFileRoute("/view/$id")({
     const url = `https://torahforthetable.com/view/${params.id}`;
     const image = "https://torahforthetable.com/og-image.png";
 
-    const jsonLd = {
+    // Best available publish/update dates, safely normalized to ISO strings.
+    const toIso = (v: string | null | undefined): string | null => {
+      if (!v) return null;
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? null : d.toISOString();
+    };
+    const datePublished =
+      toIso(loaderData?.pdf?.weekOf) ?? toIso(loaderData?.pdf?.createdAt);
+    const dateModified = toIso(loaderData?.pdf?.updatedAt);
+
+    const jsonLd: Record<string, unknown> = {
       "@context": "https://schema.org",
       "@type": "Article",
       headline: title,
@@ -33,6 +43,8 @@ export const Route = createFileRoute("/view/$id")({
         logo: "https://torahforthetable.com/favicon.png",
       },
     };
+    if (datePublished) jsonLd.datePublished = datePublished;
+    if (dateModified) jsonLd.dateModified = dateModified;
 
     return {
       meta: [
