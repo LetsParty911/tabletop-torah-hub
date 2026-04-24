@@ -2,6 +2,80 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseAdmin, getSupabaseForUser } from "@/integrations/supabase/client.server";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
+import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
+
+// Resolve the currently-featured parsha (key + Hebrew year) the same way the
+// homepage does: settings override first, otherwise Hebcal. Used to exclude
+// the live week from the archive.
+async function resolveCurrentFeatured(): Promise<{
+  comparableKey: string | null;
+  jewishYear: number | null;
+}> {
+  let parshaKey: string | null = null;
+  let jewishYear: number | null = null;
+
+  try {
+    const admin = getSupabaseAdmin();
+    const { data: s } = await admin
+      .from("settings")
+      .select("parsha_override")
+      .eq("id", 1)
+      .maybeSingle();
+    if (s?.parsha_override) parshaKey = s.parsha_override;
+  } catch {
+    // ignore
+  }
+
+  try {
+    const res = await fetch(
+      "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
+    );
+    const data = (await res.json()) as {
+      items?: Array<{ title: string; category: string; subcat?: string; date: string; hdate?: string }>;
+    };
+    const items = data?.items ?? [];
+    const parsha = items.find((i) => i.category === "parashat");
+    const yomTovOnShabbos = parsha
+      ? items.find(
+          (i) =>
+            i.category === "holiday" &&
+            i.subcat === "major" &&
+            i.date.slice(0, 10) === parsha.date.slice(0, 10),
+        )
+      : undefined;
+
+    if (!parshaKey) {
+      if (yomTovOnShabbos) {
+        parshaKey = hebcalYomTovToKey(yomTovOnShabbos.title) ?? yomTovOnShabbos.title;
+      } else if (parsha) {
+        parshaKey = hebcalToParshaKey(parsha.title);
+      }
+    }
+
+    // Derive Hebrew year from the parsha's hdate (e.g. "26th of Nisan, 5786")
+    const hdate = parsha?.hdate ?? items.find((i) => i.hdate)?.hdate;
+    if (hdate) {
+      const m = hdate.match(/(\d{4,5})\s*$/);
+      if (m) jewishYear = Number(m[1]);
+    }
+  } catch {
+    // ignore
+  }
+
+  // Fallback Hebrew year: Gregorian + 3760, bump after Sept 15
+  if (!jewishYear) {
+    const d = new Date();
+    const month = d.getUTCMonth() + 1;
+    const day = d.getUTCDate();
+    jewishYear =
+      d.getUTCFullYear() + 3760 + (month > 9 || (month === 9 && day >= 15) ? 1 : 0);
+  }
+
+  return {
+    comparableKey: parshaKey ? toParshaComparableKey(parshaKey) : null,
+    jewishYear,
+  };
+}
 
 // ---------- Public: list published PDFs for a parsha key ----------
 // Filters by canonical comparable key so spelling variants between the
@@ -60,6 +134,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
       console.error("listArchive error", error);
       return { years: [] };
     }
+    const current = await resolveCurrentFeatured();
     const yearMap = new Map<
       number,
       Map<string, Array<ArchivePdf & { created_at: string }>>
@@ -67,6 +142,14 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
     for (const r of rows ?? []) {
       const year = (r.jewish_year ?? 0) as number;
       if (!year) continue;
+      // Exclude the currently-featured live week (same parsha + same Hebrew year).
+      if (
+        current.comparableKey &&
+        current.jewishYear === year &&
+        toParshaComparableKey(r.parsha_key) === current.comparableKey
+      ) {
+        continue;
+      }
       if (!yearMap.has(year)) yearMap.set(year, new Map());
       const pmap = yearMap.get(year)!;
       if (!pmap.has(r.parsha_key)) pmap.set(r.parsha_key, []);

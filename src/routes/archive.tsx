@@ -87,8 +87,11 @@ function ArchivePage() {
         {years.length === 0 ? (
           <section className="parchment-frame">
             <div className="parchment-panel text-center">
-              <p className="text-muted-foreground">
-                New Divrei Torah are added each week. Bookmark this page or join the email list to stay updated.
+              <p className="font-serif text-xl sm:text-2xl text-primary">
+                No archived issues yet.
+              </p>
+              <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
+                Past weeks' Divrei Torah will appear here once prior editions exist.
               </p>
             </div>
           </section>
