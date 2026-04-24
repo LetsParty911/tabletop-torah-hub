@@ -169,6 +169,11 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
       return { years: [] };
     }
     const current = await resolveCurrentFeatured();
+    const orderMap = await getTitleSortOrderMap(admin);
+    const orderFor = (title: string): number => {
+      const v = orderMap.get(title.trim().toLowerCase());
+      return typeof v === "number" ? v : 999999;
+    };
     const liveCandidates = (rows ?? []).filter(
       (r) =>
         current.comparableKey &&
@@ -217,10 +222,13 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
               (m, p) => (p.created_at > m ? p.created_at : m),
               pdfs[0].created_at,
             );
+            const sortedPdfs = [...pdfs].sort(
+              (a, b) => orderFor(a.title) - orderFor(b.title),
+            );
             return {
               parshaKey,
               latest,
-              pdfs: pdfs.map(({ id, title, subtitle }) => ({ id, title, subtitle })),
+              pdfs: sortedPdfs.map(({ id, title, subtitle }) => ({ id, title, subtitle })),
             };
           })
           .sort((a, b) => (a.latest < b.latest ? 1 : -1))
