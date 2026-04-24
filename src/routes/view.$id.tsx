@@ -55,6 +55,13 @@ function ViewPdf() {
           <div className="flex items-center gap-2 shrink-0">
             <a
               href={`/view/${pdf.id}/download`}
+              onClick={() =>
+                trackEvent("pdf_download", {
+                  location: currentPathname(),
+                  pdf_id: pdf.id,
+                  pdf_title: pdf.title,
+                })
+              }
               className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               <Download className="h-4 w-4" /> Download
@@ -63,6 +70,13 @@ function ViewPdf() {
               href={`/view/${pdf.id}/pdf`}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() =>
+                trackEvent("pdf_print", {
+                  location: currentPathname(),
+                  pdf_id: pdf.id,
+                  pdf_title: pdf.title,
+                })
+              }
               className="hidden sm:inline-flex items-center gap-2 rounded-full border-2 border-accent/70 px-4 py-1.5 text-sm font-medium text-accent hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               <Printer className="h-4 w-4" /> Print PDF
