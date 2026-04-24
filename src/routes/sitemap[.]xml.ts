@@ -34,9 +34,8 @@ export const Route = createFileRoute("/sitemap.xml")({
         try {
           const admin = getSupabaseAdmin();
           // Try to include updated_at if the column exists; fall back to created_at only.
-          let rows:
-            | Array<{ id: string; created_at: string | null; updated_at?: string | null }>
-            | null = null;
+          type PdfRow = { id: string; created_at: string | null; updated_at?: string | null };
+          let rows: PdfRow[] = [];
           const withUpdated = await admin
             .from("pdfs")
             .select("id, created_at, updated_at")
@@ -49,12 +48,12 @@ export const Route = createFileRoute("/sitemap.xml")({
             if (fallback.error) {
               console.error("sitemap pdfs query error", fallback.error);
             } else {
-              rows = (fallback.data ?? []) as typeof rows;
+              rows = (fallback.data ?? []) as unknown as PdfRow[];
             }
           } else {
-            rows = (withUpdated.data ?? []) as typeof rows;
+            rows = (withUpdated.data ?? []) as unknown as PdfRow[];
           }
-          for (const row of rows ?? []) {
+          for (const row of rows) {
             urls.push({
               loc: `${SITE_URL}/view/${row.id}`,
               lastmod: toLastmod(row.updated_at ?? row.created_at, today),
