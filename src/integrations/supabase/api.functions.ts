@@ -498,23 +498,16 @@ async function sendWelcomeEmailSafe(
   const apiKey = process.env.RESEND_API_KEY;
   const rawFromAddress = process.env.EMAIL_FROM_ADDRESS;
   const fromAddress = rawFromAddress ? rawFromAddress.trim().toLowerCase() : rawFromAddress;
-  console.log("[welcome-email] function start", { to: email });
-  console.log("[welcome-email] RESEND_API_KEY exists", Boolean(apiKey));
-  console.log("[welcome-email] EMAIL_FROM_ADDRESS exists", Boolean(fromAddress));
-  console.log("[welcome-email] EMAIL_FROM_ADDRESS raw vs normalized", { raw: rawFromAddress, normalized: fromAddress });
-  console.log(`NORMALIZED_FROM=${fromAddress}`);
   const missing: string[] = [];
   if (!apiKey) missing.push("RESEND_API_KEY");
   if (!fromAddress) missing.push("EMAIL_FROM_ADDRESS");
   if (missing.length > 0) {
-    // Email not configured in this environment — skip, but surface WHY.
-    console.warn(`welcome email skipped: missing env ${missing.join(",")}`);
+    console.warn(`[welcome-email] skipped: missing env ${missing.join(",")}`);
     return { attempted: false, reason: "not_configured", missing };
   }
   const configuredApiKey = apiKey as string;
   const configuredFromAddress = fromAddress as string;
   const { fromDomain } = parseFromDomain(configuredFromAddress);
-  await logResendRuntimeDomains(configuredApiKey, fromDomain, "welcome-email-before-send");
 
   const SITE_URL = "https://torahforthetable.com";
   const unsubscribeUrl = unsubscribeToken
