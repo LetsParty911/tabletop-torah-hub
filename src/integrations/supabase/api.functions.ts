@@ -95,18 +95,7 @@ async function resolveCurrentFeatured(): Promise<{
 }> {
   let parshaKey: string | null = null;
   let jewishYear: number | null = null;
-
-  try {
-    const admin = getSupabaseAdmin();
-    const { data: s } = await admin
-      .from("settings")
-      .select("parsha_override")
-      .eq("id", 1)
-      .maybeSingle();
-    if (s?.parsha_override) parshaKey = s.parsha_override;
-  } catch {
-    // ignore
-  }
+  let shabbosDate: string | null = null;
 
   try {
     const res = await fetch(
@@ -117,6 +106,7 @@ async function resolveCurrentFeatured(): Promise<{
     };
     const items = data?.items ?? [];
     const parsha = items.find((i) => i.category === "parashat");
+    shabbosDate = parsha?.date?.slice(0, 10) ?? null;
     const yomTovOnShabbos = parsha
       ? items.find(
           (i) =>
@@ -126,12 +116,10 @@ async function resolveCurrentFeatured(): Promise<{
         )
       : undefined;
 
-    if (!parshaKey) {
-      if (yomTovOnShabbos) {
-        parshaKey = hebcalYomTovToKey(yomTovOnShabbos.title) ?? yomTovOnShabbos.title;
-      } else if (parsha) {
-        parshaKey = hebcalToParshaKey(parsha.title);
-      }
+    if (yomTovOnShabbos) {
+      parshaKey = hebcalYomTovToKey(yomTovOnShabbos.title) ?? yomTovOnShabbos.title;
+    } else if (parsha) {
+      parshaKey = hebcalToParshaKey(parsha.title);
     }
 
     // Derive Hebrew year from the parsha's hdate (e.g. "26th of Nisan, 5786")
@@ -140,6 +128,15 @@ async function resolveCurrentFeatured(): Promise<{
       const m = hdate.match(/(\d{4,5})\s*$/);
       if (m) jewishYear = Number(m[1]);
     }
+  } catch {
+    // ignore
+  }
+
+  // Override only wins if it was set during this Hebcal week.
+  try {
+    const admin = getSupabaseAdmin();
+    const activeOverride = await readActiveParshaOverride(admin, shabbosDate);
+    if (activeOverride) parshaKey = activeOverride;
   } catch {
     // ignore
   }
