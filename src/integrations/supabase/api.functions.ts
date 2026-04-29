@@ -426,6 +426,80 @@ type WelcomeEmailResult =
   | { attempted: true; ok: false; status: number; errorSnippet: string }
   | { attempted: true; ok: false; status: 0; errorSnippet: string };
 
+async function fingerprintSecret(value: string): Promise<{ length: number; sha256_12: string }> {
+  try {
+    const digest = await globalThis.crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(value),
+    );
+    const sha256_12 = Array.from(new Uint8Array(digest))
+      .slice(0, 6)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    return { length: value.length, sha256_12 };
+  } catch {
+    return { length: value.length, sha256_12: "unavailable" };
+  }
+}
+
+function parseFromDomain(fromRaw: string): { fromDisplay: string; fromDomain: string } {
+  const m = fromRaw.match(/<\s*([^<>@\s]+@[^<>@\s]+)\s*>/);
+  const fromAddr = (m?.[1] ?? fromRaw).trim();
+  return {
+    fromDisplay: fromRaw.includes("<") ? fromRaw : fromAddr,
+    fromDomain: fromAddr.split("@")[1]?.toLowerCase() ?? "",
+  };
+}
+
+async function logResendRuntimeDomains(apiKey: string, targetDomain: string, caller: string) {
+  const keyFingerprint = await fingerprintSecret(apiKey);
+  console.log("[resend-runtime-domains] start", { caller, keyFingerprint, targetDomain });
+  try {
+    const resp = await fetch("https://api.resend.com/domains", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    const raw = await resp.text().catch(() => "");
+    let parsed: unknown = raw || null;
+    if (raw) {
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        parsed = raw;
+      }
+    }
+    const data =
+      parsed && typeof parsed === "object" && "data" in parsed
+        ? (parsed as { data?: Array<{ name?: string; status?: string; region?: string }> }).data
+        : [];
+    const domains = Array.isArray(data) ? data : [];
+    const availableDomains = domains.map((d) => ({
+      name: d.name ?? "",
+      status: d.status ?? "",
+      region: d.region ?? "",
+    }));
+    const match = availableDomains.find((d) => d.name.toLowerCase() === targetDomain);
+    console.log("[resend-runtime-domains] result", {
+      caller,
+      status: resp.status,
+      ok: resp.ok,
+      keyFingerprint,
+      targetDomain,
+      targetAppears: Boolean(match),
+      targetStatus: match?.status ?? null,
+      availableDomains,
+      errorSnippet: resp.ok ? null : raw.slice(0, 300),
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[resend-runtime-domains] error", {
+      caller,
+      keyFingerprint,
+      targetDomain,
+      message: msg.slice(0, 300),
+    });
+  }
+}
+
 async function sendWelcomeEmailSafe(
   email: string,
   unsubscribeToken: string | null,
