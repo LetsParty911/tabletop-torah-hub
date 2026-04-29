@@ -344,10 +344,10 @@ export const subscribeEmail = createServerFn({ method: "POST" })
     // Subscription save already succeeded by the time we call this, so we keep
     // the row in the DB but surface the email failure to the frontend.
     const respondFromWelcome = (r: WelcomeEmailResult) => {
-      if (r.attempted === false || r.ok === false) {
-        return { ok: true as const, error: null, welcomeEmailSent: false as const };
+      if (r.attempted === true && r.ok === true) {
+        return { ok: true as const, error: null, welcomeEmailSent: true as const, alreadySubscribed: false as const };
       }
-      return { ok: true as const, error: null, welcomeEmailSent: true as const };
+      return { ok: true as const, error: null, welcomeEmailSent: false as const, alreadySubscribed: false as const };
     };
 
     if (existing) {
@@ -365,14 +365,14 @@ export const subscribeEmail = createServerFn({ method: "POST" })
         return respondFromWelcome(r);
       }
       console.log(`${tag} already active -> welcome skipped`);
-      return { ok: true, error: null, welcomeEmailSent: false as const };
+      return { ok: true, error: null, welcomeEmailSent: false as const, alreadySubscribed: true as const };
     }
 
     const { error } = await admin.from("subscribers").insert({ email });
     if (error) {
       if (error.message.toLowerCase().includes("duplicate")) {
         console.log(`${tag} duplicate race -> welcome skipped`);
-        return { ok: true, error: null, welcomeEmailSent: false as const };
+        return { ok: true, error: null, welcomeEmailSent: false as const, alreadySubscribed: true as const };
       }
       console.error(`${tag} insert error`, error);
       return { ok: false, error: "Could not subscribe. Please try again." };
