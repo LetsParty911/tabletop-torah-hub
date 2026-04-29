@@ -517,8 +517,10 @@ async function sendWelcomeEmailSafe(
     console.warn(`welcome email skipped: missing env ${missing.join(",")}`);
     return { attempted: false, reason: "not_configured", missing };
   }
-  const { fromDomain } = parseFromDomain(fromAddress);
-  await logResendRuntimeDomains(apiKey, fromDomain, "welcome-email-before-send");
+  const configuredApiKey = apiKey as string;
+  const configuredFromAddress = fromAddress as string;
+  const { fromDomain } = parseFromDomain(configuredFromAddress);
+  await logResendRuntimeDomains(configuredApiKey, fromDomain, "welcome-email-before-send");
 
   const SITE_URL = "https://torahforthetable.com";
   const unsubscribeUrl = unsubscribeToken
