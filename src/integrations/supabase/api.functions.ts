@@ -1589,7 +1589,8 @@ export const adminSendWeeklyEmail = createServerFn({ method: "POST" })
     }
 
     const apiKey = process.env.RESEND_API_KEY;
-    const fromAddress = process.env.EMAIL_FROM_ADDRESS;
+    const rawFromAddress = process.env.EMAIL_FROM_ADDRESS;
+    const fromAddress = rawFromAddress ? rawFromAddress.trim().toLowerCase() : rawFromAddress;
     if (!apiKey || !fromAddress) {
       return { ok: false, error: "Email is not configured (missing RESEND_API_KEY / EMAIL_FROM_ADDRESS)." };
     }
