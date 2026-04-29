@@ -60,10 +60,10 @@ function Index() {
       let displayLabel = "Parshas Hashavua";
       let parshaKey: string | null = null;
 
-      // 1. Check manual override first
+      // 1. Check manual override first — only honor it if still active for this week
       try {
         const o = await getParshaOverride();
-        if (o.override) {
+        if (o.override && o.isActive) {
           parshaKey = o.override;
           displayLabel = o.override.startsWith("Parshas") ? o.override : `Parshas ${o.override}`;
           // For yom tovim stored without "Parshas" prefix:
