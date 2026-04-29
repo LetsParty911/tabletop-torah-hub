@@ -145,6 +145,10 @@ function Index() {
           setSignupMsg(
             "You're all set — welcome email sent. You'll get updates when new Divrei Torah are uploaded.",
           );
+        } else if (r.alreadySubscribed) {
+          setSignupMsg(
+            "You're already subscribed — you'll get updates when new Divrei Torah are uploaded.",
+          );
         } else {
           setSignupMsg(
             "You're subscribed, but the welcome email could not be sent right now.",
