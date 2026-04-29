@@ -587,8 +587,7 @@ async function sendWelcomeEmailSafe(
     return { attempted: true, ok: true, status: res.status };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    const stack = e instanceof Error ? e.stack : undefined;
-    console.error("welcome email network error", { message: msg, stack });
+    console.error(`[welcome-email] network error: ${msg}`);
     return { attempted: true, ok: false, status: 0, errorSnippet: msg.slice(0, 200) };
   }
 }
