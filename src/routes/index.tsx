@@ -217,14 +217,22 @@ function Index() {
         body: r,
       });
       if (r.ok) {
-        setSignupMsg("You’re all set — we’ll email you when new Divrei Torah are uploaded and ready to view or download.");
+        if (r.welcomeEmailSent) {
+          setSignupMsg(
+            "You're all set — welcome email sent. You'll get updates when new Divrei Torah are uploaded.",
+          );
+        } else {
+          setSignupMsg(
+            "You're subscribed, but the welcome email could not be sent right now.",
+          );
+        }
         setEmail("");
         trackEvent("email_signup", {
           location: currentPathname(),
           form_name: "weekly_torah_notifications",
         });
       } else {
-        setSignupMsg(r.error ?? "Something went wrong.");
+        setSignupMsg(r.error ?? "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("[newsletter-signup] frontend error", error);
