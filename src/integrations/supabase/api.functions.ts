@@ -375,7 +375,7 @@ export const subscribeEmail = createServerFn({ method: "POST" })
         subscriberId: existing.id,
       });
       console.log(`${tag} already active -> welcome skipped (not a new subscription)`);
-      return { ok: true, error: null };
+      return { ok: true, error: null, welcomeEmailSent: false as const };
     }
 
     const { error } = await admin.from("subscribers").insert({ email });
