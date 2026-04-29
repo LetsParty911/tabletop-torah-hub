@@ -383,7 +383,7 @@ export const subscribeEmail = createServerFn({ method: "POST" })
       if (error.message.toLowerCase().includes("duplicate")) {
         console.log(`${tag} email save hit duplicate race`, { email });
         console.log(`${tag} insert race duplicate -> welcome skipped`);
-        return { ok: true, error: null };
+        return { ok: true, error: null, welcomeEmailSent: false as const };
       }
       console.error(`${tag} insert error`, error);
       return { ok: false, error: "Could not subscribe. Please try again." };
