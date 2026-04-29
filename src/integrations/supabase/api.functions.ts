@@ -30,9 +30,65 @@ async function getTitleSortOrderMap(
   return map;
 }
 
+// Fetch the current Shabbos date (YYYY-MM-DD, NYC timezone) from Hebcal.
+// Returns null if Hebcal is unreachable or no parsha item is present.
+async function fetchCurrentShabbosDate(): Promise<string | null> {
+  try {
+    const res = await fetch(
+      "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
+    );
+    const data = (await res.json()) as {
+      items?: Array<{ category: string; date: string }>;
+    };
+    const parsha = data?.items?.find((i) => i.category === "parashat");
+    return parsha?.date?.slice(0, 10) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// An override is "for the current week" if it was last updated on or after
+// the Sunday before the upcoming Shabbos (i.e. within the same Hebcal week).
+// If the override is older than that, it's considered stale and ignored so
+// Hebcal automatically takes over.
+function isOverrideCurrent(updatedAt: string | null, shabbosDate: string | null): boolean {
+  if (!updatedAt || !shabbosDate) return false;
+  // Window start: Sunday on/before shabbosDate. Shabbos is Saturday, so the
+  // Sunday that opens the week is shabbosDate - 6 days (UTC math is fine,
+  // we only compare calendar dates).
+  const shabbos = new Date(`${shabbosDate}T00:00:00Z`);
+  const windowStart = new Date(shabbos.getTime() - 6 * 24 * 60 * 60 * 1000);
+  // Window end: end of Shabbos day.
+  const windowEnd = new Date(shabbos.getTime() + 24 * 60 * 60 * 1000 - 1);
+  const updated = new Date(updatedAt);
+  return updated >= windowStart && updated <= windowEnd;
+}
+
+// Read the parsha override only if it is still active for the current week.
+// Stale overrides (set for a previous Shabbos) return null so Hebcal wins.
+async function readActiveParshaOverride(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  shabbosDate: string | null,
+): Promise<string | null> {
+  try {
+    const { data } = await admin
+      .from("settings")
+      .select("parsha_override, updated_at")
+      .eq("id", 1)
+      .maybeSingle();
+    const override = (data?.parsha_override as string | null) ?? null;
+    const updatedAt = (data?.updated_at as string | null) ?? null;
+    if (!override) return null;
+    if (!isOverrideCurrent(updatedAt, shabbosDate)) return null;
+    return override;
+  } catch {
+    return null;
+  }
+}
+
 // Resolve the currently-featured parsha (key + Hebrew year) the same way the
-// homepage does: settings override first, otherwise Hebcal. Used to exclude
-// the live week from the archive.
+// homepage does: settings override first (only if active for this week),
+// otherwise Hebcal. Used to exclude the live week from the archive.
 async function resolveCurrentFeatured(): Promise<{
   comparableKey: string | null;
   jewishYear: number | null;
