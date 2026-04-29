@@ -1354,38 +1354,35 @@ async function resolveCurrentParshaLabel(): Promise<{
   // or Hebcal — same logic as resolveCurrentFeatured but keep raw label.
   const admin = getSupabaseAdmin();
   let rawKey: string | null = null;
+  let shabbosDate: string | null = null;
+
+  // Hebcal first.
   try {
-    const { data: s } = await admin
-      .from("settings")
-      .select("parsha_override")
-      .eq("id", 1)
-      .maybeSingle();
-    if (s?.parsha_override) rawKey = s.parsha_override;
+    const res = await fetch("https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on");
+    const data = (await res.json()) as {
+      items?: Array<{ title: string; category: string; subcat?: string; date: string }>;
+    };
+    const items = data?.items ?? [];
+    const parsha = items.find((i) => i.category === "parashat");
+    shabbosDate = parsha?.date?.slice(0, 10) ?? null;
+    const yomTov = parsha
+      ? items.find(
+          (i) =>
+            i.category === "holiday" &&
+            i.subcat === "major" &&
+            i.date.slice(0, 10) === parsha.date.slice(0, 10),
+        )
+      : undefined;
+    if (yomTov) {
+      rawKey = hebcalYomTovToKey(yomTov.title) ?? yomTov.title;
+    } else if (parsha) {
+      rawKey = hebcalToParshaKey(parsha.title);
+    }
   } catch { /* ignore */ }
 
-  if (!rawKey) {
-    try {
-      const res = await fetch("https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on");
-      const data = (await res.json()) as {
-        items?: Array<{ title: string; category: string; subcat?: string; date: string }>;
-      };
-      const items = data?.items ?? [];
-      const parsha = items.find((i) => i.category === "parashat");
-      const yomTov = parsha
-        ? items.find(
-            (i) =>
-              i.category === "holiday" &&
-              i.subcat === "major" &&
-              i.date.slice(0, 10) === parsha.date.slice(0, 10),
-          )
-        : undefined;
-      if (yomTov) {
-        rawKey = hebcalYomTovToKey(yomTov.title) ?? yomTov.title;
-      } else if (parsha) {
-        rawKey = hebcalToParshaKey(parsha.title);
-      }
-    } catch { /* ignore */ }
-  }
+  // Override only wins if it was set during this Hebcal week.
+  const activeOverride = await readActiveParshaOverride(admin, shabbosDate);
+  if (activeOverride) rawKey = activeOverride;
 
   const KNOWN_YOM_TOV = [
     "Rosh Hashanah", "Yom Kippur", "Sukkos", "Shemini Atzeres",
