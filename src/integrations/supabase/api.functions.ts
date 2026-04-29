@@ -345,19 +345,10 @@ export const subscribeEmail = createServerFn({ method: "POST" })
     // Subscription save already succeeded by the time we call this, so we keep
     // the row in the DB but surface the email failure to the frontend.
     const respondFromWelcome = (r: WelcomeEmailResult) => {
-      if (r.attempted === false) {
-        return {
-          ok: false as const,
-          error: `Welcome email not sent: missing ${r.missing.join(", ")}. Subscription saved.`,
-        };
+      if (r.attempted === false || r.ok === false) {
+        return { ok: true as const, error: null, welcomeEmailSent: false as const };
       }
-      if (r.ok === false) {
-        return {
-          ok: false as const,
-          error: `Welcome email failed (status ${r.status}): ${r.errorSnippet || "no body"}. Subscription saved.`,
-        };
-      }
-      return { ok: true as const, error: null };
+      return { ok: true as const, error: null, welcomeEmailSent: true as const };
     };
 
     if (existing) {
@@ -384,7 +375,7 @@ export const subscribeEmail = createServerFn({ method: "POST" })
         subscriberId: existing.id,
       });
       console.log(`${tag} already active -> welcome skipped (not a new subscription)`);
-      return { ok: true, error: null };
+      return { ok: true, error: null, welcomeEmailSent: false as const };
     }
 
     const { error } = await admin.from("subscribers").insert({ email });
@@ -392,7 +383,7 @@ export const subscribeEmail = createServerFn({ method: "POST" })
       if (error.message.toLowerCase().includes("duplicate")) {
         console.log(`${tag} email save hit duplicate race`, { email });
         console.log(`${tag} insert race duplicate -> welcome skipped`);
-        return { ok: true, error: null };
+        return { ok: true, error: null, welcomeEmailSent: false as const };
       }
       console.error(`${tag} insert error`, error);
       return { ok: false, error: "Could not subscribe. Please try again." };
