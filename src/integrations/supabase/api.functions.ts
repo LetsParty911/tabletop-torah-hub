@@ -417,7 +417,7 @@ async function sendWelcomeEmailSafe(
   }
   const configuredApiKey = apiKey as string;
   const configuredFromAddress = fromAddress as string;
-  const { fromDomain } = parseFromDomain(configuredFromAddress);
+  
 
   const SITE_URL = "https://torahforthetable.com";
   const unsubscribeUrl = unsubscribeToken
