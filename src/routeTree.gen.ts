@@ -20,7 +20,6 @@ import { Route as ViewIdRouteImport } from './routes/view.$id'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
-import { Route as ApiPublicDebugResendRouteImport } from './routes/api/public/debug-resend'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -77,11 +76,6 @@ const ViewIdDownloadRoute = ViewIdDownloadRouteImport.update({
   path: '/download',
   getParentRoute: () => ViewIdRoute,
 } as any)
-const ApiPublicDebugResendRoute = ApiPublicDebugResendRouteImport.update({
-  id: '/api/public/debug-resend',
-  path: '/api/public/debug-resend',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -93,7 +87,6 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
-  '/api/public/debug-resend': typeof ApiPublicDebugResendRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/pdf': typeof ViewIdPdfRoute
 }
@@ -107,7 +100,6 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
-  '/api/public/debug-resend': typeof ApiPublicDebugResendRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/pdf': typeof ViewIdPdfRoute
 }
@@ -122,7 +114,6 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
-  '/api/public/debug-resend': typeof ApiPublicDebugResendRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/pdf': typeof ViewIdPdfRoute
 }
@@ -138,7 +129,6 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/unsubscribe/$token'
     | '/view/$id'
-    | '/api/public/debug-resend'
     | '/view/$id/download'
     | '/view/$id/pdf'
   fileRoutesByTo: FileRoutesByTo
@@ -152,7 +142,6 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/unsubscribe/$token'
     | '/view/$id'
-    | '/api/public/debug-resend'
     | '/view/$id/download'
     | '/view/$id/pdf'
   id:
@@ -166,7 +155,6 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/unsubscribe/$token'
     | '/view/$id'
-    | '/api/public/debug-resend'
     | '/view/$id/download'
     | '/view/$id/pdf'
   fileRoutesById: FileRoutesById
@@ -181,7 +169,6 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ViewIdRoute: typeof ViewIdRouteWithChildren
-  ApiPublicDebugResendRoute: typeof ApiPublicDebugResendRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -263,13 +250,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ViewIdDownloadRouteImport
       parentRoute: typeof ViewIdRoute
     }
-    '/api/public/debug-resend': {
-      id: '/api/public/debug-resend'
-      path: '/api/public/debug-resend'
-      fullPath: '/api/public/debug-resend'
-      preLoaderRoute: typeof ApiPublicDebugResendRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -296,7 +276,6 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ViewIdRoute: ViewIdRouteWithChildren,
-  ApiPublicDebugResendRoute: ApiPublicDebugResendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
