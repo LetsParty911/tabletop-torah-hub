@@ -33,7 +33,7 @@ export function useCurrentParsha(): CurrentParsha {
 
       try {
         const o = await getParshaOverride();
-        if (o.override) {
+        if (o.override && o.isActive) {
           parshaKey = o.override;
           displayLabel = o.override.startsWith("Parshas")
             ? o.override
