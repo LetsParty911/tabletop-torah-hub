@@ -359,18 +359,27 @@ export const getPdfById = createServerFn({ method: "GET" })
   });
 
 // ---------- Public: read parsha override ----------
+// Returns the raw saved override plus whether it is still active for the
+// current Hebcal week. The homepage should only use `override` when
+// `isActive` is true; the admin UI displays the raw value regardless so
+// the admin can see (and clear) a stale override.
 export const getParshaOverride = createServerFn({ method: "GET" }).handler(async () => {
   const admin = getSupabaseAdmin();
   const { data, error } = await admin
     .from("settings")
-    .select("parsha_override")
+    .select("parsha_override, updated_at")
     .eq("id", 1)
     .maybeSingle();
   if (error) {
     console.error("getParshaOverride error", error);
-    return { override: null as string | null };
+    return { override: null as string | null, isActive: false };
   }
-  return { override: (data?.parsha_override ?? null) as string | null };
+  const override = (data?.parsha_override ?? null) as string | null;
+  const updatedAt = (data?.updated_at ?? null) as string | null;
+  if (!override) return { override: null, isActive: false };
+  const shabbosDate = await fetchCurrentShabbosDate();
+  const isActive = isOverrideCurrent(updatedAt, shabbosDate);
+  return { override, isActive };
 });
 
 // ---------- Public: subscribe email (unsubscribe-aware reactivation) ----------
