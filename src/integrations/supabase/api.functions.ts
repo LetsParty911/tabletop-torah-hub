@@ -549,53 +549,41 @@ async function sendWelcomeEmailSafe(
   const headers: Record<string, string> = {};
   if (unsubscribeUrl) headers["List-Unsubscribe"] = `<${unsubscribeUrl}>`;
 
-  console.log("[welcome-email] exact from address", fromAddress);
-  console.log("[welcome-email] exact to address", email);
-
   try {
     const resendPayload = {
-      from: fromAddress,
+      from: configuredFromAddress,
       to: email,
       subject,
       html,
       text,
       ...(unsubscribeUrl ? { headers } : {}),
     };
-    console.log("[welcome-email] resend send call is being attempted", {
-      from: resendPayload.from,
-      to: resendPayload.to,
-      hasHeaders: Boolean(unsubscribeUrl),
-    });
-    console.log(`SENDING_WELCOME_EMAIL from=${resendPayload.from} to=${resendPayload.to}`);
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${configuredApiKey}`,
       },
       body: JSON.stringify(resendPayload),
     });
     const rawResponseBody = await res.text().catch(() => "");
-    let parsedResponseBody: unknown = rawResponseBody || null;
-    if (rawResponseBody) {
-      try {
-        parsedResponseBody = JSON.parse(rawResponseBody);
-      } catch {
-        parsedResponseBody = rawResponseBody;
-      }
-    }
-    console.log("[welcome-email] full resend response object", {
-      ok: res.ok,
-      status: res.status,
-      statusText: res.statusText,
-      body: parsedResponseBody,
-    });
-    console.log(`RESEND_RESULT status=${res.status} body=${rawResponseBody}`);
     if (!res.ok) {
       const errText = rawResponseBody.slice(0, 200);
-      console.error(`welcome email send failed status=${res.status}`, errText);
+      console.error(
+        `[welcome-email] failed from=${configuredFromAddress} status=${res.status} error=${errText}`,
+      );
       return { attempted: true, ok: false, status: res.status, errorSnippet: errText };
     }
+    let messageId: string | undefined;
+    try {
+      const parsed = JSON.parse(rawResponseBody) as { id?: string };
+      messageId = parsed?.id;
+    } catch {
+      // ignore parse errors
+    }
+    console.log(
+      `[welcome-email] sent from=${configuredFromAddress} status=${res.status} id=${messageId ?? "n/a"}`,
+    );
     return { attempted: true, ok: true, status: res.status };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
