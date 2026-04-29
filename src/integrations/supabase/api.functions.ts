@@ -511,6 +511,7 @@ async function sendWelcomeEmailSafe(
   console.log("[welcome-email] RESEND_API_KEY exists", Boolean(apiKey));
   console.log("[welcome-email] EMAIL_FROM_ADDRESS exists", Boolean(fromAddress));
   console.log("[welcome-email] EMAIL_FROM_ADDRESS raw vs normalized", { raw: rawFromAddress, normalized: fromAddress });
+  console.log(`NORMALIZED_FROM=${fromAddress}`);
   const missing: string[] = [];
   if (!apiKey) missing.push("RESEND_API_KEY");
   if (!fromAddress) missing.push("EMAIL_FROM_ADDRESS");
