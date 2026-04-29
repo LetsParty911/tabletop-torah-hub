@@ -345,19 +345,10 @@ export const subscribeEmail = createServerFn({ method: "POST" })
     // Subscription save already succeeded by the time we call this, so we keep
     // the row in the DB but surface the email failure to the frontend.
     const respondFromWelcome = (r: WelcomeEmailResult) => {
-      if (r.attempted === false) {
-        return {
-          ok: false as const,
-          error: `Welcome email not sent: missing ${r.missing.join(", ")}. Subscription saved.`,
-        };
+      if (r.attempted === false || r.ok === false) {
+        return { ok: true as const, error: null, welcomeEmailSent: false as const };
       }
-      if (r.ok === false) {
-        return {
-          ok: false as const,
-          error: `Welcome email failed (status ${r.status}): ${r.errorSnippet || "no body"}. Subscription saved.`,
-        };
-      }
-      return { ok: true as const, error: null };
+      return { ok: true as const, error: null, welcomeEmailSent: true as const };
     };
 
     if (existing) {
