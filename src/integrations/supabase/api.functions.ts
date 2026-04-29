@@ -505,10 +505,12 @@ async function sendWelcomeEmailSafe(
   unsubscribeToken: string | null,
 ): Promise<WelcomeEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
-  const fromAddress = process.env.EMAIL_FROM_ADDRESS;
+  const rawFromAddress = process.env.EMAIL_FROM_ADDRESS;
+  const fromAddress = rawFromAddress ? rawFromAddress.trim().toLowerCase() : rawFromAddress;
   console.log("[welcome-email] function start", { to: email });
   console.log("[welcome-email] RESEND_API_KEY exists", Boolean(apiKey));
   console.log("[welcome-email] EMAIL_FROM_ADDRESS exists", Boolean(fromAddress));
+  console.log("[welcome-email] EMAIL_FROM_ADDRESS raw vs normalized", { raw: rawFromAddress, normalized: fromAddress });
   const missing: string[] = [];
   if (!apiKey) missing.push("RESEND_API_KEY");
   if (!fromAddress) missing.push("EMAIL_FROM_ADDRESS");
@@ -1587,7 +1589,8 @@ export const adminSendWeeklyEmail = createServerFn({ method: "POST" })
     }
 
     const apiKey = process.env.RESEND_API_KEY;
-    const fromAddress = process.env.EMAIL_FROM_ADDRESS;
+    const rawFromAddress = process.env.EMAIL_FROM_ADDRESS;
+    const fromAddress = rawFromAddress ? rawFromAddress.trim().toLowerCase() : rawFromAddress;
     if (!apiKey || !fromAddress) {
       return { ok: false, error: "Email is not configured (missing RESEND_API_KEY / EMAIL_FROM_ADDRESS)." };
     }
