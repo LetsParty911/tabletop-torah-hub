@@ -1287,7 +1287,8 @@ function AdminPage() {
                       </thead>
                       <tbody>
                         {filteredPdfs.map((p) => (
-                          <tr key={p.id} className="border-b">
+                          <React.Fragment key={p.id}>
+                          <tr className="border-b">
                             <td className="py-2 pr-3">{p.parsha_key}</td>
                             <td className="py-2 pr-3 text-muted-foreground">
                               {p.jewish_year ?? "—"}
