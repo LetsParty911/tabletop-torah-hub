@@ -168,10 +168,10 @@ function Index() {
   };
 
   const pdfParams = (r: Resource) => ({
-    location: currentPathname(),
-    pdf_id: r.id,
-    pdf_title: r.title,
-    parsha_key: currentParshaKey ?? undefined,
+    file_id: r.id,
+    file_title: r.title,
+    source_name: r.title,
+    parsha: currentParshaKey ?? undefined,
   });
 
   return (
