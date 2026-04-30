@@ -903,6 +903,28 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { userId } = await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
+
+    // Universal duplicate guard: block if a PDF already exists for the same
+    // parsha + jewish year + source/checklist placement (matched by normalized title).
+    const incomingTitleKey = data.title.trim().replace(/\s+/g, " ").toLowerCase();
+    const incomingParshaKey = toParshaComparableKey(data.parshaKey);
+    const { data: existingRows, error: dupQueryErr } = await admin
+      .from("pdfs")
+      .select("id, parsha_key, title, jewish_year")
+      .eq("jewish_year", data.jewishYear);
+    if (dupQueryErr) throw new Error(`Duplicate check failed: ${dupQueryErr.message}`);
+    const duplicate = (existingRows ?? []).find(
+      (r) =>
+        toParshaComparableKey(r.parsha_key as string) === incomingParshaKey &&
+        ((r.title as string) ?? "").trim().replace(/\s+/g, " ").toLowerCase() ===
+          incomingTitleKey,
+    );
+    if (duplicate) {
+      throw new Error(
+        "A file is already uploaded for this placement. Delete the existing one first if you want to replace it.",
+      );
+    }
+
     const safeName = data.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
     const path = `${data.parshaKey.replace(/[^a-zA-Z0-9._-]/g, "_")}/${Date.now()}_${safeName}`;
     const buf = Buffer.from(data.fileBase64, "base64");
