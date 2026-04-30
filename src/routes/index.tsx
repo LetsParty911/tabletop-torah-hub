@@ -155,8 +155,7 @@ function Index() {
           );
         }
         setEmail("");
-        trackEvent("email_signup", {
-          location: currentPathname(),
+        trackEvent("newsletter_signup", {
           form_name: "weekly_torah_notifications",
         });
       } else {
