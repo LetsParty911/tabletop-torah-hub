@@ -498,6 +498,50 @@ function AdminPage() {
     await refresh();
   };
 
+  const getCurrentPdfFileName = (filePath: string | null | undefined): string => {
+    if (!filePath) return "(no file)";
+    const last = filePath.split("/").pop() || filePath;
+    // Strip leading "<timestamp>_" prefix added at upload time
+    return last.replace(/^\d{10,}_/, "");
+  };
+
+  const startEditPdf = (id: string) => {
+    setEditingPdfId(id);
+    setReplaceFile(null);
+  };
+
+  const cancelEditPdf = () => {
+    setEditingPdfId(null);
+    setReplaceFile(null);
+  };
+
+  const handleReplacePdf = async (id: string) => {
+    if (!accessToken || !replaceFile) return;
+    setReplacing(true);
+    setMsg(null);
+    try {
+      const buf = await replaceFile.arrayBuffer();
+      let bin = "";
+      const bytes = new Uint8Array(buf);
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
+      }
+      const fileBase64 = btoa(bin);
+      await adminReplacePdfFile({
+        data: { accessToken, id, fileName: replaceFile.name, fileBase64 },
+      });
+      setMsg({ kind: "success", text: "PDF replaced." });
+      cancelEditPdf();
+      await refresh();
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : "Unknown error";
+      setMsg({ kind: "error", text: `Replace failed: ${detail}` });
+    } finally {
+      setReplacing(false);
+    }
+  };
+
   const handleAddSource = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!accessToken || !newSourceTitle.trim()) return;
