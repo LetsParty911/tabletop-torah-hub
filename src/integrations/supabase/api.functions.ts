@@ -926,6 +926,54 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- Admin: replace PDF file on existing row ----------
+export const adminReplacePdfFile = createServerFn({ method: "POST" })
+  .inputValidator((input: {
+    accessToken: string;
+    id: string;
+    fileName: string;
+    fileBase64: string;
+  }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        id: z.string().uuid(),
+        fileName: z.string().min(1).max(255),
+        fileBase64: z.string().min(10),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { data: row, error: rowErr } = await admin
+      .from("pdfs")
+      .select("id, parsha_key, file_path")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (rowErr) throw new Error(rowErr.message);
+    if (!row) throw new Error("PDF row not found");
+    const safeName = data.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${row.parsha_key.replace(/[^a-zA-Z0-9._-]/g, "_")}/${Date.now()}_${safeName}`;
+    const buf = Buffer.from(data.fileBase64, "base64");
+    const { error: upErr } = await admin.storage
+      .from("pdfs")
+      .upload(path, buf, { contentType: "application/pdf", upsert: false });
+    if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
+    const { error: updErr } = await admin
+      .from("pdfs")
+      .update({ file_path: path })
+      .eq("id", data.id);
+    if (updErr) {
+      await admin.storage.from("pdfs").remove([path]);
+      throw new Error(`DB update failed: ${updErr.message}`);
+    }
+    if (row.file_path && row.file_path !== path) {
+      await admin.storage.from("pdfs").remove([row.file_path]);
+    }
+    return { ok: true, file_path: path };
+  });
+
 // ---------- Admin: toggle published ----------
 export const adminTogglePublished = createServerFn({ method: "POST" })
   .inputValidator((input: { accessToken: string; id: string; published: boolean }) =>

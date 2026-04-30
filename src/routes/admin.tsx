@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import {
   adminListPdfs,
   adminUploadPdf,
+  adminReplacePdfFile,
   adminTogglePublished,
   adminDeletePdf,
   adminSetParshaOverride,
@@ -174,6 +175,11 @@ function AdminPage() {
   const [subtitle, setSubtitle] = useState("");
   const [published, setPublished] = useState(true);
   const [file, setFile] = useState<File | null>(null);
+
+  // Inline "Replace PDF" editor state (per row)
+  const [editingPdfId, setEditingPdfId] = useState<string | null>(null);
+  const [replaceFile, setReplaceFile] = useState<File | null>(null);
+  const [replacing, setReplacing] = useState(false);
 
   const accessToken = session?.access_token ?? null;
   // Admin checklist + upload form intentionally use the LIVE Hebcal parsha
@@ -490,6 +496,50 @@ function AdminPage() {
     if (!confirm("Delete this PDF? This cannot be undone.")) return;
     await adminDeletePdf({ data: { accessToken, id } });
     await refresh();
+  };
+
+  const getCurrentPdfFileName = (filePath: string | null | undefined): string => {
+    if (!filePath) return "(no file)";
+    const last = filePath.split("/").pop() || filePath;
+    // Strip leading "<timestamp>_" prefix added at upload time
+    return last.replace(/^\d{10,}_/, "");
+  };
+
+  const startEditPdf = (id: string) => {
+    setEditingPdfId(id);
+    setReplaceFile(null);
+  };
+
+  const cancelEditPdf = () => {
+    setEditingPdfId(null);
+    setReplaceFile(null);
+  };
+
+  const handleReplacePdf = async (id: string) => {
+    if (!accessToken || !replaceFile) return;
+    setReplacing(true);
+    setMsg(null);
+    try {
+      const buf = await replaceFile.arrayBuffer();
+      let bin = "";
+      const bytes = new Uint8Array(buf);
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
+      }
+      const fileBase64 = btoa(bin);
+      await adminReplacePdfFile({
+        data: { accessToken, id, fileName: replaceFile.name, fileBase64 },
+      });
+      setMsg({ kind: "success", text: "PDF replaced." });
+      cancelEditPdf();
+      await refresh();
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : "Unknown error";
+      setMsg({ kind: "error", text: `Replace failed: ${detail}` });
+    } finally {
+      setReplacing(false);
+    }
   };
 
   const handleAddSource = async (e: React.FormEvent) => {
@@ -1237,7 +1287,8 @@ function AdminPage() {
                       </thead>
                       <tbody>
                         {filteredPdfs.map((p) => (
-                          <tr key={p.id} className="border-b">
+                          <React.Fragment key={p.id}>
+                          <tr className="border-b">
                             <td className="py-2 pr-3">{p.parsha_key}</td>
                             <td className="py-2 pr-3 text-muted-foreground">
                               {p.jewish_year ?? "—"}
@@ -1286,14 +1337,98 @@ function AdminPage() {
                               </div>
                             </td>
                             <td className="py-2 text-right">
-                              <button
-                                onClick={() => handleDelete(p.id)}
-                                className="text-destructive underline text-xs"
-                              >
-                                Delete
-                              </button>
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() =>
+                                    editingPdfId === p.id ? cancelEditPdf() : startEditPdf(p.id)
+                                  }
+                                  className="text-primary underline text-xs"
+                                >
+                                  {editingPdfId === p.id ? "Close" : "Edit"}
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(p.id)}
+                                  className="text-destructive underline text-xs"
+                                >
+                                  Delete
+                                </button>
+                              </div>
                             </td>
                           </tr>
+                          {editingPdfId === p.id && (
+                            <tr key={`${p.id}-edit`} className="border-b bg-muted/30">
+                              <td colSpan={7} className="py-4 px-3">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                  <div className="rounded-md border border-accent/60 bg-background p-3">
+                                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                      Current PDF
+                                    </div>
+                                    <div
+                                      className="mt-1 break-all text-sm font-medium text-foreground"
+                                      title={p.file_path}
+                                    >
+                                      {getCurrentPdfFileName(p.file_path)}
+                                    </div>
+                                    <div className="mt-2">
+                                      <a
+                                        href={`/view/${p.id}/pdf`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 rounded-md border border-primary/60 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                                      >
+                                        <Eye className="h-3 w-3" /> View Current PDF
+                                      </a>
+                                    </div>
+                                  </div>
+                                  <div className="rounded-md border border-accent/60 bg-background p-3">
+                                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                      Replace PDF
+                                    </div>
+                                    <input
+                                      type="file"
+                                      accept="application/pdf"
+                                      onChange={(e) =>
+                                        setReplaceFile(e.target.files?.[0] ?? null)
+                                      }
+                                      className="mt-2 block w-full text-sm"
+                                    />
+                                    {replaceFile && (
+                                      <div className="mt-2 text-sm">
+                                        <div
+                                          className="font-medium break-all"
+                                          title={replaceFile.name}
+                                        >
+                                          {replaceFile.name}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground mt-0.5">
+                                          This will replace the current PDF when saved
+                                        </div>
+                                      </div>
+                                    )}
+                                    <div className="mt-3 flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleReplacePdf(p.id)}
+                                        disabled={!replaceFile || replacing}
+                                        className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
+                                      >
+                                        {replacing ? "Saving…" : "Save replacement"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={cancelEditPdf}
+                                        disabled={replacing}
+                                        className="rounded-md border border-accent/60 px-3 py-1.5 text-xs font-medium text-foreground"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                          </React.Fragment>
                         ))}
                         {filteredPdfs.length === 0 && (
                           <tr>
