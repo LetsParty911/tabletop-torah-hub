@@ -1,4 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { ArrowLeft, Download, Printer } from "lucide-react";
 import { getPdfById } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
@@ -83,6 +84,15 @@ export const Route = createFileRoute("/view/$id")({
 function ViewPdf() {
   const { pdf } = Route.useLoaderData();
   const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=FitH`;
+
+  useEffect(() => {
+    trackEvent("pdf_view", {
+      file_id: pdf.id,
+      file_title: pdf.title,
+      source_name: pdf.title,
+    });
+  }, [pdf.id, pdf.title]);
+
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
