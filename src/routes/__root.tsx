@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import appCss from "../styles.css?url";
 
 const GA_MEASUREMENT_ID = "G-18CZTJF2FS";
+// TODO: Replace with the real GTM container ID once provided (format: GTM-XXXXXXX).
+const GTM_CONTAINER_ID = "";
 
 declare global {
   interface Window {
@@ -16,6 +18,28 @@ function GoogleAnalytics() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
 
+  // Load GTM (primary analytics container) on public routes only.
+  useEffect(() => {
+    if (isAdmin) return;
+    if (typeof window === "undefined") return;
+    if (!GTM_CONTAINER_ID) return;
+    if (document.getElementById("gtm-src")) return;
+
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      "gtm.start": new Date().getTime(),
+      event: "gtm.js",
+    });
+
+    const s = document.createElement("script");
+    s.id = "gtm-src";
+    s.async = true;
+    s.src = `https://www.googletagmanager.com/gtm.js?id=${GTM_CONTAINER_ID}`;
+    document.head.appendChild(s);
+  }, [isAdmin]);
+
+  // Legacy GA4 direct load — kept temporarily until GTM is confirmed live.
+  // Once GTM container fires GA4, remove this block to make GTM the sole path.
   useEffect(() => {
     if (isAdmin) return;
     if (typeof window === "undefined") return;
@@ -36,7 +60,20 @@ function GoogleAnalytics() {
     window.gtag("config", GA_MEASUREMENT_ID);
   }, [isAdmin]);
 
-  return null;
+  // GTM <noscript> iframe fallback — rendered into <body> on public routes only.
+  // (Kept out of <head> to comply with HTML5 noscript content rules.)
+  if (isAdmin || !GTM_CONTAINER_ID) return null;
+  return (
+    <noscript>
+      <iframe
+        src={`https://www.googletagmanager.com/ns.html?id=${GTM_CONTAINER_ID}`}
+        height="0"
+        width="0"
+        style={{ display: "none", visibility: "hidden" }}
+        title="gtm"
+      />
+    </noscript>
+  );
 }
 
 function NotFoundComponent() {
