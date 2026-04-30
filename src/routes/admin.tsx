@@ -176,6 +176,11 @@ function AdminPage() {
   const [published, setPublished] = useState(true);
   const [file, setFile] = useState<File | null>(null);
 
+  // Inline "Replace PDF" editor state (per row)
+  const [editingPdfId, setEditingPdfId] = useState<string | null>(null);
+  const [replaceFile, setReplaceFile] = useState<File | null>(null);
+  const [replacing, setReplacing] = useState(false);
+
   const accessToken = session?.access_token ?? null;
   // Admin checklist + upload form intentionally use the LIVE Hebcal parsha
   // (ignoring any display override in settings) so the checklist always
