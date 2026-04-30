@@ -8,7 +8,7 @@ import {
   getParshaOverride,
   subscribeEmail,
 } from "@/integrations/supabase/api.functions";
-import { trackEvent, currentPathname } from "@/lib/analytics";
+import { trackEvent } from "@/lib/analytics";
 
 export const Route = createFileRoute("/")({
   component: Index,
