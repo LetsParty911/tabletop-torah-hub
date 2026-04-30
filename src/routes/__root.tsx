@@ -36,27 +36,6 @@ function GoogleAnalytics() {
     document.head.appendChild(s);
   }, [isAdmin]);
 
-  // Legacy GA4 direct load — kept temporarily until GTM is confirmed live.
-  // Once GTM container fires GA4, remove this block to make GTM the sole path.
-  useEffect(() => {
-    if (isAdmin) return;
-    if (typeof window === "undefined") return;
-    if (document.getElementById("ga4-src")) return;
-
-    const s = document.createElement("script");
-    s.id = "ga4-src";
-    s.async = true;
-    s.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
-    document.head.appendChild(s);
-
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = function gtag() {
-      // eslint-disable-next-line prefer-rest-params
-      window.dataLayer.push(arguments);
-    };
-    window.gtag("js", new Date());
-    window.gtag("config", GA_MEASUREMENT_ID);
-  }, [isAdmin]);
 
   // GTM <noscript> iframe fallback — rendered into <body> on public routes only.
   // (Kept out of <head> to comply with HTML5 noscript content rules.)
