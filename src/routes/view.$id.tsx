@@ -1,7 +1,8 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { ArrowLeft, Download, Printer } from "lucide-react";
 import { getPdfById } from "@/integrations/supabase/api.functions";
-import { trackEvent, currentPathname } from "@/lib/analytics";
+import { trackEvent } from "@/lib/analytics";
 
 export const Route = createFileRoute("/view/$id")({
   loader: async ({ params }) => {
@@ -84,6 +85,15 @@ function ViewPdf() {
   const { pdf } = Route.useLoaderData();
   const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=FitH`;
 
+  useEffect(() => {
+    trackEvent("pdf_view", {
+      file_id: pdf.id,
+      file_title: pdf.title,
+      source_name: pdf.title,
+    });
+  }, [pdf.id, pdf.title]);
+
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="border-b border-accent/30 bg-background/80 backdrop-blur sticky top-0 z-10">
@@ -107,9 +117,9 @@ function ViewPdf() {
               href={`/view/${pdf.id}/download`}
               onClick={() =>
                 trackEvent("pdf_download", {
-                  location: currentPathname(),
-                  pdf_id: pdf.id,
-                  pdf_title: pdf.title,
+                  file_id: pdf.id,
+                  file_title: pdf.title,
+                  source_name: pdf.title,
                 })
               }
               className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -122,9 +132,9 @@ function ViewPdf() {
               rel="noopener noreferrer"
               onClick={() =>
                 trackEvent("pdf_print", {
-                  location: currentPathname(),
-                  pdf_id: pdf.id,
-                  pdf_title: pdf.title,
+                  file_id: pdf.id,
+                  file_title: pdf.title,
+                  source_name: pdf.title,
                 })
               }
               className="hidden sm:inline-flex items-center gap-2 rounded-full border-2 border-accent/70 px-4 py-1.5 text-sm font-medium text-accent hover:bg-accent hover:text-accent-foreground transition-colors"

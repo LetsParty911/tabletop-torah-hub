@@ -8,7 +8,7 @@ import {
   getParshaOverride,
   subscribeEmail,
 } from "@/integrations/supabase/api.functions";
-import { trackEvent, currentPathname } from "@/lib/analytics";
+import { trackEvent } from "@/lib/analytics";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -155,8 +155,7 @@ function Index() {
           );
         }
         setEmail("");
-        trackEvent("email_signup", {
-          location: currentPathname(),
+        trackEvent("newsletter_signup", {
           form_name: "weekly_torah_notifications",
         });
       } else {
@@ -169,10 +168,10 @@ function Index() {
   };
 
   const pdfParams = (r: Resource) => ({
-    location: currentPathname(),
-    pdf_id: r.id,
-    pdf_title: r.title,
-    parsha_key: currentParshaKey ?? undefined,
+    file_id: r.id,
+    file_title: r.title,
+    source_name: r.title,
+    parsha: currentParshaKey ?? undefined,
   });
 
   return (
