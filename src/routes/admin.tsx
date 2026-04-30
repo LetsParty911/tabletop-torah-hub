@@ -26,6 +26,7 @@ import {
   adminSendTestWelcomeEmail,
   adminResetSubscriber,
   adminResendPreflight,
+  getLiveCurrentParsha,
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
