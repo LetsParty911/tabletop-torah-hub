@@ -5,7 +5,7 @@ import appCss from "../styles.css?url";
 
 const GA_MEASUREMENT_ID = "G-18CZTJF2FS";
 // TODO: Replace with the real GTM container ID once provided (format: GTM-XXXXXXX).
-const GTM_CONTAINER_ID = "";
+const GTM_CONTAINER_ID = "GTM-WMVV6CJ7";
 
 declare global {
   interface Window {
