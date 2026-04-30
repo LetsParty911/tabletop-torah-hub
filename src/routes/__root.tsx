@@ -3,14 +3,12 @@ import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 
-const GA_MEASUREMENT_ID = "G-18CZTJF2FS";
-// TODO: Replace with the real GTM container ID once provided (format: GTM-XXXXXXX).
+// GTM is now the sole analytics path. GA4 is loaded via GTM (container GTM-WMVV6CJ7).
 const GTM_CONTAINER_ID = "GTM-WMVV6CJ7";
 
 declare global {
   interface Window {
     dataLayer: unknown[];
-    gtag: (...args: unknown[]) => void;
   }
 }
 
