@@ -1336,14 +1336,98 @@ function AdminPage() {
                               </div>
                             </td>
                             <td className="py-2 text-right">
-                              <button
-                                onClick={() => handleDelete(p.id)}
-                                className="text-destructive underline text-xs"
-                              >
-                                Delete
-                              </button>
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() =>
+                                    editingPdfId === p.id ? cancelEditPdf() : startEditPdf(p.id)
+                                  }
+                                  className="text-primary underline text-xs"
+                                >
+                                  {editingPdfId === p.id ? "Close" : "Edit"}
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(p.id)}
+                                  className="text-destructive underline text-xs"
+                                >
+                                  Delete
+                                </button>
+                              </div>
                             </td>
                           </tr>
+                          {editingPdfId === p.id && (
+                            <tr key={`${p.id}-edit`} className="border-b bg-muted/30">
+                              <td colSpan={7} className="py-4 px-3">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                  <div className="rounded-md border border-accent/60 bg-background p-3">
+                                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                      Current PDF
+                                    </div>
+                                    <div
+                                      className="mt-1 break-all text-sm font-medium text-foreground"
+                                      title={p.file_path}
+                                    >
+                                      {getCurrentPdfFileName(p.file_path)}
+                                    </div>
+                                    <div className="mt-2">
+                                      <a
+                                        href={`/view/${p.id}/pdf`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 rounded-md border border-primary/60 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                                      >
+                                        <Eye className="h-3 w-3" /> View Current PDF
+                                      </a>
+                                    </div>
+                                  </div>
+                                  <div className="rounded-md border border-accent/60 bg-background p-3">
+                                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                      Replace PDF
+                                    </div>
+                                    <input
+                                      type="file"
+                                      accept="application/pdf"
+                                      onChange={(e) =>
+                                        setReplaceFile(e.target.files?.[0] ?? null)
+                                      }
+                                      className="mt-2 block w-full text-sm"
+                                    />
+                                    {replaceFile && (
+                                      <div className="mt-2 text-sm">
+                                        <div
+                                          className="font-medium break-all"
+                                          title={replaceFile.name}
+                                        >
+                                          {replaceFile.name}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground mt-0.5">
+                                          This will replace the current PDF when saved
+                                        </div>
+                                      </div>
+                                    )}
+                                    <div className="mt-3 flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleReplacePdf(p.id)}
+                                        disabled={!replaceFile || replacing}
+                                        className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
+                                      >
+                                        {replacing ? "Saving…" : "Save replacement"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={cancelEditPdf}
+                                        disabled={replacing}
+                                        className="rounded-md border border-accent/60 px-3 py-1.5 text-xs font-medium text-foreground"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </>
                         ))}
                         {filteredPdfs.length === 0 && (
                           <tr>
