@@ -1428,7 +1428,7 @@ function AdminPage() {
                               </td>
                             </tr>
                           )}
-                        </>
+                          </React.Fragment>
                         ))}
                         {filteredPdfs.length === 0 && (
                           <tr>
