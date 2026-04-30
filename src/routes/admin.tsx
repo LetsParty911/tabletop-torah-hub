@@ -449,6 +449,26 @@ function AdminPage() {
     setBusy(true);
     setMsg(null);
     try {
+      const jewishYear = await getCurrentJewishYear();
+
+      // UI-side duplicate guard: same parsha + jewish year + source/placement (title).
+      const incomingTitleKey = normalizeTitleKey(title);
+      const incomingParshaKey = toParshaComparableKey(parshaKey);
+      const dup = pdfs.find(
+        (p) =>
+          p.jewish_year === jewishYear &&
+          toParshaComparableKey(p.parsha_key) === incomingParshaKey &&
+          normalizeTitleKey(p.title) === incomingTitleKey,
+      );
+      if (dup) {
+        setMsg({
+          kind: "error",
+          text: "A file is already uploaded for this placement. Delete the existing one first if you want to replace it.",
+        });
+        setBusy(false);
+        return;
+      }
+
       const buf = await file.arrayBuffer();
       let bin = "";
       const bytes = new Uint8Array(buf);
@@ -457,7 +477,6 @@ function AdminPage() {
         bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
       }
       const fileBase64 = btoa(bin);
-      const jewishYear = await getCurrentJewishYear();
       await adminUploadPdf({
         data: {
           accessToken,
