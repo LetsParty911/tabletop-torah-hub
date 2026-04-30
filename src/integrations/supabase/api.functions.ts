@@ -358,6 +358,60 @@ export const getPdfById = createServerFn({ method: "GET" })
     };
   });
 
+// ---------- Public: live current parsha (Hebcal truth, ignores override) ----------
+// The admin Weekly Upload Checklist uses this so it always tracks the actual
+// current week's parsha and rolls forward automatically when the week changes,
+// even if a stale display-override exists in settings.
+export const getLiveCurrentParsha = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const res = await fetch(
+      "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
+    );
+    const data = (await res.json()) as {
+      items?: Array<{ title: string; category: string; subcat?: string; date: string; hdate?: string }>;
+    };
+    const items = data?.items ?? [];
+    const parsha = items.find((i) => i.category === "parashat");
+    const yomTov = parsha
+      ? items.find(
+          (i) =>
+            i.category === "holiday" &&
+            i.subcat === "major" &&
+            i.date.slice(0, 10) === parsha.date.slice(0, 10),
+        )
+      : undefined;
+
+    let parshaKey: string | null = null;
+    let displayLabel = "Parshas Hashavua";
+    if (yomTov) {
+      parshaKey = hebcalYomTovToKey(yomTov.title) ?? yomTov.title;
+      displayLabel = parshaKey;
+    } else if (parsha) {
+      parshaKey = hebcalToParshaKey(parsha.title);
+      displayLabel = `Parshas ${parshaKey}`;
+    }
+
+    let jewishYear: number | null = null;
+    const hdate = parsha?.hdate ?? items.find((i) => i.hdate)?.hdate;
+    if (hdate) {
+      const m = hdate.match(/(\d{4,5})\s*$/);
+      if (m) jewishYear = Number(m[1]);
+    }
+    if (!jewishYear) {
+      const d = new Date();
+      const month = d.getUTCMonth() + 1;
+      const day = d.getUTCDate();
+      jewishYear =
+        d.getUTCFullYear() + 3760 + (month > 9 || (month === 9 && day >= 15) ? 1 : 0);
+    }
+
+    return { parshaKey, displayLabel, jewishYear, shabbosDate: parsha?.date?.slice(0, 10) ?? null };
+  } catch (e) {
+    console.error("getLiveCurrentParsha error", e);
+    return { parshaKey: null, displayLabel: "Parshas Hashavua", jewishYear: null, shabbosDate: null };
+  }
+});
+
 // ---------- Public: read parsha override ----------
 // Returns the raw saved override plus whether it is still active for the
 // current Hebcal week. The homepage should only use `override` when

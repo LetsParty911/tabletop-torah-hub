@@ -26,10 +26,11 @@ import {
   adminSendTestWelcomeEmail,
   adminResetSubscriber,
   adminResendPreflight,
+  getLiveCurrentParsha,
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
-import { useCurrentParsha } from "@/hooks/use-current-parsha";
+
 import { getCurrentJewishYear } from "@/lib/jewish-year";
 import { CheckCircle2, Circle, MinusCircle, Eye, Download, Printer } from "lucide-react";
 
@@ -175,18 +176,41 @@ function AdminPage() {
   const [file, setFile] = useState<File | null>(null);
 
   const accessToken = session?.access_token ?? null;
-  const {
-    parshaKey: currentParshaKey,
-    displayLabel: currentParshaLabel,
-    loading: currentParshaLoading,
-  } = useCurrentParsha();
+  // Admin checklist + upload form intentionally use the LIVE Hebcal parsha
+  // (ignoring any display override in settings) so the checklist always
+  // tracks the actual current week and rolls forward automatically when the
+  // week changes — regardless of stale overrides left in the database.
+  const [liveParshaKey, setLiveParshaKey] = useState<string | null>(null);
+  const [liveParshaLabel, setLiveParshaLabel] = useState<string>("Loading…");
+  const [liveParshaLoading, setLiveParshaLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await getLiveCurrentParsha();
+        if (cancelled) return;
+        setLiveParshaKey(r.parshaKey);
+        setLiveParshaLabel(r.displayLabel);
+      } catch {
+        // ignore — keep loading label
+      } finally {
+        if (!cancelled) setLiveParshaLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const currentParshaKey = liveParshaKey;
+  const currentParshaLabel = liveParshaLabel;
+  const currentParshaLoading = liveParshaLoading;
   const resolvedCurrentParsha =
     normalizeParshaSelection(currentParshaKey) ??
     normalizeParshaSelection(currentParshaLabel);
   const uploadParshaReady = Boolean(resolvedCurrentParsha || parshaUserTouched || !currentParshaLoading);
 
-  // Default the upload form parsha to the current parsha (override or Hebcal),
-  // unless the admin has manually changed it.
+  // Default the upload form parsha to the current (live) parsha unless the
+  // admin has manually changed it.
   useEffect(() => {
     if (parshaUserTouched) return;
     if (!resolvedCurrentParsha) return;
