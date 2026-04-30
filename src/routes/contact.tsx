@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Mail, Send } from "lucide-react";
 import { submitContactMessage } from "@/integrations/supabase/api.functions";
-import { trackEvent, currentPathname } from "@/lib/analytics";
+import { trackEvent } from "@/lib/analytics";
 
 const CONTACT_EMAIL = "hello@torahforthetable.com";
 
@@ -72,7 +72,6 @@ function ContactPage() {
         setEmail("");
         setMessage("");
         trackEvent("contact_submit", {
-          location: currentPathname(),
           form_name: "contact_form",
         });
       } else {

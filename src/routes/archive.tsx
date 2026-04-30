@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileText, Download, Eye, Printer } from "lucide-react";
 import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
-import { trackEvent, currentPathname } from "@/lib/analytics";
+import { trackEvent } from "@/lib/analytics";
 
 export const Route = createFileRoute("/archive")({
   component: ArchivePage,
@@ -153,10 +153,10 @@ function ArchivePage() {
                             <div className="mt-4 flex flex-col sm:flex-row gap-2.5 sm:gap-2">
                               {(() => {
                                 const params = {
-                                  location: currentPathname(),
-                                  pdf_id: r.id,
-                                  pdf_title: r.title,
-                                  parsha_key: p.parshaKey,
+                                  file_id: r.id,
+                                  file_title: r.title,
+                                  source_name: r.title,
+                                  parsha: p.parshaKey,
                                   jewish_year: y.year,
                                 };
                                 return (
@@ -164,7 +164,10 @@ function ArchivePage() {
                                     <Link
                                       to="/view/$id"
                                       params={{ id: r.id }}
-                                      onClick={() => trackEvent("pdf_view", params)}
+                                      onClick={() => {
+                                        trackEvent("pdf_view", params);
+                                        trackEvent("archive_pdf_open", params);
+                                      }}
                                       className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border-2 border-primary/70 px-4 py-2 text-sm font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
                                     >
                                       <Eye className="h-4 w-4" /> View
