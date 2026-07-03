@@ -1301,7 +1301,7 @@ function AdminPage() {
                           <th className="py-2 pr-3">Published</th>
                           <th className="py-2 pr-3">Created</th>
                           <th className="py-2 pr-3">Actions</th>
-                          <th className="py-2"></th>
+                          <th className="py-2 text-right">Edit</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1356,18 +1356,18 @@ function AdminPage() {
                               </div>
                             </td>
                             <td className="py-2 text-right">
-                              <div className="flex items-center justify-end gap-2">
+                              <div className="flex items-center justify-end gap-1.5">
                                 <button
                                   onClick={() =>
                                     editingPdfId === p.id ? cancelEditPdf() : startEditPdf(p.id)
                                   }
-                                  className="text-primary underline text-xs"
+                                  className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
                                 >
-                                  {editingPdfId === p.id ? "Close" : "Edit"}
+                                  {editingPdfId === p.id ? "Close" : "Edit / Replace"}
                                 </button>
                                 <button
                                   onClick={() => handleDelete(p.id)}
-                                  className="text-destructive underline text-xs"
+                                  className="inline-flex items-center gap-1 rounded-full border border-destructive/70 px-2.5 py-1 text-xs font-medium text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
                                 >
                                   Delete
                                 </button>
