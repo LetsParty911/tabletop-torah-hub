@@ -1301,7 +1301,7 @@ function AdminPage() {
                           <th className="py-2 pr-3">Published</th>
                           <th className="py-2 pr-3">Created</th>
                           <th className="py-2 pr-3">Actions</th>
-                          <th className="py-2"></th>
+                          <th className="py-2 text-right">Edit</th>
                         </tr>
                       </thead>
                       <tbody>
