@@ -231,9 +231,6 @@ function Index() {
               Weekly Torah Notifications
             </h2>
             <p className="mt-3 text-muted-foreground md:text-lg max-w-xl mx-auto">
-              Get an email when the latest Divrei Torah are uploaded.
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground max-w-xl mx-auto">
               One short email each week when new Divrei Torah are uploaded.
             </p>
             <form
