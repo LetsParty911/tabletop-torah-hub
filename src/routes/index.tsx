@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FileText, Download, Eye, Printer } from "lucide-react";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
@@ -10,8 +10,108 @@ import {
 } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 
+type Resource = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  url: string;
+};
+
+type LoaderData = {
+  label: string;
+  parshaKey: string | null;
+  resources: Resource[];
+};
+
+async function loadCurrentWeek(): Promise<LoaderData> {
+  let label = "Parshas Hashavua";
+  let parshaKey: string | null = null;
+
+  // 1. Manual override
+  try {
+    const o = await getParshaOverride();
+    if (o.override && o.isActive) {
+      parshaKey = o.override;
+      label = o.override.startsWith("Parshas") ? o.override : `Parshas ${o.override}`;
+      const knownYomTov = ["Rosh Hashanah", "Yom Kippur", "Sukkos", "Shemini Atzeres", "Simchas Torah", "Pesach", "Shavuos"];
+      if (knownYomTov.includes(o.override)) label = o.override;
+    }
+  } catch {
+    // ignore
+  }
+
+  // 2. Hebcal fallback
+  if (!parshaKey) {
+    try {
+      const res = await fetch(
+        "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
+      );
+      const data = await res.json();
+      const items: Array<{
+        title: string;
+        category: string;
+        subcat?: string;
+        date: string;
+      }> = data?.items ?? [];
+
+      const parsha = items.find((i) => i.category === "parashat");
+      const yomTovOnShabbos = parsha
+        ? items.find(
+            (i) =>
+              i.category === "holiday" &&
+              i.subcat === "major" &&
+              i.date.slice(0, 10) === parsha.date.slice(0, 10),
+          )
+        : undefined;
+
+      if (yomTovOnShabbos) {
+        const ytKey = hebcalYomTovToKey(yomTovOnShabbos.title);
+        parshaKey = ytKey ?? yomTovOnShabbos.title;
+        label = parshaKey;
+      } else if (parsha) {
+        parshaKey = hebcalToParshaKey(parsha.title);
+        label = `Parshas ${parshaKey}`;
+      }
+    } catch (e) {
+      console.error("Hebcal load error", e);
+    }
+  }
+
+  // 3. PDFs
+  let resources: Resource[] = [];
+  if (parshaKey) {
+    try {
+      const r = await listPublishedPdfs({ data: { parshaKey } });
+      resources = r.resources;
+    } catch (e) {
+      console.error("Failed to load PDFs", e);
+    }
+  }
+
+  return { label, parshaKey, resources };
+}
+
 export const Route = createFileRoute("/")({
   component: Index,
+  loader: () => loadCurrentWeek(),
+  errorComponent: ({ error }) => {
+    console.error("Home load error", error);
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="parchment-frame max-w-md w-full">
+          <div className="parchment-panel text-center">
+            <h1 className="font-serif text-2xl text-primary">Something went wrong</h1>
+            <p className="mt-3 text-sm text-muted-foreground">Please refresh the page.</p>
+          </div>
+        </div>
+      </div>
+    );
+  },
+  notFoundComponent: () => (
+    <div className="min-h-screen flex items-center justify-center">
+      <Link to="/archive" className="text-primary underline">Browse archive</Link>
+    </div>
+  ),
   head: () => {
     const title = "Torah for the Table | Weekly Divrei Torah for Shabbos & Yom Tov";
     const description =
@@ -39,7 +139,7 @@ export const Route = createFileRoute("/")({
   },
 });
 
-type Resource = {
+type _KeepResource = Resource;
   id: string;
   title: string;
   subtitle: string | null;
