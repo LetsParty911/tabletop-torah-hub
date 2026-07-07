@@ -206,7 +206,7 @@ function Index() {
               </span>
               <span aria-hidden className="h-px w-8 sm:w-16 bg-accent/60" />
             </div>
-            {loading ? (
+            {false ? (
               <div className="mt-2 sm:mt-3 flex justify-center">
                 <div className="h-8 sm:h-10 md:h-12 w-56 sm:w-72 md:w-96 rounded-md bg-primary/10 animate-pulse" aria-label="Loading this week's parsha" />
               </div>
@@ -215,7 +215,7 @@ function Index() {
                 {currentLabel}
               </p>
             )}
-            {!loading && resources.length > 0 && (
+            {true && resources.length > 0 && (
               <div className="mt-5 sm:mt-6">
                 <a
                   href="#this-weeks-collection"
@@ -278,12 +278,12 @@ function Index() {
             <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold text-primary text-center">
               This Week's Collection
             </h2>
-            {!loading && resources.length > 0 && (
+            {true && resources.length > 0 && (
               <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent">
                 {resources.length} {resources.length === 1 ? "Devar" : "Divrei"} Torah this week
               </p>
             )}
-            {!loading && resources.length === 0 ? (
+            {true && resources.length === 0 ? (
               <p className="mt-8 text-center text-muted-foreground">
                 No resources published yet for {currentLabel}. Check back soon.
               </p>
@@ -339,7 +339,7 @@ function Index() {
                 ))}
               </div>
             )}
-            {!loading && resources.length > 0 && (
+            {true && resources.length > 0 && (
               <div className="mt-6 sm:mt-8 text-center">
                 <Link
                   to="/archive"
