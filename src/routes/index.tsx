@@ -284,9 +284,10 @@ function Index() {
               </p>
             )}
             {true && resources.length === 0 ? (
-              <p className="mt-8 text-center text-muted-foreground">
-                No resources published yet for {currentLabel}. Check back soon.
+              <p className="mt-8 text-center text-muted-foreground max-w-md mx-auto">
+                New Divrei Torah for {currentLabel} go up Thursday. Check back soon!
               </p>
+
             ) : (
               <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2">
                 {resources.map((r) => (
