@@ -139,100 +139,12 @@ export const Route = createFileRoute("/")({
   },
 });
 
-type _KeepResource = Resource;
-  id: string;
-  title: string;
-  subtitle: string | null;
-  url: string;
-};
-
 function Index() {
+  const { label: currentLabel, parshaKey: currentParshaKey, resources } =
+    Route.useLoaderData() as LoaderData;
   const [email, setEmail] = useState("");
   const [signupMsg, setSignupMsg] = useState<string | null>(null);
-  const [currentLabel, setCurrentLabel] = useState<string>("Loading…");
-  const [currentParshaKey, setCurrentParshaKey] = useState<string | null>(null);
-  const [resources, setResources] = useState<Resource[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      let displayLabel = "Parshas Hashavua";
-      let parshaKey: string | null = null;
-
-      // 1. Check manual override first — only honor it if still active for this week
-      try {
-        const o = await getParshaOverride();
-        if (o.override && o.isActive) {
-          parshaKey = o.override;
-          displayLabel = o.override.startsWith("Parshas") ? o.override : `Parshas ${o.override}`;
-          // For yom tovim stored without "Parshas" prefix:
-          const knownYomTov = ["Rosh Hashanah", "Yom Kippur", "Sukkos", "Shemini Atzeres", "Simchas Torah", "Pesach", "Shavuos"];
-          if (knownYomTov.includes(o.override)) displayLabel = o.override;
-        }
-      } catch {
-        // ignore
-      }
-
-      // 2. Otherwise, Hebcal
-      if (!parshaKey) {
-        try {
-          const res = await fetch(
-            "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
-          );
-          const data = await res.json();
-          const items: Array<{
-            title: string;
-            category: string;
-            subcat?: string;
-            date: string;
-          }> = data?.items ?? [];
-
-          const parsha = items.find((i) => i.category === "parashat");
-          const yomTovOnShabbos = parsha
-            ? items.find(
-                (i) =>
-                  i.category === "holiday" &&
-                  i.subcat === "major" &&
-                  i.date.slice(0, 10) === parsha.date.slice(0, 10),
-              )
-            : undefined;
-
-          if (yomTovOnShabbos) {
-            const ytKey = hebcalYomTovToKey(yomTovOnShabbos.title);
-            parshaKey = ytKey ?? yomTovOnShabbos.title;
-            displayLabel = parshaKey;
-          } else if (parsha) {
-            parshaKey = hebcalToParshaKey(parsha.title);
-            displayLabel = `Parshas ${parshaKey}`;
-          }
-        } catch {
-          // fall through
-        }
-      }
-
-      // 3. Fetch PDFs for parsha key
-      let fetchedResources: Resource[] = [];
-      if (parshaKey) {
-        try {
-          const r = await listPublishedPdfs({ data: { parshaKey } });
-          fetchedResources = r.resources;
-        } catch (e) {
-          console.error("Failed to load PDFs", e);
-        }
-      }
-
-      if (!cancelled) {
-        setCurrentLabel(displayLabel);
-        setCurrentParshaKey(parshaKey);
-        setResources(fetchedResources);
-        setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
