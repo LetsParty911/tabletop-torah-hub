@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FileText, Download, Eye, Printer } from "lucide-react";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
@@ -10,8 +10,108 @@ import {
 } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 
+type Resource = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  url: string;
+};
+
+type LoaderData = {
+  label: string;
+  parshaKey: string | null;
+  resources: Resource[];
+};
+
+async function loadCurrentWeek(): Promise<LoaderData> {
+  let label = "Parshas Hashavua";
+  let parshaKey: string | null = null;
+
+  // 1. Manual override
+  try {
+    const o = await getParshaOverride();
+    if (o.override && o.isActive) {
+      parshaKey = o.override;
+      label = o.override.startsWith("Parshas") ? o.override : `Parshas ${o.override}`;
+      const knownYomTov = ["Rosh Hashanah", "Yom Kippur", "Sukkos", "Shemini Atzeres", "Simchas Torah", "Pesach", "Shavuos"];
+      if (knownYomTov.includes(o.override)) label = o.override;
+    }
+  } catch {
+    // ignore
+  }
+
+  // 2. Hebcal fallback
+  if (!parshaKey) {
+    try {
+      const res = await fetch(
+        "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
+      );
+      const data = await res.json();
+      const items: Array<{
+        title: string;
+        category: string;
+        subcat?: string;
+        date: string;
+      }> = data?.items ?? [];
+
+      const parsha = items.find((i) => i.category === "parashat");
+      const yomTovOnShabbos = parsha
+        ? items.find(
+            (i) =>
+              i.category === "holiday" &&
+              i.subcat === "major" &&
+              i.date.slice(0, 10) === parsha.date.slice(0, 10),
+          )
+        : undefined;
+
+      if (yomTovOnShabbos) {
+        const ytKey = hebcalYomTovToKey(yomTovOnShabbos.title);
+        parshaKey = ytKey ?? yomTovOnShabbos.title;
+        label = parshaKey;
+      } else if (parsha) {
+        parshaKey = hebcalToParshaKey(parsha.title);
+        label = `Parshas ${parshaKey}`;
+      }
+    } catch (e) {
+      console.error("Hebcal load error", e);
+    }
+  }
+
+  // 3. PDFs
+  let resources: Resource[] = [];
+  if (parshaKey) {
+    try {
+      const r = await listPublishedPdfs({ data: { parshaKey } });
+      resources = r.resources;
+    } catch (e) {
+      console.error("Failed to load PDFs", e);
+    }
+  }
+
+  return { label, parshaKey, resources };
+}
+
 export const Route = createFileRoute("/")({
   component: Index,
+  loader: () => loadCurrentWeek(),
+  errorComponent: ({ error }) => {
+    console.error("Home load error", error);
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="parchment-frame max-w-md w-full">
+          <div className="parchment-panel text-center">
+            <h1 className="font-serif text-2xl text-primary">Something went wrong</h1>
+            <p className="mt-3 text-sm text-muted-foreground">Please refresh the page.</p>
+          </div>
+        </div>
+      </div>
+    );
+  },
+  notFoundComponent: () => (
+    <div className="min-h-screen flex items-center justify-center">
+      <Link to="/archive" className="text-primary underline">Browse archive</Link>
+    </div>
+  ),
   head: () => {
     const title = "Torah for the Table | Weekly Divrei Torah for Shabbos & Yom Tov";
     const description =
@@ -39,100 +139,12 @@ export const Route = createFileRoute("/")({
   },
 });
 
-type Resource = {
-  id: string;
-  title: string;
-  subtitle: string | null;
-  url: string;
-};
-
 function Index() {
+  const { label: currentLabel, parshaKey: currentParshaKey, resources } =
+    Route.useLoaderData() as LoaderData;
   const [email, setEmail] = useState("");
   const [signupMsg, setSignupMsg] = useState<string | null>(null);
-  const [currentLabel, setCurrentLabel] = useState<string>("Loading…");
-  const [currentParshaKey, setCurrentParshaKey] = useState<string | null>(null);
-  const [resources, setResources] = useState<Resource[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      let displayLabel = "Parshas Hashavua";
-      let parshaKey: string | null = null;
-
-      // 1. Check manual override first — only honor it if still active for this week
-      try {
-        const o = await getParshaOverride();
-        if (o.override && o.isActive) {
-          parshaKey = o.override;
-          displayLabel = o.override.startsWith("Parshas") ? o.override : `Parshas ${o.override}`;
-          // For yom tovim stored without "Parshas" prefix:
-          const knownYomTov = ["Rosh Hashanah", "Yom Kippur", "Sukkos", "Shemini Atzeres", "Simchas Torah", "Pesach", "Shavuos"];
-          if (knownYomTov.includes(o.override)) displayLabel = o.override;
-        }
-      } catch {
-        // ignore
-      }
-
-      // 2. Otherwise, Hebcal
-      if (!parshaKey) {
-        try {
-          const res = await fetch(
-            "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
-          );
-          const data = await res.json();
-          const items: Array<{
-            title: string;
-            category: string;
-            subcat?: string;
-            date: string;
-          }> = data?.items ?? [];
-
-          const parsha = items.find((i) => i.category === "parashat");
-          const yomTovOnShabbos = parsha
-            ? items.find(
-                (i) =>
-                  i.category === "holiday" &&
-                  i.subcat === "major" &&
-                  i.date.slice(0, 10) === parsha.date.slice(0, 10),
-              )
-            : undefined;
-
-          if (yomTovOnShabbos) {
-            const ytKey = hebcalYomTovToKey(yomTovOnShabbos.title);
-            parshaKey = ytKey ?? yomTovOnShabbos.title;
-            displayLabel = parshaKey;
-          } else if (parsha) {
-            parshaKey = hebcalToParshaKey(parsha.title);
-            displayLabel = `Parshas ${parshaKey}`;
-          }
-        } catch {
-          // fall through
-        }
-      }
-
-      // 3. Fetch PDFs for parsha key
-      let fetchedResources: Resource[] = [];
-      if (parshaKey) {
-        try {
-          const r = await listPublishedPdfs({ data: { parshaKey } });
-          fetchedResources = r.resources;
-        } catch (e) {
-          console.error("Failed to load PDFs", e);
-        }
-      }
-
-      if (!cancelled) {
-        setCurrentLabel(displayLabel);
-        setCurrentParshaKey(parshaKey);
-        setResources(fetchedResources);
-        setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,7 +206,7 @@ function Index() {
               </span>
               <span aria-hidden className="h-px w-8 sm:w-16 bg-accent/60" />
             </div>
-            {loading ? (
+            {false ? (
               <div className="mt-2 sm:mt-3 flex justify-center">
                 <div className="h-8 sm:h-10 md:h-12 w-56 sm:w-72 md:w-96 rounded-md bg-primary/10 animate-pulse" aria-label="Loading this week's parsha" />
               </div>
@@ -203,7 +215,7 @@ function Index() {
                 {currentLabel}
               </p>
             )}
-            {!loading && resources.length > 0 && (
+            {true && resources.length > 0 && (
               <div className="mt-5 sm:mt-6">
                 <a
                   href="#this-weeks-collection"
@@ -266,12 +278,12 @@ function Index() {
             <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold text-primary text-center">
               This Week's Collection
             </h2>
-            {!loading && resources.length > 0 && (
+            {true && resources.length > 0 && (
               <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent">
                 {resources.length} {resources.length === 1 ? "Devar" : "Divrei"} Torah this week
               </p>
             )}
-            {!loading && resources.length === 0 ? (
+            {true && resources.length === 0 ? (
               <p className="mt-8 text-center text-muted-foreground">
                 No resources published yet for {currentLabel}. Check back soon.
               </p>
@@ -327,7 +339,7 @@ function Index() {
                 ))}
               </div>
             )}
-            {!loading && resources.length > 0 && (
+            {true && resources.length > 0 && (
               <div className="mt-6 sm:mt-8 text-center">
                 <Link
                   to="/archive"
