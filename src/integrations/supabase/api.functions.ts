@@ -232,7 +232,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
         current.comparableKey &&
         toParshaComparableKey(r.parsha_key) === current.comparableKey,
     );
-    const liveCollectionYear = liveCandidates.reduce<number | null>((latest: number | null, row: any) => {
+    const liveCollectionYear = (liveCandidates as any[]).reduce<number | null>((latest: number | null, row: any) => {
       const year = typeof row.jewish_year === "number" ? row.jewish_year : null;
       if (year == null) return latest;
       if (latest == null || year > latest) return year;
