@@ -914,7 +914,7 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
       .eq("jewish_year", data.jewishYear);
     if (dupQueryErr) throw new Error(`Duplicate check failed: ${dupQueryErr.message}`);
     const duplicate = (existingRows ?? []).find(
-      (r) =>
+      (r: any) =>
         toParshaComparableKey(r.parsha_key as string) === incomingParshaKey &&
         ((r.title as string) ?? "").trim().replace(/\s+/g, " ").toLowerCase() ===
           incomingTitleKey,
@@ -1089,7 +1089,7 @@ export const adminListWeeklySkips = createServerFn({ method: "POST" })
       .eq("parsha_key", data.parshaKey)
       .eq("jewish_year", data.jewishYear);
     if (error) throw new Error(error.message);
-    return { titleKeys: (rows ?? []).map((r) => r.title_key as string) };
+    return { titleKeys: (rows ?? []).map((r: any) => r.title_key as string) };
   });
 
 // ---------- Admin: add a weekly skip ----------
@@ -1139,7 +1139,7 @@ export const listChecklistSources = createServerFn({ method: "GET" }).handler(as
     console.error("listChecklistSources error", error);
     return { titles: [] as string[] };
   }
-  return { titles: (data ?? []).map((r) => r.title as string) };
+  return { titles: (data ?? []).map((r: any) => r.title as string) };
 });
 
 // ---------- Admin: list ALL checklist sources ----------
@@ -1574,15 +1574,15 @@ async function getWeeklyEmailContentInternal(): Promise<WeeklyEmailContent> {
     .eq("published", true)
     .order("created_at", { ascending: false });
   const matched = (rows ?? []).filter(
-    (r) => toParshaComparableKey(r.parsha_key) === target,
+    (r: any) => toParshaComparableKey(r.parsha_key) === target,
   );
   const orderMap = await getTitleSortOrderMap(admin);
   const orderFor = (t: string) => {
     const v = orderMap.get(t.trim().toLowerCase());
     return typeof v === "number" ? v : 999999;
   };
-  matched.sort((a, b) => orderFor(a.title) - orderFor(b.title));
-  const resources: WeeklyEmailResource[] = matched.map((r) => ({
+  matched.sort((a: any, b: any) => orderFor(a.title) - orderFor(b.title));
+  const resources: WeeklyEmailResource[] = matched.map((r: any) => ({
     id: r.id as string,
     title: r.title as string,
     subtitle: (r.subtitle as string | null) ?? null,
@@ -1669,7 +1669,7 @@ export const adminSendWeeklyEmail = createServerFn({ method: "POST" })
       return { ok: false, error: `Could not load subscribers: ${subsErr.message}` };
     }
     const recipients = (subs ?? []).filter(
-      (s) => typeof s.email === "string" && typeof s.unsubscribe_token === "string",
+      (s: any) => typeof s.email === "string" && typeof s.unsubscribe_token === "string",
     );
     if (recipients.length === 0) {
       return { ok: false, error: "No active subscribers." };
