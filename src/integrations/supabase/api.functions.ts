@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getSupabaseAdmin, getSupabaseForUser } from "@/integrations/supabase/client.server";
+import { getSupabaseAdmin, getSupabaseForUser } from "@/integrations/supabase/ext.server";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 
@@ -176,7 +176,7 @@ export const listPublishedPdfs = createServerFn({ method: "GET" })
       return { resources: [] as Array<{ id: string; title: string; subtitle: string | null; url: string }> };
     }
     const matched = (rows ?? []).filter(
-      (r) => toParshaComparableKey(r.parsha_key) === target,
+      (r: any) => toParshaComparableKey(r.parsha_key) === target,
     );
     // Sort by admin-managed display order from checklist_sources.sort_order
     // (joined by title, case-insensitive). Nulls go last.
@@ -185,9 +185,9 @@ export const listPublishedPdfs = createServerFn({ method: "GET" })
       const v = orderMap.get(title.trim().toLowerCase());
       return typeof v === "number" ? v : 999999;
     };
-    matched.sort((a, b) => orderFor(a.title) - orderFor(b.title));
+    matched.sort((a: any, b: any) => orderFor(a.title) - orderFor(b.title));
     const resources = await Promise.all(
-      matched.map(async (r) => {
+      matched.map(async (r: any) => {
         const { data: signed } = await admin.storage
           .from("pdfs")
           .createSignedUrl(r.file_path, 60 * 60);
@@ -228,11 +228,11 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
       return typeof v === "number" ? v : 999999;
     };
     const liveCandidates = (rows ?? []).filter(
-      (r) =>
+      (r: any) =>
         current.comparableKey &&
         toParshaComparableKey(r.parsha_key) === current.comparableKey,
     );
-    const liveCollectionYear = liveCandidates.reduce<number | null>((latest, row) => {
+    const liveCollectionYear = (liveCandidates as any[]).reduce<number | null>((latest: number | null, row: any) => {
       const year = typeof row.jewish_year === "number" ? row.jewish_year : null;
       if (year == null) return latest;
       if (latest == null || year > latest) return year;
@@ -840,7 +840,7 @@ async function requireAdmin(accessToken: string | null) {
     .from("user_roles")
     .select("role")
     .eq("user_id", userData.user.id);
-  const isAdmin = (roles ?? []).some((r) => r.role === "admin");
+  const isAdmin = (roles ?? []).some((r: any) => r.role === "admin");
   if (!isAdmin) throw new Error("Forbidden");
   return { userId: userData.user.id };
 }
@@ -914,7 +914,7 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
       .eq("jewish_year", data.jewishYear);
     if (dupQueryErr) throw new Error(`Duplicate check failed: ${dupQueryErr.message}`);
     const duplicate = (existingRows ?? []).find(
-      (r) =>
+      (r: any) =>
         toParshaComparableKey(r.parsha_key as string) === incomingParshaKey &&
         ((r.title as string) ?? "").trim().replace(/\s+/g, " ").toLowerCase() ===
           incomingTitleKey,
@@ -1089,7 +1089,7 @@ export const adminListWeeklySkips = createServerFn({ method: "POST" })
       .eq("parsha_key", data.parshaKey)
       .eq("jewish_year", data.jewishYear);
     if (error) throw new Error(error.message);
-    return { titleKeys: (rows ?? []).map((r) => r.title_key as string) };
+    return { titleKeys: (rows ?? []).map((r: any) => r.title_key as string) };
   });
 
 // ---------- Admin: add a weekly skip ----------
@@ -1139,7 +1139,7 @@ export const listChecklistSources = createServerFn({ method: "GET" }).handler(as
     console.error("listChecklistSources error", error);
     return { titles: [] as string[] };
   }
-  return { titles: (data ?? []).map((r) => r.title as string) };
+  return { titles: (data ?? []).map((r: any) => r.title as string) };
 });
 
 // ---------- Admin: list ALL checklist sources ----------
@@ -1574,15 +1574,15 @@ async function getWeeklyEmailContentInternal(): Promise<WeeklyEmailContent> {
     .eq("published", true)
     .order("created_at", { ascending: false });
   const matched = (rows ?? []).filter(
-    (r) => toParshaComparableKey(r.parsha_key) === target,
+    (r: any) => toParshaComparableKey(r.parsha_key) === target,
   );
   const orderMap = await getTitleSortOrderMap(admin);
   const orderFor = (t: string) => {
     const v = orderMap.get(t.trim().toLowerCase());
     return typeof v === "number" ? v : 999999;
   };
-  matched.sort((a, b) => orderFor(a.title) - orderFor(b.title));
-  const resources: WeeklyEmailResource[] = matched.map((r) => ({
+  matched.sort((a: any, b: any) => orderFor(a.title) - orderFor(b.title));
+  const resources: WeeklyEmailResource[] = matched.map((r: any) => ({
     id: r.id as string,
     title: r.title as string,
     subtitle: (r.subtitle as string | null) ?? null,
@@ -1669,7 +1669,7 @@ export const adminSendWeeklyEmail = createServerFn({ method: "POST" })
       return { ok: false, error: `Could not load subscribers: ${subsErr.message}` };
     }
     const recipients = (subs ?? []).filter(
-      (s) => typeof s.email === "string" && typeof s.unsubscribe_token === "string",
+      (s: any) => typeof s.email === "string" && typeof s.unsubscribe_token === "string",
     );
     if (recipients.length === 0) {
       return { ok: false, error: "No active subscribers." };

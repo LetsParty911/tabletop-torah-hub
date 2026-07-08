@@ -257,7 +257,7 @@ function AdminPage() {
         const r = await adminListWeeklySkips({
           data: { accessToken, parshaKey: currentParshaKey, jewishYear },
         });
-        if (!cancelled) setSkipped(new Set(r.titleKeys.map((s) => s.toLowerCase())));
+        if (!cancelled) setSkipped(new Set(r.titleKeys.map((s: string) => s.toLowerCase())));
       } catch {
         if (!cancelled) setSkipped(new Set());
       }
