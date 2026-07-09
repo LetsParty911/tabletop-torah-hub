@@ -11,6 +11,7 @@ import {
 } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 import { ListenToSummaryButton } from "@/components/ListenToSummaryButton";
+import { ExpandableSummary } from "@/components/ExpandableSummary";
 import {
   CATEGORY_KEYS,
   CATEGORY_LABELS,
@@ -460,9 +461,10 @@ function Index() {
                       {hasSummary && (
                         <>
                           <div className="mt-3 border-t border-accent/20" />
-                          <p className="mt-3 font-sans text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                            {r.summary_quick}
-                          </p>
+                          <ExpandableSummary
+                            text={r.summary_quick}
+                            className="mt-3"
+                          />
                           {r.summary_audio_path && (
                             <ListenToSummaryButton audioPath={r.summary_audio_path} />
                           )}

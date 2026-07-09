@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileText, Download, Eye, Printer } from "lucide-react";
+import { ExpandableSummary } from "@/components/ExpandableSummary";
 import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 
@@ -150,6 +151,12 @@ function ArchivePage() {
                                 )}
                               </div>
                             </div>
+                            {r.summary_quick && (
+                              <ExpandableSummary
+                                text={r.summary_quick}
+                                className="mt-3"
+                              />
+                            )}
                             <div className="mt-4 flex flex-col sm:flex-row gap-2.5 sm:gap-2">
                               {(() => {
                                 const params = {

@@ -362,7 +362,7 @@ export const listPublicationsMeta = createServerFn({ method: "GET" }).handler(
 );
 
 // ---------- Public: archive — all published PDFs grouped by year + parsha ----------
-export type ArchivePdf = { id: string; title: string; subtitle: string | null };
+export type ArchivePdf = { id: string; title: string; subtitle: string | null; summary_quick: string | null };
 export type ArchiveParsha = { parshaKey: string; pdfs: ArchivePdf[] };
 export type ArchiveYear = { year: number; parshiyos: ArchiveParsha[] };
 export type ArchiveResult = { years: ArchiveYear[] };
@@ -372,7 +372,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
     const admin = getSupabaseAdmin();
     const { data: rows, error } = await admin
       .from("pdfs")
-      .select("id, title, subtitle, parsha_key, jewish_year, created_at")
+      .select("id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at")
       .eq("published", true)
       .order("jewish_year", { ascending: false })
       .order("created_at", { ascending: false });
@@ -410,6 +410,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
         id: r.id,
         title: r.title,
         subtitle: r.subtitle,
+        summary_quick: r.summary_quick,
         created_at: r.created_at,
       });
     }
@@ -429,7 +430,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
             return {
               parshaKey,
               latest,
-              pdfs: sortedPdfs.map(({ id, title, subtitle }) => ({ id, title, subtitle })),
+              pdfs: sortedPdfs.map(({ id, title, subtitle, summary_quick }) => ({ id, title, subtitle, summary_quick })),
             };
           })
           .sort((a, b) => (a.latest < b.latest ? 1 : -1))
