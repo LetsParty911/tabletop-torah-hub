@@ -6,6 +6,7 @@ import {
   adminUploadPdf,
   adminReplacePdfFile,
   adminTogglePublished,
+  adminBulkPublish,
   adminDeletePdf,
   adminSetParshaOverride,
   adminListSubscribers,
