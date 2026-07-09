@@ -9,6 +9,7 @@ import {
   subscribeEmail,
 } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
+import { ListenToSummaryButton } from "@/components/ListenToSummaryButton";
 
 type Resource = {
   id: string;
@@ -17,6 +18,7 @@ type Resource = {
   url: string;
   summary_quick: string | null;
   content_type: string | null;
+  summary_audio_path: string | null;
 };
 
 type LoaderData = {
@@ -338,6 +340,9 @@ function Index() {
                           <p className="mt-3 font-sans text-xs sm:text-sm text-muted-foreground leading-relaxed">
                             {r.summary_quick}
                           </p>
+                          {r.summary_audio_path && (
+                            <ListenToSummaryButton audioPath={r.summary_audio_path} />
+                          )}
                         </>
                       )}
                       <div className="mt-auto pt-4 flex flex-col lg:flex-row gap-2.5 lg:gap-2">
