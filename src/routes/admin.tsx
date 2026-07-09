@@ -28,6 +28,7 @@ import {
   adminResetSubscriber,
   adminResendPreflight,
   getLiveCurrentParsha,
+  adminGenerateSummary,
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
@@ -49,6 +50,8 @@ type PdfRow = {
   published: boolean;
   jewish_year: number | null;
   created_at: string;
+  summary_quick: string | null;
+  content_type: string | null;
 };
 
 type Subscriber = { id: string; email: string; created_at: string };
@@ -180,6 +183,47 @@ function AdminPage() {
   const [editingPdfId, setEditingPdfId] = useState<string | null>(null);
   const [replaceFile, setReplaceFile] = useState<File | null>(null);
   const [replacing, setReplacing] = useState(false);
+
+  // Summary generation state (per row)
+  const [generatingSummaryId, setGeneratingSummaryId] = useState<string | null>(null);
+  const [summaryModal, setSummaryModal] = useState<
+    | { kind: "success"; title: string; summary: string; contentType: string | null }
+    | { kind: "error"; title: string; error: string }
+    | null
+  >(null);
+
+  const handleGenerateSummary = async (row: PdfRow) => {
+    if (!accessToken || generatingSummaryId) return;
+    setGeneratingSummaryId(row.id);
+    try {
+      const r = await adminGenerateSummary({ data: { accessToken, id: row.id } });
+      if (r.ok) {
+        setPdfs((prev) =>
+          prev.map((p) =>
+            p.id === row.id
+              ? { ...p, summary_quick: r.summary_quick, content_type: r.content_type }
+              : p,
+          ),
+        );
+        setSummaryModal({
+          kind: "success",
+          title: row.title,
+          summary: r.summary_quick ?? "(no summary returned)",
+          contentType: r.content_type,
+        });
+      } else {
+        setSummaryModal({ kind: "error", title: row.title, error: r.error });
+      }
+    } catch {
+      setSummaryModal({
+        kind: "error",
+        title: row.title,
+        error: "Something went wrong generating this summary. Please try again.",
+      });
+    } finally {
+      setGeneratingSummaryId(null);
+    }
+  };
 
   const accessToken = session?.access_token ?? null;
   // Admin checklist + upload form intentionally use the LIVE Hebcal parsha
