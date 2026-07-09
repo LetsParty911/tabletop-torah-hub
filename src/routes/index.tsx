@@ -161,7 +161,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { label: currentLabel, parshaKey: currentParshaKey, resources } =
+  const { label: currentLabel, parshaKey: currentParshaKey, resources, isFallback, fallbackParshaLabel } =
     Route.useLoaderData() as LoaderData;
   const [email, setEmail] = useState("");
   const [signupMsg, setSignupMsg] = useState<string | null>(null);
