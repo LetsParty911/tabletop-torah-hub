@@ -15,6 +15,8 @@ type Resource = {
   title: string;
   subtitle: string | null;
   url: string;
+  summary_quick: string | null;
+  content_type: string | null;
 };
 
 type LoaderData = {

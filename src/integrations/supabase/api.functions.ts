@@ -196,6 +196,8 @@ export const listPublishedPdfs = createServerFn({ method: "GET" })
           title: r.title,
           subtitle: r.subtitle,
           url: signed?.signedUrl ?? "#",
+          summary_quick: r.summary_quick,
+          content_type: r.content_type,
         };
       }),
     );
