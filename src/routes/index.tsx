@@ -9,6 +9,7 @@ import {
   subscribeEmail,
 } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
+import { ListenToSummaryButton } from "@/components/ListenToSummaryButton";
 
 type Resource = {
   id: string;
@@ -17,6 +18,7 @@ type Resource = {
   url: string;
   summary_quick: string | null;
   content_type: string | null;
+  summary_audio_path: string | null;
 };
 
 type LoaderData = {
