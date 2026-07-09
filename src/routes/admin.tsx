@@ -435,6 +435,39 @@ function AdminPage() {
   const uploadedCount = checklist.filter((c) => c.status === "uploaded").length;
   const countableTotal = checklist.filter((c) => c.status !== "skipped").length;
 
+  // Unpublished (draft) PDFs for the CURRENT parsha + year — targets for "Publish All".
+  const unpublishedForCurrent = pdfs.filter(
+    (p) =>
+      !p.published &&
+      checklistParshaComparableKey &&
+      jewishYear != null &&
+      p.jewish_year === jewishYear &&
+      toParshaComparableKey(p.parsha_key) === checklistParshaComparableKey,
+  );
+
+  const [publishingWeek, setPublishingWeek] = useState(false);
+  const publishAllForWeek = async () => {
+    if (!accessToken) return;
+    if (unpublishedForCurrent.length === 0) {
+      alert("No unpublished PDFs for this parsha.");
+      return;
+    }
+    const titles = unpublishedForCurrent.map((p) => `• ${p.title}`).join("\n");
+    const msg = `Publish ${unpublishedForCurrent.length} PDF${unpublishedForCurrent.length === 1 ? "" : "s"} for ${currentParshaLabel}?\n\n${titles}\n\nThis will make them live on the homepage.`;
+    if (!confirm(msg)) return;
+    setPublishingWeek(true);
+    try {
+      await adminBulkPublish({
+        data: { accessToken, ids: unpublishedForCurrent.map((p) => p.id) },
+      });
+      await refresh();
+    } catch (e) {
+      alert(`Publish failed: ${e instanceof Error ? e.message : "unknown error"}`);
+    } finally {
+      setPublishingWeek(false);
+    }
+  };
+
   const useExpectedTitle = (title: string) => {
     setTitle(title);
     if (resolvedCurrentParsha) {
