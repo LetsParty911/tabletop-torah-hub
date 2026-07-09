@@ -188,6 +188,18 @@ function Index() {
     parsha: currentParshaKey ?? undefined,
   });
 
+  const contentTypeLabel = (type: string | null): string | null => {
+    const map: Record<string, string> = {
+      A: "Essay",
+      B: "Story",
+      C: "Stories",
+      D: "Insights",
+      E: "Reference",
+      F: "Mixed Collection",
+    };
+    return type && map[type] ? map[type] : null;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <AnnouncementBanner />
