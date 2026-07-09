@@ -237,17 +237,6 @@ function Index() {
     parsha: currentParshaKey ?? undefined,
   });
 
-  const contentTypeLabel = (type: string | null): string | null => {
-    const map: Record<string, string> = {
-      A: "Essay",
-      B: "Story",
-      C: "Stories",
-      D: "Insights",
-      E: "Reference",
-      F: "Mixed Collection",
-    };
-    return type && map[type] ? map[type] : null;
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -427,7 +416,7 @@ function Index() {
               <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
                 {filteredResources.map((r) => {
                   const hasSummary = !!r.summary_quick && r.summary_quick.trim().length > 0;
-                  const badgeLabel = contentTypeLabel(r.content_type);
+                  
                   const catLabel = categoryLabel(r.primary_category);
                   return (
                     <article
@@ -446,11 +435,6 @@ function Index() {
                             <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                               {r.subtitle}
                             </p>
-                          )}
-                          {hasSummary && badgeLabel && (
-                            <span className="mt-2 inline-flex items-center rounded-full bg-[#D4D9C8] px-2.5 py-0.5 text-[0.65rem] sm:text-xs font-sans font-medium uppercase tracking-wider text-[#4E5643]">
-                              {badgeLabel}
-                            </span>
                           )}
                         </div>
                       </div>
