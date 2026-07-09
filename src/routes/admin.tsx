@@ -178,7 +178,7 @@ function AdminPage() {
   const [parshaUserTouched, setParshaUserTouched] = useState(false);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
-  const [published, setPublished] = useState(true);
+  const [published, setPublished] = useState(false);
   const [file, setFile] = useState<File | null>(null);
 
   // Inline "Replace PDF" editor state (per row)
