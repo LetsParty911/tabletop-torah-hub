@@ -77,6 +77,8 @@ function AboutPage() {
           <span aria-hidden>·</span>
           <Link to="/archive" className="hover:text-primary transition-colors">Archive</Link>
           <span aria-hidden>·</span>
+          <Link to="/publications" className="hover:text-primary transition-colors">Meet the Publications</Link>
+          <span aria-hidden>·</span>
           <Link to="/contact" className="hover:text-primary transition-colors">Contact</Link>
           <span aria-hidden>·</span>
           <span>© {new Date().getFullYear()} Torah for the Table</span>
