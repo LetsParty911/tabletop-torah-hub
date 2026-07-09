@@ -1410,6 +1410,25 @@ function AdminPage() {
                                   {editingPdfId === p.id ? "Close" : "Edit / Replace"}
                                 </button>
                                 <button
+                                  onClick={() => handleGenerateSummary(p)}
+                                  disabled={generatingSummaryId === p.id}
+                                  className="inline-flex items-center gap-1 rounded-full border border-primary/60 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                  {generatingSummaryId === p.id ? (
+                                    <>
+                                      <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+                                        <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" className="opacity-75" />
+                                      </svg>
+                                      Generating…
+                                    </>
+                                  ) : p.summary_quick ? (
+                                    "Regenerate Summary"
+                                  ) : (
+                                    "Generate Summary"
+                                  )}
+                                </button>
+                                <button
                                   onClick={() => handleDelete(p.id)}
                                   className="inline-flex items-center gap-1 rounded-full border border-destructive/70 px-2.5 py-1 text-xs font-medium text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
                                 >
