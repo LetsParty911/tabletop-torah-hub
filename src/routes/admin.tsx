@@ -128,7 +128,7 @@ const normalizeParshaSelection = (value: string | null | undefined) => {
 const normalizeTitleKey = (value: string) => value.trim().replace(/\s+/g, " ").toLowerCase();
 
 function AdminPage() {
-  const { session, loading, signInWithGitHub, signOut } = useAuth();
+  const { session, loading, signInWithGoogle, signOut } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [pdfs, setPdfs] = useState<PdfRow[]>([]);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
@@ -734,12 +734,12 @@ function AdminPage() {
         <div className="parchment-frame max-w-md w-full">
           <div className="parchment-panel text-center">
             <h1 className="font-serif text-3xl font-bold text-primary">Admin Sign-in</h1>
-            <p className="mt-3 text-muted-foreground">Sign in with GitHub to manage Torah PDFs.</p>
+            <p className="mt-3 text-muted-foreground">Sign in with Google to manage Torah PDFs.</p>
             <button
-              onClick={signInWithGitHub}
+              onClick={signInWithGoogle}
               className="mt-6 inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              Sign in with GitHub
+              Sign in with Google
             </button>
           </div>
         </div>

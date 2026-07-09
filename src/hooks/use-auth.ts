@@ -47,22 +47,25 @@ export function useAuth() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  const signInWithGitHub = useCallback(async () => {
+  const signInWithGoogle = useCallback(async () => {
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem(
         REDIRECT_KEY,
         window.location.pathname + window.location.search,
       );
     }
-    await supabase.auth.signInWithOAuth({
-      provider: "github",
-      options: { redirectTo: `${window.location.origin}/admin` },
+    const { lovable } = await import("@/integrations/lovable");
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
     });
+    if (result.error) {
+      console.error("Google sign-in failed:", result.error);
+    }
   }, []);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
   }, []);
 
-  return { session, loading, signInWithGitHub, signOut };
+  return { session, loading, signInWithGoogle, signOut };
 }
