@@ -157,6 +157,36 @@ function Index() {
     Route.useLoaderData() as LoaderData;
   const [email, setEmail] = useState("");
   const [signupMsg, setSignupMsg] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeTags, setActiveTags] = useState<string[]>([]);
+
+  const toggleCategory = (key: string) => {
+    setActiveCategory((cur) => (cur === key ? null : key));
+  };
+  const toggleTag = (key: string) => {
+    setActiveTags((cur) =>
+      cur.includes(key) ? cur.filter((t) => t !== key) : [...cur, key],
+    );
+  };
+  const clearFilters = () => {
+    setActiveCategory(null);
+    setActiveTags([]);
+  };
+
+  const filteredResources = useMemo(() => {
+    return resources.filter((r) => {
+      if (activeCategory && r.primary_category !== activeCategory) return false;
+      if (activeTags.length > 0) {
+        for (const tag of activeTags) {
+          if (!r.tags?.includes(tag)) return false;
+        }
+      }
+      return true;
+    });
+  }, [resources, activeCategory, activeTags]);
+
+  const hasActiveFilters = activeCategory !== null || activeTags.length > 0;
+
 
 
   const handleSignup = async (e: React.FormEvent) => {
