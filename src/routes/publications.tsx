@@ -40,7 +40,7 @@ export const Route = createFileRoute("/publications")({
 });
 
 function PublicationsPage() {
-  const { publications } = Route.useLoaderData();
+  const { publications } = Route.useLoaderData() as { publications: PublicationMeta[] };
 
   return (
     <div className="min-h-screen bg-background">
