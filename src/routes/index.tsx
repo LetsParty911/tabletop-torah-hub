@@ -367,7 +367,7 @@ function Index() {
                       </a>
                     </div>
                   </article>
-                ))}
+                )}
               </div>
             )}
             {true && resources.length > 0 && (
