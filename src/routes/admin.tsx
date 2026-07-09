@@ -29,6 +29,8 @@ import {
   adminResendPreflight,
   getLiveCurrentParsha,
   adminGenerateSummary,
+  adminListPdfsMissingAudio,
+  adminGenerateAudio,
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
