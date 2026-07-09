@@ -34,6 +34,8 @@ type LoaderData = {
   label: string;
   parshaKey: string | null;
   resources: Resource[];
+  isFallback: boolean;
+  fallbackParshaLabel: string | null;
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
@@ -90,18 +92,24 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     }
   }
 
-  // 3. PDFs
+  // 3. PDFs with fallback to most recent published collection
   let resources: Resource[] = [];
-  if (parshaKey) {
-    try {
-      const r = await listPublishedPdfs({ data: { parshaKey } });
-      resources = r.resources;
-    } catch (e) {
-      console.error("Failed to load PDFs", e);
+  let isFallback = false;
+  let fallbackParshaLabel: string | null = null;
+  try {
+    const r = await listHomepageWeek({ data: { parshaKey } });
+    resources = r.resources;
+    isFallback = r.isFallback;
+    if (r.isFallback && r.fallbackParshaKey) {
+      fallbackParshaLabel = r.fallbackParshaKey.startsWith("Parshas")
+        ? r.fallbackParshaKey
+        : `Parshas ${r.fallbackParshaKey}`;
     }
+  } catch (e) {
+    console.error("Failed to load PDFs", e);
   }
 
-  return { label, parshaKey, resources };
+  return { label, parshaKey, resources, isFallback, fallbackParshaLabel };
 }
 
 export const Route = createFileRoute("/")({
