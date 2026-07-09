@@ -157,8 +157,120 @@ async function resolveCurrentFeatured(): Promise<{
 }
 
 // ---------- Public: list published PDFs for a parsha key ----------
-// Filters by canonical comparable key so spelling variants between the
-// homepage's resolved parsha and the stored admin parsha_key always match.
+type PdfResource = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  url: string;
+  summary_quick: string | null;
+  content_type: string | null;
+  summary_audio_path: string | null;
+  primary_category: string | null;
+  tags: string[];
+};
+
+async function fetchAllPublishedRows(admin: ReturnType<typeof getSupabaseAdmin>) {
+  const withCats = await admin
+    .from("pdfs")
+    .select("id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags")
+    .eq("published", true)
+    .order("created_at", { ascending: false });
+  if (!withCats.error) return withCats.data ?? [];
+  const fb = await admin
+    .from("pdfs")
+    .select("id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path")
+    .eq("published", true)
+    .order("created_at", { ascending: false });
+  if (fb.error) {
+    console.error("fetchAllPublishedRows error", fb.error);
+    return [];
+  }
+  return fb.data ?? [];
+}
+
+async function buildResources(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  rows: any[],
+): Promise<PdfResource[]> {
+  const orderMap = await getTitleSortOrderMap(admin);
+  const orderFor = (title: string): number => {
+    const v = orderMap.get(title.trim().toLowerCase());
+    return typeof v === "number" ? v : 999999;
+  };
+  const sorted = [...rows].sort((a, b) => orderFor(a.title) - orderFor(b.title));
+  return Promise.all(
+    sorted.map(async (r: any) => {
+      const { data: signed } = await admin.storage
+        .from("pdfs")
+        .createSignedUrl(r.file_path, 60 * 60);
+      return {
+        id: r.id,
+        title: r.title,
+        subtitle: r.subtitle,
+        url: signed?.signedUrl ?? "#",
+        summary_quick: r.summary_quick,
+        content_type: r.content_type,
+        summary_audio_path: r.summary_audio_path ?? null,
+        primary_category: (r.primary_category as string | null) ?? null,
+        tags: Array.isArray(r.tags) ? (r.tags as string[]) : [],
+      };
+    }),
+  );
+}
+
+// Determines which (parsha_key, jewish_year) collection the homepage displays:
+// live parsha if it has published PDFs, otherwise the most recent published
+// (parsha_key, jewish_year) group (fallback).
+async function resolveDisplayedCollection(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  liveComparableKey: string | null,
+): Promise<{
+  comparableKey: string | null;
+  parshaKey: string | null;
+  jewishYear: number | null;
+  rows: any[];
+  isFallback: boolean;
+}> {
+  const allRows = await fetchAllPublishedRows(admin);
+  if (liveComparableKey) {
+    const liveRows = allRows.filter(
+      (r: any) => toParshaComparableKey(r.parsha_key) === liveComparableKey,
+    );
+    if (liveRows.length > 0) {
+      let latestYear: number | null = null;
+      for (const r of liveRows as any[]) {
+        const y = typeof r.jewish_year === "number" ? r.jewish_year : null;
+        if (y == null) continue;
+        if (latestYear == null || y > latestYear) latestYear = y;
+      }
+      const groupRows = latestYear
+        ? liveRows.filter((r: any) => r.jewish_year === latestYear)
+        : liveRows;
+      return {
+        comparableKey: liveComparableKey,
+        parshaKey: (groupRows[0]?.parsha_key as string) ?? null,
+        jewishYear: latestYear,
+        rows: groupRows,
+        isFallback: false,
+      };
+    }
+  }
+  const head = allRows[0] as any | undefined;
+  if (!head) return { comparableKey: null, parshaKey: null, jewishYear: null, rows: [], isFallback: true };
+  const fbKey = head.parsha_key as string;
+  const fbYear = (head.jewish_year as number | null) ?? null;
+  const fbRows = allRows.filter(
+    (r: any) => r.parsha_key === fbKey && r.jewish_year === fbYear,
+  );
+  return {
+    comparableKey: toParshaComparableKey(fbKey),
+    parshaKey: fbKey,
+    jewishYear: fbYear,
+    rows: fbRows,
+    isFallback: true,
+  };
+}
+
 export const listPublishedPdfs = createServerFn({ method: "GET" })
   .inputValidator((input: { parshaKey: string }) =>
     z.object({ parshaKey: z.string().min(1).max(120) }).parse(input),
@@ -166,56 +278,30 @@ export const listPublishedPdfs = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const admin = getSupabaseAdmin();
     const target = toParshaComparableKey(data.parshaKey);
-    let rows: any[] | null = null;
-    const withCats = await admin
-      .from("pdfs")
-      .select("id, title, subtitle, file_path, parsha_key, summary_quick, content_type, summary_audio_path, primary_category, tags")
-      .eq("published", true)
-      .order("created_at", { ascending: false });
-    if (withCats.error) {
-      const fallback = await admin
-        .from("pdfs")
-        .select("id, title, subtitle, file_path, parsha_key, summary_quick, content_type, summary_audio_path")
-        .eq("published", true)
-        .order("created_at", { ascending: false });
-      if (fallback.error) {
-        console.error("listPublishedPdfs error", fallback.error);
-        return { resources: [] as Array<{ id: string; title: string; subtitle: string | null; url: string; summary_quick: string | null; content_type: string | null; summary_audio_path: string | null; primary_category: string | null; tags: string[] }> };
-      }
-      rows = fallback.data;
-    } else {
-      rows = withCats.data;
-    }
-    const matched = (rows ?? []).filter(
+    const allRows = await fetchAllPublishedRows(admin);
+    const matched = allRows.filter(
       (r: any) => toParshaComparableKey(r.parsha_key) === target,
     );
-    // Sort by admin-managed display order from checklist_sources.sort_order
-    // (joined by title, case-insensitive). Nulls go last.
-    const orderMap = await getTitleSortOrderMap(admin);
-    const orderFor = (title: string): number => {
-      const v = orderMap.get(title.trim().toLowerCase());
-      return typeof v === "number" ? v : 999999;
-    };
-    matched.sort((a: any, b: any) => orderFor(a.title) - orderFor(b.title));
-    const resources = await Promise.all(
-      matched.map(async (r: any) => {
-        const { data: signed } = await admin.storage
-          .from("pdfs")
-          .createSignedUrl(r.file_path, 60 * 60);
-        return {
-          id: r.id,
-          title: r.title,
-          subtitle: r.subtitle,
-          url: signed?.signedUrl ?? "#",
-          summary_quick: r.summary_quick,
-          content_type: r.content_type,
-          summary_audio_path: r.summary_audio_path ?? null,
-          primary_category: (r.primary_category as string | null) ?? null,
-          tags: Array.isArray(r.tags) ? (r.tags as string[]) : [],
-        };
-      }),
-    );
+    const resources = await buildResources(admin, matched);
     return { resources };
+  });
+
+// Homepage loader: returns live-parsha collection, or the most recent
+// published collection as a fallback when the live parsha has no PDFs.
+export const listHomepageWeek = createServerFn({ method: "GET" })
+  .inputValidator((input: { parshaKey: string | null }) =>
+    z.object({ parshaKey: z.string().min(1).max(120).nullable() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const admin = getSupabaseAdmin();
+    const liveComparable = data.parshaKey ? toParshaComparableKey(data.parshaKey) : null;
+    const displayed = await resolveDisplayedCollection(admin, liveComparable);
+    const resources = await buildResources(admin, displayed.rows);
+    return {
+      resources,
+      isFallback: displayed.isFallback,
+      fallbackParshaKey: displayed.isFallback ? displayed.parshaKey : null,
+    };
   });
 
 // ---------- Public: publications meta (one entry per unique title) ----------
@@ -295,22 +381,12 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
       return { years: [] };
     }
     const current = await resolveCurrentFeatured();
+    const displayed = await resolveDisplayedCollection(admin, current.comparableKey);
     const orderMap = await getTitleSortOrderMap(admin);
     const orderFor = (title: string): number => {
       const v = orderMap.get(title.trim().toLowerCase());
       return typeof v === "number" ? v : 999999;
     };
-    const liveCandidates = (rows ?? []).filter(
-      (r: any) =>
-        current.comparableKey &&
-        toParshaComparableKey(r.parsha_key) === current.comparableKey,
-    );
-    const liveCollectionYear = (liveCandidates as any[]).reduce<number | null>((latest: number | null, row: any) => {
-      const year = typeof row.jewish_year === "number" ? row.jewish_year : null;
-      if (year == null) return latest;
-      if (latest == null || year > latest) return year;
-      return latest;
-    }, null);
     const yearMap = new Map<
       number,
       Map<string, Array<ArchivePdf & { created_at: string }>>
@@ -318,13 +394,12 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
     for (const r of rows ?? []) {
       const year = (r.jewish_year ?? 0) as number;
       if (!year) continue;
-      // Exclude the currently-featured live collection by the same archive group
-      // key used to render it: current parsha comparable key + latest matching
-      // jewish_year present in the published dataset.
+      // Exclude whichever collection the homepage is actually displaying
+      // (live parsha, or fallback to most recent when live is empty).
       if (
-        current.comparableKey &&
-        liveCollectionYear === year &&
-        toParshaComparableKey(r.parsha_key) === current.comparableKey
+        displayed.comparableKey &&
+        displayed.jewishYear === year &&
+        toParshaComparableKey(r.parsha_key) === displayed.comparableKey
       ) {
         continue;
       }
@@ -1155,6 +1230,27 @@ export const adminTogglePublished = createServerFn({ method: "POST" })
     const { error } = await admin.from("pdfs").update({ published: data.published }).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+// ---------- Admin: bulk publish a set of PDFs ----------
+export const adminBulkPublish = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; ids: string[] }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        ids: z.array(z.string().uuid()).min(1).max(500),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { error } = await admin
+      .from("pdfs")
+      .update({ published: true })
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: data.ids.length };
   });
 
 // ---------- Admin: delete pdf ----------

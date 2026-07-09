@@ -5,7 +5,7 @@ import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { CategoryBadge } from "@/components/CategoryBadge";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 import {
-  listPublishedPdfs,
+  listHomepageWeek,
   getParshaOverride,
   subscribeEmail,
 } from "@/integrations/supabase/api.functions";
@@ -34,6 +34,8 @@ type LoaderData = {
   label: string;
   parshaKey: string | null;
   resources: Resource[];
+  isFallback: boolean;
+  fallbackParshaLabel: string | null;
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
@@ -90,18 +92,24 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     }
   }
 
-  // 3. PDFs
+  // 3. PDFs with fallback to most recent published collection
   let resources: Resource[] = [];
-  if (parshaKey) {
-    try {
-      const r = await listPublishedPdfs({ data: { parshaKey } });
-      resources = r.resources;
-    } catch (e) {
-      console.error("Failed to load PDFs", e);
+  let isFallback = false;
+  let fallbackParshaLabel: string | null = null;
+  try {
+    const r = await listHomepageWeek({ data: { parshaKey } });
+    resources = r.resources;
+    isFallback = r.isFallback;
+    if (r.isFallback && r.fallbackParshaKey) {
+      fallbackParshaLabel = r.fallbackParshaKey.startsWith("Parshas")
+        ? r.fallbackParshaKey
+        : `Parshas ${r.fallbackParshaKey}`;
     }
+  } catch (e) {
+    console.error("Failed to load PDFs", e);
   }
 
-  return { label, parshaKey, resources };
+  return { label, parshaKey, resources, isFallback, fallbackParshaLabel };
 }
 
 export const Route = createFileRoute("/")({
@@ -153,7 +161,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { label: currentLabel, parshaKey: currentParshaKey, resources } =
+  const { label: currentLabel, parshaKey: currentParshaKey, resources, isFallback, fallbackParshaLabel } =
     Route.useLoaderData() as LoaderData;
   const [email, setEmail] = useState("");
   const [signupMsg, setSignupMsg] = useState<string | null>(null);
@@ -333,9 +341,21 @@ function Index() {
             <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold text-primary text-center">
               This Week's Collection
             </h2>
+            {isFallback && resources.length > 0 && (
+              <div className="mt-4 rounded-xl border-2 border-accent/60 bg-accent/10 px-4 py-3 text-center">
+                <p className="font-serif italic text-sm sm:text-base text-primary">
+                  This week's collection for {currentLabel} is coming soon — enjoy last week's selections below.
+                </p>
+              </div>
+            )}
+            {!isFallback && resources.length > 0 && (
+              <p className="mt-2 text-center font-sans text-[0.65rem] sm:text-xs uppercase tracking-[0.2em] text-accent">
+                {currentLabel} · New collections weekly
+              </p>
+            )}
             {resources.length > 0 && (
               <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent">
-                {resources.length} {resources.length === 1 ? "Devar" : "Divrei"} Torah this week
+                {resources.length} {resources.length === 1 ? "Devar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : " this week"}
               </p>
             )}
 

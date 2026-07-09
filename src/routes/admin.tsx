@@ -6,6 +6,7 @@ import {
   adminUploadPdf,
   adminReplacePdfFile,
   adminTogglePublished,
+  adminBulkPublish,
   adminDeletePdf,
   adminSetParshaOverride,
   adminListSubscribers,
@@ -178,7 +179,7 @@ function AdminPage() {
   const [parshaUserTouched, setParshaUserTouched] = useState(false);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
-  const [published, setPublished] = useState(true);
+  const [published, setPublished] = useState(false);
   const [file, setFile] = useState<File | null>(null);
 
   // Inline "Replace PDF" editor state (per row)
@@ -433,6 +434,39 @@ function AdminPage() {
   );
   const uploadedCount = checklist.filter((c) => c.status === "uploaded").length;
   const countableTotal = checklist.filter((c) => c.status !== "skipped").length;
+
+  // Unpublished (draft) PDFs for the CURRENT parsha + year — targets for "Publish All".
+  const unpublishedForCurrent = pdfs.filter(
+    (p) =>
+      !p.published &&
+      checklistParshaComparableKey &&
+      jewishYear != null &&
+      p.jewish_year === jewishYear &&
+      toParshaComparableKey(p.parsha_key) === checklistParshaComparableKey,
+  );
+
+  const [publishingWeek, setPublishingWeek] = useState(false);
+  const publishAllForWeek = async () => {
+    if (!accessToken) return;
+    if (unpublishedForCurrent.length === 0) {
+      alert("No unpublished PDFs for this parsha.");
+      return;
+    }
+    const titles = unpublishedForCurrent.map((p) => `• ${p.title}`).join("\n");
+    const msg = `Publish ${unpublishedForCurrent.length} PDF${unpublishedForCurrent.length === 1 ? "" : "s"} for ${currentParshaLabel}?\n\n${titles}\n\nThis will make them live on the homepage.`;
+    if (!confirm(msg)) return;
+    setPublishingWeek(true);
+    try {
+      await adminBulkPublish({
+        data: { accessToken, ids: unpublishedForCurrent.map((p) => p.id) },
+      });
+      await refresh();
+    } catch (e) {
+      alert(`Publish failed: ${e instanceof Error ? e.message : "unknown error"}`);
+    } finally {
+      setPublishingWeek(false);
+    }
+  };
 
   const useExpectedTitle = (title: string) => {
     setTitle(title);
@@ -1091,12 +1125,25 @@ function AdminPage() {
                   {currentParshaKey ? ` (${currentParshaKey})` : ""}
                 </p>
               </div>
-              <div className="text-sm font-medium text-primary">
-                {uploadedCount} uploaded
-                <span className="text-muted-foreground font-normal">
-                  {" "}· {checklist.length - countableTotal} skipped ·{" "}
-                  {countableTotal - uploadedCount} remaining
-                </span>
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="text-sm font-medium text-primary">
+                  {uploadedCount} uploaded
+                  <span className="text-muted-foreground font-normal">
+                    {" "}· {checklist.length - countableTotal} skipped ·{" "}
+                    {countableTotal - uploadedCount} remaining
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={publishAllForWeek}
+                  disabled={publishingWeek || unpublishedForCurrent.length === 0}
+                  className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={unpublishedForCurrent.length === 0 ? "No draft PDFs for this parsha" : `Publish ${unpublishedForCurrent.length} draft PDF${unpublishedForCurrent.length === 1 ? "" : "s"} for this week`}
+                >
+                  {publishingWeek
+                    ? "Publishing…"
+                    : `Publish All for This Week${unpublishedForCurrent.length > 0 ? ` (${unpublishedForCurrent.length})` : ""}`}
+                </button>
               </div>
             </div>
 
