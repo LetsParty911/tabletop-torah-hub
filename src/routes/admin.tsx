@@ -29,6 +29,8 @@ import {
   adminResendPreflight,
   getLiveCurrentParsha,
   adminGenerateSummary,
+  adminListPdfsMissingAudio,
+  adminGenerateAudio,
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
@@ -223,6 +225,69 @@ function AdminPage() {
     } finally {
       setGeneratingSummaryId(null);
     }
+  };
+
+  // Bulk audio generation state
+  const [audioBulk, setAudioBulk] = useState<
+    | { status: "idle" }
+    | { status: "running"; current: number; total: number; currentTitle: string }
+    | {
+        status: "done";
+        total: number;
+        successes: number;
+        failures: Array<{ id: string; title: string; error: string }>;
+      }
+  >({ status: "idle" });
+
+  const handleGenerateAllAudio = async () => {
+    if (!accessToken) return;
+    if (audioBulk.status === "running") return;
+    let list: Array<{ id: string; title: string }> = [];
+    try {
+      const r = await adminListPdfsMissingAudio({ data: { accessToken } });
+      list = r.rows;
+    } catch (e) {
+      setAudioBulk({
+        status: "done",
+        total: 0,
+        successes: 0,
+        failures: [
+          {
+            id: "",
+            title: "(list)",
+            error: e instanceof Error ? e.message : "Failed to load list",
+          },
+        ],
+      });
+      return;
+    }
+    if (list.length === 0) {
+      setAudioBulk({ status: "done", total: 0, successes: 0, failures: [] });
+      return;
+    }
+    const failures: Array<{ id: string; title: string; error: string }> = [];
+    let successes = 0;
+    for (let i = 0; i < list.length; i++) {
+      const row = list[i];
+      setAudioBulk({
+        status: "running",
+        current: i + 1,
+        total: list.length,
+        currentTitle: row.title,
+      });
+      try {
+        const r = await adminGenerateAudio({ data: { accessToken, id: row.id } });
+        if (r.ok) successes++;
+        else failures.push({ id: row.id, title: row.title, error: r.error });
+      } catch (e) {
+        failures.push({
+          id: row.id,
+          title: row.title,
+          error: e instanceof Error ? e.message : "Request failed",
+        });
+      }
+    }
+    setAudioBulk({ status: "done", total: list.length, successes, failures });
   };
 
   const accessToken = session?.access_token ?? null;
@@ -1337,6 +1402,50 @@ function AdminPage() {
                           ))}
                         </select>
                       </label>
+                    )}
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-border/60 bg-muted/30 p-3">
+                    <button
+                      type="button"
+                      onClick={handleGenerateAllAudio}
+                      disabled={audioBulk.status === "running"}
+                      className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                    >
+                      🔊{" "}
+                      {audioBulk.status === "running"
+                        ? `Generating audio: ${audioBulk.current} of ${audioBulk.total}...`
+                        : "Generate All Audio"}
+                    </button>
+                    {audioBulk.status === "running" && (
+                      <span className="text-xs text-muted-foreground truncate max-w-[60ch]">
+                        {audioBulk.currentTitle}
+                      </span>
+                    )}
+                    {audioBulk.status === "done" && (
+                      <div className="text-sm">
+                        {audioBulk.total === 0 ? (
+                          <span className="text-muted-foreground">
+                            No PDFs need audio generation.
+                          </span>
+                        ) : (
+                          <div className="space-y-1">
+                            <div>
+                              Done: <strong>{audioBulk.successes}</strong> succeeded,{" "}
+                              <strong>{audioBulk.failures.length}</strong> failed (of{" "}
+                              {audioBulk.total}).
+                            </div>
+                            {audioBulk.failures.length > 0 && (
+                              <ul className="list-disc pl-5 text-xs text-destructive space-y-0.5">
+                                {audioBulk.failures.map((f, i) => (
+                                  <li key={`${f.id}-${i}`}>
+                                    <span className="font-medium">{f.title}:</span> {f.error}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                   <div className="mt-4 overflow-x-auto">
