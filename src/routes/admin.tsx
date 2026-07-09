@@ -1125,12 +1125,25 @@ function AdminPage() {
                   {currentParshaKey ? ` (${currentParshaKey})` : ""}
                 </p>
               </div>
-              <div className="text-sm font-medium text-primary">
-                {uploadedCount} uploaded
-                <span className="text-muted-foreground font-normal">
-                  {" "}· {checklist.length - countableTotal} skipped ·{" "}
-                  {countableTotal - uploadedCount} remaining
-                </span>
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="text-sm font-medium text-primary">
+                  {uploadedCount} uploaded
+                  <span className="text-muted-foreground font-normal">
+                    {" "}· {checklist.length - countableTotal} skipped ·{" "}
+                    {countableTotal - uploadedCount} remaining
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={publishAllForWeek}
+                  disabled={publishingWeek || unpublishedForCurrent.length === 0}
+                  className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={unpublishedForCurrent.length === 0 ? "No draft PDFs for this parsha" : `Publish ${unpublishedForCurrent.length} draft PDF${unpublishedForCurrent.length === 1 ? "" : "s"} for this week`}
+                >
+                  {publishingWeek
+                    ? "Publishing…"
+                    : `Publish All for This Week${unpublishedForCurrent.length > 0 ? ` (${unpublishedForCurrent.length})` : ""}`}
+                </button>
               </div>
             </div>
 
