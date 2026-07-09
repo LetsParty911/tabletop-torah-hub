@@ -410,6 +410,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
         id: r.id,
         title: r.title,
         subtitle: r.subtitle,
+        summary_quick: r.summary_quick,
         created_at: r.created_at,
       });
     }
