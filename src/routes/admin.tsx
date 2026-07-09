@@ -1037,8 +1037,11 @@ function AdminPage() {
 
             <ul className="mt-4 divide-y divide-accent/30">
               {checklist.map((item) => (
-                <li key={item.title} className="flex items-center justify-between gap-3 py-3">
-                  <div className="flex items-center gap-3 min-w-0">
+                <li
+                  key={item.title}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1 basis-full sm:basis-auto">
                     {item.status === "uploaded" && (
                       <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
                     )}
@@ -1048,7 +1051,7 @@ function AdminPage() {
                     {item.status === "skipped" && (
                       <MinusCircle className="h-5 w-5 text-muted-foreground shrink-0" />
                     )}
-                    <span className="font-medium truncate">{item.title}</span>
+                    <span className="font-medium break-words min-w-0 flex-1">{item.title}</span>
                     <span
                       className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
                         item.status === "uploaded"
@@ -1065,7 +1068,7 @@ function AdminPage() {
                           : "Missing"}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 ml-8 sm:ml-0">
                     {item.status === "missing" && (
                       <button
                         type="button"
