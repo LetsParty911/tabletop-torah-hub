@@ -340,6 +340,9 @@ function Index() {
                           <p className="mt-3 font-sans text-xs sm:text-sm text-muted-foreground leading-relaxed">
                             {r.summary_quick}
                           </p>
+                          {r.summary_audio_path && (
+                            <ListenToSummaryButton audioPath={r.summary_audio_path} />
+                          )}
                         </>
                       )}
                       <div className="mt-auto pt-4 flex flex-col lg:flex-row gap-2.5 lg:gap-2">
