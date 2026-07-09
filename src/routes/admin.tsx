@@ -28,6 +28,7 @@ import {
   adminResetSubscriber,
   adminResendPreflight,
   getLiveCurrentParsha,
+  adminGenerateSummary,
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
@@ -49,6 +50,8 @@ type PdfRow = {
   published: boolean;
   jewish_year: number | null;
   created_at: string;
+  summary_quick: string | null;
+  content_type: string | null;
 };
 
 type Subscriber = { id: string; email: string; created_at: string };
@@ -180,6 +183,47 @@ function AdminPage() {
   const [editingPdfId, setEditingPdfId] = useState<string | null>(null);
   const [replaceFile, setReplaceFile] = useState<File | null>(null);
   const [replacing, setReplacing] = useState(false);
+
+  // Summary generation state (per row)
+  const [generatingSummaryId, setGeneratingSummaryId] = useState<string | null>(null);
+  const [summaryModal, setSummaryModal] = useState<
+    | { kind: "success"; title: string; summary: string; contentType: string | null }
+    | { kind: "error"; title: string; error: string }
+    | null
+  >(null);
+
+  const handleGenerateSummary = async (row: PdfRow) => {
+    if (!accessToken || generatingSummaryId) return;
+    setGeneratingSummaryId(row.id);
+    try {
+      const r = await adminGenerateSummary({ data: { accessToken, id: row.id } });
+      if (r.ok) {
+        setPdfs((prev) =>
+          prev.map((p) =>
+            p.id === row.id
+              ? { ...p, summary_quick: r.summary_quick, content_type: r.content_type }
+              : p,
+          ),
+        );
+        setSummaryModal({
+          kind: "success",
+          title: row.title,
+          summary: r.summary_quick ?? "(no summary returned)",
+          contentType: r.content_type,
+        });
+      } else {
+        setSummaryModal({ kind: "error", title: row.title, error: r.error });
+      }
+    } catch {
+      setSummaryModal({
+        kind: "error",
+        title: row.title,
+        error: "Something went wrong generating this summary. Please try again.",
+      });
+    } finally {
+      setGeneratingSummaryId(null);
+    }
+  };
 
   const accessToken = session?.access_token ?? null;
   // Admin checklist + upload form intentionally use the LIVE Hebcal parsha
@@ -1366,6 +1410,25 @@ function AdminPage() {
                                   {editingPdfId === p.id ? "Close" : "Edit / Replace"}
                                 </button>
                                 <button
+                                  onClick={() => handleGenerateSummary(p)}
+                                  disabled={generatingSummaryId === p.id}
+                                  className="inline-flex items-center gap-1 rounded-full border border-primary/60 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                  {generatingSummaryId === p.id ? (
+                                    <>
+                                      <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+                                        <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" className="opacity-75" />
+                                      </svg>
+                                      Generating…
+                                    </>
+                                  ) : p.summary_quick ? (
+                                    "Regenerate Summary"
+                                  ) : (
+                                    "Generate Summary"
+                                  )}
+                                </button>
+                                <button
                                   onClick={() => handleDelete(p.id)}
                                   className="inline-flex items-center gap-1 rounded-full border border-destructive/70 px-2.5 py-1 text-xs font-medium text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
                                 >
@@ -1548,6 +1611,41 @@ function AdminPage() {
           </div>
         </section>
       </div>
+      {summaryModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setSummaryModal(null)}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-background p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold">{summaryModal.title}</h3>
+            {summaryModal.kind === "success" ? (
+              <>
+                <div className="mt-2 text-sm text-muted-foreground">
+                  Content Type: <span className="font-medium text-foreground">{summaryModal.contentType ?? "—"}</span>
+                </div>
+                <div className="mt-4 whitespace-pre-wrap text-sm leading-relaxed">
+                  {summaryModal.summary}
+                </div>
+              </>
+            ) : (
+              <div className="mt-4 rounded-md border border-destructive/60 bg-destructive/10 p-3 text-sm text-destructive whitespace-pre-wrap">
+                {summaryModal.error}
+              </div>
+            )}
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setSummaryModal(null)}
+                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
