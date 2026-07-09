@@ -11,6 +11,7 @@ import {
 } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 import { ListenToSummaryButton } from "@/components/ListenToSummaryButton";
+import { ExpandableSummary } from "@/components/ExpandableSummary";
 import {
   CATEGORY_KEYS,
   CATEGORY_LABELS,
