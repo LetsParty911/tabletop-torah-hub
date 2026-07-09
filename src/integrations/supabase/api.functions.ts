@@ -237,11 +237,12 @@ async function resolveDisplayedCollection(
       (r: any) => toParshaComparableKey(r.parsha_key) === liveComparableKey,
     );
     if (liveRows.length > 0) {
-      const latestYear = liveRows.reduce<number | null>((m, r: any) => {
+      let latestYear: number | null = null;
+      for (const r of liveRows as any[]) {
         const y = typeof r.jewish_year === "number" ? r.jewish_year : null;
-        if (y == null) return m;
-        return m == null || y > m ? y : m;
-      }, null);
+        if (y == null) continue;
+        if (latestYear == null || y > latestYear) latestYear = y;
+      }
       const groupRows = latestYear
         ? liveRows.filter((r: any) => r.jewish_year === latestYear)
         : liveRows;
