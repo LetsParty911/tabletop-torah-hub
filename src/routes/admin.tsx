@@ -128,7 +128,7 @@ const normalizeParshaSelection = (value: string | null | undefined) => {
 const normalizeTitleKey = (value: string) => value.trim().replace(/\s+/g, " ").toLowerCase();
 
 function AdminPage() {
-  const { session, loading, signInWithGitHub, signOut } = useAuth();
+  const { session, loading, signInWithGoogle, signOut } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [pdfs, setPdfs] = useState<PdfRow[]>([]);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
