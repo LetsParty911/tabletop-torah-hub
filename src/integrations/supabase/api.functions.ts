@@ -166,14 +166,25 @@ export const listPublishedPdfs = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const admin = getSupabaseAdmin();
     const target = toParshaComparableKey(data.parshaKey);
-    const { data: rows, error } = await admin
+    let rows: any[] | null = null;
+    const withCats = await admin
       .from("pdfs")
-      .select("id, title, subtitle, file_path, parsha_key, summary_quick, content_type, summary_audio_path")
+      .select("id, title, subtitle, file_path, parsha_key, summary_quick, content_type, summary_audio_path, primary_category, tags")
       .eq("published", true)
       .order("created_at", { ascending: false });
-    if (error) {
-      console.error("listPublishedPdfs error", error);
-      return { resources: [] as Array<{ id: string; title: string; subtitle: string | null; url: string; summary_quick: string | null; content_type: string | null; summary_audio_path: string | null }> };
+    if (withCats.error) {
+      const fallback = await admin
+        .from("pdfs")
+        .select("id, title, subtitle, file_path, parsha_key, summary_quick, content_type, summary_audio_path")
+        .eq("published", true)
+        .order("created_at", { ascending: false });
+      if (fallback.error) {
+        console.error("listPublishedPdfs error", fallback.error);
+        return { resources: [] as Array<{ id: string; title: string; subtitle: string | null; url: string; summary_quick: string | null; content_type: string | null; summary_audio_path: string | null; primary_category: string | null; tags: string[] }> };
+      }
+      rows = fallback.data;
+    } else {
+      rows = withCats.data;
     }
     const matched = (rows ?? []).filter(
       (r: any) => toParshaComparableKey(r.parsha_key) === target,
@@ -199,11 +210,70 @@ export const listPublishedPdfs = createServerFn({ method: "GET" })
           summary_quick: r.summary_quick,
           content_type: r.content_type,
           summary_audio_path: r.summary_audio_path ?? null,
+          primary_category: (r.primary_category as string | null) ?? null,
+          tags: Array.isArray(r.tags) ? (r.tags as string[]) : [],
         };
       }),
     );
     return { resources };
   });
+
+// ---------- Public: publications meta (one entry per unique title) ----------
+export type PublicationMeta = {
+  title: string;
+  primary_category: string | null;
+  tags: string[];
+  summary: string | null;
+};
+
+export const listPublicationsMeta = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ publications: PublicationMeta[] }> => {
+    const admin = getSupabaseAdmin();
+    const res = await admin
+      .from("pdfs")
+      .select("title, primary_category, tags, summary_quick, created_at")
+      .eq("published", true)
+      .order("created_at", { ascending: false });
+    if (res.error) {
+      console.error("listPublicationsMeta error", res.error);
+      return { publications: [] };
+    }
+    const orderMap = await getTitleSortOrderMap(admin);
+    const orderFor = (title: string): number => {
+      const v = orderMap.get(title.trim().toLowerCase());
+      return typeof v === "number" ? v : 999999;
+    };
+    const map = new Map<string, PublicationMeta>();
+    for (const r of (res.data ?? []) as any[]) {
+      const t = (r.title as string | null)?.trim();
+      if (!t) continue;
+      const key = t.toLowerCase();
+      const existing = map.get(key);
+      const tags = Array.isArray(r.tags) ? (r.tags as string[]) : [];
+      if (!existing) {
+        map.set(key, {
+          title: t,
+          primary_category: (r.primary_category as string | null) ?? null,
+          tags,
+          summary: (r.summary_quick as string | null) ?? null,
+        });
+      } else {
+        // Merge: prefer first non-null category/summary; union tags
+        if (!existing.primary_category && r.primary_category)
+          existing.primary_category = r.primary_category;
+        if (!existing.summary && r.summary_quick)
+          existing.summary = r.summary_quick;
+        for (const tag of tags) {
+          if (!existing.tags.includes(tag)) existing.tags.push(tag);
+        }
+      }
+    }
+    const publications = Array.from(map.values()).sort(
+      (a, b) => orderFor(a.title) - orderFor(b.title),
+    );
+    return { publications };
+  },
+);
 
 // ---------- Public: archive — all published PDFs grouped by year + parsha ----------
 export type ArchivePdf = { id: string; title: string; subtitle: string | null };
