@@ -362,7 +362,7 @@ export const listPublicationsMeta = createServerFn({ method: "GET" }).handler(
 );
 
 // ---------- Public: archive — all published PDFs grouped by year + parsha ----------
-export type ArchivePdf = { id: string; title: string; subtitle: string | null };
+export type ArchivePdf = { id: string; title: string; subtitle: string | null; summary_quick: string | null };
 export type ArchiveParsha = { parshaKey: string; pdfs: ArchivePdf[] };
 export type ArchiveYear = { year: number; parshiyos: ArchiveParsha[] };
 export type ArchiveResult = { years: ArchiveYear[] };
