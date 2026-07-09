@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { FileText, Download, Eye, Printer } from "lucide-react";
+import { useMemo, useState } from "react";
+import { FileText, Download, Eye, Printer, X } from "lucide-react";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { CategoryBadge } from "@/components/CategoryBadge";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 import {
   listPublishedPdfs,
@@ -10,6 +11,12 @@ import {
 } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 import { ListenToSummaryButton } from "@/components/ListenToSummaryButton";
+import {
+  CATEGORY_KEYS,
+  CATEGORY_LABELS,
+  categoryLabel,
+  tagLabel,
+} from "@/lib/badges";
 
 type Resource = {
   id: string;
@@ -19,6 +26,8 @@ type Resource = {
   summary_quick: string | null;
   content_type: string | null;
   summary_audio_path: string | null;
+  primary_category: string | null;
+  tags: string[];
 };
 
 type LoaderData = {
