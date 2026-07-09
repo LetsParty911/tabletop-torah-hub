@@ -168,12 +168,12 @@ export const listPublishedPdfs = createServerFn({ method: "GET" })
     const target = toParshaComparableKey(data.parshaKey);
     const { data: rows, error } = await admin
       .from("pdfs")
-      .select("id, title, subtitle, file_path, parsha_key, summary_quick, content_type")
+      .select("id, title, subtitle, file_path, parsha_key, summary_quick, content_type, summary_audio_path")
       .eq("published", true)
       .order("created_at", { ascending: false });
     if (error) {
       console.error("listPublishedPdfs error", error);
-      return { resources: [] as Array<{ id: string; title: string; subtitle: string | null; url: string; summary_quick: string | null; content_type: string | null }> };
+      return { resources: [] as Array<{ id: string; title: string; subtitle: string | null; url: string; summary_quick: string | null; content_type: string | null; summary_audio_path: string | null }> };
     }
     const matched = (rows ?? []).filter(
       (r: any) => toParshaComparableKey(r.parsha_key) === target,
