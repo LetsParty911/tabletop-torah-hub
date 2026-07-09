@@ -304,27 +304,43 @@ function Index() {
 
             ) : (
               <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2">
-                {resources.map((r) => (
-                  <article
-                    key={r.id}
-                    className="rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent transition-colors flex flex-col"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-accent/15 text-primary shrink-0">
-                        <FileText className="h-5 w-5" />
+                {resources.map((r) => {
+                  const hasSummary = !!r.summary_quick && r.summary_quick.trim().length > 0;
+                  const badgeLabel = contentTypeLabel(r.content_type);
+                  return (
+                    <article
+                      key={r.id}
+                      className="rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent transition-colors flex flex-col"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-accent/15 text-primary shrink-0">
+                          <FileText className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-serif text-base sm:text-xl font-semibold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
+                            {r.title}
+                          </h3>
+                          {r.subtitle && (
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                              {r.subtitle}
+                            </p>
+                          )}
+                          {hasSummary && badgeLabel && (
+                            <span className="mt-2 inline-flex items-center rounded-full bg-[#D4D9C8] px-2.5 py-0.5 text-[0.65rem] sm:text-xs font-sans font-medium uppercase tracking-wider text-[#4E5643]">
+                              {badgeLabel}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-serif text-base sm:text-xl font-semibold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
-                          {r.title}
-                        </h3>
-                        {r.subtitle && (
-                          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                            {r.subtitle}
+                      {hasSummary && (
+                        <>
+                          <div className="mt-3 border-t border-accent/20" />
+                          <p className="mt-3 font-sans text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                            {r.summary_quick}
                           </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="mt-4 flex flex-col lg:flex-row gap-2.5 lg:gap-2">
+                        </>
+                      )}
+                      <div className="mt-auto pt-4 flex flex-col lg:flex-row gap-2.5 lg:gap-2">
                       <Link
                         to="/view/$id"
                         params={{ id: r.id }}
