@@ -1121,7 +1121,8 @@ function AdminPage() {
             </form>
 
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[520px] text-sm">
+
                 <thead className="text-left border-b">
                   <tr>
                     <th className="py-2 pr-3 w-20">Order</th>
