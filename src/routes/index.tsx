@@ -436,11 +436,6 @@ function Index() {
                               {r.subtitle}
                             </p>
                           )}
-                          {hasSummary && badgeLabel && (
-                            <span className="mt-2 inline-flex items-center rounded-full bg-[#D4D9C8] px-2.5 py-0.5 text-[0.65rem] sm:text-xs font-sans font-medium uppercase tracking-wider text-[#4E5643]">
-                              {badgeLabel}
-                            </span>
-                          )}
                         </div>
                       </div>
                       {(catLabel || (r.tags && r.tags.length > 0)) && (
