@@ -832,17 +832,25 @@ export const submitContactMessage = createServerFn({ method: "POST" })
 // ---------- Helper: verify user is admin from access token ----------
 async function requireAdmin(accessToken: string | null) {
   if (!accessToken) throw new Error("Not authenticated");
-  const supa = getSupabaseForUser(accessToken);
-  const { data: userData, error: uErr } = await supa.auth.getUser();
+  // The user signs in against the Lovable Cloud Supabase project, so validate
+  // the token there (not the external "torah-by-the-table" project).
+  const { createClient } = await import("@supabase/supabase-js");
+  const cloudUrl = process.env.SUPABASE_URL;
+  const cloudKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (!cloudUrl || !cloudKey) throw new Error("Server misconfigured: SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY missing");
+  const cloud = createClient(cloudUrl, cloudKey, {
+    auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+  });
+  const { data: userData, error: uErr } = await cloud.auth.getUser(accessToken);
   if (uErr || !userData?.user) throw new Error("Not authenticated");
-  const admin = getSupabaseAdmin();
-  const { data: roles } = await admin
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userData.user.id);
-  const isAdmin = (roles ?? []).some((r: any) => r.role === "admin");
-  if (!isAdmin) throw new Error("Forbidden");
-  return { userId: userData.user.id };
+  const email = (userData.user.email ?? "").toLowerCase();
+  const allow = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  if (!email || !allow.includes(email)) throw new Error("Forbidden");
+  return { userId: userData.user.id, email };
 }
 
 // ---------- Admin: check role ----------
