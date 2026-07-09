@@ -961,8 +961,19 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { userId } = await requireAdmin(data.accessToken);
+    const { userId, email } = await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
+    let createdBy: string | null = null;
+    try {
+      const { data: authUsers } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      const users = authUsers?.users ?? [];
+      createdBy =
+        users.find((u: any) => u.id === userId)?.id ??
+        users.find((u: any) => ((u.email as string | undefined) ?? "").toLowerCase() === email)?.id ??
+        null;
+    } catch {
+      createdBy = null;
+    }
 
     // Universal duplicate guard: block if a PDF already exists for the same
     // parsha + jewish year + source/checklist placement (matched by normalized title).
@@ -999,7 +1010,7 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
       file_path: path,
       published: data.published,
       jewish_year: data.jewishYear,
-      created_by: userId,
+      created_by: createdBy,
     });
     if (insErr) {
       await admin.storage.from("pdfs").remove([path]);
