@@ -333,21 +333,82 @@ function Index() {
             <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold text-primary text-center">
               This Week's Collection
             </h2>
-            {true && resources.length > 0 && (
+            {resources.length > 0 && (
               <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent">
                 {resources.length} {resources.length === 1 ? "Devar" : "Divrei"} Torah this week
               </p>
             )}
-            {true && resources.length === 0 ? (
+
+            {resources.length > 0 && (
+              <div className="mt-5 sm:mt-6">
+                <div className="flex gap-2 overflow-x-auto pb-2 justify-center flex-wrap">
+                  <CategoryBadge
+                    label="All"
+                    active={activeCategory === null}
+                    onClick={() => setActiveCategory(null)}
+                  />
+                  {CATEGORY_KEYS.map((k) => (
+                    <CategoryBadge
+                      key={k}
+                      label={CATEGORY_LABELS[k]}
+                      active={activeCategory === k}
+                      onClick={() => toggleCategory(k)}
+                    />
+                  ))}
+                </div>
+                {hasActiveFilters && (
+                  <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs">
+                    <span className="text-muted-foreground uppercase tracking-wider">
+                      Active:
+                    </span>
+                    {activeCategory && (
+                      <CategoryBadge
+                        label={CATEGORY_LABELS[activeCategory] ?? activeCategory}
+                        active
+                        onClick={() => setActiveCategory(null)}
+                      />
+                    )}
+                    {activeTags.map((t) => (
+                      <CategoryBadge
+                        key={t}
+                        label={tagLabel(t)}
+                        active
+                        onClick={() => toggleTag(t)}
+                      />
+                    ))}
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      className="inline-flex items-center gap-1 text-accent hover:text-primary transition-colors font-sans uppercase tracking-wider"
+                    >
+                      <X className="h-3 w-3" /> Clear
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {resources.length === 0 ? (
               <p className="mt-8 text-center text-muted-foreground max-w-md mx-auto">
                 New Divrei Torah for {currentLabel} go up Thursday. Check back soon!
               </p>
-
+            ) : filteredResources.length === 0 ? (
+              <p className="mt-8 text-center text-muted-foreground max-w-md mx-auto">
+                No Divrei Torah match the selected filters.{" "}
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="text-accent hover:text-primary underline"
+                >
+                  Clear filters
+                </button>
+              </p>
             ) : (
               <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
-                {resources.map((r) => {
+                {filteredResources.map((r) => {
                   const hasSummary = !!r.summary_quick && r.summary_quick.trim().length > 0;
                   const badgeLabel = contentTypeLabel(r.content_type);
+                  const catLabel = categoryLabel(r.primary_category);
                   return (
                     <article
                       key={r.id}
@@ -373,6 +434,25 @@ function Index() {
                           )}
                         </div>
                       </div>
+                      {(catLabel || (r.tags && r.tags.length > 0)) && (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {catLabel && r.primary_category && (
+                            <CategoryBadge
+                              label={catLabel}
+                              active={activeCategory === r.primary_category}
+                              onClick={() => toggleCategory(r.primary_category!)}
+                            />
+                          )}
+                          {r.tags?.map((t) => (
+                            <CategoryBadge
+                              key={t}
+                              label={tagLabel(t)}
+                              active={activeTags.includes(t)}
+                              onClick={() => toggleTag(t)}
+                            />
+                          ))}
+                        </div>
+                      )}
                       {hasSummary && (
                         <>
                           <div className="mt-3 border-t border-accent/20" />
