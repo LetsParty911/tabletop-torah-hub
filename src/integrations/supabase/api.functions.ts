@@ -381,22 +381,12 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
       return { years: [] };
     }
     const current = await resolveCurrentFeatured();
+    const displayed = await resolveDisplayedCollection(admin, current.comparableKey);
     const orderMap = await getTitleSortOrderMap(admin);
     const orderFor = (title: string): number => {
       const v = orderMap.get(title.trim().toLowerCase());
       return typeof v === "number" ? v : 999999;
     };
-    const liveCandidates = (rows ?? []).filter(
-      (r: any) =>
-        current.comparableKey &&
-        toParshaComparableKey(r.parsha_key) === current.comparableKey,
-    );
-    const liveCollectionYear = (liveCandidates as any[]).reduce<number | null>((latest: number | null, row: any) => {
-      const year = typeof row.jewish_year === "number" ? row.jewish_year : null;
-      if (year == null) return latest;
-      if (latest == null || year > latest) return year;
-      return latest;
-    }, null);
     const yearMap = new Map<
       number,
       Map<string, Array<ArchivePdf & { created_at: string }>>
@@ -404,13 +394,12 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
     for (const r of rows ?? []) {
       const year = (r.jewish_year ?? 0) as number;
       if (!year) continue;
-      // Exclude the currently-featured live collection by the same archive group
-      // key used to render it: current parsha comparable key + latest matching
-      // jewish_year present in the published dataset.
+      // Exclude whichever collection the homepage is actually displaying
+      // (live parsha, or fallback to most recent when live is empty).
       if (
-        current.comparableKey &&
-        liveCollectionYear === year &&
-        toParshaComparableKey(r.parsha_key) === current.comparableKey
+        displayed.comparableKey &&
+        displayed.jewishYear === year &&
+        toParshaComparableKey(r.parsha_key) === displayed.comparableKey
       ) {
         continue;
       }
