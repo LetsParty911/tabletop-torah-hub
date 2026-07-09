@@ -372,7 +372,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
     const admin = getSupabaseAdmin();
     const { data: rows, error } = await admin
       .from("pdfs")
-      .select("id, title, subtitle, parsha_key, jewish_year, created_at")
+      .select("id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at")
       .eq("published", true)
       .order("jewish_year", { ascending: false })
       .order("created_at", { ascending: false });
