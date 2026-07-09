@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen } from "lucide-react";
 import { CategoryBadge } from "@/components/CategoryBadge";
-import { listPublicationsMeta } from "@/integrations/supabase/api.functions";
+import { listPublicationsMeta, type PublicationMeta } from "@/integrations/supabase/api.functions";
 import { categoryLabel, tagLabel } from "@/lib/badges";
 
 export const Route = createFileRoute("/publications")({
