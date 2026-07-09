@@ -5,7 +5,7 @@ import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { CategoryBadge } from "@/components/CategoryBadge";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 import {
-  listPublishedPdfs,
+  listHomepageWeek,
   getParshaOverride,
   subscribeEmail,
 } from "@/integrations/supabase/api.functions";
