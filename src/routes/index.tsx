@@ -341,9 +341,21 @@ function Index() {
             <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold text-primary text-center">
               This Week's Collection
             </h2>
+            {isFallback && resources.length > 0 && (
+              <div className="mt-4 rounded-xl border-2 border-accent/60 bg-accent/10 px-4 py-3 text-center">
+                <p className="font-serif italic text-sm sm:text-base text-primary">
+                  This week's collection for {currentLabel} is coming soon — enjoy last week's selections below.
+                </p>
+              </div>
+            )}
+            {!isFallback && resources.length > 0 && (
+              <p className="mt-2 text-center font-sans text-[0.65rem] sm:text-xs uppercase tracking-[0.2em] text-accent">
+                {currentLabel} · New collections weekly
+              </p>
+            )}
             {resources.length > 0 && (
               <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent">
-                {resources.length} {resources.length === 1 ? "Devar" : "Divrei"} Torah this week
+                {resources.length} {resources.length === 1 ? "Devar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : " this week"}
               </p>
             )}
 
