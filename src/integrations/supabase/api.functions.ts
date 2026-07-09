@@ -1232,6 +1232,27 @@ export const adminTogglePublished = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- Admin: bulk publish a set of PDFs ----------
+export const adminBulkPublish = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; ids: string[] }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        ids: z.array(z.string().uuid()).min(1).max(500),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { error } = await admin
+      .from("pdfs")
+      .update({ published: true })
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: data.ids.length };
+  });
+
 // ---------- Admin: delete pdf ----------
 export const adminDeletePdf = createServerFn({ method: "POST" })
   .inputValidator((input: { accessToken: string; id: string }) =>
