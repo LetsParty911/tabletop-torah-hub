@@ -303,7 +303,7 @@ function Index() {
               </p>
 
             ) : (
-              <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2">
+              <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
                 {resources.map((r) => {
                   const hasSummary = !!r.summary_quick && r.summary_quick.trim().length > 0;
                   const badgeLabel = contentTypeLabel(r.content_type);
