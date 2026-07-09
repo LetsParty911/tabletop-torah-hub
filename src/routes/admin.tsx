@@ -1611,6 +1611,41 @@ function AdminPage() {
           </div>
         </section>
       </div>
+      {summaryModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setSummaryModal(null)}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-background p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold">{summaryModal.title}</h3>
+            {summaryModal.kind === "success" ? (
+              <>
+                <div className="mt-2 text-sm text-muted-foreground">
+                  Content Type: <span className="font-medium text-foreground">{summaryModal.contentType ?? "—"}</span>
+                </div>
+                <div className="mt-4 whitespace-pre-wrap text-sm leading-relaxed">
+                  {summaryModal.summary}
+                </div>
+              </>
+            ) : (
+              <div className="mt-4 rounded-md border border-destructive/60 bg-destructive/10 p-3 text-sm text-destructive whitespace-pre-wrap">
+                {summaryModal.error}
+              </div>
+            )}
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setSummaryModal(null)}
+                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
