@@ -869,10 +869,60 @@ export const adminListPdfs = createServerFn({ method: "POST" })
     const admin = getSupabaseAdmin();
     const { data: rows, error } = await admin
       .from("pdfs")
-      .select("id, parsha_key, title, subtitle, file_path, published, jewish_year, created_at")
+      .select("id, parsha_key, title, subtitle, file_path, published, jewish_year, created_at, summary_quick, content_type")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return { pdfs: rows ?? [] };
+  });
+
+// ---------- Admin: generate/regenerate summary via external edge function ----------
+export const adminGenerateSummary = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; id: string }) =>
+    z.object({ accessToken: z.string().min(10), id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const serviceKey =
+      process.env.EXT_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey) {
+      return { ok: false as const, error: "Missing EXT_SUPABASE_SERVICE_ROLE_KEY" };
+    }
+    const url = "https://kwdeyzumetmjcvtbqnzl.supabase.co/functions/v1/generate-summary";
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120_000);
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          Authorization: `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({ id: data.id }),
+        signal: controller.signal,
+      });
+      const text = await res.text();
+      let json: any = null;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        return { ok: false as const, error: `Non-JSON response (${res.status}): ${text.slice(0, 300)}` };
+      }
+      if (!res.ok || json?.error) {
+        return { ok: false as const, error: json?.error ?? `Edge function error ${res.status}` };
+      }
+      const saved = json?.saved ?? {};
+      return {
+        ok: true as const,
+        id: json?.id ?? data.id,
+        summary_quick: (saved.summary_quick ?? null) as string | null,
+        content_type: (saved.content_type ?? null) as string | null,
+      };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown error";
+      return { ok: false as const, error: msg };
+    } finally {
+      clearTimeout(timeout);
+    }
   });
 
 // ---------- Admin: upload PDF (base64) + insert row ----------
