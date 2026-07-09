@@ -416,7 +416,7 @@ function Index() {
               <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
                 {filteredResources.map((r) => {
                   const hasSummary = !!r.summary_quick && r.summary_quick.trim().length > 0;
-                  const badgeLabel = contentTypeLabel(r.content_type);
+                  
                   const catLabel = categoryLabel(r.primary_category);
                   return (
                     <article
