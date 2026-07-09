@@ -38,7 +38,8 @@ export function useAuth() {
         if (saved) {
           window.sessionStorage.removeItem(REDIRECT_KEY);
           if (saved !== window.location.pathname + window.location.search) {
-            window.history.replaceState({}, "", saved);
+            // Full navigation so TanStack Router mounts the target route.
+            window.location.replace(saved);
           }
         }
       }
