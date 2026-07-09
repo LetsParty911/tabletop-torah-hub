@@ -1,8 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-
-const REDIRECT_KEY = "auth:postLoginRedirect";
+import { getSafePostLoginRedirect, POST_LOGIN_REDIRECT_KEY } from "@/lib/auth-redirect";
 
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
@@ -34,9 +33,11 @@ export function useAuth() {
       setLoading(false);
 
       if (data.session && typeof window !== "undefined") {
-        const saved = window.sessionStorage.getItem(REDIRECT_KEY);
+        const saved = getSafePostLoginRedirect(
+          window.sessionStorage.getItem(POST_LOGIN_REDIRECT_KEY),
+        );
         if (saved) {
-          window.sessionStorage.removeItem(REDIRECT_KEY);
+          window.sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
           if (saved !== window.location.pathname + window.location.search) {
             // Full navigation so TanStack Router mounts the target route.
             window.location.replace(saved);
@@ -51,7 +52,7 @@ export function useAuth() {
   const signInWithGoogle = useCallback(async () => {
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem(
-        REDIRECT_KEY,
+        POST_LOGIN_REDIRECT_KEY,
         window.location.pathname + window.location.search,
       );
     }

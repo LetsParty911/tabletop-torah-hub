@@ -2,6 +2,8 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouterState } f
 import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
+import { supabase } from "@/integrations/supabase/client";
+import { getSafePostLoginRedirect, POST_LOGIN_REDIRECT_KEY } from "@/lib/auth-redirect";
 
 // GTM is now the sole analytics path. GA4 is loaded via GTM (container GTM-WMVV6CJ7).
 const GTM_CONTAINER_ID = "GTM-WMVV6CJ7";
@@ -51,6 +53,49 @@ function GoogleAnalytics() {
       />
     </noscript>
   );
+}
+
+function AuthRedirectHandler() {
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      if (typeof window === "undefined") return;
+
+      const hasAuthCallback =
+        window.location.search.includes("code=") ||
+        window.location.hash.includes("access_token=") ||
+        window.location.hash.includes("refresh_token=");
+
+      if (hasAuthCallback) {
+        try {
+          await supabase.auth.exchangeCodeForSession(window.location.href);
+        } catch {
+          /* Lovable OAuth may already have restored the session. */
+        }
+      }
+
+      const { data } = await supabase.auth.getSession();
+      if (cancelled || !data.session) return;
+
+      const saved = getSafePostLoginRedirect(
+        window.sessionStorage.getItem(POST_LOGIN_REDIRECT_KEY),
+      );
+      if (!saved) return;
+
+      window.sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
+      const current = window.location.pathname + window.location.search + window.location.hash;
+      if (saved !== current) {
+        window.location.replace(saved);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return null;
 }
 
 function NotFoundComponent() {
@@ -185,6 +230,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   return (
     <>
+      <AuthRedirectHandler />
       <GoogleAnalytics />
       <Outlet />
     </>
