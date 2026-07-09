@@ -430,7 +430,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
             return {
               parshaKey,
               latest,
-              pdfs: sortedPdfs.map(({ id, title, subtitle }) => ({ id, title, subtitle })),
+              pdfs: sortedPdfs.map(({ id, title, subtitle, summary_quick }) => ({ id, title, subtitle, summary_quick })),
             };
           })
           .sort((a, b) => (a.latest < b.latest ? 1 : -1))
