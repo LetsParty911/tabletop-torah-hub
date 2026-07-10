@@ -237,12 +237,25 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function PwaRegistrar() {
+  useEffect(() => {
+    registerPwa();
+  }, []);
+  return null;
+}
+
 function RootComponent() {
   return (
     <>
       <AuthRedirectHandler />
       <GoogleAnalytics />
+      <PwaRegistrar />
       <Outlet />
+      <div className="pointer-events-none fixed bottom-4 right-4 z-50">
+        <div className="pointer-events-auto">
+          <InstallAppButton />
+        </div>
+      </div>
     </>
   );
 }
