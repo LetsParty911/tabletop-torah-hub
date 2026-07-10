@@ -3,6 +3,8 @@ import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
+import { registerPwa } from "@/pwa-register";
+import { InstallAppButton } from "@/components/InstallAppButton";
 import { getSafePostLoginRedirect, POST_LOGIN_REDIRECT_KEY } from "@/lib/auth-redirect";
 
 // GTM is now the sole analytics path. GA4 is loaded via GTM (container GTM-WMVV6CJ7).
@@ -177,11 +179,19 @@ export const Route = createRootRoute({
       { name: "twitter:description", content: "Torah Table Connect allows users to view, download, and print Torah-related PDFs." },
       { property: "og:image", content: "https://torahforthetable.com/og-image.png" },
       { name: "twitter:image", content: "https://torahforthetable.com/og-image.png" },
+      // PWA
+      { name: "theme-color", content: "#1A365D" },
+      { name: "application-name", content: "Torah for the Table" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      { name: "apple-mobile-web-app-title", content: "Torah Table" },
+      { name: "mobile-web-app-capable", content: "yes" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
-      { rel: "apple-touch-icon", href: "/favicon.png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" },
@@ -227,12 +237,25 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function PwaRegistrar() {
+  useEffect(() => {
+    registerPwa();
+  }, []);
+  return null;
+}
+
 function RootComponent() {
   return (
     <>
       <AuthRedirectHandler />
       <GoogleAnalytics />
+      <PwaRegistrar />
       <Outlet />
+      <div className="pointer-events-none fixed bottom-4 right-4 z-50">
+        <div className="pointer-events-auto">
+          <InstallAppButton />
+        </div>
+      </div>
     </>
   );
 }
