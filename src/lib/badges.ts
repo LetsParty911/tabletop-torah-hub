@@ -2,7 +2,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
   kids: "Kids",
   family: "Family",
   in_depth: "In-Depth",
-  reference: "Reference",
+  reference: "Halacha",
 };
 
 export const TAG_LABELS: Record<string, string> = {
