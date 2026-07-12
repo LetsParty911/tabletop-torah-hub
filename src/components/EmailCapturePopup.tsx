@@ -78,9 +78,6 @@ export function EmailCapturePopup() {
 
   // Fire an "abandoned" engagement event if the user leaves with the popup open.
   // Debounced + once-only so bfcache restore or rapid pagehide events don't duplicate it.
-  const abandonedSentRef = useRef(false);
-  const abandonTimerRef = useRef<number | null>(null);
-
   useEffect(() => {
     if (!open) return;
 
