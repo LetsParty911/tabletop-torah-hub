@@ -27,11 +27,12 @@ export function trackEvent(name: string, params: EventParams = {}): void {
       w.dataLayer = [];
     } else {
       console.info(
-        `[tftt analytics] window.dataLayer available (length ${w.dataLayer.length}); pushing event "${name}"`,
+        `[tftt analytics] window.dataLayer available (length ${w.dataLayer!.length}); pushing event "${name}"`,
       );
     }
 
-    w.dataLayer.push({
+    const dataLayer = w.dataLayer!;
+    dataLayer.push({
       event: name,
       page_path: window.location?.pathname ?? "",
       page_location: window.location?.href ?? "",
