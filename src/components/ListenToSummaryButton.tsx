@@ -38,6 +38,11 @@ export function ListenToSummaryButton({ audioPath, resourceId, resourceTitle, pu
     const a = audioRef.current;
     if (!a) return;
     if (a.paused) {
+      trackEvent("listen_summary_clicked", {
+        resource_id: resourceId,
+        resource_title: resourceTitle,
+        publication,
+      });
       a.play().catch((e) => console.error("audio play failed", e));
     } else {
       a.pause();
