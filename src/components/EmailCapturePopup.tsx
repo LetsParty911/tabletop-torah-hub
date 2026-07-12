@@ -66,18 +66,40 @@ export function EmailCapturePopup() {
     };
   }, [isAdmin]);
 
-  // Fire an "abandoned" engagement event if the user leaves with the popup open
+  // Fire an "abandoned" engagement event if the user leaves with the popup open.
+  // Debounced + once-only so bfcache restore or rapid pagehide events don't duplicate it.
+  const abandonedSentRef = useRef(false);
+  const abandonTimerRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (!open) return;
+
     const onHide = () => {
       if (outcome !== null) return;
-      trackEvent("email_popup_abandoned", {
-        form_name: "download_popup",
-        engagement_ms: engagementMs(),
-      });
+      if (abandonedSentRef.current) return;
+
+      if (abandonTimerRef.current !== null) {
+        window.clearTimeout(abandonTimerRef.current);
+      }
+
+      abandonTimerRef.current = window.setTimeout(() => {
+        if (outcome !== null || abandonedSentRef.current) return;
+        abandonedSentRef.current = true;
+        trackEvent("email_popup_abandoned", {
+          form_name: "download_popup",
+          engagement_ms: engagementMs(),
+        });
+      }, 150);
     };
+
     window.addEventListener("pagehide", onHide);
-    return () => window.removeEventListener("pagehide", onHide);
+    return () => {
+      window.removeEventListener("pagehide", onHide);
+      if (abandonTimerRef.current !== null) {
+        window.clearTimeout(abandonTimerRef.current);
+        abandonTimerRef.current = null;
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, outcome, shownAt]);
 
