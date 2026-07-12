@@ -66,7 +66,11 @@ export function EmailCapturePopup() {
     } catch {
       /* ignore */
     }
-    trackEvent("email_popup_dismissed", { form_name: "download_popup" });
+    trackEventOnce(
+      "email_popup_dismissed",
+      { form_name: "download_popup" },
+      "tftt:analytics-sent:email_popup_dismissed",
+    );
     setOpen(false);
   };
 
