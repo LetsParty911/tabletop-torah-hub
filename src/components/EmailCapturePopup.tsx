@@ -30,6 +30,9 @@ export function EmailCapturePopup() {
   const [shownAt, setShownAt] = useState<number | null>(null);
   const [outcome, setOutcome] = useState<"dismissed" | "signed_up" | "error" | null>(null);
 
+  const abandonedSentRef = useRef(false);
+  const abandonTimerRef = useRef<number | null>(null);
+
   // Reset once-only abandoned tracking whenever the popup is freshly opened
   useEffect(() => {
     if (open) {
