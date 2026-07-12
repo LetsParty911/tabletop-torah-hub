@@ -9,7 +9,7 @@ import {
   getParshaOverride,
   subscribeEmail,
 } from "@/integrations/supabase/api.functions";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackEventOnce } from "@/lib/analytics";
 import { ListenToSummaryButton } from "@/components/ListenToSummaryButton";
 import { ExpandableSummary } from "@/components/ExpandableSummary";
 import {
