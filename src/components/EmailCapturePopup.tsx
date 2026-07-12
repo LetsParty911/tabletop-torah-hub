@@ -40,7 +40,17 @@ export function EmailCapturePopup() {
     }
   }, [open]);
 
-  const engagementMs = () => (shownAt ? Math.round(performance.now() - shownAt) : 0);
+  // Validate engagement timing:
+  // - returns undefined if the popup was never shown (no bogus 0s in analytics)
+  // - clamps negatives to 0 (guards against monotonic clock quirks / bfcache restores)
+  // - caps at 30 minutes to filter out backgrounded tabs left open overnight
+  const MAX_ENGAGEMENT_MS = 30 * 60 * 1000;
+  const engagementMs = (): number | undefined => {
+    if (shownAt == null) return undefined;
+    const raw = performance.now() - shownAt;
+    if (!Number.isFinite(raw)) return undefined;
+    return Math.min(MAX_ENGAGEMENT_MS, Math.max(0, Math.round(raw)));
+  };
 
   useEffect(() => {
     if (isAdmin) return;
