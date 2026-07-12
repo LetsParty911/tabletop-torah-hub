@@ -42,7 +42,10 @@ export function EmailCapturePopup() {
       }
       if (timer !== null) return;
       timer = window.setTimeout(() => {
-        if (!shouldSkip()) setOpen(true);
+        if (!shouldSkip()) {
+          setOpen(true);
+          trackEvent("email_popup_shown", { trigger: "download_click" });
+        }
       }, DELAY_MS);
     };
 
