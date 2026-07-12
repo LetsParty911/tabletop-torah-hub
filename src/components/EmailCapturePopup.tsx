@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { useRouterState } from "@tanstack/react-router";
 import { subscribeEmail } from "@/integrations/supabase/api.functions";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackEventOnce } from "@/lib/analytics";
 
 const DISMISSED_KEY = "tftt:email-popup-dismissed:v2";
 const SIGNED_UP_KEY = "tftt:email-popup-signed-up:v2";
