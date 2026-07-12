@@ -44,7 +44,11 @@ export function EmailCapturePopup() {
       timer = window.setTimeout(() => {
         if (!shouldSkip()) {
           setOpen(true);
-          trackEvent("email_popup_shown", { trigger: "download_click" });
+          trackEventOnce(
+            "email_popup_shown",
+            { trigger: "download_click" },
+            "tftt:analytics-sent:email_popup_shown",
+          );
         }
       }, DELAY_MS);
     };
