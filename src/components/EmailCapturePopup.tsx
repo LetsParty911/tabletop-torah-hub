@@ -27,6 +27,10 @@ export function EmailCapturePopup() {
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [shownAt, setShownAt] = useState<number | null>(null);
+  const [outcome, setOutcome] = useState<"dismissed" | "signed_up" | "error" | null>(null);
+
+  const engagementMs = () => (shownAt ? Math.round(performance.now() - shownAt) : 0);
 
   useEffect(() => {
     if (isAdmin) return;
@@ -44,6 +48,8 @@ export function EmailCapturePopup() {
       timer = window.setTimeout(() => {
         if (!shouldSkip()) {
           setOpen(true);
+          const t = performance.now();
+          setShownAt(t);
           trackEventOnce(
             "email_popup_shown",
             { trigger: "download_click" },
@@ -60,15 +66,31 @@ export function EmailCapturePopup() {
     };
   }, [isAdmin]);
 
+  // Fire an "abandoned" engagement event if the user leaves with the popup open
+  useEffect(() => {
+    if (!open) return;
+    const onHide = () => {
+      if (outcome !== null) return;
+      trackEvent("email_popup_abandoned", {
+        form_name: "download_popup",
+        engagement_ms: engagementMs(),
+      });
+    };
+    window.addEventListener("pagehide", onHide);
+    return () => window.removeEventListener("pagehide", onHide);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, outcome, shownAt]);
+
   const dismiss = () => {
     try {
       sessionStorage.setItem(DISMISSED_KEY, "1");
     } catch {
       /* ignore */
     }
+    setOutcome("dismissed");
     trackEventOnce(
       "email_popup_dismissed",
-      { form_name: "download_popup" },
+      { form_name: "download_popup", engagement_ms: engagementMs() },
       "tftt:analytics-sent:email_popup_dismissed",
     );
     setOpen(false);
@@ -87,11 +109,13 @@ export function EmailCapturePopup() {
         } catch {
           /* ignore */
         }
+        setOutcome("signed_up");
         trackEventOnce(
           "newsletter_signup",
           {
             form_name: "download_popup",
             already_subscribed: !!r.alreadySubscribed,
+            engagement_ms: engagementMs(),
           },
           "tftt:analytics-sent:newsletter_signup:popup",
         );
@@ -103,16 +127,25 @@ export function EmailCapturePopup() {
         setEmail("");
         window.setTimeout(() => setOpen(false), 1800);
       } else {
-        trackEvent("email_popup_error", { form_name: "download_popup", error: r.error ?? "unknown" });
+        trackEvent("email_popup_error", {
+          form_name: "download_popup",
+          error: r.error ?? "unknown",
+          engagement_ms: engagementMs(),
+        });
         setMsg(r.error ?? "Something went wrong. Please try again.");
       }
     } catch {
-      trackEvent("email_popup_error", { form_name: "download_popup", error: "exception" });
+      trackEvent("email_popup_error", {
+        form_name: "download_popup",
+        error: "exception",
+        engagement_ms: engagementMs(),
+      });
       setMsg("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
+
 
   if (!open || isAdmin) return null;
 
