@@ -62,6 +62,7 @@ export function EmailCapturePopup() {
     } catch {
       /* ignore */
     }
+    trackEvent("email_popup_dismissed", { form_name: "download_popup" });
     setOpen(false);
   };
 
