@@ -18,7 +18,19 @@ export function trackEvent(name: string, params: EventParams = {}): void {
     if (typeof window === "undefined") return;
     if (isAdminPath()) return;
     const w = window as unknown as { dataLayer?: unknown[] };
-    w.dataLayer = w.dataLayer || [];
+
+    const hadDataLayer = Array.isArray(w.dataLayer);
+    if (!hadDataLayer) {
+      console.info(
+        `[tftt analytics] window.dataLayer not yet initialized by GTM; creating fallback array before event "${name}"`,
+      );
+      w.dataLayer = [];
+    } else {
+      console.info(
+        `[tftt analytics] window.dataLayer available (length ${w.dataLayer.length}); pushing event "${name}"`,
+      );
+    }
+
     w.dataLayer.push({
       event: name,
       page_path: window.location?.pathname ?? "",
