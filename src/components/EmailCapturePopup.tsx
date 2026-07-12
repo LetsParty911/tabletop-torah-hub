@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useRouterState } from "@tanstack/react-router";
 import { subscribeEmail } from "@/integrations/supabase/api.functions";
@@ -29,6 +29,16 @@ export function EmailCapturePopup() {
   const [submitting, setSubmitting] = useState(false);
   const [shownAt, setShownAt] = useState<number | null>(null);
   const [outcome, setOutcome] = useState<"dismissed" | "signed_up" | "error" | null>(null);
+
+  const abandonedSentRef = useRef(false);
+  const abandonTimerRef = useRef<number | null>(null);
+
+  // Reset once-only abandoned tracking whenever the popup is freshly opened
+  useEffect(() => {
+    if (open) {
+      abandonedSentRef.current = false;
+    }
+  }, [open]);
 
   const engagementMs = () => (shownAt ? Math.round(performance.now() - shownAt) : 0);
 
@@ -66,18 +76,37 @@ export function EmailCapturePopup() {
     };
   }, [isAdmin]);
 
-  // Fire an "abandoned" engagement event if the user leaves with the popup open
+  // Fire an "abandoned" engagement event if the user leaves with the popup open.
+  // Debounced + once-only so bfcache restore or rapid pagehide events don't duplicate it.
   useEffect(() => {
     if (!open) return;
+
     const onHide = () => {
       if (outcome !== null) return;
-      trackEvent("email_popup_abandoned", {
-        form_name: "download_popup",
-        engagement_ms: engagementMs(),
-      });
+      if (abandonedSentRef.current) return;
+
+      if (abandonTimerRef.current !== null) {
+        window.clearTimeout(abandonTimerRef.current);
+      }
+
+      abandonTimerRef.current = window.setTimeout(() => {
+        if (outcome !== null || abandonedSentRef.current) return;
+        abandonedSentRef.current = true;
+        trackEvent("email_popup_abandoned", {
+          form_name: "download_popup",
+          engagement_ms: engagementMs(),
+        });
+      }, 150);
     };
+
     window.addEventListener("pagehide", onHide);
-    return () => window.removeEventListener("pagehide", onHide);
+    return () => {
+      window.removeEventListener("pagehide", onHide);
+      if (abandonTimerRef.current !== null) {
+        window.clearTimeout(abandonTimerRef.current);
+        abandonTimerRef.current = null;
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, outcome, shownAt]);
 
