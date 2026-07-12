@@ -42,7 +42,10 @@ export function EmailCapturePopup() {
       }
       if (timer !== null) return;
       timer = window.setTimeout(() => {
-        if (!shouldSkip()) setOpen(true);
+        if (!shouldSkip()) {
+          setOpen(true);
+          trackEvent("email_popup_shown", { trigger: "download_click" });
+        }
       }, DELAY_MS);
     };
 
@@ -59,6 +62,7 @@ export function EmailCapturePopup() {
     } catch {
       /* ignore */
     }
+    trackEvent("email_popup_dismissed", { form_name: "download_popup" });
     setOpen(false);
   };
 
@@ -75,7 +79,10 @@ export function EmailCapturePopup() {
         } catch {
           /* ignore */
         }
-        trackEvent("newsletter_signup", { form_name: "download_popup" });
+        trackEvent("newsletter_signup", {
+          form_name: "download_popup",
+          already_subscribed: !!r.alreadySubscribed,
+        });
         setMsg(
           r.alreadySubscribed
             ? "You're already subscribed — thank you!"
@@ -84,9 +91,11 @@ export function EmailCapturePopup() {
         setEmail("");
         window.setTimeout(() => setOpen(false), 1800);
       } else {
+        trackEvent("email_popup_error", { form_name: "download_popup", error: r.error ?? "unknown" });
         setMsg(r.error ?? "Something went wrong. Please try again.");
       }
     } catch {
+      trackEvent("email_popup_error", { form_name: "download_popup", error: "exception" });
       setMsg("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
