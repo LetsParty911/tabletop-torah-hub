@@ -9,7 +9,7 @@ import {
   getParshaOverride,
   subscribeEmail,
 } from "@/integrations/supabase/api.functions";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackEventOnce } from "@/lib/analytics";
 import { ListenToSummaryButton } from "@/components/ListenToSummaryButton";
 import { ExpandableSummary } from "@/components/ExpandableSummary";
 import {
@@ -202,6 +202,10 @@ function Index() {
     e.preventDefault();
     setSignupMsg(null);
 
+    trackEvent("newsletter_signup_submit", {
+      form_name: "weekly_torah_notifications",
+    });
+
     try {
       const r = await subscribeEmail({ data: { email } });
       if (r.ok) {
@@ -219,9 +223,14 @@ function Index() {
           );
         }
         setEmail("");
-        trackEvent("newsletter_signup", {
-          form_name: "weekly_torah_notifications",
-        });
+        trackEventOnce(
+          "newsletter_signup",
+          {
+            form_name: "weekly_torah_notifications",
+            already_subscribed: !!r.alreadySubscribed,
+          },
+          "tftt:analytics-sent:newsletter_signup:homepage",
+        );
       } else {
         setSignupMsg(r.error ?? "Something went wrong. Please try again.");
       }
