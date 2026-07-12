@@ -43,6 +43,41 @@ export function trackEvent(name: string, params: EventParams = {}): void {
   }
 }
 
+const SESSION_SENT_PREFIX = "tftt:analytics-sent:";
+
+/**
+ * Fire a dataLayer event at most once per browser session. Use this for
+ * popup lifecycle events (show / dismiss / signup) so GTM/GA4 does not count
+ * the same user action multiple times on repeated interactions.
+ *
+ * @param name       dataLayer event name
+ * @param params     event parameters
+ * @param dedupeKey  optional sessionStorage key; defaults to a key based on
+ *                   the event name. Pass a custom key when the same event
+ *                   name is used in multiple contexts (e.g. newsletter_signup
+ *                   from the homepage vs. the download popup).
+ */
+export function trackEventOnce(
+  name: string,
+  params: EventParams = {},
+  dedupeKey?: string,
+): void {
+  if (typeof window === "undefined") return;
+  const key = dedupeKey ?? `${SESSION_SENT_PREFIX}${name}`;
+  try {
+    if (sessionStorage.getItem(key) === "1") {
+      console.info(
+        `[tftt analytics] event "${name}" already sent this session (key: ${key}); skipping`,
+      );
+      return;
+    }
+    sessionStorage.setItem(key, "1");
+  } catch {
+    // ignore storage failures (e.g. private browsing) and fall through to track
+  }
+  trackEvent(name, params);
+}
+
 export function currentPathname(): string {
   if (typeof window === "undefined") return "";
   return window.location?.pathname ?? "";

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { useRouterState } from "@tanstack/react-router";
 import { subscribeEmail } from "@/integrations/supabase/api.functions";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackEventOnce } from "@/lib/analytics";
 
 const DISMISSED_KEY = "tftt:email-popup-dismissed:v2";
 const SIGNED_UP_KEY = "tftt:email-popup-signed-up:v2";
@@ -44,7 +44,11 @@ export function EmailCapturePopup() {
       timer = window.setTimeout(() => {
         if (!shouldSkip()) {
           setOpen(true);
-          trackEvent("email_popup_shown", { trigger: "download_click" });
+          trackEventOnce(
+            "email_popup_shown",
+            { trigger: "download_click" },
+            "tftt:analytics-sent:email_popup_shown",
+          );
         }
       }, DELAY_MS);
     };
@@ -62,7 +66,11 @@ export function EmailCapturePopup() {
     } catch {
       /* ignore */
     }
-    trackEvent("email_popup_dismissed", { form_name: "download_popup" });
+    trackEventOnce(
+      "email_popup_dismissed",
+      { form_name: "download_popup" },
+      "tftt:analytics-sent:email_popup_dismissed",
+    );
     setOpen(false);
   };
 
@@ -79,10 +87,14 @@ export function EmailCapturePopup() {
         } catch {
           /* ignore */
         }
-        trackEvent("newsletter_signup", {
-          form_name: "download_popup",
-          already_subscribed: !!r.alreadySubscribed,
-        });
+        trackEventOnce(
+          "newsletter_signup",
+          {
+            form_name: "download_popup",
+            already_subscribed: !!r.alreadySubscribed,
+          },
+          "tftt:analytics-sent:newsletter_signup:popup",
+        );
         setMsg(
           r.alreadySubscribed
             ? "You're already subscribed — thank you!"
