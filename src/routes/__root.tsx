@@ -5,6 +5,7 @@ import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPwa } from "@/pwa-register";
 import { InstallAppButton } from "@/components/InstallAppButton";
+import { EmailCapturePopup } from "@/components/EmailCapturePopup";
 import { getSafePostLoginRedirect, POST_LOGIN_REDIRECT_KEY } from "@/lib/auth-redirect";
 
 // GTM is now the sole analytics path. GA4 is loaded via GTM (container GTM-WMVV6CJ7).
@@ -251,6 +252,7 @@ function RootComponent() {
       <GoogleAnalytics />
       <PwaRegistrar />
       <Outlet />
+      <EmailCapturePopup />
       <div className="pointer-events-none fixed bottom-4 right-4 z-50">
         <div className="pointer-events-auto">
           <InstallAppButton />

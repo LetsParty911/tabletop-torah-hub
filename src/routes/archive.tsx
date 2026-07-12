@@ -160,15 +160,18 @@ function ArchivePage() {
                             <div className="mt-4">
                               <a
                                 href={`/view/${r.id}/download`}
-                                onClick={() =>
+                                onClick={() => {
                                   trackEvent("pdf_download", {
                                     file_id: r.id,
                                     file_title: r.title,
                                     source_name: r.title,
                                     parsha: p.parshaKey,
                                     jewish_year: y.year,
-                                  })
-                                }
+                                  });
+                                  if (typeof window !== "undefined") {
+                                    window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
+                                  }
+                                }}
                                 className="w-full inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
                               >
                                 <Download className="h-4 w-4" /> Download
