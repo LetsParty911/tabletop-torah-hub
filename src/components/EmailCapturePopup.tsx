@@ -79,7 +79,10 @@ export function EmailCapturePopup() {
         } catch {
           /* ignore */
         }
-        trackEvent("newsletter_signup", { form_name: "download_popup" });
+        trackEvent("newsletter_signup", {
+          form_name: "download_popup",
+          already_subscribed: !!r.alreadySubscribed,
+        });
         setMsg(
           r.alreadySubscribed
             ? "You're already subscribed — thank you!"
