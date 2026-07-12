@@ -1,10 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Volume2, Pause } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 const AUDIO_BASE =
   "https://kwdeyzumetmjcvtbqnzl.supabase.co/storage/v1/object/public/pdfs/";
 
-export function ListenToSummaryButton({ audioPath }: { audioPath: string }) {
+type Props = {
+  audioPath: string;
+  resourceId?: string;
+  resourceTitle?: string;
+  publication?: string;
+};
+
+export function ListenToSummaryButton({ audioPath, resourceId, resourceTitle, publication }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
 
@@ -30,6 +38,11 @@ export function ListenToSummaryButton({ audioPath }: { audioPath: string }) {
     const a = audioRef.current;
     if (!a) return;
     if (a.paused) {
+      trackEvent("listen_summary_clicked", {
+        resource_id: resourceId,
+        resource_title: resourceTitle,
+        publication,
+      });
       a.play().catch((e) => console.error("audio play failed", e));
     } else {
       a.pause();

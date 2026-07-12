@@ -475,7 +475,12 @@ function Index() {
                             className="mt-3"
                           />
                           {r.summary_audio_path && (
-                            <ListenToSummaryButton audioPath={r.summary_audio_path} />
+                            <ListenToSummaryButton
+                              audioPath={r.summary_audio_path}
+                              resourceId={r.id}
+                              resourceTitle={r.title}
+                              publication={r.title}
+                            />
                           )}
                         </>
                       )}
