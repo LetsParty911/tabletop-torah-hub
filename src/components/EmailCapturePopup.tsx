@@ -91,9 +91,11 @@ export function EmailCapturePopup() {
         setEmail("");
         window.setTimeout(() => setOpen(false), 1800);
       } else {
+        trackEvent("email_popup_error", { form_name: "download_popup", error: r.error ?? "unknown" });
         setMsg(r.error ?? "Something went wrong. Please try again.");
       }
     } catch {
+      trackEvent("email_popup_error", { form_name: "download_popup", error: "exception" });
       setMsg("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
