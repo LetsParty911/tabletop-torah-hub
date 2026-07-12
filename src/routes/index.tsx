@@ -202,6 +202,10 @@ function Index() {
     e.preventDefault();
     setSignupMsg(null);
 
+    trackEvent("newsletter_signup_submit", {
+      form_name: "weekly_torah_notifications",
+    });
+
     try {
       const r = await subscribeEmail({ data: { email } });
       if (r.ok) {
@@ -219,9 +223,14 @@ function Index() {
           );
         }
         setEmail("");
-        trackEvent("newsletter_signup", {
-          form_name: "weekly_torah_notifications",
-        });
+        trackEventOnce(
+          "newsletter_signup",
+          {
+            form_name: "weekly_torah_notifications",
+            already_subscribed: !!r.alreadySubscribed,
+          },
+          "tftt:analytics-sent:newsletter_signup:homepage",
+        );
       } else {
         setSignupMsg(r.error ?? "Something went wrong. Please try again.");
       }
