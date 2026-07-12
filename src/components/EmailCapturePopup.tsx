@@ -35,7 +35,11 @@ export function EmailCapturePopup() {
     let timer: number | null = null;
 
     const onDownload = () => {
-      if (shouldSkip()) return;
+      console.info("[tftt] download-clicked received");
+      if (shouldSkip()) {
+        console.info("[tftt] popup suppressed (already dismissed/signed up)");
+        return;
+      }
       if (timer !== null) return;
       timer = window.setTimeout(() => {
         if (!shouldSkip()) setOpen(true);
