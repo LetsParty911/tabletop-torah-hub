@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useRouterState } from "@tanstack/react-router";
 import { subscribeEmail } from "@/integrations/supabase/api.functions";
