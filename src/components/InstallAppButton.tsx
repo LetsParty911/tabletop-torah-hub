@@ -46,11 +46,11 @@ export function InstallAppButton({ className }: { className?: string }) {
       }}
       className={
         className ??
-        "inline-flex items-center gap-1.5 rounded-md border border-[color:var(--accent)]/40 bg-transparent px-3 py-1.5 text-xs font-medium text-[color:var(--accent)] transition-colors hover:bg-[color:var(--accent)]/10"
+        "inline-flex items-center gap-1.5 rounded-full border-2 border-[#D4AF37] bg-[#1A365D] px-4 py-2 text-sm font-semibold text-[#FAF6EC] shadow-lg shadow-black/30 ring-1 ring-black/10 transition-transform hover:scale-[1.03] hover:bg-[#22406F] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]"
       }
       aria-label="Install Torah for the Table app"
     >
-      <Download className="h-3.5 w-3.5" />
+      <Download className="h-4 w-4 text-[#D4AF37]" />
       Install app
     </button>
   );
