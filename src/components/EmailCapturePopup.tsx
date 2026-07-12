@@ -4,9 +4,9 @@ import { useRouterState } from "@tanstack/react-router";
 import { subscribeEmail } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 
-const DISMISSED_KEY = "tftt:email-popup-dismissed";
-const SIGNED_UP_KEY = "tftt:email-popup-signed-up";
-const DELAY_MS = 3000;
+const DISMISSED_KEY = "tftt:email-popup-dismissed:v2";
+const SIGNED_UP_KEY = "tftt:email-popup-signed-up:v2";
+const DELAY_MS = 2000;
 
 function shouldSkip(): boolean {
   if (typeof window === "undefined") return true;
