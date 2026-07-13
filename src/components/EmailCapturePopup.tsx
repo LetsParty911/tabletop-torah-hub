@@ -6,6 +6,10 @@ import { trackEvent, trackEventOnce } from "@/lib/analytics";
 
 const DISMISSED_KEY = "tftt:email-popup-dismissed:v2";
 const SIGNED_UP_KEY = "tftt:email-popup-signed-up:v2";
+const SHOWN_COUNT_KEY = "tftt:email-popup-shown-count";
+const LAST_SHOWN_AT_KEY = "tftt:email-popup-last-shown-at";
+const MAX_SHOWS = 2;
+const MIN_INTERVAL_MS = 14 * 24 * 60 * 60 * 1000;
 const DELAY_MS = 2000;
 
 function shouldSkip(): boolean {
@@ -13,10 +17,26 @@ function shouldSkip(): boolean {
   try {
     if (sessionStorage.getItem(DISMISSED_KEY) === "1") return true;
     if (localStorage.getItem(SIGNED_UP_KEY) === "1") return true;
+    const count = parseInt(localStorage.getItem(SHOWN_COUNT_KEY) ?? "0", 10) || 0;
+    if (count >= MAX_SHOWS) return true;
+    if (count > 0) {
+      const last = parseInt(localStorage.getItem(LAST_SHOWN_AT_KEY) ?? "0", 10) || 0;
+      if (last > 0 && Date.now() - last < MIN_INTERVAL_MS) return true;
+    }
   } catch {
     // ignore
   }
   return false;
+}
+
+function recordShown() {
+  try {
+    const count = parseInt(localStorage.getItem(SHOWN_COUNT_KEY) ?? "0", 10) || 0;
+    localStorage.setItem(SHOWN_COUNT_KEY, String(count + 1));
+    localStorage.setItem(LAST_SHOWN_AT_KEY, String(Date.now()));
+  } catch {
+    // ignore
+  }
 }
 
 export function EmailCapturePopup() {
