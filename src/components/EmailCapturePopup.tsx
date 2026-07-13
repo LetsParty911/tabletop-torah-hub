@@ -87,6 +87,7 @@ export function EmailCapturePopup() {
       if (timer !== null) return;
       timer = window.setTimeout(() => {
         if (!shouldSkip()) {
+          recordShown();
           setOpen(true);
           const t = performance.now();
           setShownAt(t);
