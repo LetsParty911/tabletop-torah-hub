@@ -10,7 +10,7 @@ import {
   subscribeEmail,
 } from "@/integrations/supabase/api.functions";
 import { trackEvent, trackEventOnce } from "@/lib/analytics";
-import { ListenToSummaryButton } from "@/components/ListenToSummaryButton";
+
 import { ExpandableSummary } from "@/components/ExpandableSummary";
 import {
   CATEGORY_KEYS,
@@ -474,14 +474,6 @@ function Index() {
                             text={r.summary_quick}
                             className="mt-3"
                           />
-                          {r.summary_audio_path && (
-                            <ListenToSummaryButton
-                              audioPath={r.summary_audio_path}
-                              resourceId={r.id}
-                              resourceTitle={r.title}
-                              publication={r.title}
-                            />
-                          )}
                         </>
                       )}
                       <div className="mt-auto pt-4">
