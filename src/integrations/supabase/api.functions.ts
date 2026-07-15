@@ -1032,12 +1032,22 @@ export const adminListPdfs = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
-    const { data: rows, error } = await admin
+    const withPub = await admin
+      .from("pdfs")
+      .select("id, parsha_key, title, subtitle, file_path, published, jewish_year, created_at, summary_quick, content_type, primary_category, tags, publication")
+      .order("created_at", { ascending: false });
+    if (!withPub.error) return { pdfs: withPub.data ?? [] };
+    const withCats = await admin
+      .from("pdfs")
+      .select("id, parsha_key, title, subtitle, file_path, published, jewish_year, created_at, summary_quick, content_type, primary_category, tags")
+      .order("created_at", { ascending: false });
+    if (!withCats.error) return { pdfs: withCats.data ?? [] };
+    const fb = await admin
       .from("pdfs")
       .select("id, parsha_key, title, subtitle, file_path, published, jewish_year, created_at, summary_quick, content_type")
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    return { pdfs: rows ?? [] };
+    if (fb.error) throw new Error(fb.error.message);
+    return { pdfs: fb.data ?? [] };
   });
 
 // ---------- Admin: generate/regenerate summary via external edge function ----------
