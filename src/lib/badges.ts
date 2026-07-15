@@ -28,7 +28,6 @@ export const TAG_LABELS: Record<string, string> = {
   textual: "Textual Analysis",
   practical: "Practical",
   discussion: "Discussion Starter",
-  read_aloud: "Read Aloud",
   quick_read: "Quick Read",
   advanced: "Advanced",
 };
