@@ -22,6 +22,8 @@ import {
   adminDeleteContactMessage,
   getAnnouncementBanner,
   adminSetAnnouncementBanner,
+  getWhatsNewBanner,
+  adminSetWhatsNewBanner,
   adminGetWeeklyEmailPreview,
   adminSendWeeklyEmail,
   adminListWeeklyEmailSends,
