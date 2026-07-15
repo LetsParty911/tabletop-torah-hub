@@ -35,8 +35,7 @@ export function AnnouncementBanner() {
       <div className="mx-auto max-w-5xl px-4 py-3 flex flex-col sm:flex-row items-center justify-center gap-x-4 gap-y-1 text-center">
         <div className="flex items-center gap-2">
           <Megaphone className="h-5 w-5 shrink-0" style={{ color: "#E8C468" }} aria-hidden="true" />
-          <p className="font-semibold text-sm sm:text-base tracking-wide">
-  text-primary-foreground">
+          <p className="font-semibold text-sm sm:text-base tracking-wide text-primary-foreground">
             {banner.text}
           </p>
         </div>
