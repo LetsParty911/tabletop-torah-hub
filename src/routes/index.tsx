@@ -467,15 +467,8 @@ function Index() {
                           ))}
                         </div>
                       )}
-                      {hasSummary && (
-                        <>
-                          <div className="mt-3 border-t border-accent/20" />
-                          <ExpandableSummary
-                            text={r.summary_quick}
-                            className="mt-3"
-                          />
-                        </>
-                      )}
+
+
                       <div className="mt-auto pt-4">
                       <a
                         href={`/view/${r.id}/download`}
