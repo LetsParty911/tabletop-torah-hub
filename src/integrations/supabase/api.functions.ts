@@ -166,10 +166,17 @@ type PdfResource = {
   content_type: string | null;
   summary_audio_path: string | null;
   primary_category: string | null;
+  publication: string | null;
   tags: string[];
 };
 
 async function fetchAllPublishedRows(admin: ReturnType<typeof getSupabaseAdmin>) {
+  const withPub = await admin
+    .from("pdfs")
+    .select("id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication")
+    .eq("published", true)
+    .order("created_at", { ascending: false });
+  if (!withPub.error) return withPub.data ?? [];
   const withCats = await admin
     .from("pdfs")
     .select("id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags")
