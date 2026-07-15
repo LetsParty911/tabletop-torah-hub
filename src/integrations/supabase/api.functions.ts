@@ -1101,6 +1101,9 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     fileName: string;
     fileBase64: string;
     jewishYear: number;
+    primaryCategory?: string | null;
+    publication?: string | null;
+    tags?: string[] | null;
   }) =>
     z
       .object({
@@ -1112,6 +1115,9 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
         fileName: z.string().min(1).max(255),
         fileBase64: z.string().min(10),
         jewishYear: z.number().int().min(5000).max(7000),
+        primaryCategory: z.enum(["kids", "family", "in_depth", "reference"]).nullable().optional(),
+        publication: z.enum(["tftt_original", "mikaamcha", "peninei_mechkerei"]).nullable().optional(),
+        tags: z.array(z.string().min(1).max(60)).max(20).nullable().optional(),
       })
       .parse(input),
   )
@@ -1158,8 +1164,8 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
       .from("pdfs")
       .upload(path, buf, { contentType: "application/pdf", upsert: false });
     if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
-    const { categoryForTitle } = await import("@/lib/badges");
-    const autoCategory = categoryForTitle(data.title);
+    const { publicationForTitle } = await import("@/lib/badges");
+    const autoPublication = publicationForTitle(data.title);
     const insertRow: Record<string, unknown> = {
       parsha_key: data.parshaKey,
       title: data.title,
@@ -1169,12 +1175,63 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
       jewish_year: data.jewishYear,
       created_by: createdBy,
     };
-    if (autoCategory) insertRow.primary_category = autoCategory;
-    const { error: insErr } = await admin.from("pdfs").insert(insertRow);
+    if (data.primaryCategory) insertRow.primary_category = data.primaryCategory;
+    const finalPublication = data.publication ?? autoPublication;
+    if (finalPublication) insertRow.publication = finalPublication;
+    if (data.tags && data.tags.length > 0) insertRow.tags = data.tags;
+
+    // Try insert with publication; if the column doesn't exist yet, retry without it.
+    let insErr = (await admin.from("pdfs").insert(insertRow)).error;
+    if (insErr && /publication/i.test(insErr.message)) {
+      const { publication: _p, ...fallback } = insertRow as any;
+      insErr = (await admin.from("pdfs").insert(fallback)).error;
+    }
     if (insErr) {
       await admin.storage.from("pdfs").remove([path]);
       throw new Error(`DB insert failed: ${insErr.message}`);
     }
+    return { ok: true };
+  });
+
+// ---------- Admin: update PDF metadata (category, publication, tags, title/subtitle) ----------
+export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
+  .inputValidator((input: {
+    accessToken: string;
+    id: string;
+    title?: string;
+    subtitle?: string | null;
+    primaryCategory?: string | null;
+    publication?: string | null;
+    tags?: string[] | null;
+  }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        id: z.string().uuid(),
+        title: z.string().min(1).max(300).optional(),
+        subtitle: z.string().max(500).nullable().optional(),
+        primaryCategory: z.enum(["kids", "family", "in_depth", "reference"]).nullable().optional(),
+        publication: z.enum(["tftt_original", "mikaamcha", "peninei_mechkerei"]).nullable().optional(),
+        tags: z.array(z.string().min(1).max(60)).max(20).nullable().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const update: Record<string, unknown> = {};
+    if (data.title !== undefined) update.title = data.title;
+    if (data.subtitle !== undefined) update.subtitle = data.subtitle;
+    if (data.primaryCategory !== undefined) update.primary_category = data.primaryCategory;
+    if (data.publication !== undefined) update.publication = data.publication;
+    if (data.tags !== undefined) update.tags = data.tags;
+    if (Object.keys(update).length === 0) return { ok: true };
+    let { error } = await admin.from("pdfs").update(update).eq("id", data.id);
+    if (error && /publication/i.test(error.message)) {
+      const { publication: _p, ...fallback } = update as any;
+      ({ error } = await admin.from("pdfs").update(fallback).eq("id", data.id));
+    }
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 
