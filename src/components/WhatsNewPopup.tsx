@@ -4,6 +4,7 @@ import {
   getWhatsNewPopup,
   type WhatsNewPopup as Popup,
 } from "@/integrations/supabase/api.functions";
+import { trackEvent } from "@/lib/analytics";
 
 const SEEN_KEY = "tftt:whats-new-seen-version";
 
