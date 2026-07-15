@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { FileText, Download, X } from "lucide-react";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { WhatsNewBanner } from "@/components/WhatsNewBanner";
 import { CategoryBadge } from "@/components/CategoryBadge";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 import {
