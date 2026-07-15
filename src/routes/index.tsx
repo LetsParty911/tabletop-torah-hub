@@ -11,7 +11,7 @@ import {
 } from "@/integrations/supabase/api.functions";
 import { trackEvent, trackEventOnce } from "@/lib/analytics";
 
-import { ExpandableSummary } from "@/components/ExpandableSummary";
+
 import {
   CATEGORY_KEYS,
   CATEGORY_LABELS,
