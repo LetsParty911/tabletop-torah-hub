@@ -15,7 +15,10 @@ import { trackEvent, trackEventOnce } from "@/lib/analytics";
 import {
   CATEGORY_KEYS,
   CATEGORY_LABELS,
+  PUBLICATION_KEYS,
+  PUBLICATION_LABELS,
   categoryLabel,
+  publicationLabel,
   tagLabel,
 } from "@/lib/badges";
 
@@ -28,6 +31,7 @@ type Resource = {
   content_type: string | null;
   summary_audio_path: string | null;
   primary_category: string | null;
+  publication: string | null;
   tags: string[];
 };
 
