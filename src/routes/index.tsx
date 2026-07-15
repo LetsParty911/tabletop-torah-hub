@@ -322,7 +322,7 @@ function Index() {
             <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
               Weekly Torah Notifications
             </h2>
-            <p className="mt-2 font-serif italic text-sm sm:text-base text-accent max-w-md mx-auto">
+            <p className="mt-2 font-serif italic font-medium text-sm sm:text-base text-primary max-w-md mx-auto">
               One short email each week when new Divrei Torah are uploaded.
             </p>
             <form
@@ -377,36 +377,48 @@ function Index() {
             )}
 
             {resources.length > 0 && (
-              <div className="mt-5 sm:mt-6">
-                <div className="flex gap-2 overflow-x-auto pb-2 justify-center flex-wrap">
-                  <CategoryBadge
-                    label="All"
-                    active={activeCategory === null}
-                    onClick={() => setActiveCategory(null)}
-                  />
-                  {CATEGORY_KEYS.map((k) => (
+              <div className="mt-5 sm:mt-6 space-y-4">
+                <div>
+                  <span className="block text-center font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">
+                    Content Type
+                  </span>
+                  <div className="flex gap-2 overflow-x-auto pb-2 justify-center flex-wrap">
                     <CategoryBadge
-                      key={k}
-                      label={CATEGORY_LABELS[k]}
-                      active={activeCategory === k}
-                      onClick={() => toggleCategory(k)}
+                      label="All"
+                      active={activeCategory === null}
+                      onClick={() => setActiveCategory(null)}
                     />
-                  ))}
+                    {CATEGORY_KEYS.map((k) => (
+                      <CategoryBadge
+                        key={k}
+                        label={CATEGORY_LABELS[k]}
+                        active={activeCategory === k}
+                        onClick={() => toggleCategory(k)}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className="mt-2 flex gap-2 overflow-x-auto pb-2 justify-center flex-wrap">
-                  <CategoryBadge
-                    label="All Publications"
-                    active={activePublication === null}
-                    onClick={() => setActivePublication(null)}
-                  />
-                  {PUBLICATION_KEYS.map((k) => (
+                <div>
+                  <span className="block text-center font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">
+                    Publication
+                  </span>
+                  <div className="flex gap-2 overflow-x-auto pb-2 justify-center flex-wrap">
                     <CategoryBadge
-                      key={k}
-                      label={PUBLICATION_LABELS[k]}
-                      active={activePublication === k}
-                      onClick={() => togglePublication(k)}
+                      label="All Publications"
+                      active={activePublication === null}
+                      onClick={() => setActivePublication(null)}
+                      variant="secondary"
                     />
-                  ))}
+                    {PUBLICATION_KEYS.map((k) => (
+                      <CategoryBadge
+                        key={k}
+                        label={PUBLICATION_LABELS[k]}
+                        active={activePublication === k}
+                        onClick={() => togglePublication(k)}
+                        variant="secondary"
+                      />
+                    ))}
+                  </div>
                 </div>
                 {hasActiveFilters && (
                   <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs">

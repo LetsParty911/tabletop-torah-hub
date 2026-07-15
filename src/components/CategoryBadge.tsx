@@ -6,11 +6,13 @@ type Props = {
   onClick?: () => void;
   as?: "button" | "span";
   size?: "sm" | "xs";
+  variant?: "default" | "secondary";
 };
 
 /**
- * Gold outline pill badge for category/tag display.
- * Active state = filled gold background with dark text.
+ * Pill badge for category/tag display.
+ * Default = antique gold (content type filters).
+ * Secondary = deep navy (publication/source filters).
  */
 export function CategoryBadge({
   label,
@@ -18,6 +20,7 @@ export function CategoryBadge({
   onClick,
   as,
   size = "sm",
+  variant = "default",
 }: Props) {
   const Tag = (as ?? (onClick ? "button" : "span")) as any;
   const base =
@@ -26,9 +29,23 @@ export function CategoryBadge({
     size === "xs"
       ? "px-2 py-0.5 text-[0.6rem]"
       : "px-2.5 py-0.5 text-[0.65rem] sm:text-xs";
+
+  const variants = {
+    default: {
+      active: "bg-accent text-accent-foreground border-accent",
+      inactive:
+        "bg-background text-accent border-accent/80 hover:bg-accent/10",
+    },
+    secondary: {
+      active: "bg-primary text-primary-foreground border-primary",
+      inactive:
+        "bg-background text-primary border-primary/60 hover:bg-primary/10",
+    },
+  };
+
   const state = active
-    ? "bg-accent text-accent-foreground border-accent"
-    : "bg-background text-accent border-accent/80 hover:bg-accent/10";
+    ? variants[variant].active
+    : variants[variant].inactive;
   const interactive = onClick ? "cursor-pointer" : "";
   return (
     <Tag
@@ -40,3 +57,4 @@ export function CategoryBadge({
     </Tag>
   );
 }
+
