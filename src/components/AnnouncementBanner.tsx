@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Megaphone } from "lucide-react";
 import {
   getAnnouncementBanner,
   type AnnouncementBanner as Banner,
