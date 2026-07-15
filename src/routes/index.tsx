@@ -401,13 +401,6 @@ function Index() {
                         onClick={() => setActiveCategory(null)}
                       />
                     )}
-                    {activePublication && (
-                      <CategoryBadge
-                        label={PUBLICATION_LABELS[activePublication] ?? activePublication}
-                        active
-                        onClick={() => setActivePublication(null)}
-                      />
-                    )}
                     {activeTags.map((t) => (
                       <CategoryBadge
                         key={t}
@@ -446,11 +439,8 @@ function Index() {
             ) : (
               <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
                 {filteredResources.map((r) => {
-                  
-                  
                   const catLabel = categoryLabel(r.primary_category);
-                  const pubLabel = publicationLabel(r.publication);
-                  const hasBadges = catLabel || pubLabel || (r.tags && r.tags.length > 0);
+                  const hasBadges = catLabel || (r.tags && r.tags.length > 0);
                   return (
                     <article
                       key={r.id}
@@ -478,13 +468,6 @@ function Index() {
                               label={catLabel}
                               active={activeCategory === r.primary_category}
                               onClick={() => toggleCategory(r.primary_category!)}
-                            />
-                          )}
-                          {pubLabel && r.publication && (
-                            <CategoryBadge
-                              label={pubLabel}
-                              active={activePublication === r.publication}
-                              onClick={() => togglePublication(r.publication!)}
                             />
                           )}
                           {r.tags?.map((t) => (
