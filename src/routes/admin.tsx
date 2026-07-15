@@ -528,7 +528,7 @@ function AdminPage() {
 
   const refresh = async () => {
     if (!accessToken || !isAdmin) return;
-    const [p, s, o, cs, cm, ann] = await Promise.all([
+    const [p, s, o, cs, cm, ann, wn] = await Promise.all([
       adminListPdfs({ data: { accessToken } }),
       adminListSubscribers({ data: { accessToken } }),
       getParshaOverride(),
@@ -538,6 +538,7 @@ function AdminPage() {
         (e: unknown) => ({ ok: false as const, error: e instanceof Error ? e.message : "unknown" }),
       ),
       getAnnouncementBanner(),
+      getWhatsNewBanner(),
     ]);
     setPdfs(p.pdfs as PdfRow[]);
     setSubscribers(s.subscribers as Subscriber[]);
@@ -547,6 +548,10 @@ function AdminPage() {
     setAnnText(ann.text ?? "");
     setAnnLinkUrl(ann.linkUrl ?? "");
     setAnnLinkLabel(ann.linkLabel ?? "");
+    setWnEnabled(wn.enabled);
+    setWnText(wn.text ?? "");
+    setWnLinkUrl(wn.linkUrl ?? "");
+    setWnLinkLabel(wn.linkLabel ?? "");
     if (cm.ok) {
       setContactMessages(cm.messages);
       setContactMessagesError(null);
