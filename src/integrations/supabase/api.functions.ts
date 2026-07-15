@@ -1640,6 +1640,70 @@ export const adminSetAnnouncementBanner = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- Public: read "What's New" banner ----------
+export type WhatsNewBanner = {
+  enabled: boolean;
+  text: string | null;
+  linkUrl: string | null;
+  linkLabel: string | null;
+};
+
+export const getWhatsNewBanner = createServerFn({ method: "GET" }).handler(
+  async (): Promise<WhatsNewBanner> => {
+    const admin = getSupabaseAdmin();
+    const { data, error } = await admin
+      .from("whats_new_banner")
+      .select("enabled, text, link_url, link_label")
+      .eq("id", 1)
+      .maybeSingle();
+    if (error || !data) {
+      return { enabled: false, text: null, linkUrl: null, linkLabel: null };
+    }
+    return {
+      enabled: Boolean(data.enabled),
+      text: (data.text ?? null) as string | null,
+      linkUrl: (data.link_url ?? null) as string | null,
+      linkLabel: (data.link_label ?? null) as string | null,
+    };
+  },
+);
+
+// ---------- Admin: update "What's New" banner ----------
+export const adminSetWhatsNewBanner = createServerFn({ method: "POST" })
+  .inputValidator((input: {
+    accessToken: string;
+    enabled: boolean;
+    text: string | null;
+    linkUrl: string | null;
+    linkLabel: string | null;
+  }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        enabled: z.boolean(),
+        text: z.string().trim().max(500).nullable(),
+        linkUrl: z.string().trim().url().max(500).nullable().or(z.literal("").transform(() => null)),
+        linkLabel: z.string().trim().max(120).nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { error } = await admin
+      .from("whats_new_banner")
+      .upsert({
+        id: 1,
+        enabled: data.enabled,
+        text: data.text && data.text.length > 0 ? data.text : null,
+        link_url: data.linkUrl && data.linkUrl.length > 0 ? data.linkUrl : null,
+        link_label: data.linkLabel && data.linkLabel.length > 0 ? data.linkLabel : null,
+        updated_at: new Date().toISOString(),
+      });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ---------- Admin: remove a weekly skip ----------
 export const adminRemoveWeeklySkip = createServerFn({ method: "POST" })
   .inputValidator((input: {

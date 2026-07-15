@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { FileText, Download, X } from "lucide-react";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { WhatsNewBanner } from "@/components/WhatsNewBanner";
 import { CategoryBadge } from "@/components/CategoryBadge";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 import {
@@ -253,6 +254,7 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background">
+      <WhatsNewBanner />
       <AnnouncementBanner />
       <div className="mx-auto max-w-5xl px-3 py-5 sm:px-4 sm:py-8 md:px-8 md:py-14 space-y-5 sm:space-y-8 md:space-y-10">
         {/* Hero */}
