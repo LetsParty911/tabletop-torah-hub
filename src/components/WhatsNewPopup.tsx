@@ -82,7 +82,7 @@ export function WhatsNewPopup() {
     >
       <div
         className="absolute inset-0 bg-black/50"
-        onClick={dismiss}
+        onClick={() => dismiss("backdrop")}
         aria-hidden="true"
       />
       <div className="relative w-full max-w-md">
@@ -90,7 +90,7 @@ export function WhatsNewPopup() {
           <div className="parchment-panel relative px-5 py-6 sm:px-6 sm:py-7">
             <button
               type="button"
-              onClick={dismiss}
+              onClick={() => dismiss("close_button")}
               aria-label="Close"
               className="absolute right-3 top-3 rounded-full p-1 text-accent hover:bg-accent/10 hover:text-primary transition-colors"
             >
@@ -126,7 +126,7 @@ export function WhatsNewPopup() {
                         href={item.linkUrl!}
                         target={isExternal ? "_blank" : undefined}
                         rel={isExternal ? "noopener noreferrer" : undefined}
-                        onClick={dismiss}
+                        onClick={() => dismiss("link_click")}
                         className="mt-2 inline-flex items-center rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
                       >
                         {item.linkLabel} →
@@ -140,7 +140,7 @@ export function WhatsNewPopup() {
             <div className="mt-6 flex justify-end">
               <button
                 type="button"
-                onClick={dismiss}
+                onClick={() => dismiss("got_it")}
                 className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md"
               >
                 Got it
