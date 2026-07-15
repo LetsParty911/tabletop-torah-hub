@@ -193,6 +193,18 @@ function AdminPage() {
   const [subtitle, setSubtitle] = useState("");
   const [published, setPublished] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [uploadCategory, setUploadCategory] = useState<string>("");
+  const [uploadPublication, setUploadPublication] = useState<string>("");
+  const [uploadPublicationTouched, setUploadPublicationTouched] = useState(false);
+  const [uploadTags, setUploadTags] = useState<string[]>([]);
+
+  // Inline metadata editor state (per row) — category / publication / tags / title / subtitle
+  const [editMetaTitle, setEditMetaTitle] = useState("");
+  const [editMetaSubtitle, setEditMetaSubtitle] = useState("");
+  const [editMetaCategory, setEditMetaCategory] = useState<string>("");
+  const [editMetaPublication, setEditMetaPublication] = useState<string>("");
+  const [editMetaTags, setEditMetaTags] = useState<string[]>([]);
+  const [savingMeta, setSavingMeta] = useState(false);
 
   // Inline "Replace PDF" editor state (per row)
   const [editingPdfId, setEditingPdfId] = useState<string | null>(null);
