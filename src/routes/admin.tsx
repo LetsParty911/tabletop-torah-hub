@@ -156,6 +156,10 @@ function AdminPage() {
   const [annText, setAnnText] = useState("");
   const [annLinkUrl, setAnnLinkUrl] = useState("");
   const [annLinkLabel, setAnnLinkLabel] = useState("");
+  const [wnEnabled, setWnEnabled] = useState(false);
+  const [wnText, setWnText] = useState("");
+  const [wnLinkUrl, setWnLinkUrl] = useState("");
+  const [wnLinkLabel, setWnLinkLabel] = useState("");
   const [busy, setBusy] = useState(false);
   const [yearFilter, setYearFilter] = useState<string>("all");
   const [msg, setMsg] = useState<{ kind: "success" | "error"; text: string } | null>(null);
