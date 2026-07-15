@@ -219,6 +219,7 @@ async function buildResources(
         content_type: r.content_type,
         summary_audio_path: r.summary_audio_path ?? null,
         primary_category: (r.primary_category as string | null) ?? null,
+        publication: (r.publication as string | null) ?? null,
         tags: Array.isArray(r.tags) ? (r.tags as string[]) : [],
       };
     }),
