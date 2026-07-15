@@ -151,12 +151,7 @@ function ArchivePage() {
                                 )}
                               </div>
                             </div>
-                            {r.summary_quick && (
-                              <ExpandableSummary
-                                text={r.summary_quick}
-                                className="mt-3"
-                              />
-                            )}
+
                             <div className="mt-4">
                               <a
                                 href={`/view/${r.id}/download`}
