@@ -1150,7 +1150,9 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
       .from("pdfs")
       .upload(path, buf, { contentType: "application/pdf", upsert: false });
     if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
-    const { error: insErr } = await admin.from("pdfs").insert({
+    const { categoryForTitle } = await import("@/lib/badges");
+    const autoCategory = categoryForTitle(data.title);
+    const insertRow: Record<string, unknown> = {
       parsha_key: data.parshaKey,
       title: data.title,
       subtitle: data.subtitle,
@@ -1158,7 +1160,9 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
       published: data.published,
       jewish_year: data.jewishYear,
       created_by: createdBy,
-    });
+    };
+    if (autoCategory) insertRow.primary_category = autoCategory;
+    const { error: insErr } = await admin.from("pdfs").insert(insertRow);
     if (insErr) {
       await admin.storage.from("pdfs").remove([path]);
       throw new Error(`DB insert failed: ${insErr.message}`);
