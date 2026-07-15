@@ -29,7 +29,12 @@ export function WhatsNewPopup() {
         }
         if (seen === p.version) return;
         timer = window.setTimeout(() => {
-          if (!cancelled) setOpen(true);
+          if (cancelled) return;
+          setOpen(true);
+          trackEvent("whats_new_popup_shown", {
+            popup_version: p.version,
+            item_count: p.items.length,
+          });
         }, 800);
       } catch {
         // silent
@@ -41,13 +46,17 @@ export function WhatsNewPopup() {
     };
   }, []);
 
-  const dismiss = () => {
+  const dismiss = (method: "close_button" | "got_it" | "escape" | "backdrop" | "link_click" = "close_button") => {
     if (popup) {
       try {
         localStorage.setItem(SEEN_KEY, popup.version);
       } catch {
         /* ignore */
       }
+      trackEvent("whats_new_popup_dismissed", {
+        popup_version: popup.version,
+        method,
+      });
     }
     setOpen(false);
   };
@@ -55,7 +64,7 @@ export function WhatsNewPopup() {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") dismiss();
+      if (e.key === "Escape") dismiss("escape");
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
