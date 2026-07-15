@@ -1704,6 +1704,145 @@ export const adminSetWhatsNewBanner = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- Public: read "What's New" popup ----------
+export type WhatsNewPopupItem = {
+  title: string;
+  description: string | null;
+  linkUrl: string | null;
+  linkLabel: string | null;
+};
+
+export type WhatsNewPopup = {
+  enabled: boolean;
+  heading: string;
+  items: WhatsNewPopupItem[];
+  version: string;
+};
+
+export const getWhatsNewPopup = createServerFn({ method: "GET" }).handler(
+  async (): Promise<WhatsNewPopup> => {
+    const admin = getSupabaseAdmin();
+    const { data, error } = await admin
+      .from("whats_new_popup")
+      .select("enabled, heading, items, version")
+      .eq("id", 1)
+      .maybeSingle();
+    if (error || !data) {
+      return { enabled: false, heading: "What's New", items: [], version: "0" };
+    }
+    const rawItems = Array.isArray(data.items) ? (data.items as any[]) : [];
+    const items: WhatsNewPopupItem[] = rawItems
+      .filter((i) => i && typeof i.title === "string" && i.title.trim())
+      .slice(0, 4)
+      .map((i) => ({
+        title: String(i.title),
+        description: i.description ? String(i.description) : null,
+        linkUrl: i.linkUrl ? String(i.linkUrl) : null,
+        linkLabel: i.linkLabel ? String(i.linkLabel) : null,
+      }));
+    return {
+      enabled: Boolean(data.enabled),
+      heading: (data.heading as string | null) ?? "What's New",
+      items,
+      version: (data.version as string | null) ?? "0",
+    };
+  },
+);
+
+// ---------- Admin: update "What's New" popup ----------
+const whatsNewPopupItemSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  description: z
+    .string()
+    .trim()
+    .max(500)
+    .nullable()
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : null)),
+  linkUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .url()
+    .nullable()
+    .optional()
+    .or(z.literal("").transform(() => null))
+    .transform((v) => (v && v.length > 0 ? v : null)),
+  linkLabel: z
+    .string()
+    .trim()
+    .max(120)
+    .nullable()
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : null)),
+});
+
+export const adminSetWhatsNewPopup = createServerFn({ method: "POST" })
+  .inputValidator((input: {
+    accessToken: string;
+    enabled: boolean;
+    heading: string;
+    items: Array<{
+      title: string;
+      description?: string | null;
+      linkUrl?: string | null;
+      linkLabel?: string | null;
+    }>;
+    version?: string | null;
+  }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        enabled: z.boolean(),
+        heading: z.string().trim().min(1).max(200),
+        items: z.array(whatsNewPopupItemSchema).max(4),
+        version: z.string().trim().max(64).nullable().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+
+    // Read current row to decide whether to bump version.
+    const { data: existing } = await admin
+      .from("whats_new_popup")
+      .select("heading, items, version, enabled")
+      .eq("id", 1)
+      .maybeSingle();
+
+    const newContentSig = JSON.stringify({
+      heading: data.heading,
+      items: data.items,
+    });
+    const oldContentSig = existing
+      ? JSON.stringify({
+          heading: (existing.heading as string | null) ?? "What's New",
+          items: Array.isArray(existing.items) ? existing.items : [],
+        })
+      : null;
+
+    let version = (existing?.version as string | null) ?? "1";
+    if (data.version && data.version.length > 0) {
+      version = data.version;
+    } else if (!existing || oldContentSig !== newContentSig) {
+      version = String(Date.now());
+    }
+
+    const { error } = await admin
+      .from("whats_new_popup")
+      .upsert({
+        id: 1,
+        enabled: data.enabled,
+        heading: data.heading,
+        items: data.items,
+        version,
+        updated_at: new Date().toISOString(),
+      });
+    if (error) throw new Error(error.message);
+    return { ok: true, version };
+  });
+
 // ---------- Admin: remove a weekly skip ----------
 export const adminRemoveWeeklySkip = createServerFn({ method: "POST" })
   .inputValidator((input: {
