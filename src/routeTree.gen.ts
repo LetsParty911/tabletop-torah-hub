@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
-import { Route as PublicationsRouteImport } from './routes/publications'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ArchiveRouteImport } from './routes/archive'
@@ -31,11 +30,6 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   id: '/robots.txt',
   path: '/robots.txt',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PublicationsRoute = PublicationsRouteImport.update({
-  id: '/publications',
-  path: '/publications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfflineRoute = OfflineRouteImport.update({
@@ -96,7 +90,6 @@ export interface FileRoutesByFullPath {
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
   '/offline': typeof OfflineRoute
-  '/publications': typeof PublicationsRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
@@ -111,7 +104,6 @@ export interface FileRoutesByTo {
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
   '/offline': typeof OfflineRoute
-  '/publications': typeof PublicationsRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
@@ -127,7 +119,6 @@ export interface FileRoutesById {
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
   '/offline': typeof OfflineRoute
-  '/publications': typeof PublicationsRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
@@ -144,7 +135,6 @@ export interface FileRouteTypes {
     | '/archive'
     | '/contact'
     | '/offline'
-    | '/publications'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/unsubscribe/$token'
@@ -159,7 +149,6 @@ export interface FileRouteTypes {
     | '/archive'
     | '/contact'
     | '/offline'
-    | '/publications'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/unsubscribe/$token'
@@ -174,7 +163,6 @@ export interface FileRouteTypes {
     | '/archive'
     | '/contact'
     | '/offline'
-    | '/publications'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/unsubscribe/$token'
@@ -190,7 +178,6 @@ export interface RootRouteChildren {
   ArchiveRoute: typeof ArchiveRoute
   ContactRoute: typeof ContactRoute
   OfflineRoute: typeof OfflineRoute
-  PublicationsRoute: typeof PublicationsRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
@@ -211,13 +198,6 @@ declare module '@tanstack/react-router' {
       path: '/robots.txt'
       fullPath: '/robots.txt'
       preLoaderRoute: typeof RobotsDottxtRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/publications': {
-      id: '/publications'
-      path: '/publications'
-      fullPath: '/publications'
-      preLoaderRoute: typeof PublicationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offline': {
@@ -313,7 +293,6 @@ const rootRouteChildren: RootRouteChildren = {
   ArchiveRoute: ArchiveRoute,
   ContactRoute: ContactRoute,
   OfflineRoute: OfflineRoute,
-  PublicationsRoute: PublicationsRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
