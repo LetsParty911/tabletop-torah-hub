@@ -32,9 +32,18 @@ import {
   adminGenerateSummary,
   adminListPdfsMissingAudio,
   adminGenerateAudio,
+  adminUpdatePdfMeta,
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
+import {
+  CATEGORY_KEYS,
+  CATEGORY_LABELS,
+  PUBLICATION_KEYS,
+  PUBLICATION_LABELS,
+  TAG_LABELS,
+  publicationForTitle,
+} from "@/lib/badges";
 
 import { getCurrentJewishYear } from "@/lib/jewish-year";
 import { CheckCircle2, Circle, MinusCircle, Eye, Download, Printer } from "lucide-react";
@@ -55,6 +64,9 @@ type PdfRow = {
   created_at: string;
   summary_quick: string | null;
   content_type: string | null;
+  primary_category?: string | null;
+  publication?: string | null;
+  tags?: string[] | null;
 };
 
 type Subscriber = { id: string; email: string; created_at: string };
@@ -181,6 +193,18 @@ function AdminPage() {
   const [subtitle, setSubtitle] = useState("");
   const [published, setPublished] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [uploadCategory, setUploadCategory] = useState<string>("");
+  const [uploadPublication, setUploadPublication] = useState<string>("");
+  const [uploadPublicationTouched, setUploadPublicationTouched] = useState(false);
+  const [uploadTags, setUploadTags] = useState<string[]>([]);
+
+  // Inline metadata editor state (per row) — category / publication / tags / title / subtitle
+  const [editMetaTitle, setEditMetaTitle] = useState("");
+  const [editMetaSubtitle, setEditMetaSubtitle] = useState("");
+  const [editMetaCategory, setEditMetaCategory] = useState<string>("");
+  const [editMetaPublication, setEditMetaPublication] = useState<string>("");
+  const [editMetaTags, setEditMetaTags] = useState<string[]>([]);
+  const [savingMeta, setSavingMeta] = useState(false);
 
   // Inline "Replace PDF" editor state (per row)
   const [editingPdfId, setEditingPdfId] = useState<string | null>(null);
@@ -334,6 +358,13 @@ function AdminPage() {
       setParshaKey(resolvedCurrentParsha);
     }
   }, [resolvedCurrentParsha, parshaUserTouched, parshaKey]);
+
+  // Auto-suggest publication from the title unless the admin has touched the field.
+  useEffect(() => {
+    if (uploadPublicationTouched) return;
+    const suggested = publicationForTitle(title) ?? "";
+    setUploadPublication(suggested);
+  }, [title, uploadPublicationTouched]);
 
   // Skipped-this-week state, keyed by parsha + jewish_year, persisted in DB.
   const [jewishYear, setJewishYear] = useState<number | null>(null);
@@ -630,11 +661,18 @@ function AdminPage() {
           fileName: file.name,
           fileBase64,
           jewishYear,
+          primaryCategory: (uploadCategory || null) as any,
+          publication: (uploadPublication || null) as any,
+          tags: uploadTags.length > 0 ? uploadTags : null,
         },
       });
       setTitle("");
       setSubtitle("");
       setFile(null);
+      setUploadCategory("");
+      setUploadPublication("");
+      setUploadPublicationTouched(false);
+      setUploadTags([]);
       (document.getElementById("pdf-file-input") as HTMLInputElement | null)?.value &&
         ((document.getElementById("pdf-file-input") as HTMLInputElement).value = "");
       setMsg({ kind: "success", text: "Uploaded." });
@@ -670,11 +708,43 @@ function AdminPage() {
   const startEditPdf = (id: string) => {
     setEditingPdfId(id);
     setReplaceFile(null);
+    const row = pdfs.find((p) => p.id === id);
+    setEditMetaTitle(row?.title ?? "");
+    setEditMetaSubtitle(row?.subtitle ?? "");
+    setEditMetaCategory((row?.primary_category as string) ?? "");
+    setEditMetaPublication((row?.publication as string) ?? "");
+    setEditMetaTags(Array.isArray(row?.tags) ? (row!.tags as string[]) : []);
   };
 
   const cancelEditPdf = () => {
     setEditingPdfId(null);
     setReplaceFile(null);
+  };
+
+  const handleSaveMeta = async (id: string) => {
+    if (!accessToken) return;
+    setSavingMeta(true);
+    setMsg(null);
+    try {
+      await adminUpdatePdfMeta({
+        data: {
+          accessToken,
+          id,
+          title: editMetaTitle,
+          subtitle: editMetaSubtitle || null,
+          primaryCategory: (editMetaCategory || null) as any,
+          publication: (editMetaPublication || null) as any,
+          tags: editMetaTags,
+        },
+      });
+      setMsg({ kind: "success", text: "Metadata saved." });
+      await refresh();
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : "Unknown error";
+      setMsg({ kind: "error", text: `Save failed: ${detail}` });
+    } finally {
+      setSavingMeta(false);
+    }
   };
 
   const handleReplacePdf = async (id: string) => {
@@ -1365,6 +1435,62 @@ function AdminPage() {
                   className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
                 />
               </label>
+              <label className="block">
+                <span className="text-sm font-medium">Category (optional)</span>
+                <select
+                  value={uploadCategory}
+                  onChange={(e) => setUploadCategory(e.target.value)}
+                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                >
+                  <option value="">— none —</option>
+                  {CATEGORY_KEYS.map((k) => (
+                    <option key={k} value={k}>{CATEGORY_LABELS[k]}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium">
+                  Publication (optional)
+                  {!uploadPublicationTouched && uploadPublication && (
+                    <span className="ml-2 text-xs text-muted-foreground">(auto-suggested from title)</span>
+                  )}
+                </span>
+                <select
+                  value={uploadPublication}
+                  onChange={(e) => {
+                    setUploadPublication(e.target.value);
+                    setUploadPublicationTouched(true);
+                  }}
+                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                >
+                  <option value="">— none —</option>
+                  {PUBLICATION_KEYS.map((k) => (
+                    <option key={k} value={k}>{PUBLICATION_LABELS[k]}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="md:col-span-2">
+                <span className="text-sm font-medium">Tags (optional)</span>
+                <div className="mt-2 flex flex-wrap gap-3">
+                  {Object.entries(TAG_LABELS).map(([key, label]) => {
+                    const checked = uploadTags.includes(key);
+                    return (
+                      <label key={key} className="inline-flex items-center gap-1.5 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            setUploadTags((prev) =>
+                              e.target.checked ? [...prev, key] : prev.filter((t) => t !== key),
+                            );
+                          }}
+                        />
+                        <span>{label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
               <label className="block md:col-span-2">
                 <span className="text-sm font-medium">PDF file</span>
                 <input
@@ -1663,6 +1789,89 @@ function AdminPage() {
                                         className="rounded-md border border-accent/60 px-3 py-1.5 text-xs font-medium text-foreground"
                                       >
                                         Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div className="md:col-span-2 rounded-md border border-accent/60 bg-background p-3">
+                                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                                      Edit metadata
+                                    </div>
+                                    <div className="grid gap-3 md:grid-cols-2">
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Title</span>
+                                        <input
+                                          value={editMetaTitle}
+                                          onChange={(e) => setEditMetaTitle(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        />
+                                      </label>
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Subtitle</span>
+                                        <input
+                                          value={editMetaSubtitle}
+                                          onChange={(e) => setEditMetaSubtitle(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        />
+                                      </label>
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Category</span>
+                                        <select
+                                          value={editMetaCategory}
+                                          onChange={(e) => setEditMetaCategory(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        >
+                                          <option value="">— none —</option>
+                                          {CATEGORY_KEYS.map((k) => (
+                                            <option key={k} value={k}>{CATEGORY_LABELS[k]}</option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Publication</span>
+                                        <select
+                                          value={editMetaPublication}
+                                          onChange={(e) => setEditMetaPublication(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        >
+                                          <option value="">— none —</option>
+                                          {PUBLICATION_KEYS.map((k) => (
+                                            <option key={k} value={k}>{PUBLICATION_LABELS[k]}</option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                      <div className="md:col-span-2">
+                                        <span className="text-xs font-medium">Tags</span>
+                                        <div className="mt-1 flex flex-wrap gap-2">
+                                          {Object.entries(TAG_LABELS).map(([key, label]) => {
+                                            const checked = editMetaTags.includes(key);
+                                            return (
+                                              <label key={key} className="inline-flex items-center gap-1 text-xs">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={checked}
+                                                  onChange={(e) => {
+                                                    setEditMetaTags((prev) =>
+                                                      e.target.checked
+                                                        ? [...prev, key]
+                                                        : prev.filter((t) => t !== key),
+                                                    );
+                                                  }}
+                                                />
+                                                <span>{label}</span>
+                                              </label>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="mt-3 flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSaveMeta(p.id)}
+                                        disabled={savingMeta}
+                                        className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
+                                      >
+                                        {savingMeta ? "Saving…" : "Save metadata"}
                                       </button>
                                     </div>
                                   </div>

@@ -15,7 +15,10 @@ import { trackEvent, trackEventOnce } from "@/lib/analytics";
 import {
   CATEGORY_KEYS,
   CATEGORY_LABELS,
+  PUBLICATION_KEYS,
+  PUBLICATION_LABELS,
   categoryLabel,
+  publicationLabel,
   tagLabel,
 } from "@/lib/badges";
 
@@ -28,6 +31,7 @@ type Resource = {
   content_type: string | null;
   summary_audio_path: string | null;
   primary_category: string | null;
+  publication: string | null;
   tags: string[];
 };
 
@@ -167,10 +171,14 @@ function Index() {
   const [email, setEmail] = useState("");
   const [signupMsg, setSignupMsg] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activePublication, setActivePublication] = useState<string | null>(null);
   const [activeTags, setActiveTags] = useState<string[]>([]);
 
   const toggleCategory = (key: string) => {
     setActiveCategory((cur) => (cur === key ? null : key));
+  };
+  const togglePublication = (key: string) => {
+    setActivePublication((cur) => (cur === key ? null : key));
   };
   const toggleTag = (key: string) => {
     setActiveTags((cur) =>
@@ -179,12 +187,14 @@ function Index() {
   };
   const clearFilters = () => {
     setActiveCategory(null);
+    setActivePublication(null);
     setActiveTags([]);
   };
 
   const filteredResources = useMemo(() => {
     return resources.filter((r) => {
       if (activeCategory && r.primary_category !== activeCategory) return false;
+      if (activePublication && r.publication !== activePublication) return false;
       if (activeTags.length > 0) {
         for (const tag of activeTags) {
           if (!r.tags?.includes(tag)) return false;
@@ -192,9 +202,10 @@ function Index() {
       }
       return true;
     });
-  }, [resources, activeCategory, activeTags]);
+  }, [resources, activeCategory, activePublication, activeTags]);
 
-  const hasActiveFilters = activeCategory !== null || activeTags.length > 0;
+  const hasActiveFilters =
+    activeCategory !== null || activePublication !== null || activeTags.length > 0;
 
 
 
@@ -375,6 +386,21 @@ function Index() {
                     />
                   ))}
                 </div>
+                <div className="mt-2 flex gap-2 overflow-x-auto pb-2 justify-center flex-wrap">
+                  <CategoryBadge
+                    label="All Publications"
+                    active={activePublication === null}
+                    onClick={() => setActivePublication(null)}
+                  />
+                  {PUBLICATION_KEYS.map((k) => (
+                    <CategoryBadge
+                      key={k}
+                      label={PUBLICATION_LABELS[k]}
+                      active={activePublication === k}
+                      onClick={() => togglePublication(k)}
+                    />
+                  ))}
+                </div>
                 {hasActiveFilters && (
                   <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs">
                     <span className="text-muted-foreground uppercase tracking-wider">
@@ -385,6 +411,13 @@ function Index() {
                         label={CATEGORY_LABELS[activeCategory] ?? activeCategory}
                         active
                         onClick={() => setActiveCategory(null)}
+                      />
+                    )}
+                    {activePublication && (
+                      <CategoryBadge
+                        label={PUBLICATION_LABELS[activePublication] ?? activePublication}
+                        active
+                        onClick={() => setActivePublication(null)}
                       />
                     )}
                     {activeTags.map((t) => (
@@ -428,6 +461,8 @@ function Index() {
                   
                   
                   const catLabel = categoryLabel(r.primary_category);
+                  const pubLabel = publicationLabel(r.publication);
+                  const hasBadges = catLabel || pubLabel || (r.tags && r.tags.length > 0);
                   return (
                     <article
                       key={r.id}
@@ -448,13 +483,20 @@ function Index() {
                           )}
                         </div>
                       </div>
-                      {(catLabel || (r.tags && r.tags.length > 0)) && (
+                      {hasBadges && (
                         <div className="mt-3 flex flex-wrap gap-1.5">
                           {catLabel && r.primary_category && (
                             <CategoryBadge
                               label={catLabel}
                               active={activeCategory === r.primary_category}
                               onClick={() => toggleCategory(r.primary_category!)}
+                            />
+                          )}
+                          {pubLabel && r.publication && (
+                            <CategoryBadge
+                              label={pubLabel}
+                              active={activePublication === r.publication}
+                              onClick={() => togglePublication(r.publication!)}
                             />
                           )}
                           {r.tags?.map((t) => (
