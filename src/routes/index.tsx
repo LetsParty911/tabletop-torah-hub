@@ -171,10 +171,14 @@ function Index() {
   const [email, setEmail] = useState("");
   const [signupMsg, setSignupMsg] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activePublication, setActivePublication] = useState<string | null>(null);
   const [activeTags, setActiveTags] = useState<string[]>([]);
 
   const toggleCategory = (key: string) => {
     setActiveCategory((cur) => (cur === key ? null : key));
+  };
+  const togglePublication = (key: string) => {
+    setActivePublication((cur) => (cur === key ? null : key));
   };
   const toggleTag = (key: string) => {
     setActiveTags((cur) =>
@@ -183,12 +187,14 @@ function Index() {
   };
   const clearFilters = () => {
     setActiveCategory(null);
+    setActivePublication(null);
     setActiveTags([]);
   };
 
   const filteredResources = useMemo(() => {
     return resources.filter((r) => {
       if (activeCategory && r.primary_category !== activeCategory) return false;
+      if (activePublication && r.publication !== activePublication) return false;
       if (activeTags.length > 0) {
         for (const tag of activeTags) {
           if (!r.tags?.includes(tag)) return false;
@@ -196,9 +202,10 @@ function Index() {
       }
       return true;
     });
-  }, [resources, activeCategory, activeTags]);
+  }, [resources, activeCategory, activePublication, activeTags]);
 
-  const hasActiveFilters = activeCategory !== null || activeTags.length > 0;
+  const hasActiveFilters =
+    activeCategory !== null || activePublication !== null || activeTags.length > 0;
 
 
 
