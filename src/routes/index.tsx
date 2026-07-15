@@ -15,6 +15,7 @@ import { trackEvent, trackEventOnce } from "@/lib/analytics";
 import {
   CATEGORY_KEYS,
   CATEGORY_LABELS,
+  TAG_KEYS,
   categoryLabel,
   tagLabel,
 } from "@/lib/badges";
@@ -385,6 +386,21 @@ function Index() {
                         label={CATEGORY_LABELS[k]}
                         active={activeCategory === k}
                         onClick={() => toggleCategory(k)}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span className="block text-center font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">
+                    Tags
+                  </span>
+                  <div className="flex gap-2 overflow-x-auto pb-2 justify-center flex-wrap">
+                    {TAG_KEYS.map((k) => (
+                      <CategoryBadge
+                        key={k}
+                        label={tagLabel(k)}
+                        active={activeTags.includes(k)}
+                        onClick={() => toggleTag(k)}
                       />
                     ))}
                   </div>
