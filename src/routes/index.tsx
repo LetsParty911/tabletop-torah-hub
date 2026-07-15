@@ -461,6 +461,8 @@ function Index() {
                   
                   
                   const catLabel = categoryLabel(r.primary_category);
+                  const pubLabel = publicationLabel(r.publication);
+                  const hasBadges = catLabel || pubLabel || (r.tags && r.tags.length > 0);
                   return (
                     <article
                       key={r.id}
@@ -481,13 +483,20 @@ function Index() {
                           )}
                         </div>
                       </div>
-                      {(catLabel || (r.tags && r.tags.length > 0)) && (
+                      {hasBadges && (
                         <div className="mt-3 flex flex-wrap gap-1.5">
                           {catLabel && r.primary_category && (
                             <CategoryBadge
                               label={catLabel}
                               active={activeCategory === r.primary_category}
                               onClick={() => toggleCategory(r.primary_category!)}
+                            />
+                          )}
+                          {pubLabel && r.publication && (
+                            <CategoryBadge
+                              label={pubLabel}
+                              active={activePublication === r.publication}
+                              onClick={() => togglePublication(r.publication!)}
                             />
                           )}
                           {r.tags?.map((t) => (
