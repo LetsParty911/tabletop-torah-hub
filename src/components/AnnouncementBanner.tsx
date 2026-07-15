@@ -7,13 +7,10 @@ import {
 
 export function AnnouncementBanner() {
   const [banner, setBanner] = useState<Banner | null>({
-    id: "test",
     text: "Important announcement: New parsha materials are now available!",
     linkUrl: "/archive",
     linkLabel: "Explore",
     enabled: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
   });
 
   useEffect(() => {
