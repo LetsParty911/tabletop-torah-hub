@@ -15,10 +15,7 @@ import { trackEvent, trackEventOnce } from "@/lib/analytics";
 import {
   CATEGORY_KEYS,
   CATEGORY_LABELS,
-  PUBLICATION_KEYS,
-  PUBLICATION_LABELS,
   categoryLabel,
-  publicationLabel,
   tagLabel,
 } from "@/lib/badges";
 
