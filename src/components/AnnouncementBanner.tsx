@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Megaphone } from "lucide-react";
 import {
   getAnnouncementBanner,
   type AnnouncementBanner as Banner,
@@ -30,17 +31,20 @@ export function AnnouncementBanner() {
   const isExternal = banner.linkUrl?.startsWith("http");
 
   return (
-    <div className="border-b border-accent/30 bg-accent/10">
-      <div className="mx-auto max-w-5xl px-4 py-2.5 flex flex-col sm:flex-row items-center justify-center gap-x-4 gap-y-1 text-center">
-        <p className="font-serif italic text-sm sm:text-base text-primary">
-          {banner.text}
-        </p>
+    <div className="bg-primary text-primary-foreground border-y-2 border-accent shadow-md">
+      <div className="mx-auto max-w-5xl px-4 py-3 flex flex-col sm:flex-row items-center justify-center gap-x-4 gap-y-1 text-center">
+        <div className="flex items-center gap-2">
+          <Megaphone className="h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
+          <p className="font-semibold text-sm sm:text-base tracking-wide">
+            {banner.text}
+          </p>
+        </div>
         {showLink && (
           <a
             href={banner.linkUrl!}
             target={isExternal ? "_blank" : undefined}
             rel={isExternal ? "noopener noreferrer" : undefined}
-            className="text-xs sm:text-sm font-medium text-accent hover:text-primary underline underline-offset-2 transition-colors whitespace-nowrap"
+            className="inline-flex items-center rounded-full bg-accent px-4 py-1.5 text-xs sm:text-sm font-bold text-accent-foreground hover:bg-accent/90 transition-colors whitespace-nowrap shadow-sm"
           >
             {banner.linkLabel} →
           </a>
