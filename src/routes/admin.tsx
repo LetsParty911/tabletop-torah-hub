@@ -661,11 +661,18 @@ function AdminPage() {
           fileName: file.name,
           fileBase64,
           jewishYear,
+          primaryCategory: (uploadCategory || null) as any,
+          publication: (uploadPublication || null) as any,
+          tags: uploadTags.length > 0 ? uploadTags : null,
         },
       });
       setTitle("");
       setSubtitle("");
       setFile(null);
+      setUploadCategory("");
+      setUploadPublication("");
+      setUploadPublicationTouched(false);
+      setUploadTags([]);
       (document.getElementById("pdf-file-input") as HTMLInputElement | null)?.value &&
         ((document.getElementById("pdf-file-input") as HTMLInputElement).value = "");
       setMsg({ kind: "success", text: "Uploaded." });
