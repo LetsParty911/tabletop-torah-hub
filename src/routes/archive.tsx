@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileText, Download } from "lucide-react";
-import { ExpandableSummary } from "@/components/ExpandableSummary";
 import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
+
 
 export const Route = createFileRoute("/archive")({
   component: ArchivePage,
