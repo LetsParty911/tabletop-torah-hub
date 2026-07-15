@@ -126,7 +126,14 @@ export function WhatsNewPopup() {
                         href={item.linkUrl!}
                         target={isExternal ? "_blank" : undefined}
                         rel={isExternal ? "noopener noreferrer" : undefined}
-                        onClick={() => dismiss("link_click")}
+                        onClick={() => {
+                          trackEvent("whats_new_popup_link_click", {
+                            popup_version: popup.version,
+                            linkLabel: item.linkLabel,
+                            linkUrl: item.linkUrl,
+                          });
+                          dismiss("link_click");
+                        }}
                         className="mt-2 inline-flex items-center rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
                       >
                         {item.linkLabel} →
