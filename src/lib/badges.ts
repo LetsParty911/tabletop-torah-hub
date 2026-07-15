@@ -5,6 +5,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
   reference: "Halacha",
   tftt_original: "TFTT Original",
   mikaamcha: "Mi Ka'amcha Yisroel",
+  peninei_mechkerei: "Peninei Mechkerei Eretz",
 };
 
 export const TAG_LABELS: Record<string, string> = {
@@ -28,6 +29,7 @@ export const CATEGORY_KEYS = [
   "reference",
   "tftt_original",
   "mikaamcha",
+  "peninei_mechkerei",
 ] as const;
 
 // Map of normalized publication title -> primary_category key.
