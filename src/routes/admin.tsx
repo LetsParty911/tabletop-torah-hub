@@ -359,6 +359,13 @@ function AdminPage() {
     }
   }, [resolvedCurrentParsha, parshaUserTouched, parshaKey]);
 
+  // Auto-suggest publication from the title unless the admin has touched the field.
+  useEffect(() => {
+    if (uploadPublicationTouched) return;
+    const suggested = publicationForTitle(title) ?? "";
+    setUploadPublication(suggested);
+  }, [title, uploadPublicationTouched]);
+
   // Skipped-this-week state, keyed by parsha + jewish_year, persisted in DB.
   const [jewishYear, setJewishYear] = useState<number | null>(null);
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
