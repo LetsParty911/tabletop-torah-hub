@@ -883,6 +883,33 @@ function AdminPage() {
     }
   };
 
+  const handleSaveWhatsNew = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accessToken) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      await adminSetWhatsNewBanner({
+        data: {
+          accessToken,
+          enabled: wnEnabled,
+          text: wnText.trim() ? wnText.trim() : null,
+          linkUrl: wnLinkUrl.trim() ? wnLinkUrl.trim() : null,
+          linkLabel: wnLinkLabel.trim() ? wnLinkLabel.trim() : null,
+        },
+      });
+      setMsg({ kind: "success", text: "What's New banner saved." });
+    } catch (err) {
+      setMsg({
+        kind: "error",
+        text: `Save failed: ${err instanceof Error ? err.message : "unknown error"}`,
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+
   const handleOverride = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!accessToken) return;
