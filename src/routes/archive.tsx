@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileText, Download } from "lucide-react";
-import { ExpandableSummary } from "@/components/ExpandableSummary";
 import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
+
 
 export const Route = createFileRoute("/archive")({
   component: ArchivePage,
@@ -151,12 +151,7 @@ function ArchivePage() {
                                 )}
                               </div>
                             </div>
-                            {r.summary_quick && (
-                              <ExpandableSummary
-                                text={r.summary_quick}
-                                className="mt-3"
-                              />
-                            )}
+
                             <div className="mt-4">
                               <a
                                 href={`/view/${r.id}/download`}

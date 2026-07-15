@@ -11,7 +11,7 @@ import {
 } from "@/integrations/supabase/api.functions";
 import { trackEvent, trackEventOnce } from "@/lib/analytics";
 
-import { ExpandableSummary } from "@/components/ExpandableSummary";
+
 import {
   CATEGORY_KEYS,
   CATEGORY_LABELS,
@@ -425,7 +425,7 @@ function Index() {
             ) : (
               <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
                 {filteredResources.map((r) => {
-                  const hasSummary = !!r.summary_quick && r.summary_quick.trim().length > 0;
+                  
                   
                   const catLabel = categoryLabel(r.primary_category);
                   return (
@@ -467,15 +467,8 @@ function Index() {
                           ))}
                         </div>
                       )}
-                      {hasSummary && (
-                        <>
-                          <div className="mt-3 border-t border-accent/20" />
-                          <ExpandableSummary
-                            text={r.summary_quick}
-                            className="mt-3"
-                          />
-                        </>
-                      )}
+
+
                       <div className="mt-auto pt-4">
                       <a
                         href={`/view/${r.id}/download`}
