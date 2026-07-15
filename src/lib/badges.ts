@@ -39,6 +39,8 @@ const PUBLICATION_CATEGORY: Record<string, string> = {
   "mi ka'amcha yisroel": "mikaamcha",
   "mi kaamcha yisroel": "mikaamcha",
   "mi ka'amcha yisrael": "mikaamcha",
+  "peninei mechkerei eretz — harav hagaon rachamim moshe shayo, shlita": "peninei_mechkerei",
+  "peninei mechkerei eretz": "peninei_mechkerei",
 };
 
 export function categoryForTitle(title: string | null | undefined): string | null {
