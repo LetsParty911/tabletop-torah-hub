@@ -6,28 +6,22 @@ import {
 } from "@/integrations/supabase/api.functions";
 
 export function AnnouncementBanner() {
-  const [banner, setBanner] = useState<Banner | null>({
-    text: "Important announcement: New parsha materials are now available!",
-    linkUrl: "/archive",
-    linkLabel: "Explore",
-    enabled: true,
-  });
+  const [banner, setBanner] = useState<Banner | null>(null);
 
-  // Temporarily disabled for screenshot verification
-  // useEffect(() => {
-  //   let cancelled = false;
-  //   (async () => {
-  //     try {
-  //       const b = await getAnnouncementBanner();
-  //       if (!cancelled) setBanner(b);
-  //     } catch {
-  //       // silent
-  //     }
-  //   })();
-  //   return () => {
-  //     cancelled = true;
-  //   };
-  // }, []);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const b = await getAnnouncementBanner();
+        if (!cancelled) setBanner(b);
+      } catch {
+        // silent
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (!banner || !banner.enabled || !banner.text || !banner.text.trim()) {
     return null;
