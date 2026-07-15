@@ -1220,6 +1220,78 @@ function AdminPage() {
           </div>
         </section>
 
+        {/* What's New Banner */}
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <h2 className="font-serif text-2xl font-semibold text-primary">
+              What&rsquo;s New Banner
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              A compact pill badge that sits above the announcement bar on the homepage. Independent of the Announcement Banner.
+            </p>
+            <form onSubmit={handleSaveWhatsNew} className="mt-4 space-y-4">
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={wnEnabled}
+                  onChange={(e) => setWnEnabled(e.target.checked)}
+                  className="h-4 w-4 accent-primary"
+                />
+                <span className="font-medium">Enable What&rsquo;s New badge</span>
+              </label>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Badge Text</label>
+                <textarea
+                  value={wnText}
+                  onChange={(e) => setWnText(e.target.value)}
+                  rows={2}
+                  maxLength={500}
+                  placeholder="e.g., New publication added: Peninei Mechkerei Eretz"
+                  className="w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Link URL (optional)</label>
+                  <input
+                    type="url"
+                    value={wnLinkUrl}
+                    onChange={(e) => setWnLinkUrl(e.target.value)}
+                    placeholder="https://…"
+                    className="w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Link Label (optional)</label>
+                  <input
+                    type="text"
+                    value={wnLinkLabel}
+                    onChange={(e) => setWnLinkLabel(e.target.value)}
+                    maxLength={120}
+                    placeholder="See it"
+                    className="w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                  />
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Link only appears when both URL and Label are filled in.
+              </p>
+
+              <button
+                disabled={busy}
+                className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
+              >
+                Save What&rsquo;s New
+              </button>
+            </form>
+          </div>
+        </section>
+
+
+
 
         <section className="parchment-frame">
           <div className="parchment-panel">
