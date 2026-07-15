@@ -24,6 +24,8 @@ import {
   adminSetAnnouncementBanner,
   getWhatsNewBanner,
   adminSetWhatsNewBanner,
+  getWhatsNewPopup,
+  adminSetWhatsNewPopup,
   adminGetWeeklyEmailPreview,
   adminSendWeeklyEmail,
   adminListWeeklyEmailSends,
@@ -160,6 +162,13 @@ function AdminPage() {
   const [wnText, setWnText] = useState("");
   const [wnLinkUrl, setWnLinkUrl] = useState("");
   const [wnLinkLabel, setWnLinkLabel] = useState("");
+  // What's New Popup
+  type WnpItem = { title: string; description: string; linkUrl: string; linkLabel: string };
+  const emptyItem = (): WnpItem => ({ title: "", description: "", linkUrl: "", linkLabel: "" });
+  const [wnpEnabled, setWnpEnabled] = useState(false);
+  const [wnpHeading, setWnpHeading] = useState("What's New");
+  const [wnpItems, setWnpItems] = useState<WnpItem[]>([emptyItem()]);
+  const [wnpVersion, setWnpVersion] = useState<string>("0");
   const [busy, setBusy] = useState(false);
   const [yearFilter, setYearFilter] = useState<string>("all");
   const [msg, setMsg] = useState<{ kind: "success" | "error"; text: string } | null>(null);
@@ -528,7 +537,7 @@ function AdminPage() {
 
   const refresh = async () => {
     if (!accessToken || !isAdmin) return;
-    const [p, s, o, cs, cm, ann, wn] = await Promise.all([
+    const [p, s, o, cs, cm, ann, wn, wnp] = await Promise.all([
       adminListPdfs({ data: { accessToken } }),
       adminListSubscribers({ data: { accessToken } }),
       getParshaOverride(),
@@ -539,6 +548,7 @@ function AdminPage() {
       ),
       getAnnouncementBanner(),
       getWhatsNewBanner(),
+      getWhatsNewPopup(),
     ]);
     setPdfs(p.pdfs as PdfRow[]);
     setSubscribers(s.subscribers as Subscriber[]);
@@ -552,6 +562,19 @@ function AdminPage() {
     setWnText(wn.text ?? "");
     setWnLinkUrl(wn.linkUrl ?? "");
     setWnLinkLabel(wn.linkLabel ?? "");
+    setWnpEnabled(wnp.enabled);
+    setWnpHeading(wnp.heading || "What's New");
+    setWnpItems(
+      wnp.items.length > 0
+        ? wnp.items.map((i) => ({
+            title: i.title,
+            description: i.description ?? "",
+            linkUrl: i.linkUrl ?? "",
+            linkLabel: i.linkLabel ?? "",
+          }))
+        : [emptyItem()],
+    );
+    setWnpVersion(wnp.version);
     if (cm.ok) {
       setContactMessages(cm.messages);
       setContactMessagesError(null);
@@ -899,6 +922,55 @@ function AdminPage() {
         },
       });
       setMsg({ kind: "success", text: "What's New banner saved." });
+    } catch (err) {
+      setMsg({
+        kind: "error",
+        text: `Save failed: ${err instanceof Error ? err.message : "unknown error"}`,
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const updateWnpItem = (idx: number, patch: Partial<WnpItem>) => {
+    setWnpItems((items) => items.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+  };
+  const addWnpItem = () => {
+    setWnpItems((items) => (items.length >= 4 ? items : [...items, emptyItem()]));
+  };
+  const removeWnpItem = (idx: number) => {
+    setWnpItems((items) => (items.length <= 1 ? items : items.filter((_, i) => i !== idx)));
+  };
+
+  const handleSaveWhatsNewPopup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accessToken) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const cleanedItems = wnpItems
+        .map((i) => ({
+          title: i.title.trim(),
+          description: i.description.trim() || null,
+          linkUrl: i.linkUrl.trim() || null,
+          linkLabel: i.linkLabel.trim() || null,
+        }))
+        .filter((i) => i.title.length > 0);
+      if (cleanedItems.length === 0 && wnpEnabled) {
+        setMsg({ kind: "error", text: "Add at least one item with a title, or disable the popup." });
+        setBusy(false);
+        return;
+      }
+      const res = await adminSetWhatsNewPopup({
+        data: {
+          accessToken,
+          enabled: wnpEnabled,
+          heading: wnpHeading.trim() || "What's New",
+          items: cleanedItems,
+        },
+      });
+      setWnpVersion(res.version);
+      setMsg({ kind: "success", text: `What's New popup saved (version ${res.version}).` });
     } catch (err) {
       setMsg({
         kind: "error",
@@ -1289,6 +1361,117 @@ function AdminPage() {
             </form>
           </div>
         </section>
+
+        {/* What's New Popup */}
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <h2 className="font-serif text-2xl font-semibold text-primary">
+              What&rsquo;s New Popup
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              A centered modal shown on the homepage. Up to 4 items. Editing and saving auto-bumps the version so returning visitors see the update.
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Current version: <code className="font-mono">{wnpVersion}</code>
+            </p>
+            <form onSubmit={handleSaveWhatsNewPopup} className="mt-4 space-y-4">
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={wnpEnabled}
+                  onChange={(e) => setWnpEnabled(e.target.checked)}
+                  className="h-4 w-4 accent-primary"
+                />
+                <span className="font-medium">Enable What&rsquo;s New popup</span>
+              </label>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Heading</label>
+                <input
+                  type="text"
+                  value={wnpHeading}
+                  onChange={(e) => setWnpHeading(e.target.value)}
+                  maxLength={200}
+                  placeholder="What's New"
+                  className="w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                />
+              </div>
+
+              <div className="space-y-4">
+                {wnpItems.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-md border-2 border-accent/40 bg-background/50 p-3 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-primary">Item {idx + 1}</span>
+                      {wnpItems.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeWnpItem(idx)}
+                          className="text-xs text-red-700 hover:underline"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      value={item.title}
+                      onChange={(e) => updateWnpItem(idx, { title: e.target.value })}
+                      maxLength={200}
+                      placeholder="Title (required)"
+                      className="w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2 text-sm"
+                    />
+                    <textarea
+                      value={item.description}
+                      onChange={(e) => updateWnpItem(idx, { description: e.target.value })}
+                      rows={2}
+                      maxLength={500}
+                      placeholder="Description (optional)"
+                      className="w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2 text-sm"
+                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <input
+                        type="url"
+                        value={item.linkUrl}
+                        onChange={(e) => updateWnpItem(idx, { linkUrl: e.target.value })}
+                        placeholder="Link URL (optional)"
+                        className="w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2 text-sm"
+                      />
+                      <input
+                        type="text"
+                        value={item.linkLabel}
+                        onChange={(e) => updateWnpItem(idx, { linkLabel: e.target.value })}
+                        maxLength={120}
+                        placeholder="Link label (optional)"
+                        className="w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2 text-sm"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {wnpItems.length < 4 && (
+                <button
+                  type="button"
+                  onClick={addWnpItem}
+                  className="rounded-md border-2 border-accent/60 bg-background px-3 py-1.5 text-sm font-medium text-primary hover:bg-accent/10"
+                >
+                  + Add item ({wnpItems.length}/4)
+                </button>
+              )}
+
+              <button
+                disabled={busy}
+                className="block rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
+              >
+                Save popup
+              </button>
+            </form>
+          </div>
+        </section>
+
 
 
 
