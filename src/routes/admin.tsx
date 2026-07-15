@@ -32,9 +32,18 @@ import {
   adminGenerateSummary,
   adminListPdfsMissingAudio,
   adminGenerateAudio,
+  adminUpdatePdfMeta,
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
+import {
+  CATEGORY_KEYS,
+  CATEGORY_LABELS,
+  PUBLICATION_KEYS,
+  PUBLICATION_LABELS,
+  TAG_LABELS,
+  publicationForTitle,
+} from "@/lib/badges";
 
 import { getCurrentJewishYear } from "@/lib/jewish-year";
 import { CheckCircle2, Circle, MinusCircle, Eye, Download, Printer } from "lucide-react";
@@ -55,6 +64,9 @@ type PdfRow = {
   created_at: string;
   summary_quick: string | null;
   content_type: string | null;
+  primary_category?: string | null;
+  publication?: string | null;
+  tags?: string[] | null;
 };
 
 type Subscriber = { id: string; email: string; created_at: string };
