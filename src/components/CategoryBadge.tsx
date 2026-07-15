@@ -27,8 +27,8 @@ export function CategoryBadge({
       ? "px-2 py-0.5 text-[0.6rem]"
       : "px-2.5 py-0.5 text-[0.65rem] sm:text-xs";
   const state = active
-    ? "bg-[#D4AF37] text-[#1a1a1a] border-[#D4AF37]"
-    : "bg-transparent text-[#B8912B] border-[#D4AF37]/70 hover:bg-[#D4AF37]/10";
+    ? "bg-accent text-accent-foreground border-accent"
+    : "bg-background text-accent border-accent/80 hover:bg-accent/10";
   const interactive = onClick ? "cursor-pointer" : "";
   return (
     <Tag
