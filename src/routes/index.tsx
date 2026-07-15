@@ -386,6 +386,21 @@ function Index() {
                     />
                   ))}
                 </div>
+                <div className="mt-2 flex gap-2 overflow-x-auto pb-2 justify-center flex-wrap">
+                  <CategoryBadge
+                    label="All Publications"
+                    active={activePublication === null}
+                    onClick={() => setActivePublication(null)}
+                  />
+                  {PUBLICATION_KEYS.map((k) => (
+                    <CategoryBadge
+                      key={k}
+                      label={PUBLICATION_LABELS[k]}
+                      active={activePublication === k}
+                      onClick={() => togglePublication(k)}
+                    />
+                  ))}
+                </div>
                 {hasActiveFilters && (
                   <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs">
                     <span className="text-muted-foreground uppercase tracking-wider">
@@ -396,6 +411,13 @@ function Index() {
                         label={CATEGORY_LABELS[activeCategory] ?? activeCategory}
                         active
                         onClick={() => setActiveCategory(null)}
+                      />
+                    )}
+                    {activePublication && (
+                      <CategoryBadge
+                        label={PUBLICATION_LABELS[activePublication] ?? activePublication}
+                        active
+                        onClick={() => setActivePublication(null)}
                       />
                     )}
                     {activeTags.map((t) => (
