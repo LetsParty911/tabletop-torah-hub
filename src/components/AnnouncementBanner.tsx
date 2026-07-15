@@ -13,20 +13,21 @@ export function AnnouncementBanner() {
     enabled: true,
   });
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const b = await getAnnouncementBanner();
-        if (!cancelled) setBanner(b);
-      } catch {
-        // silent
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Temporarily disabled for screenshot verification
+  // useEffect(() => {
+  //   let cancelled = false;
+  //   (async () => {
+  //     try {
+  //       const b = await getAnnouncementBanner();
+  //       if (!cancelled) setBanner(b);
+  //     } catch {
+  //       // silent
+  //     }
+  //   })();
+  //   return () => {
+  //     cancelled = true;
+  //   };
+  // }, []);
 
   if (!banner || !banner.enabled || !banner.text || !banner.text.trim()) {
     return null;
