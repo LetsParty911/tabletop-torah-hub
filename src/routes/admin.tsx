@@ -708,11 +708,43 @@ function AdminPage() {
   const startEditPdf = (id: string) => {
     setEditingPdfId(id);
     setReplaceFile(null);
+    const row = pdfs.find((p) => p.id === id);
+    setEditMetaTitle(row?.title ?? "");
+    setEditMetaSubtitle(row?.subtitle ?? "");
+    setEditMetaCategory((row?.primary_category as string) ?? "");
+    setEditMetaPublication((row?.publication as string) ?? "");
+    setEditMetaTags(Array.isArray(row?.tags) ? (row!.tags as string[]) : []);
   };
 
   const cancelEditPdf = () => {
     setEditingPdfId(null);
     setReplaceFile(null);
+  };
+
+  const handleSaveMeta = async (id: string) => {
+    if (!accessToken) return;
+    setSavingMeta(true);
+    setMsg(null);
+    try {
+      await adminUpdatePdfMeta({
+        data: {
+          accessToken,
+          id,
+          title: editMetaTitle,
+          subtitle: editMetaSubtitle || null,
+          primaryCategory: (editMetaCategory || null) as any,
+          publication: (editMetaPublication || null) as any,
+          tags: editMetaTags,
+        },
+      });
+      setMsg({ kind: "success", text: "Metadata saved." });
+      await refresh();
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : "Unknown error";
+      setMsg({ kind: "error", text: `Save failed: ${detail}` });
+    } finally {
+      setSavingMeta(false);
+    }
   };
 
   const handleReplacePdf = async (id: string) => {
