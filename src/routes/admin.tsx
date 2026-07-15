@@ -1792,6 +1792,89 @@ function AdminPage() {
                                       </button>
                                     </div>
                                   </div>
+                                  <div className="md:col-span-2 rounded-md border border-accent/60 bg-background p-3">
+                                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                                      Edit metadata
+                                    </div>
+                                    <div className="grid gap-3 md:grid-cols-2">
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Title</span>
+                                        <input
+                                          value={editMetaTitle}
+                                          onChange={(e) => setEditMetaTitle(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        />
+                                      </label>
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Subtitle</span>
+                                        <input
+                                          value={editMetaSubtitle}
+                                          onChange={(e) => setEditMetaSubtitle(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        />
+                                      </label>
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Category</span>
+                                        <select
+                                          value={editMetaCategory}
+                                          onChange={(e) => setEditMetaCategory(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        >
+                                          <option value="">— none —</option>
+                                          {CATEGORY_KEYS.map((k) => (
+                                            <option key={k} value={k}>{CATEGORY_LABELS[k]}</option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Publication</span>
+                                        <select
+                                          value={editMetaPublication}
+                                          onChange={(e) => setEditMetaPublication(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        >
+                                          <option value="">— none —</option>
+                                          {PUBLICATION_KEYS.map((k) => (
+                                            <option key={k} value={k}>{PUBLICATION_LABELS[k]}</option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                      <div className="md:col-span-2">
+                                        <span className="text-xs font-medium">Tags</span>
+                                        <div className="mt-1 flex flex-wrap gap-2">
+                                          {Object.entries(TAG_LABELS).map(([key, label]) => {
+                                            const checked = editMetaTags.includes(key);
+                                            return (
+                                              <label key={key} className="inline-flex items-center gap-1 text-xs">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={checked}
+                                                  onChange={(e) => {
+                                                    setEditMetaTags((prev) =>
+                                                      e.target.checked
+                                                        ? [...prev, key]
+                                                        : prev.filter((t) => t !== key),
+                                                    );
+                                                  }}
+                                                />
+                                                <span>{label}</span>
+                                              </label>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="mt-3 flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSaveMeta(p.id)}
+                                        disabled={savingMeta}
+                                        className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
+                                      >
+                                        {savingMeta ? "Saving…" : "Save metadata"}
+                                      </button>
+                                    </div>
+                                  </div>
                                 </div>
                               </td>
                             </tr>
