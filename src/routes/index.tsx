@@ -310,17 +310,24 @@ function Index() {
         <div className="gold-divider" aria-hidden><span className="gold-divider-dot" /></div>
 
         {/* Email signup */}
-        <section className="parchment-frame">
-          <div className="parchment-panel text-center">
-            <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold text-primary">
+        <section className="parchment-frame max-w-2xl mx-auto">
+          <div className="parchment-panel py-6 px-5 sm:px-6 sm:py-8 text-center">
+            <div className="flex items-center justify-center gap-3 text-accent mb-3">
+              <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
+              <span className="font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em]">
+                Stay Updated
+              </span>
+              <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
+            </div>
+            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
               Weekly Torah Notifications
             </h2>
-            <p className="mt-3 text-muted-foreground md:text-lg max-w-xl mx-auto">
+            <p className="mt-2 font-serif italic text-sm sm:text-base text-accent max-w-md mx-auto">
               One short email each week when new Divrei Torah are uploaded.
             </p>
             <form
               onSubmit={handleSignup}
-              className="mt-6 flex flex-col sm:flex-row gap-3 max-w-lg mx-auto"
+              className="mt-5 flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
             >
               <input
                 type="email"
@@ -328,17 +335,17 @@ function Index() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email address"
-                className="flex-1 rounded-full border-2 border-accent/60 bg-background px-5 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                className="flex-1 rounded-full border-2 border-accent/50 bg-background px-5 py-3 font-serif text-foreground placeholder:font-serif placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
               />
               <button
                 type="submit"
-                className="rounded-full bg-primary px-8 py-3.5 font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md"
+                className="rounded-full bg-primary px-8 py-3.5 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md"
               >
                 Join the List
               </button>
             </form>
             {signupMsg && (
-              <p className="mt-4 text-sm text-accent">{signupMsg}</p>
+              <p className="mt-4 text-sm text-accent font-serif">{signupMsg}</p>
             )}
           </div>
         </section>
