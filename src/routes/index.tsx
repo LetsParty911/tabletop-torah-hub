@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { FileText, Download, X } from "lucide-react";
+import { useState } from "react";
+import { FileText, Download } from "lucide-react";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { WhatsNewBanner } from "@/components/WhatsNewBanner";
 import { WhatsNewPopup } from "@/components/WhatsNewPopup";
-import { CategoryBadge } from "@/components/CategoryBadge";
+
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 import {
   listHomepageWeek,
@@ -14,13 +14,6 @@ import {
 import { trackEvent, trackEventOnce } from "@/lib/analytics";
 
 
-import {
-  CATEGORY_KEYS,
-  CATEGORY_LABELS,
-  TAG_KEYS,
-  categoryLabel,
-  tagLabel,
-} from "@/lib/badges";
 
 type Resource = {
   id: string;
@@ -170,38 +163,6 @@ function Index() {
     Route.useLoaderData() as LoaderData;
   const [email, setEmail] = useState("");
   const [signupMsg, setSignupMsg] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [activeTags, setActiveTags] = useState<string[]>([]);
-
-  const toggleCategory = (key: string) => {
-    setActiveCategory((cur) => (cur === key ? null : key));
-  };
-  const toggleTag = (key: string) => {
-    setActiveTags((cur) =>
-      cur.includes(key) ? cur.filter((t) => t !== key) : [...cur, key],
-    );
-  };
-  const clearFilters = () => {
-    setActiveCategory(null);
-    setActiveTags([]);
-  };
-
-  const filteredResources = useMemo(() => {
-    return resources.filter((r) => {
-      if (activeCategory && r.primary_category !== activeCategory) return false;
-      if (activeTags.length > 0) {
-        for (const tag of activeTags) {
-          if (!r.tags?.includes(tag)) return false;
-        }
-      }
-      return true;
-    });
-  }, [resources, activeCategory, activeTags]);
-
-  const hasActiveFilters =
-    activeCategory !== null || activeTags.length > 0;
-
-
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -372,137 +333,34 @@ function Index() {
               </p>
             )}
 
-            {resources.length > 0 && (
-              <div className="mt-5 sm:mt-6 space-y-4">
-                <div>
-                  <span className="block text-center font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">
-                    Content Type
-                  </span>
-                  <div className="flex gap-2 overflow-x-auto pb-2 justify-center flex-wrap">
-                    <CategoryBadge
-                      label="All"
-                      active={activeCategory === null}
-                      onClick={() => setActiveCategory(null)}
-                    />
-                    {CATEGORY_KEYS.map((k) => (
-                      <CategoryBadge
-                        key={k}
-                        label={CATEGORY_LABELS[k]}
-                        active={activeCategory === k}
-                        onClick={() => toggleCategory(k)}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <span className="block text-center font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">
-                    Tags
-                  </span>
-                  <div className="flex gap-2 overflow-x-auto pb-2 justify-center flex-wrap">
-                    {TAG_KEYS.map((k) => (
-                      <CategoryBadge
-                        key={k}
-                        label={tagLabel(k)}
-                        active={activeTags.includes(k)}
-                        onClick={() => toggleTag(k)}
-                      />
-                    ))}
-                  </div>
-                </div>
-                {hasActiveFilters && (
-                  <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs">
-                    <span className="text-muted-foreground uppercase tracking-wider">
-                      Active:
-                    </span>
-                    {activeCategory && (
-                      <CategoryBadge
-                        label={CATEGORY_LABELS[activeCategory] ?? activeCategory}
-                        active
-                        onClick={() => setActiveCategory(null)}
-                      />
-                    )}
-                    {activeTags.map((t) => (
-                      <CategoryBadge
-                        key={t}
-                        label={tagLabel(t)}
-                        active
-                        onClick={() => toggleTag(t)}
-                      />
-                    ))}
-                    <button
-                      type="button"
-                      onClick={clearFilters}
-                      className="inline-flex items-center gap-1 text-accent hover:text-primary transition-colors font-sans uppercase tracking-wider"
-                    >
-                      <X className="h-3 w-3" /> Clear
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
             {resources.length === 0 ? (
               <p className="mt-8 text-center text-muted-foreground max-w-md mx-auto">
                 New Divrei Torah for {currentLabel} go up Thursday. Check back soon!
               </p>
-            ) : filteredResources.length === 0 ? (
-              <p className="mt-8 text-center text-muted-foreground max-w-md mx-auto">
-                No Divrei Torah match the selected filters.{" "}
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="text-accent hover:text-primary underline"
-                >
-                  Clear filters
-                </button>
-              </p>
             ) : (
               <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
-                {filteredResources.map((r) => {
-                  const catLabel = categoryLabel(r.primary_category);
-                  const hasBadges = catLabel || (r.tags && r.tags.length > 0);
-                  return (
-                    <article
-                      key={r.id}
-                      className="rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent transition-colors flex flex-col"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-accent/15 text-primary shrink-0">
-                          <FileText className="h-5 w-5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="font-serif text-base sm:text-xl font-semibold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
-                            {r.title}
-                          </h3>
-                          {r.subtitle && (
-                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                              {r.subtitle}
-                            </p>
-                          )}
-                        </div>
+                {resources.map((r) => (
+                  <article
+                    key={r.id}
+                    className="rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent transition-colors flex flex-col"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-accent/15 text-primary shrink-0">
+                        <FileText className="h-5 w-5" />
                       </div>
-                      {hasBadges && (
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          {catLabel && r.primary_category && (
-                            <CategoryBadge
-                              label={catLabel}
-                              active={activeCategory === r.primary_category}
-                              onClick={() => toggleCategory(r.primary_category!)}
-                            />
-                          )}
-                          {r.tags?.map((t) => (
-                            <CategoryBadge
-                              key={t}
-                              label={tagLabel(t)}
-                              active={activeTags.includes(t)}
-                              onClick={() => toggleTag(t)}
-                            />
-                          ))}
-                        </div>
-                      )}
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-serif text-base sm:text-xl font-semibold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
+                          {r.title}
+                        </h3>
+                        {r.subtitle && (
+                          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                            {r.subtitle}
+                          </p>
+                        )}
+                      </div>
+                    </div>
 
-
-                      <div className="mt-auto pt-4">
+                    <div className="mt-auto pt-4">
                       <a
                         href={`/view/${r.id}/download`}
                         onClick={() => {
@@ -517,7 +375,7 @@ function Index() {
                       </a>
                     </div>
                   </article>
-                );})}
+                ))}
               </div>
             )}
             {true && resources.length > 0 && (

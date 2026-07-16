@@ -41,11 +41,8 @@ import {
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
 import {
-  CATEGORY_KEYS,
-  CATEGORY_LABELS,
   PUBLICATION_KEYS,
   PUBLICATION_LABELS,
-  TAG_LABELS,
   publicationForTitle,
 } from "@/lib/badges";
 
@@ -208,17 +205,13 @@ function AdminPage() {
   const [subtitle, setSubtitle] = useState("");
   const [published, setPublished] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [uploadCategory, setUploadCategory] = useState<string>("");
   const [uploadPublication, setUploadPublication] = useState<string>("");
   const [uploadPublicationTouched, setUploadPublicationTouched] = useState(false);
-  const [uploadTags, setUploadTags] = useState<string[]>([]);
 
-  // Inline metadata editor state (per row) — category / publication / tags / title / subtitle
+  // Inline metadata editor state (per row) — publication / title / subtitle
   const [editMetaTitle, setEditMetaTitle] = useState("");
   const [editMetaSubtitle, setEditMetaSubtitle] = useState("");
-  const [editMetaCategory, setEditMetaCategory] = useState<string>("");
   const [editMetaPublication, setEditMetaPublication] = useState<string>("");
-  const [editMetaTags, setEditMetaTags] = useState<string[]>([]);
   const [savingMeta, setSavingMeta] = useState(false);
 
   // Inline "Replace PDF" editor state (per row)
@@ -695,18 +688,16 @@ function AdminPage() {
           fileName: file.name,
           fileBase64,
           jewishYear,
-          primaryCategory: (uploadCategory || null) as any,
+          primaryCategory: null,
           publication: (uploadPublication || null) as any,
-          tags: uploadTags.length > 0 ? uploadTags : null,
+          tags: null,
         },
       });
       setTitle("");
       setSubtitle("");
       setFile(null);
-      setUploadCategory("");
       setUploadPublication("");
       setUploadPublicationTouched(false);
-      setUploadTags([]);
       (document.getElementById("pdf-file-input") as HTMLInputElement | null)?.value &&
         ((document.getElementById("pdf-file-input") as HTMLInputElement).value = "");
       setMsg({ kind: "success", text: "Uploaded." });
@@ -745,9 +736,7 @@ function AdminPage() {
     const row = pdfs.find((p) => p.id === id);
     setEditMetaTitle(row?.title ?? "");
     setEditMetaSubtitle(row?.subtitle ?? "");
-    setEditMetaCategory((row?.primary_category as string) ?? "");
     setEditMetaPublication((row?.publication as string) ?? "");
-    setEditMetaTags(Array.isArray(row?.tags) ? (row!.tags as string[]) : []);
   };
 
   const cancelEditPdf = () => {
@@ -766,9 +755,9 @@ function AdminPage() {
           id,
           title: editMetaTitle,
           subtitle: editMetaSubtitle || null,
-          primaryCategory: (editMetaCategory || null) as any,
+          primaryCategory: null,
           publication: (editMetaPublication || null) as any,
-          tags: editMetaTags,
+          tags: null,
         },
       });
       setMsg({ kind: "success", text: "Metadata saved." });
@@ -1729,19 +1718,6 @@ function AdminPage() {
                 />
               </label>
               <label className="block">
-                <span className="text-sm font-medium">Category (optional)</span>
-                <select
-                  value={uploadCategory}
-                  onChange={(e) => setUploadCategory(e.target.value)}
-                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                >
-                  <option value="">— none —</option>
-                  {CATEGORY_KEYS.map((k) => (
-                    <option key={k} value={k}>{CATEGORY_LABELS[k]}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
                 <span className="text-sm font-medium">
                   Publication (optional)
                   {!uploadPublicationTouched && uploadPublication && (
@@ -1762,28 +1738,6 @@ function AdminPage() {
                   ))}
                 </select>
               </label>
-              <div className="md:col-span-2">
-                <span className="text-sm font-medium">Tags (optional)</span>
-                <div className="mt-2 flex flex-wrap gap-3">
-                  {Object.entries(TAG_LABELS).map(([key, label]) => {
-                    const checked = uploadTags.includes(key);
-                    return (
-                      <label key={key} className="inline-flex items-center gap-1.5 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) => {
-                            setUploadTags((prev) =>
-                              e.target.checked ? [...prev, key] : prev.filter((t) => t !== key),
-                            );
-                          }}
-                        />
-                        <span>{label}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
               <label className="block md:col-span-2">
                 <span className="text-sm font-medium">PDF file</span>
                 <input
@@ -2107,19 +2061,6 @@ function AdminPage() {
                                         />
                                       </label>
                                       <label className="block">
-                                        <span className="text-xs font-medium">Category</span>
-                                        <select
-                                          value={editMetaCategory}
-                                          onChange={(e) => setEditMetaCategory(e.target.value)}
-                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
-                                        >
-                                          <option value="">— none —</option>
-                                          {CATEGORY_KEYS.map((k) => (
-                                            <option key={k} value={k}>{CATEGORY_LABELS[k]}</option>
-                                          ))}
-                                        </select>
-                                      </label>
-                                      <label className="block">
                                         <span className="text-xs font-medium">Publication</span>
                                         <select
                                           value={editMetaPublication}
@@ -2132,30 +2073,6 @@ function AdminPage() {
                                           ))}
                                         </select>
                                       </label>
-                                      <div className="md:col-span-2">
-                                        <span className="text-xs font-medium">Tags</span>
-                                        <div className="mt-1 flex flex-wrap gap-2">
-                                          {Object.entries(TAG_LABELS).map(([key, label]) => {
-                                            const checked = editMetaTags.includes(key);
-                                            return (
-                                              <label key={key} className="inline-flex items-center gap-1 text-xs">
-                                                <input
-                                                  type="checkbox"
-                                                  checked={checked}
-                                                  onChange={(e) => {
-                                                    setEditMetaTags((prev) =>
-                                                      e.target.checked
-                                                        ? [...prev, key]
-                                                        : prev.filter((t) => t !== key),
-                                                    );
-                                                  }}
-                                                />
-                                                <span>{label}</span>
-                                              </label>
-                                            );
-                                          })}
-                                        </div>
-                                      </div>
                                     </div>
                                     <div className="mt-3 flex items-center gap-2">
                                       <button
