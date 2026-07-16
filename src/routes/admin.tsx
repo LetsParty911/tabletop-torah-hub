@@ -68,7 +68,16 @@ type PdfRow = {
   primary_category?: string | null;
   publication?: string | null;
   tags?: string[] | null;
+  description?: string | null;
+  audience?: string | null;
+  format_type?: string | null;
+  page_count?: number | null;
+  badge?: string | null;
 };
+
+const AUDIENCE_OPTIONS = ["Adults", "Families", "Kids"] as const;
+const FORMAT_TYPE_OPTIONS = ["Short Vorts", "Stories", "Halacha", "Essays"] as const;
+const BADGE_OPTIONS = ["Recommended", "Quick Read", "Kids' Pick"] as const;
 
 type Subscriber = { id: string; email: string; created_at: string };
 
