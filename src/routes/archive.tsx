@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FileText } from "lucide-react";
+import { FileText, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+
 
 
 export const Route = createFileRoute("/archive")({
@@ -61,11 +63,46 @@ export const Route = createFileRoute("/archive")({
 
 function ArchivePage() {
   const { years } = Route.useLoaderData() as { years: ArchiveYear[] };
-  const totalPdfs = years.reduce(
+
+  const [yearFilter, setYearFilter] = useState<string>("all");
+  const [parshaFilter, setParshaFilter] = useState<string>("all");
+  const [query, setQuery] = useState<string>("");
+
+  const allParshiyos = useMemo(() => {
+    const set = new Set<string>();
+    for (const y of years) for (const p of y.parshiyos) set.add(p.parshaKey);
+    return Array.from(set).sort();
+  }, [years]);
+
+  const filteredYears = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const out: ArchiveYear[] = [];
+    for (const y of years) {
+      if (yearFilter !== "all" && String(y.year) !== yearFilter) continue;
+      const parshiyos: ArchiveParsha[] = [];
+      for (const p of y.parshiyos) {
+        if (parshaFilter !== "all" && p.parshaKey !== parshaFilter) continue;
+        const pdfs = q
+          ? p.pdfs.filter((r) =>
+              [r.title, r.subtitle, r.description]
+                .filter(Boolean)
+                .some((v) => (v as string).toLowerCase().includes(q)),
+            )
+          : p.pdfs;
+        if (pdfs.length) parshiyos.push({ ...p, pdfs });
+      }
+      if (parshiyos.length) out.push({ ...y, parshiyos });
+    }
+    return out;
+  }, [years, yearFilter, parshaFilter, query]);
+
+  const totalPdfs = filteredYears.reduce(
     (sum: number, y: ArchiveYear) =>
       sum + y.parshiyos.reduce((s: number, p: ArchiveParsha) => s + p.pdfs.length, 0),
     0,
   );
+
+  const hasActiveFilters = yearFilter !== "all" || parshaFilter !== "all" || query.trim() !== "";
 
   return (
     <div className="min-h-screen bg-background">
@@ -97,6 +134,84 @@ function ArchivePage() {
           </div>
         </section>
 
+        {/* Filters */}
+        {years.length > 0 && (
+          <section className="parchment-frame">
+            <div className="parchment-panel">
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-[1fr_1fr_2fr] items-end">
+                <label className="block text-left">
+                  <span className="block font-sans text-[0.65rem] uppercase tracking-[0.2em] text-accent mb-1.5">
+                    Jewish Year
+                  </span>
+                  <select
+                    value={yearFilter}
+                    onChange={(e) => setYearFilter(e.target.value)}
+                    className="w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
+                  >
+                    <option value="all">All years</option>
+                    {years.map((y) => (
+                      <option key={y.year} value={String(y.year)}>
+                        {y.year}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-left">
+                  <span className="block font-sans text-[0.65rem] uppercase tracking-[0.2em] text-accent mb-1.5">
+                    Parsha
+                  </span>
+                  <select
+                    value={parshaFilter}
+                    onChange={(e) => setParshaFilter(e.target.value)}
+                    className="w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
+                  >
+                    <option value="all">All parshiyos</option>
+                    {allParshiyos.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-left">
+                  <span className="block font-sans text-[0.65rem] uppercase tracking-[0.2em] text-accent mb-1.5">
+                    Search
+                  </span>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-accent/70" />
+                    <input
+                      type="search"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Search titles or publications…"
+                      className="w-full rounded-lg border-2 border-accent/40 bg-background/60 pl-9 pr-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
+                    />
+                  </div>
+                </label>
+              </div>
+              {hasActiveFilters && (
+                <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>
+                    Showing {totalPdfs} {totalPdfs === 1 ? "result" : "results"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setYearFilter("all");
+                      setParshaFilter("all");
+                      setQuery("");
+                    }}
+                    className="text-accent hover:text-primary underline"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+
         {years.length === 0 ? (
           <section className="parchment-frame">
             <div className="parchment-panel text-center">
@@ -108,8 +223,20 @@ function ArchivePage() {
               </p>
             </div>
           </section>
+        ) : filteredYears.length === 0 ? (
+          <section className="parchment-frame">
+            <div className="parchment-panel text-center">
+              <p className="font-serif text-xl sm:text-2xl text-primary">
+                No matches for these filters.
+              </p>
+              <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
+                Try clearing the search or choosing a different parsha or year.
+              </p>
+            </div>
+          </section>
         ) : (
-          years.map((y: ArchiveYear) => (
+          filteredYears.map((y: ArchiveYear) => (
+
             <section key={y.year} className="parchment-frame">
               <div className="parchment-panel">
                 <div className="flex items-baseline justify-between gap-4 border-b-2 border-accent/30 pb-4 mb-6">
