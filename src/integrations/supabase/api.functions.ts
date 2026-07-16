@@ -386,7 +386,17 @@ export const listPublicationsMeta = createServerFn({ method: "GET" }).handler(
 );
 
 // ---------- Public: archive — all published PDFs grouped by year + parsha ----------
-export type ArchivePdf = { id: string; title: string; subtitle: string | null; summary_quick: string | null };
+export type ArchivePdf = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  summary_quick: string | null;
+  description: string | null;
+  audience: string | null;
+  format_type: string | null;
+  page_count: number | null;
+  badge: string | null;
+};
 export type ArchiveParsha = { parshaKey: string; pdfs: ArchivePdf[] };
 export type ArchiveYear = { year: number; parshiyos: ArchiveParsha[] };
 export type ArchiveResult = { years: ArchiveYear[] };
@@ -394,15 +404,29 @@ export type ArchiveResult = { years: ArchiveYear[] };
 export const listArchive = createServerFn({ method: "GET" }).handler(
   async (): Promise<ArchiveResult> => {
     const admin = getSupabaseAdmin();
-    const { data: rows, error } = await admin
+    const selectWith = "id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at, description, audience, format_type, page_count, badge";
+    const selectBase = "id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at";
+    let rows: any[] | null = null;
+    const withMeta = await admin
       .from("pdfs")
-      .select("id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at")
+      .select(selectWith)
       .eq("published", true)
       .order("jewish_year", { ascending: false })
       .order("created_at", { ascending: false });
-    if (error) {
-      console.error("listArchive error", error);
-      return { years: [] };
+    if (!withMeta.error) {
+      rows = withMeta.data ?? [];
+    } else {
+      const fb = await admin
+        .from("pdfs")
+        .select(selectBase)
+        .eq("published", true)
+        .order("jewish_year", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (fb.error) {
+        console.error("listArchive error", fb.error);
+        return { years: [] };
+      }
+      rows = fb.data ?? [];
     }
     const current = await resolveCurrentFeatured();
     const displayed = await resolveDisplayedCollection(admin, current.comparableKey);
@@ -435,6 +459,11 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
         title: r.title,
         subtitle: r.subtitle,
         summary_quick: r.summary_quick,
+        description: (r.description as string | null) ?? null,
+        audience: (r.audience as string | null) ?? null,
+        format_type: (r.format_type as string | null) ?? null,
+        page_count: typeof r.page_count === "number" ? r.page_count : null,
+        badge: (r.badge as string | null) ?? null,
         created_at: r.created_at,
       });
     }
@@ -454,7 +483,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
             return {
               parshaKey,
               latest,
-              pdfs: sortedPdfs.map(({ id, title, subtitle, summary_quick }) => ({ id, title, subtitle, summary_quick })),
+              pdfs: sortedPdfs.map(({ created_at: _c, ...rest }) => rest),
             };
           })
           .sort((a, b) => (a.latest < b.latest ? 1 : -1))
