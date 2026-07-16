@@ -36,6 +36,8 @@ import {
   adminGenerateSummary,
   adminListPdfsMissingAudio,
   adminGenerateAudio,
+  adminGeneratePublicationMeta,
+  adminListPdfsMissingDescription,
   adminUpdatePdfMeta,
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
