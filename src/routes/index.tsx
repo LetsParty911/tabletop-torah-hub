@@ -354,68 +354,96 @@ function Index() {
                 New Divrei Torah for {currentLabel} go up Thursday. Check back soon!
               </p>
             ) : (
-              <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
-                {resources.map((r) => (
-                  <article
-                    key={r.id}
-                    className="rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent transition-colors flex flex-col"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-accent/15 text-primary shrink-0">
-                        <FileText className="h-5 w-5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-serif text-base sm:text-xl font-semibold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
-                            {r.title}
-                          </h3>
-                          {r.badge && (
-                            <span className="shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
-                              {r.badge}
-                            </span>
+              <>
+                <div className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+                  {(["All", "Children", "Families", "Adults"] as const).map((audience) => {
+                    const active = audienceFilter === audience;
+                    return (
+                      <button
+                        key={audience}
+                        type="button"
+                        onClick={() => setAudienceFilter(active ? "All" : audience)}
+                        className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-colors ${
+                          active
+                            ? "border-accent bg-accent text-accent-foreground"
+                            : "border-accent bg-transparent text-primary hover:bg-accent/15"
+                        }`}
+                      >
+                        {audience}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
+                  {filteredResources.map((r) => (
+                    <article
+                      key={r.id}
+                      className="rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent transition-colors flex flex-col"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-accent/15 text-primary shrink-0">
+                          <FileText className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="font-serif text-base sm:text-xl font-semibold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
+                              {r.title}
+                            </h3>
+                            {r.badge && (
+                              <span className="shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
+                                {r.badge}
+                              </span>
+                            )}
+                          </div>
+                          {r.subtitle && (
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                              {r.subtitle}
+                            </p>
+                          )}
+                          {r.description && (
+                            <p className="mt-2 text-sm text-foreground/85 leading-snug">
+                              {r.description}
+                            </p>
+                          )}
+                          {(r.audience || r.format_type || typeof r.page_count === "number") && (
+                            <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                              {[
+                                r.audience,
+                                r.format_type,
+                                typeof r.page_count === "number"
+                                  ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
+                                  : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
                           )}
                         </div>
-                        {r.subtitle && (
-                          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                            {r.subtitle}
-                          </p>
-                        )}
-                        {r.description && (
-                          <p className="mt-2 text-sm text-foreground/85 leading-snug">
-                            {r.description}
-                          </p>
-                        )}
-                        {(r.audience || r.format_type || typeof r.page_count === "number") && (
-                          <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                            {[
-                              r.audience,
-                              r.format_type,
-                              typeof r.page_count === "number"
-                                ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
-                                : null,
-                            ]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </p>
-                        )}
                       </div>
-                    </div>
 
-                    <div className="mt-auto pt-4">
-                      <DownloadToPrintButton
-                        href={`/view/${r.id}/download`}
-                        onClick={() => {
-                          trackEvent("pdf_download", pdfParams(r));
-                          if (typeof window !== "undefined") {
-                            window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
-                          }
-                        }}
-                        className="w-full px-3 py-2.5 lg:py-2"
-                      />
-                    </div>
-                  </article>
-                ))}
-              </div>
+                      <div className="mt-auto pt-4">
+                        <DownloadToPrintButton
+                          href={`/view/${r.id}/download`}
+                          onClick={() => {
+                            trackEvent("pdf_download", pdfParams(r));
+                            if (typeof window !== "undefined") {
+                              window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
+                            }
+                          }}
+                          className="w-full px-3 py-2.5 lg:py-2"
+                        />
+                      </div>
+                    </article>
+                  ))}
+                </div>
+
+                {filteredResources.length === 0 && (
+                  <p className="mt-8 text-center text-muted-foreground max-w-md mx-auto">
+                    No Divrei Torah match this audience filter.
+                  </p>
+                )}
+              </>
             )}
             {true && resources.length > 0 && (
               <div className="mt-6 sm:mt-8 text-center">
