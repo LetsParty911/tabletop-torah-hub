@@ -61,7 +61,75 @@ function AboutPage() {
                 parsha and Yom Tov, alongside a growing archive of earlier weeks. The goal
                 is simple: to make it easier to have a Dvar Torah ready for the table each week.
               </p>
-              <p className="text-muted-foreground text-sm sm:text-base">
+            </div>
+
+            <div className="mt-10 pt-8 border-t-2 border-accent/30 space-y-8 max-w-2xl mx-auto text-left">
+              <section>
+                <h2 className="font-serif text-2xl font-bold text-primary">A Nonprofit Project</h2>
+                <p className="mt-2 font-serif text-base text-foreground leading-relaxed">
+                  Torah for the Table is a nonprofit Torah-distribution project. Third-party
+                  publications remain the property of their respective publishers and are shared
+                  with permission where applicable. Every PDF is offered free of charge for the
+                  sake of Harbatzas HaTorah.
+                </p>
+              </section>
+
+              <section>
+                <h2 className="font-serif text-2xl font-bold text-primary">Copyright &amp; Attribution</h2>
+                <p className="mt-2 font-serif text-base text-foreground leading-relaxed">
+                  All Divrei Torah, illustrations, and formatting shown on this site remain the
+                  intellectual property of their original authors and publishers. Torah for the
+                  Table does not claim ownership over any third-party publication. Each file is
+                  posted in its original form; where a publisher's name or contact appears in the
+                  PDF, that attribution is authoritative.
+                </p>
+              </section>
+
+              <section>
+                <h2 className="font-serif text-2xl font-bold text-primary">Privacy Policy</h2>
+                <div className="mt-2 font-serif text-base text-foreground leading-relaxed space-y-3">
+                  <p>
+                    We collect only what is needed to run the site: an email address when you
+                    voluntarily join the weekly notification list, and standard anonymized
+                    analytics (page views, downloads) via Google Tag Manager. We do not sell,
+                    rent, or share your email address.
+                  </p>
+                  <p>
+                    Emails are used solely to send the weekly notification when new Divrei Torah
+                    are posted. You can unsubscribe at any time using the link in any email or
+                    by contacting us.
+                  </p>
+                </div>
+              </section>
+
+              <section>
+                <h2 className="font-serif text-2xl font-bold text-primary">Publication Submissions</h2>
+                <p className="mt-2 font-serif text-base text-foreground leading-relaxed">
+                  Publishers and authors who would like their weekly Divrei Torah included are
+                  warmly welcomed. Please send a sample PDF, your publication name, and your
+                  distribution schedule (weekly / seasonal / occasional) through the{" "}
+                  <Link to="/contact" className="text-accent hover:text-primary underline">
+                    contact page
+                  </Link>
+                  . Submissions are reviewed for Torah content, source clarity, and print-ready
+                  formatting before inclusion.
+                </p>
+              </section>
+
+              <section>
+                <h2 className="font-serif text-2xl font-bold text-primary">Corrections &amp; Removal Requests</h2>
+                <p className="mt-2 font-serif text-base text-foreground leading-relaxed">
+                  If you are the publisher or author of a PDF hosted here and would like a
+                  correction, updated version, or removal, please reach out through the{" "}
+                  <Link to="/contact" className="text-accent hover:text-primary underline">
+                    contact page
+                  </Link>{" "}
+                  and reference the parsha and publication name. Verified requests are honored
+                  promptly — usually within a few days.
+                </p>
+              </section>
+
+              <p className="text-muted-foreground text-sm sm:text-base pt-2">
                 Have a Dvar Torah to share, a correction, or a suggestion?{" "}
                 <Link to="/contact" className="text-accent hover:text-primary underline">
                   Get in touch
@@ -71,6 +139,7 @@ function AboutPage() {
             </div>
           </div>
         </section>
+
 
         <footer className="text-center text-sm text-muted-foreground py-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           <Link to="/" className="hover:text-primary transition-colors">Home</Link>
