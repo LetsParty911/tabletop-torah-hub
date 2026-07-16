@@ -75,7 +75,7 @@ type PdfRow = {
   badge?: string | null;
 };
 
-const AUDIENCE_OPTIONS = ["Adults", "Families", "Kids"] as const;
+const AUDIENCE_OPTIONS = ["Adults", "Families", "Children"] as const;
 const FORMAT_TYPE_OPTIONS = ["Short Vorts", "Stories", "Halacha", "Essays"] as const;
 const BADGE_OPTIONS = ["Recommended", "Quick Read", "Kids' Pick"] as const;
 
