@@ -272,7 +272,7 @@ function Index() {
         <div className="gold-divider" aria-hidden><span className="gold-divider-dot" /></div>
 
         {/* Email signup */}
-        <section className="parchment-frame max-w-2xl mx-auto">
+        <section id="weekly-email-signup" className="parchment-frame max-w-2xl mx-auto scroll-mt-8">
           <div className="parchment-panel py-6 px-5 sm:px-6 sm:py-8 text-center">
             <div className="flex items-center justify-center gap-3 text-accent mb-3">
               <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
@@ -282,10 +282,10 @@ function Index() {
               <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
             </div>
             <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
-              Weekly Torah Notifications
+              Get This Week's Divrei Torah Every Thursday
             </h2>
             <p className="mt-2 font-serif italic font-medium text-sm sm:text-base text-primary max-w-md mx-auto">
-              One short email each week when new Divrei Torah are uploaded.
+              One short email. No daily messages. Unsubscribe anytime.
             </p>
             <form
               onSubmit={handleSignup}
@@ -303,7 +303,7 @@ function Index() {
                 type="submit"
                 className="rounded-full bg-primary px-8 py-3.5 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md"
               >
-                Join the List
+                Send Me the Weekly Collection
               </button>
             </form>
             {signupMsg && (
