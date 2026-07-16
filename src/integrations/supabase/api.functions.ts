@@ -168,9 +168,20 @@ type PdfResource = {
   primary_category: string | null;
   publication: string | null;
   tags: string[];
+  description: string | null;
+  audience: string | null;
+  format_type: string | null;
+  page_count: number | null;
+  badge: string | null;
 };
 
 async function fetchAllPublishedRows(admin: ReturnType<typeof getSupabaseAdmin>) {
+  const withMeta = await admin
+    .from("pdfs")
+    .select("id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, description, audience, format_type, page_count, badge")
+    .eq("published", true)
+    .order("created_at", { ascending: false });
+  if (!withMeta.error) return withMeta.data ?? [];
   const withPub = await admin
     .from("pdfs")
     .select("id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication")
@@ -221,6 +232,11 @@ async function buildResources(
         primary_category: (r.primary_category as string | null) ?? null,
         publication: (r.publication as string | null) ?? null,
         tags: Array.isArray(r.tags) ? (r.tags as string[]) : [],
+        description: (r.description as string | null) ?? null,
+        audience: (r.audience as string | null) ?? null,
+        format_type: (r.format_type as string | null) ?? null,
+        page_count: typeof r.page_count === "number" ? r.page_count : null,
+        badge: (r.badge as string | null) ?? null,
       };
     }),
   );
@@ -370,7 +386,17 @@ export const listPublicationsMeta = createServerFn({ method: "GET" }).handler(
 );
 
 // ---------- Public: archive — all published PDFs grouped by year + parsha ----------
-export type ArchivePdf = { id: string; title: string; subtitle: string | null; summary_quick: string | null };
+export type ArchivePdf = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  summary_quick: string | null;
+  description: string | null;
+  audience: string | null;
+  format_type: string | null;
+  page_count: number | null;
+  badge: string | null;
+};
 export type ArchiveParsha = { parshaKey: string; pdfs: ArchivePdf[] };
 export type ArchiveYear = { year: number; parshiyos: ArchiveParsha[] };
 export type ArchiveResult = { years: ArchiveYear[] };
@@ -378,15 +404,29 @@ export type ArchiveResult = { years: ArchiveYear[] };
 export const listArchive = createServerFn({ method: "GET" }).handler(
   async (): Promise<ArchiveResult> => {
     const admin = getSupabaseAdmin();
-    const { data: rows, error } = await admin
+    const selectWith = "id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at, description, audience, format_type, page_count, badge";
+    const selectBase = "id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at";
+    let rows: any[] | null = null;
+    const withMeta = await admin
       .from("pdfs")
-      .select("id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at")
+      .select(selectWith)
       .eq("published", true)
       .order("jewish_year", { ascending: false })
       .order("created_at", { ascending: false });
-    if (error) {
-      console.error("listArchive error", error);
-      return { years: [] };
+    if (!withMeta.error) {
+      rows = withMeta.data ?? [];
+    } else {
+      const fb = await admin
+        .from("pdfs")
+        .select(selectBase)
+        .eq("published", true)
+        .order("jewish_year", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (fb.error) {
+        console.error("listArchive error", fb.error);
+        return { years: [] };
+      }
+      rows = fb.data ?? [];
     }
     const current = await resolveCurrentFeatured();
     const displayed = await resolveDisplayedCollection(admin, current.comparableKey);
@@ -419,6 +459,11 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
         title: r.title,
         subtitle: r.subtitle,
         summary_quick: r.summary_quick,
+        description: (r.description as string | null) ?? null,
+        audience: (r.audience as string | null) ?? null,
+        format_type: (r.format_type as string | null) ?? null,
+        page_count: typeof r.page_count === "number" ? r.page_count : null,
+        badge: (r.badge as string | null) ?? null,
         created_at: r.created_at,
       });
     }
@@ -438,7 +483,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
             return {
               parshaKey,
               latest,
-              pdfs: sortedPdfs.map(({ id, title, subtitle, summary_quick }) => ({ id, title, subtitle, summary_quick })),
+              pdfs: sortedPdfs.map(({ created_at: _c, ...rest }) => rest),
             };
           })
           .sort((a, b) => (a.latest < b.latest ? 1 : -1))
@@ -1032,6 +1077,11 @@ export const adminListPdfs = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
+    const withMeta = await admin
+      .from("pdfs")
+      .select("id, parsha_key, title, subtitle, file_path, published, jewish_year, created_at, summary_quick, content_type, primary_category, tags, publication, description, audience, format_type, page_count, badge")
+      .order("created_at", { ascending: false });
+    if (!withMeta.error) return { pdfs: withMeta.data ?? [] };
     const withPub = await admin
       .from("pdfs")
       .select("id, parsha_key, title, subtitle, file_path, published, jewish_year, created_at, summary_quick, content_type, primary_category, tags, publication")
@@ -1114,6 +1164,11 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     primaryCategory?: string | null;
     publication?: string | null;
     tags?: string[] | null;
+    description?: string | null;
+    audience?: string | null;
+    formatType?: string | null;
+    pageCount?: number | null;
+    badge?: string | null;
   }) =>
     z
       .object({
@@ -1128,6 +1183,11 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
         primaryCategory: z.enum(["kids", "family", "in_depth", "reference"]).nullable().optional(),
         publication: z.enum(["tftt_original", "mikaamcha", "peninei_mechkerei"]).nullable().optional(),
         tags: z.array(z.string().min(1).max(60)).max(20).nullable().optional(),
+        description: z.string().max(500).nullable().optional(),
+        audience: z.enum(["Adults", "Families", "Kids"]).nullable().optional(),
+        formatType: z.enum(["Short Vorts", "Stories", "Halacha", "Essays"]).nullable().optional(),
+        pageCount: z.number().int().min(0).max(10000).nullable().optional(),
+        badge: z.enum(["Recommended", "Quick Read", "Kids' Pick"]).nullable().optional(),
       })
       .parse(input),
   )
@@ -1189,12 +1249,26 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     const finalPublication = data.publication ?? autoPublication;
     if (finalPublication) insertRow.publication = finalPublication;
     if (data.tags && data.tags.length > 0) insertRow.tags = data.tags;
+    if (data.description !== undefined && data.description !== null) insertRow.description = data.description;
+    if (data.audience !== undefined && data.audience !== null) insertRow.audience = data.audience;
+    if (data.formatType !== undefined && data.formatType !== null) insertRow.format_type = data.formatType;
+    if (data.pageCount !== undefined && data.pageCount !== null) insertRow.page_count = data.pageCount;
+    if (data.badge !== undefined && data.badge !== null) insertRow.badge = data.badge;
 
-    // Try insert with publication; if the column doesn't exist yet, retry without it.
-    let insErr = (await admin.from("pdfs").insert(insertRow)).error;
+    const metaKeys = ["description", "audience", "format_type", "page_count", "badge"] as const;
+    const tryInsert = async (row: Record<string, unknown>) => (await admin.from("pdfs").insert(row)).error;
+    let currentRow: Record<string, unknown> = { ...insertRow };
+    let insErr = await tryInsert(currentRow);
+    // If any metadata column is missing on the DB, retry stripping the offending column(s).
+    while (insErr) {
+      const offending = metaKeys.find((k) => new RegExp(`\\b${k}\\b`, "i").test(insErr!.message) && k in currentRow);
+      if (!offending) break;
+      delete currentRow[offending];
+      insErr = await tryInsert(currentRow);
+    }
     if (insErr && /publication/i.test(insErr.message)) {
-      const { publication: _p, ...fallback } = insertRow as any;
-      insErr = (await admin.from("pdfs").insert(fallback)).error;
+      const { publication: _p, ...fallback } = currentRow as any;
+      insErr = await tryInsert(fallback);
     }
     if (insErr) {
       await admin.storage.from("pdfs").remove([path]);
@@ -1213,6 +1287,11 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
     primaryCategory?: string | null;
     publication?: string | null;
     tags?: string[] | null;
+    description?: string | null;
+    audience?: string | null;
+    formatType?: string | null;
+    pageCount?: number | null;
+    badge?: string | null;
   }) =>
     z
       .object({
@@ -1223,6 +1302,11 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
         primaryCategory: z.enum(["kids", "family", "in_depth", "reference"]).nullable().optional(),
         publication: z.enum(["tftt_original", "mikaamcha", "peninei_mechkerei"]).nullable().optional(),
         tags: z.array(z.string().min(1).max(60)).max(20).nullable().optional(),
+        description: z.string().max(500).nullable().optional(),
+        audience: z.enum(["Adults", "Families", "Kids"]).nullable().optional(),
+        formatType: z.enum(["Short Vorts", "Stories", "Halacha", "Essays"]).nullable().optional(),
+        pageCount: z.number().int().min(0).max(10000).nullable().optional(),
+        badge: z.enum(["Recommended", "Quick Read", "Kids' Pick"]).nullable().optional(),
       })
       .parse(input),
   )
@@ -1235,11 +1319,21 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
     if (data.primaryCategory !== undefined) update.primary_category = data.primaryCategory;
     if (data.publication !== undefined) update.publication = data.publication;
     if (data.tags !== undefined) update.tags = data.tags;
+    if (data.description !== undefined) update.description = data.description;
+    if (data.audience !== undefined) update.audience = data.audience;
+    if (data.formatType !== undefined) update.format_type = data.formatType;
+    if (data.pageCount !== undefined) update.page_count = data.pageCount;
+    if (data.badge !== undefined) update.badge = data.badge;
     if (Object.keys(update).length === 0) return { ok: true };
-    let { error } = await admin.from("pdfs").update(update).eq("id", data.id);
-    if (error && /publication/i.test(error.message)) {
-      const { publication: _p, ...fallback } = update as any;
-      ({ error } = await admin.from("pdfs").update(fallback).eq("id", data.id));
+    const metaKeys = ["description", "audience", "format_type", "page_count", "badge", "publication"] as const;
+    let current: Record<string, unknown> = { ...update };
+    let { error } = await admin.from("pdfs").update(current).eq("id", data.id);
+    while (error) {
+      const offending = metaKeys.find((k) => new RegExp(`\\b${k}\\b`, "i").test(error!.message) && k in current);
+      if (!offending) break;
+      delete current[offending];
+      if (Object.keys(current).length === 0) { error = null as any; break; }
+      ({ error } = await admin.from("pdfs").update(current).eq("id", data.id));
     }
     if (error) throw new Error(error.message);
     return { ok: true };

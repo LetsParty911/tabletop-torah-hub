@@ -27,6 +27,11 @@ type Resource = {
   primary_category: string | null;
   publication: string | null;
   tags: string[];
+  description: string | null;
+  audience: string | null;
+  format_type: string | null;
+  page_count: number | null;
+  badge: string | null;
 };
 
 type LoaderData = {
@@ -354,12 +359,37 @@ function Index() {
                         <FileText className="h-5 w-5" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-serif text-base sm:text-xl font-semibold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
-                          {r.title}
-                        </h3>
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-serif text-base sm:text-xl font-semibold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
+                            {r.title}
+                          </h3>
+                          {r.badge && (
+                            <span className="shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
+                              {r.badge}
+                            </span>
+                          )}
+                        </div>
                         {r.subtitle && (
                           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                             {r.subtitle}
+                          </p>
+                        )}
+                        {r.description && (
+                          <p className="mt-2 text-sm text-foreground/85 leading-snug">
+                            {r.description}
+                          </p>
+                        )}
+                        {(r.audience || r.format_type || typeof r.page_count === "number") && (
+                          <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            {[
+                              r.audience,
+                              r.format_type,
+                              typeof r.page_count === "number"
+                                ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
+                                : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
                           </p>
                         )}
                       </div>

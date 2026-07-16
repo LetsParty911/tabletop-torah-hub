@@ -68,7 +68,16 @@ type PdfRow = {
   primary_category?: string | null;
   publication?: string | null;
   tags?: string[] | null;
+  description?: string | null;
+  audience?: string | null;
+  format_type?: string | null;
+  page_count?: number | null;
+  badge?: string | null;
 };
+
+const AUDIENCE_OPTIONS = ["Adults", "Families", "Kids"] as const;
+const FORMAT_TYPE_OPTIONS = ["Short Vorts", "Stories", "Halacha", "Essays"] as const;
+const BADGE_OPTIONS = ["Recommended", "Quick Read", "Kids' Pick"] as const;
 
 type Subscriber = { id: string; email: string; created_at: string };
 
@@ -207,11 +216,21 @@ function AdminPage() {
   const [file, setFile] = useState<File | null>(null);
   const [uploadPublication, setUploadPublication] = useState<string>("");
   const [uploadPublicationTouched, setUploadPublicationTouched] = useState(false);
+  const [uploadDescription, setUploadDescription] = useState("");
+  const [uploadAudience, setUploadAudience] = useState<string>("");
+  const [uploadFormatType, setUploadFormatType] = useState<string>("");
+  const [uploadPageCount, setUploadPageCount] = useState<string>("");
+  const [uploadBadge, setUploadBadge] = useState<string>("");
 
   // Inline metadata editor state (per row) — publication / title / subtitle
   const [editMetaTitle, setEditMetaTitle] = useState("");
   const [editMetaSubtitle, setEditMetaSubtitle] = useState("");
   const [editMetaPublication, setEditMetaPublication] = useState<string>("");
+  const [editMetaDescription, setEditMetaDescription] = useState("");
+  const [editMetaAudience, setEditMetaAudience] = useState<string>("");
+  const [editMetaFormatType, setEditMetaFormatType] = useState<string>("");
+  const [editMetaPageCount, setEditMetaPageCount] = useState<string>("");
+  const [editMetaBadge, setEditMetaBadge] = useState<string>("");
   const [savingMeta, setSavingMeta] = useState(false);
 
   // Inline "Replace PDF" editor state (per row)
@@ -691,6 +710,11 @@ function AdminPage() {
           primaryCategory: null,
           publication: (uploadPublication || null) as any,
           tags: null,
+          description: uploadDescription.trim() ? uploadDescription.trim() : null,
+          audience: (uploadAudience || null) as any,
+          formatType: (uploadFormatType || null) as any,
+          pageCount: uploadPageCount.trim() ? Number(uploadPageCount) : null,
+          badge: (uploadBadge || null) as any,
         },
       });
       setTitle("");
@@ -698,6 +722,11 @@ function AdminPage() {
       setFile(null);
       setUploadPublication("");
       setUploadPublicationTouched(false);
+      setUploadDescription("");
+      setUploadAudience("");
+      setUploadFormatType("");
+      setUploadPageCount("");
+      setUploadBadge("");
       (document.getElementById("pdf-file-input") as HTMLInputElement | null)?.value &&
         ((document.getElementById("pdf-file-input") as HTMLInputElement).value = "");
       setMsg({ kind: "success", text: "Uploaded." });
@@ -737,6 +766,11 @@ function AdminPage() {
     setEditMetaTitle(row?.title ?? "");
     setEditMetaSubtitle(row?.subtitle ?? "");
     setEditMetaPublication((row?.publication as string) ?? "");
+    setEditMetaDescription((row?.description as string) ?? "");
+    setEditMetaAudience((row?.audience as string) ?? "");
+    setEditMetaFormatType((row?.format_type as string) ?? "");
+    setEditMetaPageCount(row?.page_count != null ? String(row.page_count) : "");
+    setEditMetaBadge((row?.badge as string) ?? "");
   };
 
   const cancelEditPdf = () => {
@@ -758,6 +792,11 @@ function AdminPage() {
           primaryCategory: null,
           publication: (editMetaPublication || null) as any,
           tags: null,
+          description: editMetaDescription.trim() ? editMetaDescription.trim() : null,
+          audience: (editMetaAudience || null) as any,
+          formatType: (editMetaFormatType || null) as any,
+          pageCount: editMetaPageCount.trim() ? Number(editMetaPageCount) : null,
+          badge: (editMetaBadge || null) as any,
         },
       });
       setMsg({ kind: "success", text: "Metadata saved." });
@@ -1739,6 +1778,65 @@ function AdminPage() {
                 </select>
               </label>
               <label className="block md:col-span-2">
+                <span className="text-sm font-medium">Description (one short sentence)</span>
+                <input
+                  value={uploadDescription}
+                  onChange={(e) => setUploadDescription(e.target.value)}
+                  maxLength={500}
+                  placeholder="e.g. Short vorts drawn from the classic meforshim."
+                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                />
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium">Audience</span>
+                <select
+                  value={uploadAudience}
+                  onChange={(e) => setUploadAudience(e.target.value)}
+                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                >
+                  <option value="">— none —</option>
+                  {AUDIENCE_OPTIONS.map((o) => (
+                    <option key={o} value={o}>{o}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium">Format</span>
+                <select
+                  value={uploadFormatType}
+                  onChange={(e) => setUploadFormatType(e.target.value)}
+                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                >
+                  <option value="">— none —</option>
+                  {FORMAT_TYPE_OPTIONS.map((o) => (
+                    <option key={o} value={o}>{o}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium">Page count</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={uploadPageCount}
+                  onChange={(e) => setUploadPageCount(e.target.value)}
+                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                />
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium">Highlight badge</span>
+                <select
+                  value={uploadBadge}
+                  onChange={(e) => setUploadBadge(e.target.value)}
+                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                >
+                  <option value="">— none —</option>
+                  {BADGE_OPTIONS.map((o) => (
+                    <option key={o} value={o}>{o}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="block md:col-span-2">
                 <span className="text-sm font-medium">PDF file</span>
                 <input
                   id="pdf-file-input"
@@ -2070,6 +2168,64 @@ function AdminPage() {
                                           <option value="">— none —</option>
                                           {PUBLICATION_KEYS.map((k) => (
                                             <option key={k} value={k}>{PUBLICATION_LABELS[k]}</option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                      <label className="block md:col-span-2">
+                                        <span className="text-xs font-medium">Description</span>
+                                        <input
+                                          value={editMetaDescription}
+                                          onChange={(e) => setEditMetaDescription(e.target.value)}
+                                          maxLength={500}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        />
+                                      </label>
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Audience</span>
+                                        <select
+                                          value={editMetaAudience}
+                                          onChange={(e) => setEditMetaAudience(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        >
+                                          <option value="">— none —</option>
+                                          {AUDIENCE_OPTIONS.map((o) => (
+                                            <option key={o} value={o}>{o}</option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Format</span>
+                                        <select
+                                          value={editMetaFormatType}
+                                          onChange={(e) => setEditMetaFormatType(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        >
+                                          <option value="">— none —</option>
+                                          {FORMAT_TYPE_OPTIONS.map((o) => (
+                                            <option key={o} value={o}>{o}</option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Page count</span>
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          value={editMetaPageCount}
+                                          onChange={(e) => setEditMetaPageCount(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        />
+                                      </label>
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Highlight badge</span>
+                                        <select
+                                          value={editMetaBadge}
+                                          onChange={(e) => setEditMetaBadge(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        >
+                                          <option value="">— none —</option>
+                                          {BADGE_OPTIONS.map((o) => (
+                                            <option key={o} value={o}>{o}</option>
                                           ))}
                                         </select>
                                       </label>
