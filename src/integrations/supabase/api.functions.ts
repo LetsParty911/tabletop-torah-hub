@@ -232,6 +232,11 @@ async function buildResources(
         primary_category: (r.primary_category as string | null) ?? null,
         publication: (r.publication as string | null) ?? null,
         tags: Array.isArray(r.tags) ? (r.tags as string[]) : [],
+        description: (r.description as string | null) ?? null,
+        audience: (r.audience as string | null) ?? null,
+        format_type: (r.format_type as string | null) ?? null,
+        page_count: typeof r.page_count === "number" ? r.page_count : null,
+        badge: (r.badge as string | null) ?? null,
       };
     }),
   );
