@@ -688,18 +688,16 @@ function AdminPage() {
           fileName: file.name,
           fileBase64,
           jewishYear,
-          primaryCategory: (uploadCategory || null) as any,
+          primaryCategory: null,
           publication: (uploadPublication || null) as any,
-          tags: uploadTags.length > 0 ? uploadTags : null,
+          tags: null,
         },
       });
       setTitle("");
       setSubtitle("");
       setFile(null);
-      setUploadCategory("");
       setUploadPublication("");
       setUploadPublicationTouched(false);
-      setUploadTags([]);
       (document.getElementById("pdf-file-input") as HTMLInputElement | null)?.value &&
         ((document.getElementById("pdf-file-input") as HTMLInputElement).value = "");
       setMsg({ kind: "success", text: "Uploaded." });
@@ -738,9 +736,7 @@ function AdminPage() {
     const row = pdfs.find((p) => p.id === id);
     setEditMetaTitle(row?.title ?? "");
     setEditMetaSubtitle(row?.subtitle ?? "");
-    setEditMetaCategory((row?.primary_category as string) ?? "");
     setEditMetaPublication((row?.publication as string) ?? "");
-    setEditMetaTags(Array.isArray(row?.tags) ? (row!.tags as string[]) : []);
   };
 
   const cancelEditPdf = () => {
@@ -759,9 +755,9 @@ function AdminPage() {
           id,
           title: editMetaTitle,
           subtitle: editMetaSubtitle || null,
-          primaryCategory: (editMetaCategory || null) as any,
+          primaryCategory: null,
           publication: (editMetaPublication || null) as any,
-          tags: editMetaTags,
+          tags: null,
         },
       });
       setMsg({ kind: "success", text: "Metadata saved." });
