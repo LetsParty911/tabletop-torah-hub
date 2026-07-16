@@ -792,6 +792,11 @@ function AdminPage() {
           primaryCategory: null,
           publication: (editMetaPublication || null) as any,
           tags: null,
+          description: editMetaDescription.trim() ? editMetaDescription.trim() : null,
+          audience: (editMetaAudience || null) as any,
+          formatType: (editMetaFormatType || null) as any,
+          pageCount: editMetaPageCount.trim() ? Number(editMetaPageCount) : null,
+          badge: (editMetaBadge || null) as any,
         },
       });
       setMsg({ kind: "success", text: "Metadata saved." });
