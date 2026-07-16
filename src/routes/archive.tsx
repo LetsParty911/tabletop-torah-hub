@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FileText, Download } from "lucide-react";
+import { FileText } from "lucide-react";
 import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
+import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 
 
 export const Route = createFileRoute("/archive")({
