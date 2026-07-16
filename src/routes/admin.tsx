@@ -36,6 +36,8 @@ import {
   adminGenerateSummary,
   adminListPdfsMissingAudio,
   adminGenerateAudio,
+  adminGeneratePublicationMeta,
+  adminListPdfsMissingDescription,
   adminUpdatePdfMeta,
 } from "@/integrations/supabase/api.functions";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
@@ -250,15 +252,43 @@ function AdminPage() {
     if (!accessToken || generatingSummaryId) return;
     setGeneratingSummaryId(row.id);
     try {
-      const r = await adminGenerateSummary({ data: { accessToken, id: row.id } });
+      // Run summary + publication metadata in parallel.
+      const [r, meta] = await Promise.all([
+        adminGenerateSummary({ data: { accessToken, id: row.id } }),
+        adminGeneratePublicationMeta({ data: { accessToken, id: row.id } }).catch((e) => ({
+          ok: false as const,
+          id: row.id,
+          error: e instanceof Error ? e.message : "meta failed",
+        })),
+      ]);
+      // Merge results into the row.
+      setPdfs((prev) =>
+        prev.map((p) => {
+          if (p.id !== row.id) return p;
+          const next = { ...p };
+          if (r.ok) {
+            next.summary_quick = r.summary_quick;
+            next.content_type = r.content_type;
+          }
+          if (meta.ok) {
+            if (meta.description) next.description = meta.description;
+            if (meta.audience) (next as any).audience = meta.audience;
+            if (meta.format_type) (next as any).format_type = meta.format_type;
+            if (meta.page_count != null) (next as any).page_count = meta.page_count;
+          }
+          return next;
+        }),
+      );
+      // If this row is currently in edit mode, pre-fill any empty fields
+      // so the admin can review before saving.
+      if (editingPdfId === row.id && meta.ok) {
+        if (meta.description) setEditMetaDescription((prev) => prev || meta.description || "");
+        if (meta.audience) setEditMetaAudience((prev) => prev || meta.audience || "");
+        if (meta.format_type) setEditMetaFormatType((prev) => prev || meta.format_type || "");
+        if (meta.page_count != null)
+          setEditMetaPageCount((prev) => prev || String(meta.page_count));
+      }
       if (r.ok) {
-        setPdfs((prev) =>
-          prev.map((p) =>
-            p.id === row.id
-              ? { ...p, summary_quick: r.summary_quick, content_type: r.content_type }
-              : p,
-          ),
-        );
         setSummaryModal({
           kind: "success",
           title: row.title,
@@ -278,6 +308,71 @@ function AdminPage() {
       setGeneratingSummaryId(null);
     }
   };
+
+  // Bulk description generation state
+  const [descBulk, setDescBulk] = useState<
+    | { status: "idle" }
+    | { status: "running"; current: number; total: number; currentTitle: string }
+    | {
+        status: "done";
+        total: number;
+        successes: number;
+        failures: Array<{ id: string; title: string; error: string }>;
+      }
+  >({ status: "idle" });
+
+  const handleGenerateAllDescriptions = async () => {
+    if (!accessToken) return;
+    if (descBulk.status === "running") return;
+    let list: Array<{ id: string; title: string }> = [];
+    try {
+      const r = await adminListPdfsMissingDescription({ data: { accessToken } });
+      list = r.rows;
+    } catch (e) {
+      setDescBulk({
+        status: "done",
+        total: 0,
+        successes: 0,
+        failures: [
+          {
+            id: "",
+            title: "(list)",
+            error: e instanceof Error ? e.message : "Failed to load list",
+          },
+        ],
+      });
+      return;
+    }
+    if (list.length === 0) {
+      setDescBulk({ status: "done", total: 0, successes: 0, failures: [] });
+      return;
+    }
+    const failures: Array<{ id: string; title: string; error: string }> = [];
+    let successes = 0;
+    for (let i = 0; i < list.length; i++) {
+      const row = list[i];
+      setDescBulk({
+        status: "running",
+        current: i + 1,
+        total: list.length,
+        currentTitle: row.title,
+      });
+      try {
+        const r = await adminGeneratePublicationMeta({ data: { accessToken, id: row.id } });
+        if (r.ok) successes++;
+        else failures.push({ id: row.id, title: row.title, error: r.error });
+      } catch (e) {
+        failures.push({
+          id: row.id,
+          title: row.title,
+          error: e instanceof Error ? e.message : "Request failed",
+        });
+      }
+    }
+    setDescBulk({ status: "done", total: list.length, successes, failures });
+    await refresh();
+  };
+
 
   // Bulk audio generation state
   const [audioBulk, setAudioBulk] = useState<
@@ -1966,6 +2061,51 @@ function AdminPage() {
                       </div>
                     )}
                   </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-border/60 bg-muted/30 p-3">
+                    <button
+                      type="button"
+                      onClick={handleGenerateAllDescriptions}
+                      disabled={descBulk.status === "running"}
+                      className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                    >
+                      📝{" "}
+                      {descBulk.status === "running"
+                        ? `Generating descriptions: ${descBulk.current} of ${descBulk.total}...`
+                        : "Generate All Descriptions"}
+                    </button>
+                    {descBulk.status === "running" && (
+                      <span className="text-xs text-muted-foreground truncate max-w-[60ch]">
+                        {descBulk.currentTitle}
+                      </span>
+                    )}
+                    {descBulk.status === "done" && (
+                      <div className="text-sm">
+                        {descBulk.total === 0 ? (
+                          <span className="text-muted-foreground">
+                            All PDFs already have descriptions.
+                          </span>
+                        ) : (
+                          <div className="space-y-1">
+                            <div>
+                              Done: <strong>{descBulk.successes}</strong> succeeded,{" "}
+                              <strong>{descBulk.failures.length}</strong> failed (of{" "}
+                              {descBulk.total}).
+                            </div>
+                            {descBulk.failures.length > 0 && (
+                              <ul className="list-disc pl-5 text-xs text-destructive space-y-0.5">
+                                {descBulk.failures.map((f, i) => (
+                                  <li key={`${f.id}-${i}`}>
+                                    <span className="font-medium">{f.title}:</span> {f.error}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="mt-4 overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="text-left border-b">
