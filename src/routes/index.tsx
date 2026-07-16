@@ -27,6 +27,11 @@ type Resource = {
   primary_category: string | null;
   publication: string | null;
   tags: string[];
+  description: string | null;
+  audience: string | null;
+  format_type: string | null;
+  page_count: number | null;
+  badge: string | null;
 };
 
 type LoaderData = {
