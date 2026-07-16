@@ -362,7 +362,7 @@ function Index() {
                     </div>
 
                     <div className="mt-auto pt-4">
-                      <a
+                      <DownloadToPrintButton
                         href={`/view/${r.id}/download`}
                         onClick={() => {
                           trackEvent("pdf_download", pdfParams(r));
@@ -370,10 +370,8 @@ function Index() {
                             window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
                           }
                         }}
-                        className="w-full inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-primary px-3 py-2.5 lg:py-2 text-sm font-medium text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-                      >
-                        <Download className="h-4 w-4" /> Download
-                      </a>
+                        className="w-full px-3 py-2.5 lg:py-2"
+                      />
                     </div>
                   </article>
                 ))}
