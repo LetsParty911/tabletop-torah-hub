@@ -1077,6 +1077,11 @@ export const adminListPdfs = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
+    const withMeta = await admin
+      .from("pdfs")
+      .select("id, parsha_key, title, subtitle, file_path, published, jewish_year, created_at, summary_quick, content_type, primary_category, tags, publication, description, audience, format_type, page_count, badge")
+      .order("created_at", { ascending: false });
+    if (!withMeta.error) return { pdfs: withMeta.data ?? [] };
     const withPub = await admin
       .from("pdfs")
       .select("id, parsha_key, title, subtitle, file_path, published, jewish_year, created_at, summary_quick, content_type, primary_category, tags, publication")
