@@ -41,11 +41,8 @@ import {
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
 import {
-  CATEGORY_KEYS,
-  CATEGORY_LABELS,
   PUBLICATION_KEYS,
   PUBLICATION_LABELS,
-  TAG_LABELS,
   publicationForTitle,
 } from "@/lib/badges";
 
@@ -208,17 +205,13 @@ function AdminPage() {
   const [subtitle, setSubtitle] = useState("");
   const [published, setPublished] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [uploadCategory, setUploadCategory] = useState<string>("");
   const [uploadPublication, setUploadPublication] = useState<string>("");
   const [uploadPublicationTouched, setUploadPublicationTouched] = useState(false);
-  const [uploadTags, setUploadTags] = useState<string[]>([]);
 
-  // Inline metadata editor state (per row) — category / publication / tags / title / subtitle
+  // Inline metadata editor state (per row) — publication / title / subtitle
   const [editMetaTitle, setEditMetaTitle] = useState("");
   const [editMetaSubtitle, setEditMetaSubtitle] = useState("");
-  const [editMetaCategory, setEditMetaCategory] = useState<string>("");
   const [editMetaPublication, setEditMetaPublication] = useState<string>("");
-  const [editMetaTags, setEditMetaTags] = useState<string[]>([]);
   const [savingMeta, setSavingMeta] = useState(false);
 
   // Inline "Replace PDF" editor state (per row)
