@@ -169,6 +169,12 @@ function Index() {
     Route.useLoaderData() as LoaderData;
   const [email, setEmail] = useState("");
   const [signupMsg, setSignupMsg] = useState<string | null>(null);
+  const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
+
+  const filteredResources =
+    audienceFilter === "All"
+      ? resources
+      : resources.filter((r) => r.audience === audienceFilter);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
