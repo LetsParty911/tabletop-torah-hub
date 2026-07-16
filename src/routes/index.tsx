@@ -247,7 +247,7 @@ function Index() {
               {currentLabel} <span className="text-accent">•</span> New every Thursday
             </p>
             <p className="mt-3 sm:mt-4 font-serif italic text-base sm:text-lg md:text-xl text-accent max-w-2xl mx-auto">
-              Ready-to-print Torah sheets for adults, families, and children.
+              Ready-to-print Torah sheets for children, families, and adults.
             </p>
             <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               {resources.length > 0 && (
