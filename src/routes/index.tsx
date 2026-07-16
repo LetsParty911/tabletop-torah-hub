@@ -287,10 +287,10 @@ function Index() {
               <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
             </div>
             <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
-              Get This Week's Divrei Torah Every Thursday
+              Don't Miss a Week
             </h2>
             <p className="mt-2 font-serif italic font-medium text-sm sm:text-base text-primary max-w-md mx-auto">
-              One short email. No daily messages. Unsubscribe anytime.
+              Drop your email. Get notified when your weekly Divrei Torah are ready to download.
             </p>
             <form
               onSubmit={handleSignup}
