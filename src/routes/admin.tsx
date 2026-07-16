@@ -2171,6 +2171,64 @@ function AdminPage() {
                                           ))}
                                         </select>
                                       </label>
+                                      <label className="block md:col-span-2">
+                                        <span className="text-xs font-medium">Description</span>
+                                        <input
+                                          value={editMetaDescription}
+                                          onChange={(e) => setEditMetaDescription(e.target.value)}
+                                          maxLength={500}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        />
+                                      </label>
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Audience</span>
+                                        <select
+                                          value={editMetaAudience}
+                                          onChange={(e) => setEditMetaAudience(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        >
+                                          <option value="">— none —</option>
+                                          {AUDIENCE_OPTIONS.map((o) => (
+                                            <option key={o} value={o}>{o}</option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Format</span>
+                                        <select
+                                          value={editMetaFormatType}
+                                          onChange={(e) => setEditMetaFormatType(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        >
+                                          <option value="">— none —</option>
+                                          {FORMAT_TYPE_OPTIONS.map((o) => (
+                                            <option key={o} value={o}>{o}</option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Page count</span>
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          value={editMetaPageCount}
+                                          onChange={(e) => setEditMetaPageCount(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        />
+                                      </label>
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Highlight badge</span>
+                                        <select
+                                          value={editMetaBadge}
+                                          onChange={(e) => setEditMetaBadge(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        >
+                                          <option value="">— none —</option>
+                                          {BADGE_OPTIONS.map((o) => (
+                                            <option key={o} value={o}>{o}</option>
+                                          ))}
+                                        </select>
+                                      </label>
                                     </div>
                                     <div className="mt-3 flex items-center gap-2">
                                       <button
