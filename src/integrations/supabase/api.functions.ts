@@ -1287,6 +1287,11 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
     primaryCategory?: string | null;
     publication?: string | null;
     tags?: string[] | null;
+    description?: string | null;
+    audience?: string | null;
+    formatType?: string | null;
+    pageCount?: number | null;
+    badge?: string | null;
   }) =>
     z
       .object({
@@ -1297,6 +1302,11 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
         primaryCategory: z.enum(["kids", "family", "in_depth", "reference"]).nullable().optional(),
         publication: z.enum(["tftt_original", "mikaamcha", "peninei_mechkerei"]).nullable().optional(),
         tags: z.array(z.string().min(1).max(60)).max(20).nullable().optional(),
+        description: z.string().max(500).nullable().optional(),
+        audience: z.enum(["Adults", "Families", "Kids"]).nullable().optional(),
+        formatType: z.enum(["Short Vorts", "Stories", "Halacha", "Essays"]).nullable().optional(),
+        pageCount: z.number().int().min(0).max(10000).nullable().optional(),
+        badge: z.enum(["Recommended", "Quick Read", "Kids' Pick"]).nullable().optional(),
       })
       .parse(input),
   )
@@ -1309,11 +1319,21 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
     if (data.primaryCategory !== undefined) update.primary_category = data.primaryCategory;
     if (data.publication !== undefined) update.publication = data.publication;
     if (data.tags !== undefined) update.tags = data.tags;
+    if (data.description !== undefined) update.description = data.description;
+    if (data.audience !== undefined) update.audience = data.audience;
+    if (data.formatType !== undefined) update.format_type = data.formatType;
+    if (data.pageCount !== undefined) update.page_count = data.pageCount;
+    if (data.badge !== undefined) update.badge = data.badge;
     if (Object.keys(update).length === 0) return { ok: true };
-    let { error } = await admin.from("pdfs").update(update).eq("id", data.id);
-    if (error && /publication/i.test(error.message)) {
-      const { publication: _p, ...fallback } = update as any;
-      ({ error } = await admin.from("pdfs").update(fallback).eq("id", data.id));
+    const metaKeys = ["description", "audience", "format_type", "page_count", "badge", "publication"] as const;
+    let current: Record<string, unknown> = { ...update };
+    let { error } = await admin.from("pdfs").update(current).eq("id", data.id);
+    while (error) {
+      const offending = metaKeys.find((k) => new RegExp(`\\b${k}\\b`, "i").test(error!.message) && k in current);
+      if (!offending) break;
+      delete current[offending];
+      if (Object.keys(current).length === 0) { error = null as any; break; }
+      ({ error } = await admin.from("pdfs").update(current).eq("id", data.id));
     }
     if (error) throw new Error(error.message);
     return { ok: true };
