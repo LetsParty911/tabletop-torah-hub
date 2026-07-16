@@ -227,27 +227,19 @@ function Index() {
             <h1 className="font-serif text-[2.25rem] leading-[1.05] sm:text-5xl md:text-7xl font-bold tracking-tight text-primary">
               Torah for the Table
             </h1>
-            <p className="mt-4 sm:mt-6 font-serif italic text-base sm:text-xl md:text-2xl text-accent max-w-2xl mx-auto">
-              A weekly collection of Divrei Torah for the Shabbos table.
-            </p>
-            <div className="mt-6 sm:mt-10 flex items-center justify-center gap-3 sm:gap-4 text-accent">
-              <span aria-hidden className="h-px w-8 sm:w-16 bg-accent/60" />
-              <span className="font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em]">
-                This Week
-              </span>
-              <span aria-hidden className="h-px w-8 sm:w-16 bg-accent/60" />
-            </div>
-            {false ? (
-              <div className="mt-2 sm:mt-3 flex justify-center">
-                <div className="h-8 sm:h-10 md:h-12 w-56 sm:w-72 md:w-96 rounded-md bg-primary/10 animate-pulse" aria-label="Loading this week's parsha" />
-              </div>
-            ) : (
-              <p className="mt-2 sm:mt-3 font-serif text-xl sm:text-2xl md:text-4xl text-primary whitespace-nowrap">
-                {currentLabel}
+            {resources.length > 0 && (
+              <p className="mt-4 sm:mt-6 font-sans text-[0.7rem] sm:text-sm uppercase tracking-[0.25em] sm:tracking-[0.3em] font-semibold text-accent">
+                {resources.length} Free Hand-Picked {resources.length === 1 ? "Devar" : "Divrei"} Torah
               </p>
             )}
-            {true && resources.length > 0 && (
-              <div className="mt-5 sm:mt-6">
+            <p className="mt-3 sm:mt-4 font-serif text-xl sm:text-2xl md:text-3xl text-primary">
+              {currentLabel} <span className="text-accent">•</span> New every Thursday
+            </p>
+            <p className="mt-3 sm:mt-4 font-serif italic text-base sm:text-lg md:text-xl text-accent max-w-2xl mx-auto">
+              Ready-to-print Torah sheets for adults, families, and children.
+            </p>
+            <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+              {resources.length > 0 && (
                 <a
                   href="#this-weeks-collection"
                   onClick={(e) => {
@@ -256,19 +248,31 @@ function Index() {
                       .getElementById("this-weeks-collection")
                       ?.scrollIntoView({ behavior: "smooth", block: "start" });
                   }}
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-primary transition-colors"
+                  className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md"
                 >
-                  Jump to This Week’s Collection ↓
+                  Browse This Week's Collection ↓
                 </a>
-              </div>
-            )}
+              )}
+              <a
+                href="#weekly-email-signup"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document
+                    .getElementById("weekly-email-signup")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="inline-flex items-center justify-center rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors"
+              >
+                Get the Weekly Email
+              </a>
+            </div>
           </div>
         </section>
 
         <div className="gold-divider" aria-hidden><span className="gold-divider-dot" /></div>
 
         {/* Email signup */}
-        <section className="parchment-frame max-w-2xl mx-auto">
+        <section id="weekly-email-signup" className="parchment-frame max-w-2xl mx-auto scroll-mt-8">
           <div className="parchment-panel py-6 px-5 sm:px-6 sm:py-8 text-center">
             <div className="flex items-center justify-center gap-3 text-accent mb-3">
               <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
@@ -278,10 +282,10 @@ function Index() {
               <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
             </div>
             <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
-              Weekly Torah Notifications
+              Get This Week's Divrei Torah Every Thursday
             </h2>
             <p className="mt-2 font-serif italic font-medium text-sm sm:text-base text-primary max-w-md mx-auto">
-              One short email each week when new Divrei Torah are uploaded.
+              One short email. No daily messages. Unsubscribe anytime.
             </p>
             <form
               onSubmit={handleSignup}
@@ -299,7 +303,7 @@ function Index() {
                 type="submit"
                 className="rounded-full bg-primary px-8 py-3.5 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md"
               >
-                Join the List
+                Send Me the Weekly Collection
               </button>
             </form>
             {signupMsg && (
