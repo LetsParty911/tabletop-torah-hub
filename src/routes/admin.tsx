@@ -216,11 +216,21 @@ function AdminPage() {
   const [file, setFile] = useState<File | null>(null);
   const [uploadPublication, setUploadPublication] = useState<string>("");
   const [uploadPublicationTouched, setUploadPublicationTouched] = useState(false);
+  const [uploadDescription, setUploadDescription] = useState("");
+  const [uploadAudience, setUploadAudience] = useState<string>("");
+  const [uploadFormatType, setUploadFormatType] = useState<string>("");
+  const [uploadPageCount, setUploadPageCount] = useState<string>("");
+  const [uploadBadge, setUploadBadge] = useState<string>("");
 
   // Inline metadata editor state (per row) — publication / title / subtitle
   const [editMetaTitle, setEditMetaTitle] = useState("");
   const [editMetaSubtitle, setEditMetaSubtitle] = useState("");
   const [editMetaPublication, setEditMetaPublication] = useState<string>("");
+  const [editMetaDescription, setEditMetaDescription] = useState("");
+  const [editMetaAudience, setEditMetaAudience] = useState<string>("");
+  const [editMetaFormatType, setEditMetaFormatType] = useState<string>("");
+  const [editMetaPageCount, setEditMetaPageCount] = useState<string>("");
+  const [editMetaBadge, setEditMetaBadge] = useState<string>("");
   const [savingMeta, setSavingMeta] = useState(false);
 
   // Inline "Replace PDF" editor state (per row)
