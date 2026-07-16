@@ -1164,6 +1164,11 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     primaryCategory?: string | null;
     publication?: string | null;
     tags?: string[] | null;
+    description?: string | null;
+    audience?: string | null;
+    formatType?: string | null;
+    pageCount?: number | null;
+    badge?: string | null;
   }) =>
     z
       .object({
@@ -1178,6 +1183,11 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
         primaryCategory: z.enum(["kids", "family", "in_depth", "reference"]).nullable().optional(),
         publication: z.enum(["tftt_original", "mikaamcha", "peninei_mechkerei"]).nullable().optional(),
         tags: z.array(z.string().min(1).max(60)).max(20).nullable().optional(),
+        description: z.string().max(500).nullable().optional(),
+        audience: z.enum(["Adults", "Families", "Kids"]).nullable().optional(),
+        formatType: z.enum(["Short Vorts", "Stories", "Halacha", "Essays"]).nullable().optional(),
+        pageCount: z.number().int().min(0).max(10000).nullable().optional(),
+        badge: z.enum(["Recommended", "Quick Read", "Kids' Pick"]).nullable().optional(),
       })
       .parse(input),
   )
@@ -1239,12 +1249,26 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     const finalPublication = data.publication ?? autoPublication;
     if (finalPublication) insertRow.publication = finalPublication;
     if (data.tags && data.tags.length > 0) insertRow.tags = data.tags;
+    if (data.description !== undefined && data.description !== null) insertRow.description = data.description;
+    if (data.audience !== undefined && data.audience !== null) insertRow.audience = data.audience;
+    if (data.formatType !== undefined && data.formatType !== null) insertRow.format_type = data.formatType;
+    if (data.pageCount !== undefined && data.pageCount !== null) insertRow.page_count = data.pageCount;
+    if (data.badge !== undefined && data.badge !== null) insertRow.badge = data.badge;
 
-    // Try insert with publication; if the column doesn't exist yet, retry without it.
-    let insErr = (await admin.from("pdfs").insert(insertRow)).error;
+    const metaKeys = ["description", "audience", "format_type", "page_count", "badge"] as const;
+    const tryInsert = async (row: Record<string, unknown>) => (await admin.from("pdfs").insert(row)).error;
+    let currentRow: Record<string, unknown> = { ...insertRow };
+    let insErr = await tryInsert(currentRow);
+    // If any metadata column is missing on the DB, retry stripping the offending column(s).
+    while (insErr) {
+      const offending = metaKeys.find((k) => new RegExp(`\\b${k}\\b`, "i").test(insErr!.message) && k in currentRow);
+      if (!offending) break;
+      delete currentRow[offending];
+      insErr = await tryInsert(currentRow);
+    }
     if (insErr && /publication/i.test(insErr.message)) {
-      const { publication: _p, ...fallback } = insertRow as any;
-      insErr = (await admin.from("pdfs").insert(fallback)).error;
+      const { publication: _p, ...fallback } = currentRow as any;
+      insErr = await tryInsert(fallback);
     }
     if (insErr) {
       await admin.storage.from("pdfs").remove([path]);
