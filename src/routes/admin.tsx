@@ -710,6 +710,11 @@ function AdminPage() {
           primaryCategory: null,
           publication: (uploadPublication || null) as any,
           tags: null,
+          description: uploadDescription.trim() ? uploadDescription.trim() : null,
+          audience: (uploadAudience || null) as any,
+          formatType: (uploadFormatType || null) as any,
+          pageCount: uploadPageCount.trim() ? Number(uploadPageCount) : null,
+          badge: (uploadBadge || null) as any,
         },
       });
       setTitle("");
@@ -717,6 +722,11 @@ function AdminPage() {
       setFile(null);
       setUploadPublication("");
       setUploadPublicationTouched(false);
+      setUploadDescription("");
+      setUploadAudience("");
+      setUploadFormatType("");
+      setUploadPageCount("");
+      setUploadBadge("");
       (document.getElementById("pdf-file-input") as HTMLInputElement | null)?.value &&
         ((document.getElementById("pdf-file-input") as HTMLInputElement).value = "");
       setMsg({ kind: "success", text: "Uploaded." });
