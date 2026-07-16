@@ -36,7 +36,7 @@ export function DownloadToPrintButton({
     >
       {done ? (
         <>
-          <Check className="h-4 w-4" /> Done
+          <Check className="h-4 w-4" /> Downloading, Choose Another
         </>
       ) : (
         <>
