@@ -2061,6 +2061,51 @@ function AdminPage() {
                       </div>
                     )}
                   </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-border/60 bg-muted/30 p-3">
+                    <button
+                      type="button"
+                      onClick={handleGenerateAllDescriptions}
+                      disabled={descBulk.status === "running"}
+                      className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                    >
+                      📝{" "}
+                      {descBulk.status === "running"
+                        ? `Generating descriptions: ${descBulk.current} of ${descBulk.total}...`
+                        : "Generate All Descriptions"}
+                    </button>
+                    {descBulk.status === "running" && (
+                      <span className="text-xs text-muted-foreground truncate max-w-[60ch]">
+                        {descBulk.currentTitle}
+                      </span>
+                    )}
+                    {descBulk.status === "done" && (
+                      <div className="text-sm">
+                        {descBulk.total === 0 ? (
+                          <span className="text-muted-foreground">
+                            All PDFs already have descriptions.
+                          </span>
+                        ) : (
+                          <div className="space-y-1">
+                            <div>
+                              Done: <strong>{descBulk.successes}</strong> succeeded,{" "}
+                              <strong>{descBulk.failures.length}</strong> failed (of{" "}
+                              {descBulk.total}).
+                            </div>
+                            {descBulk.failures.length > 0 && (
+                              <ul className="list-disc pl-5 text-xs text-destructive space-y-0.5">
+                                {descBulk.failures.map((f, i) => (
+                                  <li key={`${f.id}-${i}`}>
+                                    <span className="font-medium">{f.title}:</span> {f.error}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="mt-4 overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="text-left border-b">
