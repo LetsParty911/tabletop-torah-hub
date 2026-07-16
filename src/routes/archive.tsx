@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FileText, Download } from "lucide-react";
+import { FileText } from "lucide-react";
 import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
+import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 
 
 export const Route = createFileRoute("/archive")({
@@ -153,7 +154,7 @@ function ArchivePage() {
                             </div>
 
                             <div className="mt-4">
-                              <a
+                              <DownloadToPrintButton
                                 href={`/view/${r.id}/download`}
                                 onClick={() => {
                                   trackEvent("pdf_download", {
@@ -167,10 +168,8 @@ function ArchivePage() {
                                     window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
                                   }
                                 }}
-                                className="w-full inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                              >
-                                <Download className="h-4 w-4" /> Download
-                              </a>
+                                className="w-full"
+                              />
                             </div>
                           </article>
                         ))}
