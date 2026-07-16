@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { FileText, Download } from "lucide-react";
+import { FileText } from "lucide-react";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { WhatsNewBanner } from "@/components/WhatsNewBanner";
 import { WhatsNewPopup } from "@/components/WhatsNewPopup";
+import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 import {
