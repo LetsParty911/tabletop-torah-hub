@@ -49,7 +49,7 @@ import {
 } from "@/lib/badges";
 
 import { getCurrentJewishYear } from "@/lib/jewish-year";
-import { CheckCircle2, Circle, MinusCircle, Eye, Download, Printer } from "lucide-react";
+import { CheckCircle2, Circle, MinusCircle, Eye, Download } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -2145,30 +2145,12 @@ function AdminPage() {
                               {new Date(p.created_at).toLocaleDateString()}
                             </td>
                             <td className="py-2 pr-3">
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <a
-                                  href={`/view/${p.id}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 rounded-full border border-primary/60 px-2 py-1 text-xs font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
-                                >
-                                  <Eye className="h-3 w-3" /> View
-                                </a>
-                                <a
-                                  href={`/view/${p.id}/download`}
-                                  className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                                >
-                                  <Download className="h-3 w-3" /> Download
-                                </a>
-                                <a
-                                  href={`/view/${p.id}/pdf`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 rounded-full border border-accent/70 px-2 py-1 text-xs font-medium text-accent hover:bg-accent hover:text-accent-foreground transition-colors"
-                                >
-                                  <Printer className="h-3 w-3" /> Print PDF
-                                </a>
-                              </div>
+                              <a
+                                href={`/view/${p.id}/download`}
+                                className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                              >
+                                <Download className="h-3 w-3" /> Download
+                              </a>
                             </td>
                             <td className="py-2 text-right">
                               <div className="flex items-center justify-end gap-1.5">
