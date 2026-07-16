@@ -1718,19 +1718,6 @@ function AdminPage() {
                 />
               </label>
               <label className="block">
-                <span className="text-sm font-medium">Category (optional)</span>
-                <select
-                  value={uploadCategory}
-                  onChange={(e) => setUploadCategory(e.target.value)}
-                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                >
-                  <option value="">— none —</option>
-                  {CATEGORY_KEYS.map((k) => (
-                    <option key={k} value={k}>{CATEGORY_LABELS[k]}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
                 <span className="text-sm font-medium">
                   Publication (optional)
                   {!uploadPublicationTouched && uploadPublication && (
@@ -1751,28 +1738,6 @@ function AdminPage() {
                   ))}
                 </select>
               </label>
-              <div className="md:col-span-2">
-                <span className="text-sm font-medium">Tags (optional)</span>
-                <div className="mt-2 flex flex-wrap gap-3">
-                  {Object.entries(TAG_LABELS).map(([key, label]) => {
-                    const checked = uploadTags.includes(key);
-                    return (
-                      <label key={key} className="inline-flex items-center gap-1.5 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) => {
-                            setUploadTags((prev) =>
-                              e.target.checked ? [...prev, key] : prev.filter((t) => t !== key),
-                            );
-                          }}
-                        />
-                        <span>{label}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
               <label className="block md:col-span-2">
                 <span className="text-sm font-medium">PDF file</span>
                 <input
@@ -2096,19 +2061,6 @@ function AdminPage() {
                                         />
                                       </label>
                                       <label className="block">
-                                        <span className="text-xs font-medium">Category</span>
-                                        <select
-                                          value={editMetaCategory}
-                                          onChange={(e) => setEditMetaCategory(e.target.value)}
-                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
-                                        >
-                                          <option value="">— none —</option>
-                                          {CATEGORY_KEYS.map((k) => (
-                                            <option key={k} value={k}>{CATEGORY_LABELS[k]}</option>
-                                          ))}
-                                        </select>
-                                      </label>
-                                      <label className="block">
                                         <span className="text-xs font-medium">Publication</span>
                                         <select
                                           value={editMetaPublication}
@@ -2121,30 +2073,6 @@ function AdminPage() {
                                           ))}
                                         </select>
                                       </label>
-                                      <div className="md:col-span-2">
-                                        <span className="text-xs font-medium">Tags</span>
-                                        <div className="mt-1 flex flex-wrap gap-2">
-                                          {Object.entries(TAG_LABELS).map(([key, label]) => {
-                                            const checked = editMetaTags.includes(key);
-                                            return (
-                                              <label key={key} className="inline-flex items-center gap-1 text-xs">
-                                                <input
-                                                  type="checkbox"
-                                                  checked={checked}
-                                                  onChange={(e) => {
-                                                    setEditMetaTags((prev) =>
-                                                      e.target.checked
-                                                        ? [...prev, key]
-                                                        : prev.filter((t) => t !== key),
-                                                    );
-                                                  }}
-                                                />
-                                                <span>{label}</span>
-                                              </label>
-                                            );
-                                          })}
-                                        </div>
-                                      </div>
                                     </div>
                                     <div className="mt-3 flex items-center gap-2">
                                       <button
