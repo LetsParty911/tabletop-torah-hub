@@ -2487,3 +2487,184 @@ export const adminGenerateAudio = createServerFn({ method: "POST" })
       clearTimeout(timeout);
     }
   });
+
+// ---------- Admin: generate publication metadata (description/audience/type + page_count) ----------
+// Uses Lovable AI Gateway directly (no external edge function needed).
+export const adminGeneratePublicationMeta = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; id: string }) =>
+    z.object({ accessToken: z.string().min(10), id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) {
+      return { ok: false as const, id: data.id, error: "Missing LOVABLE_API_KEY" };
+    }
+    const admin = getSupabaseAdmin();
+    const { data: row, error: rowErr } = await admin
+      .from("pdfs")
+      .select("id, title, subtitle, file_path, page_count")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (rowErr || !row) {
+      return { ok: false as const, id: data.id, error: rowErr?.message ?? "row not found" };
+    }
+    if (!row.file_path) {
+      return { ok: false as const, id: data.id, error: "row has no file_path" };
+    }
+    const { data: blob, error: dlErr } = await admin.storage.from("pdfs").download(row.file_path);
+    if (dlErr || !blob) {
+      return { ok: false as const, id: data.id, error: `download failed: ${dlErr?.message ?? "unknown"}` };
+    }
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+
+    // Detect page count from PDF bytes (only overwrites if currently unset).
+    let detectedPageCount: number | null = null;
+    try {
+      const { PDFDocument } = await import("pdf-lib");
+      const doc = await PDFDocument.load(bytes, { updateMetadata: false, ignoreEncryption: true });
+      detectedPageCount = doc.getPageCount();
+    } catch {
+      detectedPageCount = null;
+    }
+
+    // Base64-encode the PDF for the AI request.
+    let binary = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    }
+    const b64 = btoa(binary);
+
+    const systemPrompt = `You classify Torah publications for a weekly divrei-torah site.
+Respond ONLY with a JSON object with exactly these keys:
+{
+  "description": string,      // one short sentence (max 200 chars) describing this publication's style/content
+  "audience": string,          // exactly one of: "Adults", "Families", "Children"
+  "format_type": string        // exactly one of: "Short Vorts", "Stories", "Halacha", "Essays"
+}
+Choose the single best value for audience and format_type. No prose, no code fences.`;
+    const userPrompt = `Publication title: ${row.title}${row.subtitle ? ` — ${row.subtitle}` : ""}
+Analyze the attached PDF and return the json object described in the system prompt.`;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120_000);
+    let aiRes: Response;
+    try {
+      aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3.5-flash",
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: [
+                {
+                  type: "file",
+                  file: {
+                    filename: "publication.pdf",
+                    file_data: `data:application/pdf;base64,${b64}`,
+                  },
+                },
+                { type: "text", text: userPrompt },
+              ],
+            },
+          ],
+        }),
+        signal: controller.signal,
+      });
+    } catch (e) {
+      clearTimeout(timeout);
+      return {
+        ok: false as const,
+        id: data.id,
+        error: e instanceof Error ? e.message : "AI request failed",
+      };
+    }
+    clearTimeout(timeout);
+    if (!aiRes.ok) {
+      const t = await aiRes.text().catch(() => "");
+      return {
+        ok: false as const,
+        id: data.id,
+        error: `AI error ${aiRes.status}: ${t.slice(0, 300)}`,
+      };
+    }
+    const aiJson: any = await aiRes.json().catch(() => null);
+    const text: string = aiJson?.choices?.[0]?.message?.content ?? "";
+    const cleaned = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```$/, "").trim();
+    let parsed: { description?: unknown; audience?: unknown; format_type?: unknown };
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      return {
+        ok: false as const,
+        id: data.id,
+        error: `AI response not JSON: ${text.slice(0, 200)}`,
+      };
+    }
+
+    const audienceAllowed = ["Adults", "Families", "Children"];
+    const formatAllowed = ["Short Vorts", "Stories", "Halacha", "Essays"];
+    const description =
+      typeof parsed.description === "string" && parsed.description.trim().length > 0
+        ? parsed.description.trim().slice(0, 500)
+        : null;
+    const audience =
+      typeof parsed.audience === "string" && audienceAllowed.includes(parsed.audience)
+        ? (parsed.audience as string)
+        : null;
+    const format_type =
+      typeof parsed.format_type === "string" && formatAllowed.includes(parsed.format_type)
+        ? (parsed.format_type as string)
+        : null;
+
+    const update: Record<string, unknown> = {};
+    if (description) update.description = description;
+    if (audience) update.audience = audience;
+    if (format_type) update.format_type = format_type;
+    // Auto-detect page_count only when not already set.
+    if (detectedPageCount != null && (row.page_count == null || row.page_count === 0)) {
+      update.page_count = detectedPageCount;
+    }
+
+    if (Object.keys(update).length > 0) {
+      const { error: upErr } = await admin.from("pdfs").update(update).eq("id", data.id);
+      if (upErr) {
+        return { ok: false as const, id: data.id, error: upErr.message };
+      }
+    }
+
+    return {
+      ok: true as const,
+      id: data.id,
+      description,
+      audience,
+      format_type,
+      page_count:
+        row.page_count != null && row.page_count !== 0 ? row.page_count : detectedPageCount,
+    };
+  });
+
+// ---------- Admin: list PDFs missing description ----------
+export const adminListPdfsMissingDescription = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string }) =>
+    z.object({ accessToken: z.string().min(10) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { data: rows, error } = await admin
+      .from("pdfs")
+      .select("id, title")
+      .is("description", null)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return { rows: (rows ?? []) as Array<{ id: string; title: string }> };
+  });
