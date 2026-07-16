@@ -290,7 +290,7 @@ function Index() {
               Don't Miss a Week
             </h2>
             <p className="mt-2 font-serif italic font-medium text-sm sm:text-base text-primary max-w-md mx-auto">
-              Drop your email. Get notified when your weekly Divrei Torah are ready to download.
+              Drop your email. We'll remind you each week when new Divrei Torah are up — you choose what to read.
             </p>
             <form
               onSubmit={handleSignup}
@@ -308,7 +308,7 @@ function Index() {
                 type="submit"
                 className="rounded-full bg-primary px-8 py-3.5 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md"
               >
-                Send Me the Weekly Collection
+                Remind Me Weekly
               </button>
             </form>
             {signupMsg && (
