@@ -19,7 +19,7 @@ ALTER TABLE public.pdfs
   DROP CONSTRAINT IF EXISTS pdfs_audience_check;
 ALTER TABLE public.pdfs
   ADD CONSTRAINT pdfs_audience_check
-  CHECK (audience IS NULL OR audience IN ('Adults', 'Families', 'Kids'));
+  CHECK (audience IS NULL OR audience IN ('Adults', 'Families', 'Children'));
 
 ALTER TABLE public.pdfs
   DROP CONSTRAINT IF EXISTS pdfs_format_type_check;
