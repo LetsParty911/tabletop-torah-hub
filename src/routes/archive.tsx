@@ -223,8 +223,20 @@ function ArchivePage() {
               </p>
             </div>
           </section>
+        ) : filteredYears.length === 0 ? (
+          <section className="parchment-frame">
+            <div className="parchment-panel text-center">
+              <p className="font-serif text-xl sm:text-2xl text-primary">
+                No matches for these filters.
+              </p>
+              <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
+                Try clearing the search or choosing a different parsha or year.
+              </p>
+            </div>
+          </section>
         ) : (
-          years.map((y: ArchiveYear) => (
+          filteredYears.map((y: ArchiveYear) => (
+
             <section key={y.year} className="parchment-frame">
               <div className="parchment-panel">
                 <div className="flex items-baseline justify-between gap-4 border-b-2 border-accent/30 pb-4 mb-6">
