@@ -766,6 +766,11 @@ function AdminPage() {
     setEditMetaTitle(row?.title ?? "");
     setEditMetaSubtitle(row?.subtitle ?? "");
     setEditMetaPublication((row?.publication as string) ?? "");
+    setEditMetaDescription((row?.description as string) ?? "");
+    setEditMetaAudience((row?.audience as string) ?? "");
+    setEditMetaFormatType((row?.format_type as string) ?? "");
+    setEditMetaPageCount(row?.page_count != null ? String(row.page_count) : "");
+    setEditMetaBadge((row?.badge as string) ?? "");
   };
 
   const cancelEditPdf = () => {
