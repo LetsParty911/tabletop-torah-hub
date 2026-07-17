@@ -116,7 +116,7 @@ export function DownloadToPrintButton({
         // Hold a "waiting" state so the user doesn't think nothing happened
         // while the browser materializes the file in the downloads tray.
         setPhase("waiting");
-        const WAIT_TOTAL = 10;
+        const WAIT_TOTAL = 5;
         setWaitSeconds(WAIT_TOTAL);
         await new Promise<void>((resolve) => {
           let remaining = WAIT_TOTAL;
@@ -130,6 +130,7 @@ export function DownloadToPrintButton({
           }, 1000);
         });
         setPhase("done");
+        toast.success("Downloaded — check your Downloads folder or browser tray.");
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           // Fetch/CORS failed — trigger the browser's native download instead.
@@ -144,7 +145,7 @@ export function DownloadToPrintButton({
           stopFakeProgress();
           setProgress(100);
           setPhase("waiting");
-          const WAIT_TOTAL = 15;
+          const WAIT_TOTAL = 8;
           setWaitSeconds(WAIT_TOTAL);
           await new Promise<void>((resolve) => {
             let remaining = WAIT_TOTAL;
@@ -158,6 +159,7 @@ export function DownloadToPrintButton({
             }, 1000);
           });
           setPhase("done");
+          toast.success("Downloaded — check your Downloads folder or browser tray.");
         }
       } finally {
         stopFakeProgress();
