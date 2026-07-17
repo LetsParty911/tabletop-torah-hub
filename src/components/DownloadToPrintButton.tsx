@@ -92,7 +92,7 @@ export function DownloadToPrintButton({
               setProgress(Math.min(99, (received / total) * 100));
             }
           }
-          blob = new Blob(chunks, { type: res.headers.get("Content-Type") || "application/pdf" });
+          blob = new Blob(chunks as BlobPart[], { type: res.headers.get("Content-Type") || "application/pdf" });
         } else {
           // No length header — fall back to blob() and finish the fake bar
           setPhase("downloading");
