@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Download, Check } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 
 type DownloadToPrintButtonProps = {
   href: string;
@@ -36,7 +36,7 @@ export function DownloadToPrintButton({
     >
       {done ? (
         <>
-          <Check className="h-4 w-4" /> Downloading, Choose Another
+          <Loader2 className="h-4 w-4 animate-spin" /> Getting file — please wait a moment…
         </>
       ) : (
         <>
