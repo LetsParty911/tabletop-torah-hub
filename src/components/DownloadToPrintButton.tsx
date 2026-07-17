@@ -15,9 +15,10 @@ export function DownloadToPrintButton({
 }: DownloadToPrintButtonProps) {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0); // 0-100
-  const [phase, setPhase] = useState<"preparing" | "downloading" | "done">(
+  const [phase, setPhase] = useState<"preparing" | "downloading" | "waiting" | "done">(
     "preparing",
   );
+  const [waitSeconds, setWaitSeconds] = useState(10);
   const abortRef = useRef<AbortController | null>(null);
   const fakeTimerRef = useRef<number | null>(null);
 
