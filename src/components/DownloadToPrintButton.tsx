@@ -15,9 +15,10 @@ export function DownloadToPrintButton({
 }: DownloadToPrintButtonProps) {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0); // 0-100
-  const [phase, setPhase] = useState<"preparing" | "downloading" | "done">(
+  const [phase, setPhase] = useState<"preparing" | "downloading" | "waiting" | "done">(
     "preparing",
   );
+  const [waitSeconds, setWaitSeconds] = useState(10);
   const abortRef = useRef<AbortController | null>(null);
   const fakeTimerRef = useRef<number | null>(null);
 
@@ -102,7 +103,6 @@ export function DownloadToPrintButton({
         }
 
         setProgress(100);
-        setPhase("done");
 
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -112,13 +112,31 @@ export function DownloadToPrintButton({
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+        // Hold a "waiting" state so the user doesn't think nothing happened
+        // while the browser materializes the file in the downloads tray.
+        setPhase("waiting");
+        const WAIT_TOTAL = 10;
+        setWaitSeconds(WAIT_TOTAL);
+        await new Promise<void>((resolve) => {
+          let remaining = WAIT_TOTAL;
+          const tick = window.setInterval(() => {
+            remaining -= 1;
+            setWaitSeconds(remaining);
+            if (remaining <= 0) {
+              window.clearInterval(tick);
+              resolve();
+            }
+          }, 1000);
+        });
+        setPhase("done");
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           window.location.href = href;
         }
       } finally {
         stopFakeProgress();
-        // brief pause so users see 100% before it resets
+        // brief pause so users see the final state before it resets
         window.setTimeout(() => {
           setLoading(false);
           setProgress(0);
@@ -132,9 +150,11 @@ export function DownloadToPrintButton({
   const label = loading
     ? phase === "downloading"
       ? `Downloading… ${Math.floor(progress)}%`
-      : phase === "done"
-        ? "Opening file…"
-        : `Preparing file… ${Math.floor(progress)}%`
+      : phase === "waiting"
+        ? `Please wait ${waitSeconds}s for file to appear…`
+        : phase === "done"
+          ? "File ready — check your downloads"
+          : `Preparing file… ${Math.floor(progress)}%`
     : "Download to Print";
 
   return (
