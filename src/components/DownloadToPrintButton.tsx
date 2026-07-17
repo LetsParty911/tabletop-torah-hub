@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 type DownloadToPrintButtonProps = {
   href: string;
@@ -73,11 +74,13 @@ export function DownloadToPrintButton({
 
         let blob: Blob;
 
+        stopFakeProgress();
+        setPhase("downloading");
+        toast.success("Your download is ready");
+        setProgress(0);
+
         if (res.body && total > 0) {
           // Real byte-level progress
-          stopFakeProgress();
-          setPhase("downloading");
-          setProgress(0);
 
           const reader = res.body.getReader();
           const chunks: Uint8Array[] = [];
@@ -95,9 +98,7 @@ export function DownloadToPrintButton({
           blob = new Blob(chunks as BlobPart[], { type: res.headers.get("Content-Type") || "application/pdf" });
         } else {
           // No length header — fall back to blob() and finish the fake bar
-          setPhase("downloading");
           blob = await res.blob();
-          stopFakeProgress();
         }
 
         setProgress(100);
