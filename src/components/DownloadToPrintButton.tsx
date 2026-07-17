@@ -13,10 +13,38 @@ export function DownloadToPrintButton({
   className = "",
 }: DownloadToPrintButtonProps) {
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0); // 0-100
+  const [phase, setPhase] = useState<"preparing" | "downloading" | "done">(
+    "preparing",
+  );
   const abortRef = useRef<AbortController | null>(null);
+  const fakeTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    return () => abortRef.current?.abort();
+    return () => {
+      abortRef.current?.abort();
+      if (fakeTimerRef.current) window.clearInterval(fakeTimerRef.current);
+    };
+  }, []);
+
+  const startFakeProgress = useCallback(() => {
+    // Crawl toward 90% while we wait for headers/server work (~30s).
+    // Approaches 90 asymptotically so it always feels like it's moving.
+    if (fakeTimerRef.current) window.clearInterval(fakeTimerRef.current);
+    fakeTimerRef.current = window.setInterval(() => {
+      setProgress((p) => {
+        if (p >= 90) return p;
+        const step = Math.max(0.4, (90 - p) * 0.03);
+        return Math.min(90, p + step);
+      });
+    }, 300);
+  }, []);
+
+  const stopFakeProgress = useCallback(() => {
+    if (fakeTimerRef.current) {
+      window.clearInterval(fakeTimerRef.current);
+      fakeTimerRef.current = null;
+    }
   }, []);
 
   const handleClick = useCallback(
@@ -24,20 +52,56 @@ export function DownloadToPrintButton({
       e.preventDefault();
       if (loading) return;
       setLoading(true);
+      setProgress(0);
+      setPhase("preparing");
       onClick?.();
 
       const controller = new AbortController();
       abortRef.current = controller;
+      startFakeProgress();
 
       try {
         const res = await fetch(href, { signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const blob = await res.blob();
 
-        // Extract filename from Content-Disposition if present
         const disposition = res.headers.get("Content-Disposition") || "";
         const match = /filename="?([^"]+)"?/i.exec(disposition);
         const filename = match?.[1] || "document.pdf";
+
+        const totalHeader = res.headers.get("Content-Length");
+        const total = totalHeader ? parseInt(totalHeader, 10) : 0;
+
+        let blob: Blob;
+
+        if (res.body && total > 0) {
+          // Real byte-level progress
+          stopFakeProgress();
+          setPhase("downloading");
+          setProgress(0);
+
+          const reader = res.body.getReader();
+          const chunks: Uint8Array[] = [];
+          let received = 0;
+          // eslint-disable-next-line no-constant-condition
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (value) {
+              chunks.push(value);
+              received += value.byteLength;
+              setProgress(Math.min(99, (received / total) * 100));
+            }
+          }
+          blob = new Blob(chunks, { type: res.headers.get("Content-Type") || "application/pdf" });
+        } else {
+          // No length header — fall back to blob() and finish the fake bar
+          setPhase("downloading");
+          blob = await res.blob();
+          stopFakeProgress();
+        }
+
+        setProgress(100);
+        setPhase("done");
 
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -49,39 +113,59 @@ export function DownloadToPrintButton({
         setTimeout(() => URL.revokeObjectURL(url), 1000);
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
-          // Fallback: navigate directly so the user still gets the file
           window.location.href = href;
         }
       } finally {
-        setLoading(false);
+        stopFakeProgress();
+        // brief pause so users see 100% before it resets
+        window.setTimeout(() => {
+          setLoading(false);
+          setProgress(0);
+          setPhase("preparing");
+        }, 600);
       }
     },
-    [href, loading, onClick],
+    [href, loading, onClick, startFakeProgress, stopFakeProgress],
   );
+
+  const label = loading
+    ? phase === "downloading"
+      ? `Downloading… ${Math.floor(progress)}%`
+      : phase === "done"
+        ? "Opening file…"
+        : `Preparing file… ${Math.floor(progress)}%`
+    : "Download to Print";
 
   return (
     <a
       href={href}
       onClick={handleClick}
       aria-disabled={loading}
+      aria-busy={loading}
       tabIndex={loading ? -1 : 0}
       className={[
-        "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors",
+        "relative overflow-hidden inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors",
         loading
-          ? "bg-accent text-accent-foreground pointer-events-none opacity-90 cursor-wait"
+          ? "bg-accent/20 text-accent-foreground pointer-events-none cursor-wait"
           : "bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground",
         className,
       ].join(" ")}
     >
-      {loading ? (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" /> Getting file — please wait a moment…
-        </>
-      ) : (
-        <>
-          <Download className="h-4 w-4" /> Download to Print
-        </>
+      {loading && (
+        <span
+          aria-hidden="true"
+          className="absolute inset-y-0 left-0 bg-accent transition-[width] duration-300 ease-out"
+          style={{ width: `${progress}%` }}
+        />
       )}
+      <span className="relative inline-flex items-center gap-2">
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Download className="h-4 w-4" />
+        )}
+        {label}
+      </span>
     </a>
   );
 }
