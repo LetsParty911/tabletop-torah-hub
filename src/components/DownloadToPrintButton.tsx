@@ -145,7 +145,7 @@ export function DownloadToPrintButton({
           stopFakeProgress();
           setProgress(100);
           setPhase("waiting");
-          const WAIT_TOTAL = 15;
+          const WAIT_TOTAL = 8;
           setWaitSeconds(WAIT_TOTAL);
           await new Promise<void>((resolve) => {
             let remaining = WAIT_TOTAL;
@@ -159,6 +159,7 @@ export function DownloadToPrintButton({
             }, 1000);
           });
           setPhase("done");
+          toast.success("Downloaded — check your Downloads folder or browser tray.");
         }
       } finally {
         stopFakeProgress();
