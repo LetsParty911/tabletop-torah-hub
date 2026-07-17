@@ -74,11 +74,13 @@ export function DownloadToPrintButton({
 
         let blob: Blob;
 
+        stopFakeProgress();
+        setPhase("downloading");
+        toast.success("Your download is ready");
+        setProgress(0);
+
         if (res.body && total > 0) {
           // Real byte-level progress
-          stopFakeProgress();
-          setPhase("downloading");
-          setProgress(0);
 
           const reader = res.body.getReader();
           const chunks: Uint8Array[] = [];
