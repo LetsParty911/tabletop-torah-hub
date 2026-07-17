@@ -132,7 +132,32 @@ export function DownloadToPrintButton({
         setPhase("done");
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
-          window.location.href = href;
+          // Fetch/CORS failed — trigger the browser's native download instead.
+          // Use a hidden iframe so the current page isn't navigated away, and
+          // hold the waiting state so the user knows something is still happening.
+          const iframe = document.createElement("iframe");
+          iframe.style.display = "none";
+          iframe.src = href;
+          document.body.appendChild(iframe);
+          setTimeout(() => iframe.remove(), 60_000);
+
+          stopFakeProgress();
+          setProgress(100);
+          setPhase("waiting");
+          const WAIT_TOTAL = 15;
+          setWaitSeconds(WAIT_TOTAL);
+          await new Promise<void>((resolve) => {
+            let remaining = WAIT_TOTAL;
+            const tick = window.setInterval(() => {
+              remaining -= 1;
+              setWaitSeconds(remaining);
+              if (remaining <= 0) {
+                window.clearInterval(tick);
+                resolve();
+              }
+            }, 1000);
+          });
+          setPhase("done");
         }
       } finally {
         stopFakeProgress();
@@ -141,7 +166,7 @@ export function DownloadToPrintButton({
           setLoading(false);
           setProgress(0);
           setPhase("preparing");
-        }, 600);
+        }, 1200);
       }
     },
     [href, loading, onClick, startFakeProgress, stopFakeProgress],
