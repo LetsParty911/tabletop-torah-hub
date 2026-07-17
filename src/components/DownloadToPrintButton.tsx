@@ -98,9 +98,7 @@ export function DownloadToPrintButton({
           blob = new Blob(chunks as BlobPart[], { type: res.headers.get("Content-Type") || "application/pdf" });
         } else {
           // No length header — fall back to blob() and finish the fake bar
-          setPhase("downloading");
           blob = await res.blob();
-          stopFakeProgress();
         }
 
         setProgress(100);
