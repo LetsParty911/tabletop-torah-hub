@@ -1,4 +1,5 @@
 import { createStart, createMiddleware } from "@tanstack/react-start";
+import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 /**
  * Cache-Control header policy for the HTML entry point and static assets.
@@ -45,5 +46,6 @@ const cacheControl = createMiddleware().server(async ({ next, request }) => {
 });
 
 export const startInstance = createStart(() => ({
+  functionMiddleware: [attachSupabaseAuth],
   requestMiddleware: [cacheControl],
 }));

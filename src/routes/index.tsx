@@ -4,6 +4,7 @@ import { FileText } from "lucide-react";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { WhatsNewBanner } from "@/components/WhatsNewBanner";
 import { WhatsNewPopup } from "@/components/WhatsNewPopup";
+import { UpdateCountdown } from "@/components/UpdateCountdown";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
@@ -231,6 +232,7 @@ function Index() {
       <WhatsNewPopup />
       <WhatsNewBanner />
       <AnnouncementBanner />
+      <UpdateCountdown />
       <div className="mx-auto max-w-5xl px-3 py-5 sm:px-4 sm:py-8 md:px-8 md:py-14 space-y-5 sm:space-y-8 md:space-y-10">
         {/* Hero */}
         <section className="parchment-frame">
