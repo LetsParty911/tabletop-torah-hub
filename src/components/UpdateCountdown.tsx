@@ -62,6 +62,11 @@ export function UpdateCountdown() {
       const today = now.getDay();
       const daysUntilThursday = (4 - today + 7) % 7;
 
+      // Only show from Sunday (0) through Thursday (4). Hide on Fri/Sat.
+      if (today === 5 || today === 6) {
+        return;
+      }
+
       // Target Shabbos = Thursday + 2 days
       const target = new Date(now);
       target.setDate(now.getDate() + daysUntilThursday + 2);
@@ -70,6 +75,7 @@ export function UpdateCountdown() {
       const suffix = parshaLabel ? `, featuring ${parshaLabel}` : "";
 
       if (cancelled) return;
+
 
       if (daysUntilThursday === 0) {
         setIsUpdateDay(true);
