@@ -270,7 +270,7 @@ function ArchivePage() {
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-start justify-between gap-2">
-                                  <h4 className="font-serif text-base sm:text-lg font-semibold text-primary line-clamp-2 leading-snug">
+                                  <h4 className="font-serif text-base sm:text-lg font-bold text-primary line-clamp-2 leading-snug">
                                     {r.title}
                                   </h4>
                                   {r.badge && (
