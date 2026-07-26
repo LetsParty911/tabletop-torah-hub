@@ -1481,6 +1481,27 @@ export const adminListSubscribers = createServerFn({ method: "POST" })
     return { subscribers: rows ?? [] };
   });
 
+// ---------- Admin: delete subscribers by id (single or bulk) ----------
+export const adminDeleteSubscribers = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; ids: string[] }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        ids: z.array(z.string().uuid()).min(1).max(1000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { error, count } = await admin
+      .from("subscribers")
+      .delete({ count: "exact" })
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, deleted: count ?? 0 };
+  });
+
 // ---------- Admin: list weekly skips for parsha+year ----------
 export const adminListWeeklySkips = createServerFn({ method: "POST" })
   .inputValidator((input: { accessToken: string; parshaKey: string; jewishYear: number }) =>
