@@ -10,6 +10,7 @@ import {
   adminDeletePdf,
   adminSetParshaOverride,
   adminListSubscribers,
+  adminDeleteSubscribers,
   adminListWeeklySkips,
   adminAddWeeklySkip,
   adminRemoveWeeklySkip,
