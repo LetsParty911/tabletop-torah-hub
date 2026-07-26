@@ -2684,6 +2684,7 @@ function SubscribersManager({ accessToken, subscribers, onChanged }: Subscribers
 
   const runDelete = async (ids: string[], emails: string[]) => {
     if (ids.length === 0) return;
+    if (!accessToken) return;
     const preview = emails.slice(0, 10).join("\n");
     const more = emails.length > 10 ? `\n…and ${emails.length - 10} more` : "";
     const msg =
