@@ -2629,7 +2629,7 @@ function WelcomeEmailTester({
 }
 
 type SubscribersManagerProps = {
-  accessToken: string;
+  accessToken: string | null;
   subscribers: Subscriber[];
   onChanged: () => Promise<void> | void;
 };
