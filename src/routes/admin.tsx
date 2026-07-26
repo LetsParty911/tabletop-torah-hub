@@ -2389,31 +2389,20 @@ function AdminPage() {
         {/* Subscribers */}
         <section className="parchment-frame">
           <div className="parchment-panel">
-            <h2 className="font-serif text-2xl font-semibold text-primary">
-              Subscribers ({subscribers.length})
-            </h2>
+            <SubscribersManager
+              accessToken={accessToken}
+              subscribers={subscribers}
+              onChanged={refresh}
+            />
 
             {/* Welcome email test tool */}
-            <div className="mt-4 rounded-md border border-border bg-background/60 p-3">
+            <div className="mt-6 rounded-md border border-border bg-background/60 p-3">
               <div className="text-sm font-medium mb-2">Welcome email test</div>
               <WelcomeEmailTester accessToken={accessToken} onResetDone={refresh} />
             </div>
-
-            <ul className="mt-4 space-y-1 text-sm max-h-80 overflow-auto">
-              {subscribers.map((s) => (
-                <li key={s.id} className="flex justify-between border-b py-1 gap-2">
-                  <span className="truncate">{s.email}</span>
-                  <span className="text-muted-foreground text-xs whitespace-nowrap">
-                    {new Date(s.created_at).toLocaleDateString()}
-                  </span>
-                </li>
-              ))}
-              {subscribers.length === 0 && (
-                <li className="text-muted-foreground">No subscribers yet.</li>
-              )}
-            </ul>
           </div>
         </section>
+
 
         {/* Contact Messages */}
         <section className="parchment-frame">
