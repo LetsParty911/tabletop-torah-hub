@@ -476,12 +476,9 @@ function Index() {
               </span>
               <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
             </div>
-            <p dir="ltr" className="mt-4 font-serif italic text-sm sm:text-base text-accent tracking-wide">
-              This service is dedicated in loving memory of
-            </p>
             <h2
               dir="rtl"
-              className="mt-2 font-serif font-semibold text-primary"
+              className="mt-5 font-serif font-semibold text-primary"
               style={{ fontSize: "1.25rem", letterSpacing: "0.04em" }}
             >
               לעילוי נשמת
