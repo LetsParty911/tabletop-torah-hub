@@ -427,6 +427,8 @@ function Index() {
                       <div className="mt-auto pt-4">
                         <DownloadToPrintButton
                           href={`/view/${r.id}/download`}
+                          publicationId={r.id}
+                          publicationTitle={r.title}
                           onClick={() => {
                             trackEvent("pdf_download", pdfParams(r));
                             if (typeof window !== "undefined") {
@@ -435,6 +437,7 @@ function Index() {
                           }}
                           className="w-full px-3 py-2.5 lg:py-2"
                         />
+
                       </div>
                     </article>
                   ))}

@@ -19,6 +19,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ViewIdRouteImport } from './routes/view.$id'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
+import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
 import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
 
@@ -72,6 +73,11 @@ const UnsubscribeTokenRoute = UnsubscribeTokenRouteImport.update({
   path: '/unsubscribe/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTrackDownloadRoute = ApiTrackDownloadRouteImport.update({
+  id: '/api/track-download',
+  path: '/api/track-download',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ViewIdPdfRoute = ViewIdPdfRouteImport.update({
   id: '/pdf',
   path: '/pdf',
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/offline': typeof OfflineRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/track-download': typeof ApiTrackDownloadRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/offline': typeof OfflineRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/track-download': typeof ApiTrackDownloadRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/offline': typeof OfflineRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/track-download': typeof ApiTrackDownloadRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/view/$id/download': typeof ViewIdDownloadRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/offline'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/api/track-download'
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/view/$id/download'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/offline'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/api/track-download'
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/view/$id/download'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/offline'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/api/track-download'
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/view/$id/download'
@@ -180,6 +192,7 @@ export interface RootRouteChildren {
   OfflineRoute: typeof OfflineRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiTrackDownloadRoute: typeof ApiTrackDownloadRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ViewIdRoute: typeof ViewIdRouteWithChildren
 }
@@ -256,6 +269,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UnsubscribeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/track-download': {
+      id: '/api/track-download'
+      path: '/api/track-download'
+      fullPath: '/api/track-download'
+      preLoaderRoute: typeof ApiTrackDownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/view/$id/pdf': {
       id: '/view/$id/pdf'
       path: '/pdf'
@@ -295,6 +315,7 @@ const rootRouteChildren: RootRouteChildren = {
   OfflineRoute: OfflineRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiTrackDownloadRoute: ApiTrackDownloadRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ViewIdRoute: ViewIdRouteWithChildren,
 }
