@@ -6,13 +6,18 @@ type DownloadToPrintButtonProps = {
   href: string;
   onClick?: () => void;
   className?: string;
+  publicationId?: string;
+  publicationTitle?: string;
 };
 
 export function DownloadToPrintButton({
   href,
   onClick,
   className = "",
+  publicationId,
+  publicationTitle,
 }: DownloadToPrintButtonProps) {
+
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0); // 0-100
   const [phase, setPhase] = useState<"preparing" | "downloading" | "waiting" | "done">(
