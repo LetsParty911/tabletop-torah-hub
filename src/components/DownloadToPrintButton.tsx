@@ -63,9 +63,35 @@ export function DownloadToPrintButton({
       setPhase("preparing");
       onClick?.();
 
+      // Fire-and-forget anonymous download tracking. Must never block/delay the download.
+      if (publicationId || publicationTitle) {
+        try {
+          const payload = JSON.stringify({
+            publication_id: publicationId,
+            publication_title: publicationTitle,
+          });
+          const blob = new Blob([payload], { type: "application/json" });
+          const sent =
+            typeof navigator !== "undefined" &&
+            typeof navigator.sendBeacon === "function" &&
+            navigator.sendBeacon("/api/track-download", blob);
+          if (!sent) {
+            void fetch("/api/track-download", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: payload,
+              keepalive: true,
+            }).catch(() => {});
+          }
+        } catch {
+          // never block the download
+        }
+      }
+
       const controller = new AbortController();
       abortRef.current = controller;
       startFakeProgress();
+
 
       try {
         const res = await fetch(href, { signal: controller.signal });
