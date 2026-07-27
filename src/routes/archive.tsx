@@ -306,6 +306,9 @@ function ArchivePage() {
                             <div className="mt-4">
                               <DownloadToPrintButton
                                 href={`/view/${r.id}/download`}
+                                publicationId={r.id}
+                                publicationTitle={r.title}
+
                                 onClick={() => {
                                   trackEvent("pdf_download", {
                                     file_id: r.id,
