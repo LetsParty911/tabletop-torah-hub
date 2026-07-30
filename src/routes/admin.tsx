@@ -1709,6 +1709,9 @@ function AdminPage() {
               </div>
             </div>
 
+            <PublishProgress />
+
+
             <ul className="mt-4 divide-y divide-accent/30">
               {checklist.map((item) => (
                 <li
