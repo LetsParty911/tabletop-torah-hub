@@ -23,12 +23,13 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
-        const today = new Date().toISOString().split("T")[0];
+        // No <lastmod> for static pages: there is no page-specific timestamp
+        // to derive it from, and a generation-time date would be misleading.
         const urls: Array<{ loc: string; lastmod: string | null }> = [
-          { loc: `${SITE_URL}/`, lastmod: today },
-          { loc: `${SITE_URL}/archive`, lastmod: today },
-          { loc: `${SITE_URL}/about`, lastmod: today },
-          { loc: `${SITE_URL}/contact`, lastmod: today },
+          { loc: `${SITE_URL}/`, lastmod: null },
+          { loc: `${SITE_URL}/archive`, lastmod: null },
+          { loc: `${SITE_URL}/about`, lastmod: null },
+          { loc: `${SITE_URL}/contact`, lastmod: null },
         ];
 
         try {
