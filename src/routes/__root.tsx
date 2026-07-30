@@ -173,11 +173,11 @@ export const Route = createRootRoute({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "Torah for the Table" },
-      { name: "description", content: "Torah Table Connect allows users to view, download, and print Torah-related PDFs." },
-      { property: "og:description", content: "Torah Table Connect allows users to view, download, and print Torah-related PDFs." },
-      { name: "twitter:description", content: "Torah Table Connect allows users to view, download, and print Torah-related PDFs." },
+      {
+        name: "twitter:description",
+        content: "Weekly Torah PDFs curated for Shabbos and Yom Tov.",
+      },
       { property: "og:image", content: "https://torahforthetable.com/og-image.png" },
       { name: "twitter:image", content: "https://torahforthetable.com/og-image.png" },
       // PWA
