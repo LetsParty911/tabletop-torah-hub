@@ -178,8 +178,7 @@ export const Route = createRootRoute({
         name: "twitter:description",
         content: "Weekly Torah PDFs curated for Shabbos and Yom Tov.",
       },
-      { property: "og:image", content: "https://torahforthetable.com/og-image.png" },
-      { name: "twitter:image", content: "https://torahforthetable.com/og-image.png" },
+      // Page-specific og:image / twitter:image are set per leaf route.
       // PWA
       { name: "theme-color", content: "#1A365D" },
       { name: "application-name", content: "Torah for the Table" },
