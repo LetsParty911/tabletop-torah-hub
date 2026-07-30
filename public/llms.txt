@@ -7,6 +7,7 @@ Torah for the Table gathers hand-picked Divrei Torah publications for each week'
 ## Pages
 
 - [This Week's Collection](/): The current parsha's Divrei Torah, filterable by audience (children, families, adults).
+- [Short Vorts](/short-vorts): Bite-sized one-minute Torah insights ("vorts") on the parsha of the week, for saying over at the Shabbos table.
 - [Archive](/archive): Past weekly collections, browsable by Jewish year and parsha.
 - [About](/about): What Torah for the Table is and who it serves.
 - [Contact](/contact): How to reach us or submit a publication.

@@ -301,7 +301,14 @@ function Index() {
               >
                 Get the Weekly Email
               </a>
+              <Link
+                to="/short-vorts"
+                className="inline-flex items-center justify-center rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors"
+              >
+                Short Vorts
+              </Link>
             </div>
+
           </div>
         </section>
 

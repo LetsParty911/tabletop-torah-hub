@@ -252,9 +252,13 @@ function SiteNav() {
           <Link to="/" activeOptions={{ exact: true }} className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
             This Week
           </Link>
+          <Link to="/short-vorts" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
+            Short Vorts
+          </Link>
           <Link to="/archive" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
             Archive
           </Link>
+
           <Link to="/about" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
             About
           </Link>

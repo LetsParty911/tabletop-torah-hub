@@ -28,7 +28,9 @@ export const Route = createFileRoute("/sitemap.xml")({
         const urls: Array<{ loc: string; lastmod: string | null }> = [
           { loc: `${SITE_URL}/`, lastmod: null },
           { loc: `${SITE_URL}/archive`, lastmod: null },
+          { loc: `${SITE_URL}/short-vorts`, lastmod: null },
           { loc: `${SITE_URL}/about`, lastmod: null },
+
           { loc: `${SITE_URL}/contact`, lastmod: null },
         ];
 
