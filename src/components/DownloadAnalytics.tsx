@@ -19,6 +19,10 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
+    key: "count",
+    dir: "desc",
+  });
 
   const load = useCallback(
     async (range: number) => {
