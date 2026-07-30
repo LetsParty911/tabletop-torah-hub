@@ -258,9 +258,9 @@ function Index() {
         <section className="parchment-frame">
           <div className="parchment-panel text-center">
             <h1 className="font-serif text-[2.25rem] leading-[1.05] sm:text-5xl md:text-7xl font-bold tracking-tight text-primary">
-              Torah for the Table
+              <span className="block">Torah for the Table</span>
               <span className="mt-2 block font-serif text-base sm:text-xl md:text-2xl font-medium tracking-normal text-primary/80">
-                Weekly Divrei Torah for Shabbos &amp; Yom Tov
+                — Weekly Divrei Torah for Shabbos &amp; Yom Tov
               </span>
             </h1>
             {resources.length > 0 && (
