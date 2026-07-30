@@ -2281,19 +2281,6 @@ function AdminPage() {
                                           className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
                                         />
                                       </label>
-                                      <label className="block">
-                                        <span className="text-xs font-medium">Publication</span>
-                                        <select
-                                          value={editMetaPublication}
-                                          onChange={(e) => setEditMetaPublication(e.target.value)}
-                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
-                                        >
-                                          <option value="">— none —</option>
-                                          {PUBLICATION_KEYS.map((k) => (
-                                            <option key={k} value={k}>{PUBLICATION_LABELS[k]}</option>
-                                          ))}
-                                        </select>
-                                      </label>
                                       <label className="block md:col-span-2">
                                         <span className="text-xs font-medium">Description</span>
                                         <input
