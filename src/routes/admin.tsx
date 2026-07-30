@@ -48,7 +48,7 @@ import {
 } from "@/lib/badges";
 
 import { getCurrentJewishYear } from "@/lib/jewish-year";
-import { CheckCircle2, Circle, MinusCircle, Eye, Download } from "lucide-react";
+import { CheckCircle2, Circle, MinusCircle, Eye, Download, Loader2, AlertCircle } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
