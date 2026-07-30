@@ -10,13 +10,24 @@ import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 export const Route = createFileRoute("/archive")({
   component: ArchivePage,
   loader: () => listArchive(),
-  head: () => {
+  head: ({ loaderData }) => {
     const title = "Archive | Torah for the Table";
     const description =
       "Browse the archive of past weekly Divrei Torah collections for Shabbos and Yom Tov.";
     const url = "https://torahforthetable.com/archive";
     const image =
       "https://torahforthetable.com/og-image.png";
+
+    const items = (loaderData?.years ?? [])
+      .flatMap((y) => y.parshiyos.flatMap((p) => p.pdfs))
+      .slice(0, 50)
+      .map((pdf, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        url: `https://torahforthetable.com/view/${pdf.id}`,
+        name: pdf.title,
+      }));
+
     return {
       meta: [
         { title },
@@ -33,6 +44,28 @@ export const Route = createFileRoute("/archive")({
         { name: "twitter:image", content: image },
       ],
       links: [{ rel: "canonical", href: url }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: title,
+            description,
+            url,
+            isPartOf: {
+              "@type": "WebSite",
+              name: "Torah for the Table",
+              url: "https://torahforthetable.com",
+            },
+            mainEntity: {
+              "@type": "ItemList",
+              numberOfItems: items.length,
+              itemListElement: items,
+            },
+          }),
+        },
+      ],
     };
   },
   errorComponent: ({ error }) => {
