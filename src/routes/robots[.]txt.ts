@@ -6,6 +6,12 @@ export const Route = createFileRoute("/robots.txt")({
       GET: async () => {
         const body = `User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /unsubscribe/
+Disallow: /view/*/download
+Disallow: /view/*/pdf
+Disallow: /api/
 
 Sitemap: https://torahforthetable.com/sitemap.xml
 `;
