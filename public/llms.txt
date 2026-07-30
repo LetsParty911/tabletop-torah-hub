@@ -1,0 +1,12 @@
+# Torah for the Table
+
+> A free weekly collection of ready-to-print Divrei Torah for the Shabbos and Yom Tov table, curated for children, families, and adults. New collections are published every Thursday.
+
+Torah for the Table gathers hand-picked Divrei Torah publications for each week's parsha as downloadable PDFs. Every resource is free, printable, and organized by parsha and Jewish year.
+
+## Pages
+
+- [This Week's Collection](/): The current parsha's Divrei Torah, filterable by audience (children, families, adults).
+- [Archive](/archive): Past weekly collections, browsable by Jewish year and parsha.
+- [About](/about): What Torah for the Table is and who it serves.
+- [Contact](/contact): How to reach us or submit a publication.
