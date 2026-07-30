@@ -24,6 +24,7 @@ export function DownloadTimeline({
   events?: Array<{ key: string; at: string }>;
 }) {
   const [pdfKey, setPdfKey] = useState<string>("");
+  const [avgWindow, setAvgWindow] = useState<0 | 3 | 7>(0);
 
   const series = useMemo(() => {
     const totals = new Map(byDay.map((d) => [d.day, d.count]));
@@ -37,7 +38,13 @@ export function DownloadTimeline({
       }
     }
 
-    const out: Array<{ day: string; label: string; total: number; pdf?: number }> = [];
+    const out: Array<{
+      day: string;
+      label: string;
+      total: number;
+      pdf?: number;
+      avg?: number;
+    }> = [];
     const today = new Date();
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(today);
@@ -50,10 +57,21 @@ export function DownloadTimeline({
         ...(pdfKey ? { pdf: pdfTotals.get(key) ?? 0 } : {}),
       });
     }
+
+    if (avgWindow > 0) {
+      for (let i = 0; i < out.length; i++) {
+        const start = Math.max(0, i - avgWindow + 1);
+        const slice = out.slice(start, i + 1);
+        const sum = slice.reduce((s, p) => s + p.total, 0);
+        out[i].avg = Math.round((sum / slice.length) * 10) / 10;
+      }
+    }
+
     return out;
-  }, [byDay, days, events, pdfKey]);
+  }, [byDay, days, events, pdfKey, avgWindow]);
 
   const peak = series.reduce((m, p) => (p.total > m.total ? p : m), series[0] ?? { day: "", total: 0 });
+
 
   return (
     <div className="mb-6 rounded-md border border-border p-3">
