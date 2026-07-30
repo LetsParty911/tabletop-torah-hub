@@ -1,7 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { DateRange } from "react-day-picker";
 import { adminDownloadStats } from "@/integrations/supabase/api.functions";
 import { DownloadTimeline } from "@/components/DownloadTimeline";
-import { ArrowDown, ArrowUp, Loader2, RefreshCw, Search, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import {
+  ArrowDown,
+  ArrowUp,
+  Calendar as CalendarIcon,
+  Loader2,
+  RefreshCw,
+  Search,
+  X,
+} from "lucide-react";
 
 type Stats = {
   days: number;
@@ -23,9 +36,29 @@ type SortDir = "asc" | "desc";
 
 const RANGES = [7, 30, 90] as const;
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const startOfDay = (d: Date) => {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+};
+const endOfDay = (d: Date) => {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+};
+const presetRange = (n: number) => ({
+  from: startOfDay(new Date(Date.now() - (n - 1) * DAY_MS)),
+  to: endOfDay(new Date()),
+});
+const fmtDate = (d: Date) =>
+  d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+
 export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
-  const [days, setDays] = useState<number>(30);
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [range, setRange] = useState<{ from: Date; to: Date }>(() => presetRange(30));
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [raw, setRaw] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
@@ -34,13 +67,28 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
   });
   const [search, setSearch] = useState("");
 
+  const fetchDays = Math.min(
+    365,
+    Math.max(1, Math.ceil((Date.now() - startOfDay(range.from).getTime()) / DAY_MS)),
+  );
+
+  const activePreset = RANGES.find((r) => {
+    const p = presetRange(r);
+    return (
+      startOfDay(range.from).getTime() === p.from.getTime() &&
+      startOfDay(range.to).getTime() === startOfDay(p.to).getTime()
+    );
+  });
+
   const load = useCallback(
-    async (range: number) => {
+    async (rangeDays: number) => {
       setLoading(true);
       setError(null);
       try {
-        const res = (await adminDownloadStats({ data: { accessToken, days: range } })) as Stats;
-        setStats(res);
+        const res = (await adminDownloadStats({
+          data: { accessToken, days: rangeDays },
+        })) as Stats;
+        setRaw(res);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to load download stats");
       } finally {
@@ -51,8 +99,63 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
   );
 
   useEffect(() => {
-    void load(days);
-  }, [load, days]);
+    void load(fetchDays);
+  }, [load, fetchDays]);
+
+  const spanDays = Math.max(
+    1,
+    Math.round((startOfDay(range.to).getTime() - startOfDay(range.from).getTime()) / DAY_MS) + 1,
+  );
+
+  // Re-derive all stats for the selected window from the raw event list.
+  const stats = useMemo<Stats | null>(() => {
+    if (!raw) return null;
+    const fromMs = startOfDay(range.from).getTime();
+    const toMs = endOfDay(range.to).getTime();
+    const events = (raw.events ?? []).filter((e) => {
+      const t = new Date(e.at).getTime();
+      return t >= fromMs && t <= toMs;
+    });
+
+    const byDayMap = new Map<string, number>();
+    const byPdfMap = new Map<
+      string,
+      { id: string | null; title: string; count: number; last: string; lastWho: string | null; key: string }
+    >();
+    const titleOf = new Map(raw.byPdf.map((p) => [p.key ?? p.id ?? `title:${p.title}`, p.title]));
+
+    for (const e of events) {
+      const day = new Date(e.at).toISOString().slice(0, 10);
+      byDayMap.set(day, (byDayMap.get(day) ?? 0) + 1);
+      const cur = byPdfMap.get(e.key);
+      if (cur) {
+        cur.count += 1;
+        if (e.at > cur.last) {
+          cur.last = e.at;
+          cur.lastWho = e.who;
+        }
+      } else {
+        byPdfMap.set(e.key, {
+          id: e.key.startsWith("title:") ? null : e.key,
+          title: titleOf.get(e.key) ?? e.key.replace(/^title:/, ""),
+          count: 1,
+          last: e.at,
+          lastWho: e.who,
+          key: e.key,
+        });
+      }
+    }
+
+    return {
+      days: spanDays,
+      total: events.length,
+      byDay: Array.from(byDayMap.entries())
+        .map(([day, count]) => ({ day, count }))
+        .sort((a, b) => (a.day < b.day ? 1 : -1)),
+      byPdf: Array.from(byPdfMap.values()).sort((a, b) => b.count - a.count),
+      events,
+    };
+  }, [raw, range, spanDays]);
 
   const maxDay = stats?.byDay.reduce((m, d) => Math.max(m, d.count), 0) ?? 0;
 
@@ -133,24 +236,56 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h2 className="text-lg font-semibold">Download analytics</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {RANGES.map((r) => (
             <button
               key={r}
               type="button"
-              onClick={() => setDays(r)}
+              onClick={() => setRange(presetRange(r))}
               className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                days === r
+                activePreset === r
                   ? "border-accent bg-accent text-accent-foreground"
                   : "border-border bg-background/60 text-muted-foreground hover:border-accent"
               }`}
             >
-              {r}d
+              Last {r} days
             </button>
           ))}
+          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-7 gap-2 px-3 text-xs font-normal",
+                  !activePreset && "border-accent text-accent-foreground",
+                )}
+              >
+                <CalendarIcon className="h-3.5 w-3.5" />
+                {fmtDate(range.from)} – {fmtDate(range.to)}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="range"
+                defaultMonth={range.from}
+                selected={{ from: range.from, to: range.to }}
+                onSelect={(r: DateRange | undefined) => {
+                  if (!r?.from) return;
+                  const to = r.to ?? r.from;
+                  setRange({ from: startOfDay(r.from), to: endOfDay(to) });
+                  if (r.to) setPickerOpen(false);
+                }}
+                disabled={{ after: new Date() }}
+                numberOfMonths={2}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
           <button
             type="button"
-            onClick={() => void load(days)}
+            onClick={() => void load(fetchDays)}
             className="rounded-md border border-border px-2 py-1 text-xs hover:border-accent"
           >
             {loading ? (
@@ -175,13 +310,14 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
       {stats && (
         <>
           <p className="text-sm text-muted-foreground mb-4">
-            <span className="font-semibold text-foreground">{stats.total}</span> downloads in the
-            last {stats.days} days across{" "}
+            <span className="font-semibold text-foreground">{stats.total}</span> downloads from{" "}
+            {fmtDate(range.from)} to {fmtDate(range.to)} ({stats.days} days) across{" "}
             <span className="font-semibold text-foreground">{stats.byPdf.length}</span> PDFs.
           </p>
 
           <DownloadTimeline
-            days={stats.days}
+            from={range.from}
+            to={range.to}
             byDay={stats.byDay}
             pdfs={stats.byPdf}
             events={stats.events}
