@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminDownloadStats } from "@/integrations/supabase/api.functions";
-import { ArrowDown, ArrowUp, Loader2, RefreshCw } from "lucide-react";
+import { ArrowDown, ArrowUp, Loader2, RefreshCw, X } from "lucide-react";
 
 type Stats = {
   days: number;
@@ -12,7 +12,9 @@ type Stats = {
     count: number;
     last: string;
     lastWho?: string | null;
+    key?: string;
   }>;
+  events?: Array<{ key: string; at: string; who: string | null }>;
 };
 
 type SortKey = "count" | "last";
@@ -65,6 +67,25 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
     });
     return list;
   }, [stats, sort]);
+
+  const [selected, setSelected] = useState<{ key: string; title: string } | null>(null);
+
+  const drilldown = useMemo(() => {
+    if (!stats || !selected) return null;
+    const evs = (stats.events ?? [])
+      .filter((e) => e.key === selected.key)
+      .sort((a, b) => b.at.localeCompare(a.at));
+    const dayMap = new Map<string, number>();
+    for (const e of evs) {
+      const day = new Date(e.at).toISOString().slice(0, 10);
+      dayMap.set(day, (dayMap.get(day) ?? 0) + 1);
+    }
+    const byDay = Array.from(dayMap.entries())
+      .map(([day, count]) => ({ day, count }))
+      .sort((a, b) => (a.day < b.day ? 1 : -1));
+    const max = byDay.reduce((m, d) => Math.max(m, d.count), 0);
+    return { events: evs, byDay, max };
+  }, [stats, selected]);
 
   const toggleSort = (key: SortKey) => {
     setSort((prev) => ({
@@ -216,7 +237,17 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                         key={p.id ?? p.title}
                         className="border-b border-border/60 last:border-0 align-top"
                       >
-                        <td className="px-3 py-2 font-medium">{p.title}</td>
+                        <td className="px-3 py-2 font-medium">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelected({ key: p.key ?? p.id ?? `title:${p.title}`, title: p.title })
+                            }
+                            className="text-left underline decoration-dotted underline-offset-4 hover:text-accent"
+                          >
+                            {p.title}
+                          </button>
+                        </td>
                         <td className="px-3 py-2 text-right font-semibold tabular-nums">
                           {p.count}
                         </td>
