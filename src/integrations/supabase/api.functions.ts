@@ -2684,7 +2684,7 @@ export const adminListPdfsMissingDescription = createServerFn({ method: "POST" }
     const { data: rows, error } = await admin
       .from("pdfs")
       .select("id, title")
-      .is("description", null)
+      .or("description.is.null,audience.is.null,page_count.is.null")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return { rows: (rows ?? []) as Array<{ id: string; title: string }> };
