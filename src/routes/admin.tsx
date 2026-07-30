@@ -44,8 +44,6 @@ import {
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { hebcalToParshaKey, PARSHIYOS } from "@/lib/parshiyos";
 import {
-  PUBLICATION_KEYS,
-  PUBLICATION_LABELS,
   publicationForTitle,
 } from "@/lib/badges";
 
