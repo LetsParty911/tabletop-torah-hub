@@ -12,19 +12,31 @@ import {
 
 type Point = { day: string; count: number };
 
+const dayKey = (d: Date) => {
+  const y = d.getFullYear();
+  const m = `${d.getMonth() + 1}`.padStart(2, "0");
+  const day = `${d.getDate()}`.padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
 export function DownloadTimeline({
-  days,
+  from,
+  to,
   byDay,
   pdfs,
   events,
 }: {
-  days: number;
+  from: Date;
+  to: Date;
   byDay: Point[];
   pdfs: Array<{ key?: string; id: string | null; title: string }>;
   events?: Array<{ key: string; at: string }>;
 }) {
   const [pdfKey, setPdfKey] = useState<string>("");
   const [avgWindow, setAvgWindow] = useState<0 | 3 | 7>(0);
+
+  const fromTime = from.getTime();
+  const toTime = to.getTime();
 
   const series = useMemo(() => {
     const totals = new Map(byDay.map((d) => [d.day, d.count]));
@@ -45,11 +57,12 @@ export function DownloadTimeline({
       pdf?: number;
       avg?: number;
     }> = [];
-    const today = new Date();
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
+    const start = new Date(fromTime);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(toTime);
+    end.setHours(0, 0, 0, 0);
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const key = dayKey(d);
       out.push({
         day: key,
         label: `${d.getMonth() + 1}/${d.getDate()}`,
@@ -60,15 +73,15 @@ export function DownloadTimeline({
 
     if (avgWindow > 0) {
       for (let i = 0; i < out.length; i++) {
-        const start = Math.max(0, i - avgWindow + 1);
-        const slice = out.slice(start, i + 1);
-        const sum = slice.reduce((s, p) => s + p.total, 0);
+        const s = Math.max(0, i - avgWindow + 1);
+        const slice = out.slice(s, i + 1);
+        const sum = slice.reduce((acc, p) => acc + p.total, 0);
         out[i].avg = Math.round((sum / slice.length) * 10) / 10;
       }
     }
 
     return out;
-  }, [byDay, days, events, pdfKey, avgWindow]);
+  }, [byDay, fromTime, toTime, events, pdfKey, avgWindow]);
 
   const peak = series.reduce((m, p) => (p.total > m.total ? p : m), series[0] ?? { day: "", total: 0 });
 
