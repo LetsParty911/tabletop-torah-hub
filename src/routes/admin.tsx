@@ -1956,8 +1956,32 @@ function AdminPage() {
                 )}
               </div>
             </form>
+
+            <div className="mt-6 border-t border-accent/30 pt-4 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={publishAllForWeek}
+                disabled={publishingWeek || unpublishedForCurrent.length === 0}
+                className="rounded-full bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                title={
+                  unpublishedForCurrent.length === 0
+                    ? "No draft PDFs for this parsha"
+                    : `Publish ${unpublishedForCurrent.length} draft PDF${unpublishedForCurrent.length === 1 ? "" : "s"} for this week`
+                }
+              >
+                {publishingWeek
+                  ? "Publishing…"
+                  : `Publish All for This Week${unpublishedForCurrent.length > 0 ? ` (${unpublishedForCurrent.length})` : ""}`}
+              </button>
+              <span className="text-sm text-muted-foreground">
+                {unpublishedForCurrent.length === 0
+                  ? `No unpublished PDFs for ${currentParshaLabel}.`
+                  : `${unpublishedForCurrent.length} draft PDF${unpublishedForCurrent.length === 1 ? "" : "s"} for ${currentParshaLabel} waiting to go live.`}
+              </span>
+            </div>
           </div>
         </section>
+
 
         {/* PDFs list */}
         <section className="parchment-frame">
