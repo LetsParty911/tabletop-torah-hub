@@ -270,7 +270,7 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                 mode="range"
                 defaultMonth={range.from}
                 selected={{ from: range.from, to: range.to }}
-                onSelect={(r) => {
+                onSelect={(r: DateRange | undefined) => {
                   if (!r?.from) return;
                   const to = r.to ?? r.from;
                   setRange({ from: startOfDay(r.from), to: endOfDay(to) });
