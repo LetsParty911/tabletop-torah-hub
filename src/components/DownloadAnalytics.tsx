@@ -1,7 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { DateRange } from "react-day-picker";
 import { adminDownloadStats } from "@/integrations/supabase/api.functions";
 import { DownloadTimeline } from "@/components/DownloadTimeline";
-import { ArrowDown, ArrowUp, Loader2, RefreshCw, Search, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import {
+  ArrowDown,
+  ArrowUp,
+  Calendar as CalendarIcon,
+  Loader2,
+  RefreshCw,
+  Search,
+  X,
+} from "lucide-react";
 
 type Stats = {
   days: number;
