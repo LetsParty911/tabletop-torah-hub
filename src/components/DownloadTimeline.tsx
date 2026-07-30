@@ -4,6 +4,7 @@ import {
   AreaChart,
   CartesianGrid,
   Line,
+  ReferenceDot,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -34,6 +35,7 @@ export function DownloadTimeline({
 }) {
   const [pdfKey, setPdfKey] = useState<string>("");
   const [avgWindow, setAvgWindow] = useState<0 | 3 | 7>(0);
+  const [spikes, setSpikes] = useState(false);
 
   const fromTime = from.getTime();
   const toTime = to.getTime();
@@ -56,6 +58,8 @@ export function DownloadTimeline({
       total: number;
       pdf?: number;
       avg?: number;
+      spike?: boolean;
+      z?: number;
     }> = [];
     const start = new Date(fromTime);
     start.setHours(0, 0, 0, 0);
@@ -80,8 +84,27 @@ export function DownloadTimeline({
       }
     }
 
+    if (spikes) {
+      const W = 7;
+      for (let i = 0; i < out.length; i++) {
+        const base = out.slice(Math.max(0, i - W), i).map((p) => p.total);
+        if (base.length < 3) continue;
+        const mean = base.reduce((a, b) => a + b, 0) / base.length;
+        const variance =
+          base.reduce((a, b) => a + (b - mean) ** 2, 0) / base.length;
+        const sd = Math.sqrt(variance);
+        // Guard against zero-variance baselines (all-equal history)
+        const denom = sd > 0 ? sd : Math.max(1, Math.sqrt(Math.max(mean, 1)));
+        const z = (out[i].total - mean) / denom;
+        out[i].z = Math.round(z * 10) / 10;
+        if (z >= 2 && out[i].total >= Math.max(3, mean + 2)) out[i].spike = true;
+      }
+    }
+
     return out;
-  }, [byDay, fromTime, toTime, events, pdfKey, avgWindow]);
+  }, [byDay, fromTime, toTime, events, pdfKey, avgWindow, spikes]);
+
+  const spikeDays = useMemo(() => series.filter((p) => p.spike), [series]);
 
   const peak = series.reduce((m, p) => (p.total > m.total ? p : m), series[0] ?? { day: "", total: 0 });
 
@@ -94,6 +117,8 @@ export function DownloadTimeline({
           {peak?.total > 0 && (
             <p className="text-xs text-muted-foreground">
               Peak: {peak.total} on {peak.day}
+              {spikes &&
+                ` · ${spikeDays.length} spike${spikeDays.length === 1 ? "" : "s"} detected`}
             </p>
           )}
         </div>
@@ -113,6 +138,19 @@ export function DownloadTimeline({
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          onClick={() => setSpikes((v) => !v)}
+          aria-pressed={spikes}
+          className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
+            spikes
+              ? "border-accent bg-accent text-accent-foreground"
+              : "border-border text-muted-foreground hover:text-foreground"
+          }`}
+          title="Highlight days more than 2 standard deviations above the trailing 7-day baseline"
+        >
+          Spike detection
+        </button>
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
           Compare PDF
           <select
@@ -184,6 +222,19 @@ export function DownloadTimeline({
                 dot={false}
               />
             )}
+            {spikes &&
+              spikeDays.map((p) => (
+                <ReferenceDot
+                  key={p.day}
+                  x={p.label}
+                  y={p.total}
+                  r={5}
+                  fill="hsl(var(--destructive))"
+                  stroke="hsl(var(--background))"
+                  strokeWidth={2}
+                  ifOverflow="extendDomain"
+                />
+              ))}
             {pdfKey && (
               <Line
                 type="monotone"
@@ -198,6 +249,28 @@ export function DownloadTimeline({
           </AreaChart>
         </ResponsiveContainer>
       </div>
+
+      {spikes && (
+        <div className="mt-3 border-t border-border pt-2 text-xs">
+          {spikeDays.length === 0 ? (
+            <p className="text-muted-foreground">
+              No statistically significant surges in this range (threshold: 2σ above the
+              trailing 7-day baseline).
+            </p>
+          ) : (
+            <ul className="flex flex-wrap gap-2">
+              {spikeDays.map((p) => (
+                <li
+                  key={p.day}
+                  className="rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-foreground"
+                >
+                  {p.day}: {p.total} downloads ({p.z}σ)
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }
