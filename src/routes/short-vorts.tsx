@@ -158,7 +158,7 @@ function ShortVortsPage() {
           </h2>
           {current.length > 0 ? (
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
-              {current.map((v) => (
+              {current.map((v: Vort) => (
                 <VortCard key={v.id} vort={v} />
               ))}
             </div>
@@ -192,7 +192,7 @@ function ShortVortsPage() {
                     Parshas {p.parshaKey}
                   </h3>
                   <div className="mt-3 grid gap-5 sm:grid-cols-2">
-                    {p.vorts.map((v) => (
+                    {p.vorts.map((v: Vort) => (
                       <VortCard key={v.id} vort={v} />
                     ))}
                   </div>

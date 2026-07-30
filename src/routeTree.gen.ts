@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ShortVortsRouteImport } from './routes/short-vorts'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -26,6 +27,11 @@ import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShortVortsRoute = ShortVortsRouteImport.update({
+  id: '/short-vorts',
+  path: '/short-vorts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/offline': typeof OfflineRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/offline': typeof OfflineRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/offline': typeof OfflineRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/offline'
     | '/robots.txt'
+    | '/short-vorts'
     | '/sitemap.xml'
     | '/api/track-download'
     | '/unsubscribe/$token'
@@ -160,6 +170,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/offline'
     | '/robots.txt'
+    | '/short-vorts'
     | '/sitemap.xml'
     | '/api/track-download'
     | '/unsubscribe/$token'
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/offline'
     | '/robots.txt'
+    | '/short-vorts'
     | '/sitemap.xml'
     | '/api/track-download'
     | '/unsubscribe/$token'
@@ -191,6 +203,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   OfflineRoute: typeof OfflineRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
+  ShortVortsRoute: typeof ShortVortsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiTrackDownloadRoute: typeof ApiTrackDownloadRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/short-vorts': {
+      id: '/short-vorts'
+      path: '/short-vorts'
+      fullPath: '/short-vorts'
+      preLoaderRoute: typeof ShortVortsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/robots.txt': {
@@ -314,6 +334,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   OfflineRoute: OfflineRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
+  ShortVortsRoute: ShortVortsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiTrackDownloadRoute: ApiTrackDownloadRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
@@ -322,13 +343,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
