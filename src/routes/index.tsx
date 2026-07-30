@@ -460,8 +460,9 @@ function Index() {
                           {(r.audience || r.format_type || typeof r.page_count === "number") && (
                             <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                               {[
-                                r.audience,
+                                normalizeAudience(r.audience, r.title) ?? r.audience,
                                 r.format_type,
+
                                 typeof r.page_count === "number"
                                   ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
                                   : null,
