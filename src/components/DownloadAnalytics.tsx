@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminDownloadStats } from "@/integrations/supabase/api.functions";
-import { ArrowDown, ArrowUp, Loader2, RefreshCw, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Loader2, RefreshCw, Search, X } from "lucide-react";
 
 type Stats = {
   days: number;
@@ -31,6 +31,7 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
     key: "count",
     dir: "desc",
   });
+  const [search, setSearch] = useState("");
 
   const load = useCallback(
     async (range: number) => {
@@ -67,6 +68,12 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
     });
     return list;
   }, [stats, sort]);
+
+  const filteredByPdf = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return sortedByPdf;
+    return sortedByPdf.filter((p) => p.title.toLowerCase().includes(q));
+  }, [sortedByPdf, search]);
 
   const [selected, setSelected] = useState<{ key: string; title: string } | null>(null);
 
@@ -197,7 +204,34 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
             </div>
 
             <div>
-              <h3 className="text-sm font-medium mb-2">Downloads per PDF</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                <h3 className="text-sm font-medium">Downloads per PDF</h3>
+                <div className="relative flex-1 sm:max-w-xs">
+                  <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Filter by PDF title…"
+                    className="w-full rounded-md border border-border bg-background py-1.5 pl-8 pr-7 text-sm focus:border-accent focus:outline-none"
+                  />
+                  {search && (
+                    <button
+                      type="button"
+                      onClick={() => setSearch("")}
+                      aria-label="Clear filter"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+                {search && (
+                  <span className="text-xs text-muted-foreground">
+                    {filteredByPdf.length} of {sortedByPdf.length}
+                  </span>
+                )}
+              </div>
               <div className="max-h-72 overflow-y-auto rounded-md border border-border">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
@@ -225,14 +259,14 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedByPdf.length === 0 && (
+                    {filteredByPdf.length === 0 && (
                       <tr>
                         <td colSpan={4} className="p-3 text-muted-foreground">
-                          No downloads yet.
+                          {search ? "No PDFs match your filter." : "No downloads yet."}
                         </td>
                       </tr>
                     )}
-                    {sortedByPdf.map((p) => (
+                    {filteredByPdf.map((p) => (
                       <tr
                         key={p.id ?? p.title}
                         className="border-b border-border/60 last:border-0 align-top"
