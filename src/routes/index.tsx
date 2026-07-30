@@ -358,24 +358,31 @@ function Index() {
             ) : (
               <>
                 <div className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-                  {(["All", "Children", "Families", "Adults"] as const).map((audience) => {
-                    const active = audienceFilter === audience;
-                    return (
-                      <button
-                        key={audience}
-                        type="button"
-                        onClick={() => setAudienceFilter(active ? "All" : audience)}
-                        className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-colors ${
-                          active
-                            ? "border-accent bg-accent text-accent-foreground"
-                            : "border-accent bg-transparent text-primary hover:bg-accent/15"
-                        }`}
-                      >
-                        {audience}
-                      </button>
-                    );
-                  })}
+                  {(["All", "Children", "Families", "Adults"] as const)
+                    .filter(
+                      (audience) =>
+                        audience === "All" ||
+                        resources.some((r) => normalizeAudience(r.audience) === audience),
+                    )
+                    .map((audience) => {
+                      const active = audienceFilter === audience;
+                      return (
+                        <button
+                          key={audience}
+                          type="button"
+                          onClick={() => setAudienceFilter(active ? "All" : audience)}
+                          className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-colors ${
+                            active
+                              ? "border-accent bg-accent text-accent-foreground"
+                              : "border-accent bg-transparent text-primary hover:bg-accent/15"
+                          }`}
+                        >
+                          {audience}
+                        </button>
+                      );
+                    })}
                 </div>
+
 
                 <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
                   {filteredResources.map((r) => (
