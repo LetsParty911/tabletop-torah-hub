@@ -1852,27 +1852,6 @@ function AdminPage() {
                   className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
                 />
               </label>
-              <label className="block">
-                <span className="text-sm font-medium">
-                  Publication (optional)
-                  {!uploadPublicationTouched && uploadPublication && (
-                    <span className="ml-2 text-xs text-muted-foreground">(auto-suggested from title)</span>
-                  )}
-                </span>
-                <select
-                  value={uploadPublication}
-                  onChange={(e) => {
-                    setUploadPublication(e.target.value);
-                    setUploadPublicationTouched(true);
-                  }}
-                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                >
-                  <option value="">— none —</option>
-                  {PUBLICATION_KEYS.map((k) => (
-                    <option key={k} value={k}>{PUBLICATION_LABELS[k]}</option>
-                  ))}
-                </select>
-              </label>
               <label className="block md:col-span-2">
                 <span className="text-sm font-medium">Description (one short sentence)</span>
                 <input
