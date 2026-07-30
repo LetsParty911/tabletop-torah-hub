@@ -160,25 +160,8 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Torah for the Table" },
-      {
-        name: "description",
-        content:
-          "Weekly Torah resources for a more meaningful Shabbos and Yom Tov table.",
-      },
-      { property: "og:title", content: "Torah for the Table" },
-      {
-        property: "og:description",
-        content: "Weekly Torah PDFs curated for Shabbos and Yom Tov.",
-      },
+      // Page-specific title, description, og:*, and twitter:* are set on leaf routes.
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "Torah for the Table" },
-      {
-        name: "twitter:description",
-        content: "Weekly Torah PDFs curated for Shabbos and Yom Tov.",
-      },
-      // Page-specific og:image / twitter:image are set per leaf route.
       // PWA
       { name: "theme-color", content: "#1A365D" },
       { name: "application-name", content: "Torah for the Table" },
