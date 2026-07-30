@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DownloadAnalytics } from "@/components/DownloadAnalytics";
+import { UnifiedDashboard } from "@/components/UnifiedDashboard";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -2437,6 +2438,13 @@ function AdminPage() {
                 </>
               );
             })()}
+          </div>
+        </section>
+
+        {/* Unified analytics overview */}
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <UnifiedDashboard accessToken={accessToken ?? ""} />
           </div>
         </section>
 
