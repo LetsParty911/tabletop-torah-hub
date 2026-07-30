@@ -2771,3 +2771,20 @@ export const adminDownloadStats = createServerFn({ method: "POST" })
 
     return { days, total: events.length, byDay, byPdf, events: eventList };
   });
+
+// ---------- GA4 summary (admin) ----------
+export const adminGa4Summary = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; startDate: string; endDate: string }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const { getGa4Summary } = await import("@/lib/ga4.server");
+    return await getGa4Summary(data.startDate, data.endDate);
+  });
