@@ -166,7 +166,16 @@ export const Route = createFileRoute("/")({
 });
 
 // Tolerates casing/synonym differences in the stored audience value.
-function normalizeAudience(value: string | null): "Children" | "Families" | "Adults" | null {
+// Titles that are unmistakably kid-oriented always resolve to "Children",
+// even if the stored audience field was tagged incorrectly.
+const KIDS_TITLE_HINTS = ["pirchei", "kids corner", "junior", "for kids", "kids "];
+
+function normalizeAudience(
+  value: string | null,
+  title?: string | null,
+): "Children" | "Families" | "Adults" | null {
+  const t = (title ?? "").trim().toLowerCase();
+  if (t && KIDS_TITLE_HINTS.some((h) => t.includes(h))) return "Children";
   const v = (value ?? "").trim().toLowerCase();
   if (!v) return null;
   if (v.startsWith("child") || v.startsWith("kid") || v.startsWith("youth")) return "Children";
@@ -185,7 +194,8 @@ function Index() {
   const filteredResources =
     audienceFilter === "All"
       ? resources
-      : resources.filter((r) => normalizeAudience(r.audience) === audienceFilter);
+      : resources.filter((r) => normalizeAudience(r.audience, r.title) === audienceFilter);
+
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
