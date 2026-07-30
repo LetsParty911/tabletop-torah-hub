@@ -2058,6 +2058,9 @@ function AdminPage() {
                   ? `No unpublished PDFs for ${currentParshaLabel}.`
                   : `${unpublishedForCurrent.length} draft PDF${unpublishedForCurrent.length === 1 ? "" : "s"} for ${currentParshaLabel} waiting to go live.`}
               </span>
+              <div className="w-full">
+                <PublishProgress />
+              </div>
             </div>
           </div>
         </section>
