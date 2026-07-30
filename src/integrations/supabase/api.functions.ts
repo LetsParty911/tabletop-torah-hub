@@ -2705,7 +2705,7 @@ export const adminDownloadStats = createServerFn({ method: "POST" })
 
     const { data: rows, error } = await admin
       .from("download_events")
-      .select("created_at, publication_id, publication_title")
+      .select("created_at, publication_id, publication_title, city, region, country")
       .gte("created_at", since)
       .order("created_at", { ascending: false })
       .limit(20000);
@@ -2715,10 +2715,21 @@ export const adminDownloadStats = createServerFn({ method: "POST" })
       created_at: string;
       publication_id: string | null;
       publication_title: string | null;
+      city: string | null;
+      region: string | null;
+      country: string | null;
     }>;
 
     const byDayMap = new Map<string, number>();
-    const byPdfMap = new Map<string, { id: string | null; title: string; count: number; last: string }>();
+    const byPdfMap = new Map<
+      string,
+      { id: string | null; title: string; count: number; last: string; lastWho: string | null }
+    >();
+
+    const whoOf = (e: { city: string | null; region: string | null; country: string | null }) => {
+      const parts = [e.city, e.region, e.country].filter(Boolean) as string[];
+      return parts.length ? parts.join(", ") : null;
+    };
 
     for (const e of events) {
       const day = new Date(e.created_at).toISOString().slice(0, 10);
@@ -2729,9 +2740,18 @@ export const adminDownloadStats = createServerFn({ method: "POST" })
       const cur = byPdfMap.get(key);
       if (cur) {
         cur.count += 1;
-        if (e.created_at > cur.last) cur.last = e.created_at;
+        if (e.created_at > cur.last) {
+          cur.last = e.created_at;
+          cur.lastWho = whoOf(e);
+        }
       } else {
-        byPdfMap.set(key, { id: e.publication_id, title, count: 1, last: e.created_at });
+        byPdfMap.set(key, {
+          id: e.publication_id,
+          title,
+          count: 1,
+          last: e.created_at,
+          lastWho: whoOf(e),
+        });
       }
     }
 
