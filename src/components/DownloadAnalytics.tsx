@@ -46,6 +46,32 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
 
   const maxDay = stats?.byDay.reduce((m, d) => Math.max(m, d.count), 0) ?? 0;
 
+  const sortedByPdf = useMemo(() => {
+    if (!stats) return [];
+    const list = [...stats.byPdf];
+    list.sort((a, b) => {
+      if (sort.key === "count") {
+        return sort.dir === "asc" ? a.count - b.count : b.count - a.count;
+      }
+      return sort.dir === "asc"
+        ? a.last.localeCompare(b.last)
+        : b.last.localeCompare(a.last);
+    });
+    return list;
+  }, [stats, sort]);
+
+  const toggleSort = (key: SortKey) => {
+    setSort((prev) => ({
+      key,
+      dir: prev.key === key && prev.dir === "desc" ? "asc" : "desc",
+    }));
+  };
+
+  const SortIcon = ({ active, dir }: { active: boolean; dir: SortDir }) => {
+    if (!active) return <ArrowUp className="h-3 w-3 opacity-30" />;
+    return dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
+  };
+
   const exportCsv = () => {
     if (!stats) return;
     const lines = ["type,key,count,last"];
