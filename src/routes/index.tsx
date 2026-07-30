@@ -139,7 +139,7 @@ export const Route = createFileRoute("/")({
     </div>
   ),
   head: () => {
-    const title = "Torah for the Table | Weekly Divrei Torah for Shabbos & Yom Tov";
+    const title = "Torah for the Table | Weekly Divrei Torah";
     const description =
       "A weekly collection of Divrei Torah for Shabbos and Yom Tov — thoughtfully gathered in one quiet, uncluttered place for the Shabbos table.";
     const url = "https://torahforthetable.com/";
