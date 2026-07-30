@@ -2579,7 +2579,7 @@ Analyze the attached PDF and return the json object described in the system prom
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: "google/gemini-3.5-flash",
+          model: "google/gemini-2.5-flash",
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: systemPrompt },
