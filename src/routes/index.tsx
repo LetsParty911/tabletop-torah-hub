@@ -329,6 +329,7 @@ function Index() {
             >
               <input
                 type="email"
+                aria-label="Email address for weekly Torah reminders"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
