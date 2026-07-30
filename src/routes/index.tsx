@@ -367,31 +367,52 @@ function Index() {
               </p>
             ) : (
               <>
-                <div className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-                  {(["All", "Children", "Families", "Adults"] as const)
-                    .filter(
-                      (audience) =>
-                        audience === "All" ||
-                        resources.some((r) => normalizeAudience(r.audience) === audience),
-                    )
-                    .map((audience) => {
-                      const active = audienceFilter === audience;
-                      return (
-                        <button
-                          key={audience}
-                          type="button"
-                          onClick={() => setAudienceFilter(active ? "All" : audience)}
-                          className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-colors ${
-                            active
-                              ? "border-accent bg-accent text-accent-foreground"
-                              : "border-accent bg-transparent text-primary hover:bg-accent/15"
-                          }`}
-                        >
-                          {audience}
-                        </button>
-                      );
-                    })}
+                <div className="mt-5 sm:mt-6 flex flex-col items-center gap-2">
+                  <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Filter by audience
+                  </span>
+                  <div className="inline-flex max-w-full flex-wrap items-center justify-center gap-1 rounded-full border border-accent/40 bg-background/70 p-1 shadow-sm">
+                    {(["All", "Children", "Families", "Adults"] as const)
+                      .map((audience) => ({
+                        audience,
+                        count:
+                          audience === "All"
+                            ? resources.length
+                            : resources.filter(
+                                (r) => normalizeAudience(r.audience) === audience,
+                              ).length,
+                      }))
+                      .filter(({ audience, count }) => audience === "All" || count > 0)
+                      .map(({ audience, count }) => {
+                        const active = audienceFilter === audience;
+                        return (
+                          <button
+                            key={audience}
+                            type="button"
+                            aria-pressed={active}
+                            onClick={() => setAudienceFilter(active ? "All" : audience)}
+                            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
+                              active
+                                ? "bg-accent text-accent-foreground shadow-sm"
+                                : "text-primary hover:bg-accent/12"
+                            }`}
+                          >
+                            {audience}
+                            <span
+                              className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
+                                active
+                                  ? "bg-accent-foreground/20 text-accent-foreground"
+                                  : "bg-accent/15 text-accent"
+                              }`}
+                            >
+                              {count}
+                            </span>
+                          </button>
+                        );
+                      })}
+                  </div>
                 </div>
+
 
 
                 <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
