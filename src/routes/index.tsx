@@ -389,8 +389,9 @@ function Index() {
                           audience === "All"
                             ? resources.length
                             : resources.filter(
-                                (r) => normalizeAudience(r.audience) === audience,
+                                (r) => normalizeAudience(r.audience, r.title) === audience,
                               ).length,
+
                       }))
                       .filter(({ audience, count }) => audience === "All" || count > 0)
                       .map(({ audience, count }) => {
