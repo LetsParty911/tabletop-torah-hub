@@ -6,7 +6,13 @@ type Stats = {
   days: number;
   total: number;
   byDay: Array<{ day: string; count: number }>;
-  byPdf: Array<{ id: string | null; title: string; count: number; last: string }>;
+  byPdf: Array<{
+    id: string | null;
+    title: string;
+    count: number;
+    last: string;
+    lastWho?: string | null;
+  }>;
 };
 
 type SortKey = "count" | "last";
@@ -74,10 +80,12 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
 
   const exportCsv = () => {
     if (!stats) return;
-    const lines = ["type,key,count,last"];
-    for (const d of stats.byDay) lines.push(`day,${d.day},${d.count},`);
+    const lines = ["type,key,count,last,last_downloader"];
+    for (const d of stats.byDay) lines.push(`day,${d.day},${d.count},,`);
     for (const p of stats.byPdf)
-      lines.push(`pdf,"${p.title.replace(/"/g, '""')}",${p.count},${p.last}`);
+      lines.push(
+        `pdf,"${p.title.replace(/"/g, '""')}",${p.count},${p.last},"${(p.lastWho ?? "").replace(/"/g, '""')}"`,
+      );
     const url = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;
@@ -192,12 +200,13 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                           Last download <SortIcon active={sort.key === "last"} dir={sort.dir} />
                         </button>
                       </th>
+                      <th className="px-3 py-2 text-left font-medium">Last downloader</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sortedByPdf.length === 0 && (
                       <tr>
-                        <td colSpan={3} className="p-3 text-muted-foreground">
+                        <td colSpan={4} className="p-3 text-muted-foreground">
                           No downloads yet.
                         </td>
                       </tr>
@@ -213,6 +222,9 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                         </td>
                         <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
                           {new Date(p.last).toLocaleString()}
+                        </td>
+                        <td className="px-3 py-2 text-muted-foreground">
+                          {p.lastWho ?? "Anonymous"}
                         </td>
                       </tr>
                     ))}
