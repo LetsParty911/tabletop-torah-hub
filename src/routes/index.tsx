@@ -259,6 +259,9 @@ function Index() {
           <div className="parchment-panel text-center">
             <h1 className="font-serif text-[2.25rem] leading-[1.05] sm:text-5xl md:text-7xl font-bold tracking-tight text-primary">
               Torah for the Table
+              <span className="mt-2 block font-serif text-base sm:text-xl md:text-2xl font-medium tracking-normal text-primary/80">
+                Weekly Divrei Torah for Shabbos &amp; Yom Tov
+              </span>
             </h1>
             {resources.length > 0 && (
               <p className="mt-4 sm:mt-6 font-sans text-[0.7rem] sm:text-sm uppercase tracking-[0.25em] sm:tracking-[0.3em] font-semibold text-accent">
