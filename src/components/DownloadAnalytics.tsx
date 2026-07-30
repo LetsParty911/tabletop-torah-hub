@@ -174,19 +174,35 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                   <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
                     <tr className="border-b border-border/60">
                       <th className="px-3 py-2 text-left font-medium">PDF</th>
-                      <th className="px-3 py-2 text-right font-medium">Downloads</th>
-                      <th className="px-3 py-2 text-right font-medium">Last download</th>
+                      <th className="px-3 py-2 text-right font-medium">
+                        <button
+                          type="button"
+                          onClick={() => toggleSort("count")}
+                          className="inline-flex items-center gap-1 hover:text-foreground"
+                        >
+                          Downloads <SortIcon active={sort.key === "count"} dir={sort.dir} />
+                        </button>
+                      </th>
+                      <th className="px-3 py-2 text-right font-medium">
+                        <button
+                          type="button"
+                          onClick={() => toggleSort("last")}
+                          className="inline-flex items-center gap-1 hover:text-foreground"
+                        >
+                          Last download <SortIcon active={sort.key === "last"} dir={sort.dir} />
+                        </button>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {stats.byPdf.length === 0 && (
+                    {sortedByPdf.length === 0 && (
                       <tr>
                         <td colSpan={3} className="p-3 text-muted-foreground">
                           No downloads yet.
                         </td>
                       </tr>
                     )}
-                    {stats.byPdf.map((p) => (
+                    {sortedByPdf.map((p) => (
                       <tr
                         key={p.id ?? p.title}
                         className="border-b border-border/60 last:border-0 align-top"
