@@ -223,24 +223,56 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h2 className="text-lg font-semibold">Download analytics</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {RANGES.map((r) => (
             <button
               key={r}
               type="button"
-              onClick={() => setDays(r)}
+              onClick={() => setRange(presetRange(r))}
               className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                days === r
+                activePreset === r
                   ? "border-accent bg-accent text-accent-foreground"
                   : "border-border bg-background/60 text-muted-foreground hover:border-accent"
               }`}
             >
-              {r}d
+              Last {r} days
             </button>
           ))}
+          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-7 gap-2 px-3 text-xs font-normal",
+                  !activePreset && "border-accent text-accent-foreground",
+                )}
+              >
+                <CalendarIcon className="h-3.5 w-3.5" />
+                {fmtDate(range.from)} – {fmtDate(range.to)}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="range"
+                defaultMonth={range.from}
+                selected={{ from: range.from, to: range.to }}
+                onSelect={(r) => {
+                  if (!r?.from) return;
+                  const to = r.to ?? r.from;
+                  setRange({ from: startOfDay(r.from), to: endOfDay(to) });
+                  if (r.to) setPickerOpen(false);
+                }}
+                disabled={{ after: new Date() }}
+                numberOfMonths={2}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
           <button
             type="button"
-            onClick={() => void load(days)}
+            onClick={() => void load(fetchDays)}
             className="rounded-md border border-border px-2 py-1 text-xs hover:border-accent"
           >
             {loading ? (
