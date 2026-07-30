@@ -180,6 +180,13 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
             <span className="font-semibold text-foreground">{stats.byPdf.length}</span> PDFs.
           </p>
 
+          <DownloadTimeline
+            days={stats.days}
+            byDay={stats.byDay}
+            pdfs={stats.byPdf}
+            events={stats.events}
+          />
+
           <div className="grid gap-6 md:grid-cols-2">
             <div>
               <h3 className="text-sm font-medium mb-2">Downloads per day</h3>
