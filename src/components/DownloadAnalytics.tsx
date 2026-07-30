@@ -138,10 +138,19 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
               <h3 className="text-sm font-medium mb-2">Downloads per PDF</h3>
               <div className="max-h-72 overflow-y-auto rounded-md border border-border">
                 <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+                    <tr className="border-b border-border/60">
+                      <th className="px-3 py-2 text-left font-medium">PDF</th>
+                      <th className="px-3 py-2 text-right font-medium">Downloads</th>
+                      <th className="px-3 py-2 text-right font-medium">Last download</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {stats.byPdf.length === 0 && (
                       <tr>
-                        <td className="p-3 text-muted-foreground">No downloads yet.</td>
+                        <td colSpan={3} className="p-3 text-muted-foreground">
+                          No downloads yet.
+                        </td>
                       </tr>
                     )}
                     {stats.byPdf.map((p) => (
@@ -149,14 +158,12 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                         key={p.id ?? p.title}
                         className="border-b border-border/60 last:border-0 align-top"
                       >
-                        <td className="px-3 py-2">
-                          <div className="font-medium">{p.title}</div>
-                          <div className="text-xs text-muted-foreground">
-                            last {new Date(p.last).toLocaleString()}
-                          </div>
-                        </td>
+                        <td className="px-3 py-2 font-medium">{p.title}</td>
                         <td className="px-3 py-2 text-right font-semibold tabular-nums">
                           {p.count}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                          {new Date(p.last).toLocaleString()}
                         </td>
                       </tr>
                     ))}
