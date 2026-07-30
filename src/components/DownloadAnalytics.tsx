@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminDownloadStats } from "@/integrations/supabase/api.functions";
-import { Loader2, RefreshCw } from "lucide-react";
+import { ArrowDown, ArrowUp, Loader2, RefreshCw } from "lucide-react";
 
 type Stats = {
   days: number;
@@ -9,6 +9,9 @@ type Stats = {
   byPdf: Array<{ id: string | null; title: string; count: number; last: string }>;
 };
 
+type SortKey = "count" | "last";
+type SortDir = "asc" | "desc";
+
 const RANGES = [7, 30, 90] as const;
 
 export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
@@ -16,6 +19,10 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
+    key: "count",
+    dir: "desc",
+  });
 
   const load = useCallback(
     async (range: number) => {
@@ -38,6 +45,32 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
   }, [load, days]);
 
   const maxDay = stats?.byDay.reduce((m, d) => Math.max(m, d.count), 0) ?? 0;
+
+  const sortedByPdf = useMemo(() => {
+    if (!stats) return [];
+    const list = [...stats.byPdf];
+    list.sort((a, b) => {
+      if (sort.key === "count") {
+        return sort.dir === "asc" ? a.count - b.count : b.count - a.count;
+      }
+      return sort.dir === "asc"
+        ? a.last.localeCompare(b.last)
+        : b.last.localeCompare(a.last);
+    });
+    return list;
+  }, [stats, sort]);
+
+  const toggleSort = (key: SortKey) => {
+    setSort((prev) => ({
+      key,
+      dir: prev.key === key && prev.dir === "desc" ? "asc" : "desc",
+    }));
+  };
+
+  const SortIcon = ({ active, dir }: { active: boolean; dir: SortDir }) => {
+    if (!active) return <ArrowUp className="h-3 w-3 opacity-30" />;
+    return dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
+  };
 
   const exportCsv = () => {
     if (!stats) return;
@@ -141,19 +174,35 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                   <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
                     <tr className="border-b border-border/60">
                       <th className="px-3 py-2 text-left font-medium">PDF</th>
-                      <th className="px-3 py-2 text-right font-medium">Downloads</th>
-                      <th className="px-3 py-2 text-right font-medium">Last download</th>
+                      <th className="px-3 py-2 text-right font-medium">
+                        <button
+                          type="button"
+                          onClick={() => toggleSort("count")}
+                          className="inline-flex items-center gap-1 hover:text-foreground"
+                        >
+                          Downloads <SortIcon active={sort.key === "count"} dir={sort.dir} />
+                        </button>
+                      </th>
+                      <th className="px-3 py-2 text-right font-medium">
+                        <button
+                          type="button"
+                          onClick={() => toggleSort("last")}
+                          className="inline-flex items-center gap-1 hover:text-foreground"
+                        >
+                          Last download <SortIcon active={sort.key === "last"} dir={sort.dir} />
+                        </button>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {stats.byPdf.length === 0 && (
+                    {sortedByPdf.length === 0 && (
                       <tr>
                         <td colSpan={3} className="p-3 text-muted-foreground">
                           No downloads yet.
                         </td>
                       </tr>
                     )}
-                    {stats.byPdf.map((p) => (
+                    {sortedByPdf.map((p) => (
                       <tr
                         key={p.id ?? p.title}
                         className="border-b border-border/60 last:border-0 align-top"
