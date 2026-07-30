@@ -259,14 +259,14 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedByPdf.length === 0 && (
+                    {filteredByPdf.length === 0 && (
                       <tr>
                         <td colSpan={4} className="p-3 text-muted-foreground">
-                          No downloads yet.
+                          {search ? "No PDFs match your filter." : "No downloads yet."}
                         </td>
                       </tr>
                     )}
-                    {sortedByPdf.map((p) => (
+                    {filteredByPdf.map((p) => (
                       <tr
                         key={p.id ?? p.title}
                         className="border-b border-border/60 last:border-0 align-top"
