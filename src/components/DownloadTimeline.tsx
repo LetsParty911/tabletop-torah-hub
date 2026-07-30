@@ -156,9 +156,21 @@ export function DownloadTimeline({
               dataKey="total"
               name="All downloads"
               stroke="hsl(var(--accent))"
-              strokeWidth={2}
+              strokeWidth={avgWindow ? 1 : 2}
+              strokeOpacity={avgWindow ? 0.45 : 1}
               fill="url(#dlTotal)"
+              fillOpacity={avgWindow ? 0.35 : 1}
             />
+            {avgWindow > 0 && (
+              <Line
+                type="monotone"
+                dataKey="avg"
+                name={`${avgWindow}-day average`}
+                stroke="hsl(var(--accent))"
+                strokeWidth={2.5}
+                dot={false}
+              />
+            )}
             {pdfKey && (
               <Line
                 type="monotone"
