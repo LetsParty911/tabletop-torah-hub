@@ -63,8 +63,13 @@ export function DownloadToPrintButton({
       setPhase("preparing");
       onClick?.();
 
-      // Fire-and-forget anonymous download tracking. Must never block/delay the download.
-      if (publicationId || publicationTitle) {
+      // Fire-and-forget anonymous download tracking. Must never block/delay the
+      // download. Admin routes are never measured or recorded.
+      const onAdminRoute =
+        typeof window !== "undefined" &&
+        (window.location.pathname === "/admin" ||
+          window.location.pathname.startsWith("/admin/"));
+      if (!onAdminRoute && (publicationId || publicationTitle)) {
         try {
           const payload = JSON.stringify({
             publication_id: publicationId,
