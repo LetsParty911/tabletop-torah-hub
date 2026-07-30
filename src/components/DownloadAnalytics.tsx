@@ -310,13 +310,14 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
       {stats && (
         <>
           <p className="text-sm text-muted-foreground mb-4">
-            <span className="font-semibold text-foreground">{stats.total}</span> downloads in the
-            last {stats.days} days across{" "}
+            <span className="font-semibold text-foreground">{stats.total}</span> downloads from{" "}
+            {fmtDate(range.from)} to {fmtDate(range.to)} ({stats.days} days) across{" "}
             <span className="font-semibold text-foreground">{stats.byPdf.length}</span> PDFs.
           </p>
 
           <DownloadTimeline
-            days={stats.days}
+            from={range.from}
+            to={range.to}
             byDay={stats.byDay}
             pdfs={stats.byPdf}
             events={stats.events}
