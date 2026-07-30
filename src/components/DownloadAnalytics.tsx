@@ -108,11 +108,17 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
 
   const exportCsv = () => {
     if (!stats) return;
-    const lines = ["type,key,count,last,last_downloader"];
-    for (const d of stats.byDay) lines.push(`day,${d.day},${d.count},,`);
-    for (const p of stats.byPdf)
+    const escape = (s: string) => `"${s.replace(/"/g, '""')}"`;
+    const lines: string[] = [];
+    lines.push("Downloads per day");
+    lines.push("Day,Downloads");
+    for (const d of stats.byDay) lines.push(`${d.day},${d.count}`);
+    lines.push("");
+    lines.push("Downloads per PDF");
+    lines.push("PDF Title,Downloads,Last download,Last downloader");
+    for (const p of filteredByPdf)
       lines.push(
-        `pdf,"${p.title.replace(/"/g, '""')}",${p.count},${p.last},"${(p.lastWho ?? "").replace(/"/g, '""')}"`,
+        `${escape(p.title)},${p.count},${p.last},${escape(p.lastWho ?? "Anonymous")}`,
       );
     const url = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
     const a = document.createElement("a");
