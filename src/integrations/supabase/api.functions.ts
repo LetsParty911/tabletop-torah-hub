@@ -2689,3 +2689,56 @@ export const adminListPdfsMissingDescription = createServerFn({ method: "POST" }
     if (error) throw new Error(error.message);
     return { rows: (rows ?? []) as Array<{ id: string; title: string }> };
   });
+
+// ---------- Admin: download analytics ----------
+export const adminDownloadStats = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; days?: number }) =>
+    z
+      .object({ accessToken: z.string().min(10), days: z.number().int().min(1).max(365).optional() })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const days = data.days ?? 30;
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: rows, error } = await admin
+      .from("download_events")
+      .select("created_at, publication_id, publication_title")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(20000);
+    if (error) throw new Error(error.message);
+
+    const events = (rows ?? []) as Array<{
+      created_at: string;
+      publication_id: string | null;
+      publication_title: string | null;
+    }>;
+
+    const byDayMap = new Map<string, number>();
+    const byPdfMap = new Map<string, { id: string | null; title: string; count: number; last: string }>();
+
+    for (const e of events) {
+      const day = new Date(e.created_at).toISOString().slice(0, 10);
+      byDayMap.set(day, (byDayMap.get(day) ?? 0) + 1);
+
+      const title = e.publication_title || "(untitled)";
+      const key = e.publication_id || `title:${title}`;
+      const cur = byPdfMap.get(key);
+      if (cur) {
+        cur.count += 1;
+        if (e.created_at > cur.last) cur.last = e.created_at;
+      } else {
+        byPdfMap.set(key, { id: e.publication_id, title, count: 1, last: e.created_at });
+      }
+    }
+
+    const byDay = Array.from(byDayMap.entries())
+      .map(([day, count]) => ({ day, count }))
+      .sort((a, b) => (a.day < b.day ? 1 : -1));
+    const byPdf = Array.from(byPdfMap.values()).sort((a, b) => b.count - a.count);
+
+    return { days, total: events.length, byDay, byPdf };
+  });

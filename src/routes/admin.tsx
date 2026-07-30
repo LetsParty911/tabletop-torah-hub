@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { DownloadAnalytics } from "@/components/DownloadAnalytics";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -2436,6 +2437,13 @@ function AdminPage() {
                 </>
               );
             })()}
+          </div>
+        </section>
+
+        {/* Download analytics */}
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <DownloadAnalytics accessToken={accessToken ?? ""} />
           </div>
         </section>
 
