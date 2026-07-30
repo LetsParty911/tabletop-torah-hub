@@ -204,7 +204,34 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
             </div>
 
             <div>
-              <h3 className="text-sm font-medium mb-2">Downloads per PDF</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                <h3 className="text-sm font-medium">Downloads per PDF</h3>
+                <div className="relative flex-1 sm:max-w-xs">
+                  <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Filter by PDF title…"
+                    className="w-full rounded-md border border-border bg-background py-1.5 pl-8 pr-7 text-sm focus:border-accent focus:outline-none"
+                  />
+                  {search && (
+                    <button
+                      type="button"
+                      onClick={() => setSearch("")}
+                      aria-label="Clear filter"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+                {search && (
+                  <span className="text-xs text-muted-foreground">
+                    {filteredByPdf.length} of {sortedByPdf.length}
+                  </span>
+                )}
+              </div>
               <div className="max-h-72 overflow-y-auto rounded-md border border-border">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
