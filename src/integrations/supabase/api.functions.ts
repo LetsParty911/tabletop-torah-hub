@@ -2758,7 +2758,16 @@ export const adminDownloadStats = createServerFn({ method: "POST" })
     const byDay = Array.from(byDayMap.entries())
       .map(([day, count]) => ({ day, count }))
       .sort((a, b) => (a.day < b.day ? 1 : -1));
-    const byPdf = Array.from(byPdfMap.values()).sort((a, b) => b.count - a.count);
+    const byPdf = Array.from(byPdfMap.values()).map((p) => ({
+      ...p,
+      key: p.id || `title:${p.title}`,
+    })).sort((a, b) => b.count - a.count);
 
-    return { days, total: events.length, byDay, byPdf };
+    const eventList = events.slice(0, 5000).map((e) => ({
+      key: e.publication_id || `title:${e.publication_title || "(untitled)"}`,
+      at: e.created_at,
+      who: whoOf(e),
+    }));
+
+    return { days, total: events.length, byDay, byPdf, events: eventList };
   });

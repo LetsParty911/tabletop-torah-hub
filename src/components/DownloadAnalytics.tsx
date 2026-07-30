@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminDownloadStats } from "@/integrations/supabase/api.functions";
-import { ArrowDown, ArrowUp, Loader2, RefreshCw } from "lucide-react";
+import { ArrowDown, ArrowUp, Loader2, RefreshCw, X } from "lucide-react";
 
 type Stats = {
   days: number;
@@ -12,7 +12,9 @@ type Stats = {
     count: number;
     last: string;
     lastWho?: string | null;
+    key?: string;
   }>;
+  events?: Array<{ key: string; at: string; who: string | null }>;
 };
 
 type SortKey = "count" | "last";
@@ -65,6 +67,25 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
     });
     return list;
   }, [stats, sort]);
+
+  const [selected, setSelected] = useState<{ key: string; title: string } | null>(null);
+
+  const drilldown = useMemo(() => {
+    if (!stats || !selected) return null;
+    const evs = (stats.events ?? [])
+      .filter((e) => e.key === selected.key)
+      .sort((a, b) => b.at.localeCompare(a.at));
+    const dayMap = new Map<string, number>();
+    for (const e of evs) {
+      const day = new Date(e.at).toISOString().slice(0, 10);
+      dayMap.set(day, (dayMap.get(day) ?? 0) + 1);
+    }
+    const byDay = Array.from(dayMap.entries())
+      .map(([day, count]) => ({ day, count }))
+      .sort((a, b) => (a.day < b.day ? 1 : -1));
+    const max = byDay.reduce((m, d) => Math.max(m, d.count), 0);
+    return { events: evs, byDay, max };
+  }, [stats, selected]);
 
   const toggleSort = (key: SortKey) => {
     setSort((prev) => ({
@@ -216,7 +237,17 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                         key={p.id ?? p.title}
                         className="border-b border-border/60 last:border-0 align-top"
                       >
-                        <td className="px-3 py-2 font-medium">{p.title}</td>
+                        <td className="px-3 py-2 font-medium">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelected({ key: p.key ?? p.id ?? `title:${p.title}`, title: p.title })
+                            }
+                            className="text-left underline decoration-dotted underline-offset-4 hover:text-accent"
+                          >
+                            {p.title}
+                          </button>
+                        </td>
                         <td className="px-3 py-2 text-right font-semibold tabular-nums">
                           {p.count}
                         </td>
@@ -234,6 +265,87 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
             </div>
           </div>
         </>
+      )}
+
+      {selected && drilldown && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-lg border border-border bg-background shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
+              <div>
+                <h3 className="font-semibold">{selected.title}</h3>
+                <p className="text-xs text-muted-foreground">
+                  {drilldown.events.length} downloads in the last {stats?.days} days
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelected(null)}
+                aria-label="Close"
+                className="rounded p-1 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="max-h-[70vh] overflow-y-auto p-4 space-y-5">
+              <div>
+                <h4 className="text-sm font-medium mb-2">Daily breakdown</h4>
+                {drilldown.byDay.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No downloads in this range.</p>
+                )}
+                <div className="space-y-1">
+                  {drilldown.byDay.map((d) => (
+                    <div key={d.day} className="flex items-center gap-2 text-xs">
+                      <span className="w-24 shrink-0 tabular-nums text-muted-foreground">{d.day}</span>
+                      <div className="h-2 flex-1 rounded bg-muted">
+                        <div
+                          className="h-2 rounded bg-accent"
+                          style={{ width: `${drilldown.max ? (d.count / drilldown.max) * 100 : 0}%` }}
+                        />
+                      </div>
+                      <span className="w-8 text-right font-semibold tabular-nums">{d.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium mb-2">Exact timestamps</h4>
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+                    <tr className="border-b border-border/60">
+                      <th className="px-3 py-2 text-left font-medium">When</th>
+                      <th className="px-3 py-2 text-left font-medium">Downloader</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {drilldown.events.map((e, i) => (
+                      <tr key={`${e.at}-${i}`} className="border-b border-border/60 last:border-0">
+                        <td className="px-3 py-1.5 tabular-nums">{new Date(e.at).toLocaleString()}</td>
+                        <td className="px-3 py-1.5 text-muted-foreground">{e.who ?? "Anonymous"}</td>
+                      </tr>
+                    ))}
+                    {drilldown.events.length === 0 && (
+                      <tr>
+                        <td colSpan={2} className="px-3 py-2 text-muted-foreground">
+                          No events.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
