@@ -2443,7 +2443,7 @@ function AdminPage() {
         {/* Download analytics */}
         <section className="parchment-frame">
           <div className="parchment-panel">
-            <DownloadAnalytics accessToken={accessToken} />
+            <DownloadAnalytics accessToken={accessToken ?? ""} />
           </div>
         </section>
 
