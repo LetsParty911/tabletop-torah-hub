@@ -69,6 +69,12 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
     return list;
   }, [stats, sort]);
 
+  const filteredByPdf = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return sortedByPdf;
+    return sortedByPdf.filter((p) => p.title.toLowerCase().includes(q));
+  }, [sortedByPdf, search]);
+
   const [selected, setSelected] = useState<{ key: string; title: string } | null>(null);
 
   const drilldown = useMemo(() => {
