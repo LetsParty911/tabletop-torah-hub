@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminDownloadStats } from "@/integrations/supabase/api.functions";
-import { Loader2, RefreshCw } from "lucide-react";
+import { ArrowDown, ArrowUp, Loader2, RefreshCw } from "lucide-react";
 
 type Stats = {
   days: number;
@@ -8,6 +8,9 @@ type Stats = {
   byDay: Array<{ day: string; count: number }>;
   byPdf: Array<{ id: string | null; title: string; count: number; last: string }>;
 };
+
+type SortKey = "count" | "last";
+type SortDir = "asc" | "desc";
 
 const RANGES = [7, 30, 90] as const;
 
