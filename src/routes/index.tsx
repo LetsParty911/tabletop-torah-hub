@@ -175,7 +175,7 @@ function Index() {
   const filteredResources =
     audienceFilter === "All"
       ? resources
-      : resources.filter((r) => r.audience === audienceFilter);
+      : resources.filter((r) => normalizeAudience(r.audience) === audienceFilter);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
