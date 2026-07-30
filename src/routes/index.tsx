@@ -165,6 +165,16 @@ export const Route = createFileRoute("/")({
   },
 });
 
+// Tolerates casing/synonym differences in the stored audience value.
+function normalizeAudience(value: string | null): "Children" | "Families" | "Adults" | null {
+  const v = (value ?? "").trim().toLowerCase();
+  if (!v) return null;
+  if (v.startsWith("child") || v.startsWith("kid") || v.startsWith("youth")) return "Children";
+  if (v.startsWith("famil")) return "Families";
+  if (v.startsWith("adult") || v.startsWith("teen")) return "Adults";
+  return null;
+}
+
 function Index() {
   const { label: currentLabel, parshaKey: currentParshaKey, resources, isFallback, fallbackParshaLabel } =
     Route.useLoaderData() as LoaderData;
