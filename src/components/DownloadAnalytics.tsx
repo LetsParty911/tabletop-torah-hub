@@ -31,6 +31,7 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
     key: "count",
     dir: "desc",
   });
+  const [search, setSearch] = useState("");
 
   const load = useCallback(
     async (range: number) => {
