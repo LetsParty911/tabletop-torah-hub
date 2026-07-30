@@ -84,6 +84,22 @@ export function DownloadTimeline({
             </p>
           )}
         </div>
+        <div className="flex items-center gap-1 rounded-full border border-border p-0.5">
+          {([0, 3, 7] as const).map((w) => (
+            <button
+              key={w}
+              type="button"
+              onClick={() => setAvgWindow(w)}
+              className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
+                avgWindow === w
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {w === 0 ? "Raw" : `${w}-day avg`}
+            </button>
+          ))}
+        </div>
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
           Compare PDF
           <select
