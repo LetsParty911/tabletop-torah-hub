@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminDownloadStats } from "@/integrations/supabase/api.functions";
-import { ArrowDown, ArrowUp, Loader2, RefreshCw, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Loader2, RefreshCw, Search, X } from "lucide-react";
 
 type Stats = {
   days: number;
