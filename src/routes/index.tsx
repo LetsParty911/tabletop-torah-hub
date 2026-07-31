@@ -369,6 +369,11 @@ function Index() {
                         <h3 className="mt-3 font-serif text-base sm:text-xl font-bold text-primary leading-snug">
                           {r.title}
                         </h3>
+                        {r.publisher && (
+                          <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">
+                            By {r.publisher}
+                          </p>
+                        )}
                         {r.subtitle && (
                           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                             {standardizeCopy(r.subtitle)}
