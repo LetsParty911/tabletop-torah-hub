@@ -510,6 +510,13 @@ export type PublicPdf = {
   createdAt: string | null;
   updatedAt: string | null;
   weekOf: string | null;
+  description: string | null;
+  audience: string | null;
+  format_type: string | null;
+  page_count: number | null;
+  badge: string | null;
+  publication: string | null;
+  parsha_key: string | null;
 };
 
 export const getPdfById = createServerFn({ method: "GET" })
@@ -518,8 +525,8 @@ export const getPdfById = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }) => {
     const admin = getSupabaseAdmin();
-    // Try selecting updated_at (may not exist in all environments); fall back
-    // to the base set of columns if that column is missing.
+    // Try selecting the richest column set first (some columns may not exist in
+    // all environments); fall back progressively to the base set.
     type PdfRow = {
       id: string;
       title: string;
@@ -529,27 +536,34 @@ export const getPdfById = createServerFn({ method: "GET" })
       created_at: string | null;
       week_of: string | null;
       updated_at?: string | null;
+      description?: string | null;
+      audience?: string | null;
+      format_type?: string | null;
+      page_count?: number | null;
+      badge?: string | null;
+      publication?: string | null;
+      parsha_key?: string | null;
     };
+    const selects = [
+      "id, title, subtitle, file_path, published, created_at, week_of, updated_at, description, audience, format_type, page_count, badge, publication, parsha_key",
+      "id, title, subtitle, file_path, published, created_at, week_of, updated_at",
+      "id, title, subtitle, file_path, published, created_at, week_of",
+    ];
     let row: PdfRow | null = null;
-    const withUpdated = await admin
-      .from("pdfs")
-      .select("id, title, subtitle, file_path, published, created_at, week_of, updated_at")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (withUpdated.error) {
-      const fallback = await admin
+    let resolved = false;
+    for (const select of selects) {
+      const res = await admin
         .from("pdfs")
-        .select("id, title, subtitle, file_path, published, created_at, week_of")
+        .select(select)
         .eq("id", data.id)
         .maybeSingle();
-      if (fallback.error) {
-        return { pdf: null as null | PublicPdf };
+      if (!res.error) {
+        row = (res.data ?? null) as PdfRow | null;
+        resolved = true;
+        break;
       }
-      row = (fallback.data ?? null) as PdfRow | null;
-    } else {
-      row = (withUpdated.data ?? null) as PdfRow | null;
     }
-    if (!row || !row.published) {
+    if (!resolved || !row || !row.published) {
       return { pdf: null as null | PublicPdf };
     }
     const { data: signed } = await admin.storage
@@ -564,9 +578,17 @@ export const getPdfById = createServerFn({ method: "GET" })
         createdAt: row.created_at ?? null,
         updatedAt: row.updated_at ?? null,
         weekOf: row.week_of ?? null,
+        description: row.description ?? null,
+        audience: row.audience ?? null,
+        format_type: row.format_type ?? null,
+        page_count: typeof row.page_count === "number" ? row.page_count : null,
+        badge: row.badge ?? null,
+        publication: row.publication ?? null,
+        parsha_key: row.parsha_key ?? null,
       } as PublicPdf,
     };
   });
+
 
 // ---------- Public: live current parsha (Hebcal truth, ignores override) ----------
 // The admin Weekly Upload Checklist uses this so it always tracks the actual
