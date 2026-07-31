@@ -7,6 +7,7 @@ import { WhatsNewPopup } from "@/components/WhatsNewPopup";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
+import { InlineEmailSignup } from "@/components/InlineEmailSignup";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { normalizeAudience } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
@@ -340,6 +341,7 @@ function Index() {
                 Remind Me Weekly
               </a>
             </div>
+            <InlineEmailSignup sourceId="homepage-hero" className="mt-6 sm:mt-8" />
           </div>
         </section>
 
