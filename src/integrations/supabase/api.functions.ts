@@ -461,6 +461,7 @@ export const listPublicationsMeta = createServerFn({ method: "GET" }).handler(
 export type ArchivePdf = {
   id: string;
   title: string;
+  publisher: string | null;
   subtitle: string | null;
   summary_quick: string | null;
   description: string | null;
