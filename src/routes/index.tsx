@@ -312,7 +312,7 @@ function Index() {
               Free Divrei Torah for Your Shabbos Table
             </h1>
             <p className="mt-4 sm:mt-6 font-serif text-lg sm:text-xl md:text-2xl text-primary max-w-2xl mx-auto">
-              {resources.length} handpicked, print-ready {resources.length === 1 ? "selection" : "selections"} for {currentLabel} — for children, families, and adults.
+              {resources.length} handpicked, print-ready selections for {currentLabel} — for children, families, and adults.
             </p>
             <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <a
@@ -325,7 +325,7 @@ function Index() {
                 }}
                 className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md"
               >
-                Browse This Week's Collection ↓
+                Browse This Week's Collection
               </a>
               <a
                 href="#weekly-email-signup"
@@ -340,10 +340,6 @@ function Index() {
                 Remind Me Weekly
               </a>
             </div>
-            <div className="mt-4 flex justify-center">
-              <ShareButton />
-            </div>
-
           </div>
         </section>
 
