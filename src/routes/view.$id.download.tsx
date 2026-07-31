@@ -9,6 +9,33 @@ const SIGNED_URL_TTL_SECONDS = 60 * 60; // 1 hour signed URL
 const CACHE_SAFETY_MS = 5 * 60 * 1000; // refresh 5 min before expiry
 const cache = new Map<string, CacheEntry>();
 
+// Filename format: TorahForTheTable.com_Parshas-{Parsha}_{PublicationName}.pdf
+// Spaces become hyphens; characters illegal in filenames are stripped.
+function sanitizeSegment(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9 _-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export function buildDownloadFilename(
+  parshaKey: string | null | undefined,
+  publicationName: string | null | undefined,
+): string {
+  const parsha = sanitizeSegment(
+    (parshaKey || "").replace(/^(parshas|parashat|parsha)\s+/i, ""),
+  );
+  const pub = sanitizeSegment(publicationName || "Publication") || "Publication";
+  const parts = ["TorahForTheTable.com"];
+  if (parsha) parts.push(`Parshas-${parsha}`);
+  parts.push(pub);
+  return `${parts.join("_")}.pdf`;
+}
+
 export const Route = createFileRoute("/view/$id/download")({
   server: {
     handlers: {
@@ -27,16 +54,17 @@ export const Route = createFileRoute("/view/$id/download")({
         const admin = getSupabaseAdmin();
         const { data: row, error } = await admin
           .from("pdfs")
-          .select("title, file_path, published")
+          .select("title, file_path, published, parsha_key, publication")
           .eq("id", id)
           .maybeSingle();
         if (error || !row || !row.published) {
           return new Response("Not found", { status: 404 });
         }
 
-        const safeName =
-          (row.title || "document").replace(/[^a-zA-Z0-9._ -]/g, "_").trim() +
-          ".pdf";
+        const safeName = buildDownloadFilename(
+          row.parsha_key,
+          row.publication || row.title,
+        );
 
         const { data: signed, error: sErr } = await admin.storage
           .from("pdfs")
