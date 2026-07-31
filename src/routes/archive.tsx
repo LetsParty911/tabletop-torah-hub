@@ -101,6 +101,7 @@ function ArchivePage() {
   const [yearFilter, setYearFilter] = useState<string>("all");
   const [parshaFilter, setParshaFilter] = useState<string>("all");
   const [query, setQuery] = useState<string>("");
+  const [audienceFilter, setAudienceFilter] = useState<"All" | AudienceKey>("All");
 
   const allParshiyos = useMemo(() => {
     const set = new Set<string>();
@@ -116,18 +117,53 @@ function ArchivePage() {
       const parshiyos: ArchiveParsha[] = [];
       for (const p of y.parshiyos) {
         if (parshaFilter !== "all" && p.parshaKey !== parshaFilter) continue;
-        const pdfs = q
+        let pdfs = q
           ? p.pdfs.filter((r) =>
               [r.title, r.subtitle, r.description]
                 .filter(Boolean)
                 .some((v) => (v as string).toLowerCase().includes(q)),
             )
           : p.pdfs;
+        if (audienceFilter !== "All") {
+          pdfs = pdfs.filter(
+            (r) => normalizeAudience(r.audience, r.title) === audienceFilter,
+          );
+        }
         if (pdfs.length) parshiyos.push({ ...p, pdfs });
       }
       if (parshiyos.length) out.push({ ...y, parshiyos });
     }
     return out;
+  }, [years, yearFilter, parshaFilter, query, audienceFilter]);
+
+  // Audience counts reflect the other active filters (year, parsha, search).
+  const audienceCounts = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const counts: Record<"All" | AudienceKey, number> = {
+      All: 0,
+      Children: 0,
+      Families: 0,
+      Adults: 0,
+    };
+    for (const y of years) {
+      if (yearFilter !== "all" && String(y.year) !== yearFilter) continue;
+      for (const p of y.parshiyos) {
+        if (parshaFilter !== "all" && p.parshaKey !== parshaFilter) continue;
+        for (const r of p.pdfs) {
+          if (
+            q &&
+            ![r.title, r.subtitle, r.description]
+              .filter(Boolean)
+              .some((v) => (v as string).toLowerCase().includes(q))
+          )
+            continue;
+          counts.All += 1;
+          const a = normalizeAudience(r.audience, r.title);
+          if (a) counts[a] += 1;
+        }
+      }
+    }
+    return counts;
   }, [years, yearFilter, parshaFilter, query]);
 
   const totalPdfs = filteredYears.reduce(
@@ -136,7 +172,11 @@ function ArchivePage() {
     0,
   );
 
-  const hasActiveFilters = yearFilter !== "all" || parshaFilter !== "all" || query.trim() !== "";
+  const hasActiveFilters =
+    yearFilter !== "all" ||
+    parshaFilter !== "all" ||
+    query.trim() !== "" ||
+    audienceFilter !== "All";
 
   return (
     <div className="min-h-screen bg-background">
