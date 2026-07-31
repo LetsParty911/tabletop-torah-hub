@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import {
   adminListPdfs,
   adminUploadPdf,
+  listCanonicalPublications,
   adminReplacePdfFile,
   adminTogglePublished,
   adminBulkPublish,
@@ -257,6 +258,20 @@ function AdminPage() {
   const [published, setPublished] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [uploadPublication, setUploadPublication] = useState<string>("");
+  // Canonical publications (publications table). Empty before the migration runs,
+  // in which case the Title field falls back to free text.
+  type CanonicalPub = {
+    id: string;
+    name: string;
+    publisher: string | null;
+    default_audience: string | null;
+    default_format_type: string | null;
+    sort_order: number;
+    active: boolean;
+  };
+  const [canonicalPubs, setCanonicalPubs] = useState<CanonicalPub[]>([]);
+  const [publicationId, setPublicationId] = useState<string>("");
+  const [titleFreeText, setTitleFreeText] = useState(false);
   const [uploadPublicationTouched, setUploadPublicationTouched] = useState(false);
   const [uploadDescription, setUploadDescription] = useState("");
   const [uploadAudience, setUploadAudience] = useState<string>("");
@@ -741,8 +756,39 @@ function AdminPage() {
   };
 
 
+  // Select a canonical publication by id: fills the title and the canonical defaults.
+  const selectPublicationId = (id: string) => {
+    setPublicationId(id);
+    const pub = canonicalPubs.find((p) => p.id === id);
+    if (!pub) return;
+    setTitle(pub.name);
+    if (pub.default_audience) setUploadAudience(pub.default_audience);
+    if (pub.default_format_type) setUploadFormatType(pub.default_format_type);
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await listCanonicalPublications();
+        setCanonicalPubs((r?.publications ?? []) as CanonicalPub[]);
+      } catch {
+        setCanonicalPubs([]);
+      }
+    })();
+  }, []);
+
   const useExpectedTitle = (title: string) => {
     setTitle(title);
+    const match = canonicalPubs.find(
+      (p) => p.name.trim().toLowerCase() === title.trim().toLowerCase(),
+    );
+    if (match) {
+      selectPublicationId(match.id);
+      setTitleFreeText(false);
+    } else {
+      setPublicationId("");
+      setTitleFreeText(true);
+    }
     if (resolvedCurrentParsha) {
       setParshaKey(resolvedCurrentParsha);
       setParshaUserTouched(false);
@@ -922,6 +968,7 @@ function AdminPage() {
           fileName: file.name,
           fileBase64,
           jewishYear,
+          publicationId: publicationId || null,
           primaryCategory: null,
           publication: (uploadPublication || null) as any,
           tags: null,
@@ -934,6 +981,8 @@ function AdminPage() {
         },
       });
       setTitle("");
+      setPublicationId("");
+      setTitleFreeText(false);
       setSubtitle("");
       setFile(null);
       setUploadPublication("");
@@ -1964,13 +2013,56 @@ function AdminPage() {
                 )}
               </label>
               <label className="block">
-                <span className="text-sm font-medium">Title</span>
-                <input
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                />
+                <span className="text-sm font-medium">Publication</span>
+                {canonicalPubs.length > 0 && !titleFreeText ? (
+                  <select
+                    required
+                    value={publicationId}
+                    onChange={(e) => {
+                      if (e.target.value === "__other__") {
+                        setTitleFreeText(true);
+                        setPublicationId("");
+                        setTitle("");
+                        return;
+                      }
+                      selectPublicationId(e.target.value);
+                    }}
+                    className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                  >
+                    <option value="" disabled>
+                      Select a publication
+                    </option>
+                    {canonicalPubs
+                      .filter((p) => p.active)
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    <option value="__other__">Other (type a title)…</option>
+                  </select>
+                ) : (
+                  <>
+                    <input
+                      required
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                    />
+                    {canonicalPubs.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTitleFreeText(false);
+                          setTitle("");
+                        }}
+                        className="mt-1 text-xs font-semibold text-accent underline"
+                      >
+                        Choose from publications instead
+                      </button>
+                    )}
+                  </>
+                )}
               </label>
               <label className="block md:col-span-2">
                 <span className="text-sm font-medium">Subtitle (optional)</span>
