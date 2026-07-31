@@ -6,6 +6,7 @@ import { WhatsNewBanner } from "@/components/WhatsNewBanner";
 import { WhatsNewPopup } from "@/components/WhatsNewPopup";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { buildDownloadFilename } from "@/lib/download-filename";
 
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 import {
@@ -399,6 +400,10 @@ function Index() {
                             href={`/view/${r.id}/download`}
                             publicationId={r.id}
                             publicationTitle={r.title}
+                            filename={buildDownloadFilename(
+                              (r as { parsha_key?: string | null }).parsha_key ?? currentParshaKey,
+                              r.publication || r.title,
+                            )}
                             onClick={() => {
                               trackEvent("pdf_download", pdfParams(r));
                               if (typeof window !== "undefined") {
@@ -572,6 +577,10 @@ function Index() {
                           href={`/view/${r.id}/download`}
                           publicationId={r.id}
                           publicationTitle={r.title}
+                          filename={buildDownloadFilename(
+                            (r as { parsha_key?: string | null }).parsha_key ?? currentParshaKey,
+                            r.publication || r.title,
+                          )}
                           onClick={() => {
                             trackEvent("pdf_download", pdfParams(r));
                             if (typeof window !== "undefined") {

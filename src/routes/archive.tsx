@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { buildDownloadFilename } from "@/lib/download-filename";
 
 
 
@@ -341,6 +342,10 @@ function ArchivePage() {
                                 href={`/view/${r.id}/download`}
                                 publicationId={r.id}
                                 publicationTitle={r.title}
+                                filename={buildDownloadFilename(
+                                  p.parshaKey,
+                                  (r as { publication?: string | null }).publication || r.title,
+                                )}
 
                                 onClick={() => {
                                   trackEvent("pdf_download", {

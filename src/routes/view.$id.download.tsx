@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
+import { buildDownloadFilename } from "@/lib/download-filename";
 
 // Per-worker-instance in-memory cache of signed download URLs.
 // Workers are stateless across cold starts, but warm instances reuse this
@@ -27,16 +28,17 @@ export const Route = createFileRoute("/view/$id/download")({
         const admin = getSupabaseAdmin();
         const { data: row, error } = await admin
           .from("pdfs")
-          .select("title, file_path, published")
+          .select("title, file_path, published, parsha_key, publication")
           .eq("id", id)
           .maybeSingle();
         if (error || !row || !row.published) {
           return new Response("Not found", { status: 404 });
         }
 
-        const safeName =
-          (row.title || "document").replace(/[^a-zA-Z0-9._ -]/g, "_").trim() +
-          ".pdf";
+        const safeName = buildDownloadFilename(
+          row.parsha_key,
+          row.publication || row.title,
+        );
 
         const { data: signed, error: sErr } = await admin.storage
           .from("pdfs")
