@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Mail, Send } from "lucide-react";
+import { SiteFooter } from "@/components/SiteFooter";
 import { submitContactMessage } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 
@@ -202,15 +203,7 @@ function ContactPage() {
           </a>
         </section>
 
-        <footer className="text-center text-sm text-muted-foreground py-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-          <Link to="/" className="hover:text-primary transition-colors">Home</Link>
-          <span aria-hidden>·</span>
-          <Link to="/about" className="hover:text-primary transition-colors">About</Link>
-          <span aria-hidden>·</span>
-          <Link to="/archive" className="hover:text-primary transition-colors">Browse Archive</Link>
-          <span aria-hidden>·</span>
-          <span>© {new Date().getFullYear()} Torah for the Table</span>
-        </footer>
+        <SiteFooter />
       </div>
     </div>
   );

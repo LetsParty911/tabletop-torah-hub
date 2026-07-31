@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export const Route = createFileRoute("/offline")({
   head: () => ({
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/offline")({
 
 function OfflinePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-6">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
       <div className="max-w-md text-center parchment-panel">
         <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--accent)]">
           Torah for the Table
@@ -32,6 +33,9 @@ function OfflinePage() {
         >
           Try again
         </button>
+      </div>
+      <div className="w-full mt-auto">
+        <SiteFooter />
       </div>
     </div>
   );

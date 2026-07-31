@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export const Route = createFileRoute("/about")({
   component: AboutPage,
@@ -141,15 +142,7 @@ function AboutPage() {
         </section>
 
 
-        <footer className="text-center text-sm text-muted-foreground py-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-          <Link to="/" className="hover:text-primary transition-colors">Home</Link>
-          <span aria-hidden>·</span>
-          <Link to="/archive" className="hover:text-primary transition-colors">Archive</Link>
-          <span aria-hidden>·</span>
-          <Link to="/contact" className="hover:text-primary transition-colors">Contact</Link>
-          <span aria-hidden>·</span>
-          <span>© {new Date().getFullYear()} Torah for the Table</span>
-        </footer>
+        <SiteFooter />
       </div>
     </div>
   );

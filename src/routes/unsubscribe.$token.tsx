@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { SiteFooter } from "@/components/SiteFooter";
 import {
   lookupUnsubscribe,
   confirmUnsubscribe,
@@ -62,8 +63,8 @@ function UnsubscribePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background px-4 py-16 flex items-start justify-center">
-      <div className="parchment-frame max-w-lg w-full">
+    <div className="min-h-screen bg-background px-4 py-16 flex flex-col items-start justify-center">
+      <div className="parchment-frame max-w-lg w-full mx-auto">
         <div className="parchment-panel text-center">
           <h1 className="font-serif text-3xl font-bold text-primary">Unsubscribe</h1>
 
@@ -142,6 +143,9 @@ function UnsubscribePage() {
             </>
           )}
         </div>
+      </div>
+      <div className="w-full mt-auto">
+        <SiteFooter />
       </div>
     </div>
   );
