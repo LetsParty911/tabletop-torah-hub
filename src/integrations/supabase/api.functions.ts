@@ -522,7 +522,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
       if (!pmap.has(r.parsha_key)) pmap.set(r.parsha_key, []);
       pmap.get(r.parsha_key)!.push({
         id: r.id,
-        title: r.title,
+        title: canonical.get(r.id as string) ?? r.title,
         subtitle: r.subtitle,
         summary_quick: r.summary_quick,
         description: (r.description as string | null) ?? null,
