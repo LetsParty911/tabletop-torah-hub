@@ -356,6 +356,11 @@ function Index() {
                 Remind Me Weekly
               </a>
             </div>
+            {resources.length > 0 && (
+              <div className="mt-4 flex justify-center">
+                <ShareButton />
+              </div>
+            )}
             <InlineEmailSignup sourceId="homepage-hero" className="mt-6 sm:mt-8" />
           </div>
         </section>
