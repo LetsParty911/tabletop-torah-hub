@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 export const Route = createFileRoute("/about")({
   component: AboutPage,
   head: () => {
-    const title = "About | Torah for the Table";
+    const title = "About — Torah for the Table";
     const description =
       "Learn about Torah for the Table — a weekly collection of Divrei Torah gathered for the Shabbos table.";
     const url = "https://torahforthetable.com/about";

@@ -21,7 +21,7 @@ export const PUBLICATION_KEYS = [
 
 export const TAG_LABELS: Record<string, string> = {
   stories: "Stories",
-  halachah: "Halachah",
+  halachah: "Halacha",
   hashkafah: "Hashkafah",
   mussar: "Mussar",
   chassidus: "Chassidus",

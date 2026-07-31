@@ -763,7 +763,7 @@ async function sendWelcomeEmailSafe(
     "",
     "Thank you for subscribing. You're now on the list to receive our weekly Divrei Torah collection.",
     "",
-    "Expect a new email each week, usually Thursday or Friday, with that week's parsha resources ready for your Shabbos table.",
+    "Expect a new email each week, usually Thursday or Friday, with that week's Parshas resources ready for your Shabbos table.",
     "",
     unsubscribeUrl
       ? `You can unsubscribe anytime using the link at the bottom of any email, or directly here: ${unsubscribeUrl}`
@@ -780,7 +780,7 @@ async function sendWelcomeEmailSafe(
     <h1 style="font-size:22px;margin:0 0 16px;color:#5a3a1f;">Welcome to Torah for the Table</h1>
     <p style="margin:0 0 14px;">Shalom and welcome.</p>
     <p style="margin:0 0 14px;">Thank you for subscribing. You&rsquo;re now on the list to receive our weekly Divrei Torah collection.</p>
-    <p style="margin:0 0 14px;">Expect a new email each week, usually <strong>Thursday or Friday</strong>, with that week&rsquo;s parsha resources ready for your Shabbos table.</p>
+    <p style="margin:0 0 14px;">Expect a new email each week, usually <strong>Thursday or Friday</strong>, with that week&rsquo;s Parshas resources ready for your Shabbos table.</p>
     <p style="margin:0 0 14px;color:#55575d;font-size:13px;">
       You can unsubscribe anytime using the link at the bottom of any email we send you${unsubscribeUrl ? `, or directly <a href="${unsubscribeUrl}" style="color:#5a3a1f;">here</a>` : ""}.
     </p>

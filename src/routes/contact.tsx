@@ -8,7 +8,7 @@ const CONTACT_EMAIL = "torahforthetableinc@gmail.com";
 
 export const Route = createFileRoute("/contact")({
   head: () => {
-    const title = "Contact | Torah for the Table";
+    const title = "Contact — Torah for the Table";
     const description =
       "Get in touch with Torah for the Table for questions, suggestions, submissions, or corrections.";
     const url = "https://torahforthetable.com/contact";
