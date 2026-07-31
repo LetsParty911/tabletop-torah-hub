@@ -603,6 +603,11 @@ function Index() {
                 </Link>
               </div>
             )}
+            {resources.length > 0 && (
+              <div className="mt-5 flex justify-center">
+                <ShareButton />
+              </div>
+            )}
           </div>
         </section>
 
