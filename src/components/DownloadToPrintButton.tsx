@@ -8,6 +8,8 @@ type DownloadToPrintButtonProps = {
   className?: string;
   publicationId?: string;
   publicationTitle?: string;
+  /** Preferred download filename; falls back to the server Content-Disposition. */
+  filename?: string;
 };
 
 export function DownloadToPrintButton({
@@ -16,6 +18,7 @@ export function DownloadToPrintButton({
   className = "",
   publicationId,
   publicationTitle,
+  filename: preferredFilename,
 }: DownloadToPrintButtonProps) {
 
   const [loading, setLoading] = useState(false);
@@ -104,7 +107,7 @@ export function DownloadToPrintButton({
 
         const disposition = res.headers.get("Content-Disposition") || "";
         const match = /filename="?([^"]+)"?/i.exec(disposition);
-        const filename = match?.[1] || "document.pdf";
+        const filename = preferredFilename || match?.[1] || "document.pdf";
 
         const totalHeader = res.headers.get("Content-Length");
         const total = totalHeader ? parseInt(totalHeader, 10) : 0;
@@ -207,7 +210,7 @@ export function DownloadToPrintButton({
         }, 1200);
       }
     },
-    [href, loading, onClick, startFakeProgress, stopFakeProgress],
+    [href, loading, onClick, preferredFilename, startFakeProgress, stopFakeProgress],
   );
 
   const label = loading
