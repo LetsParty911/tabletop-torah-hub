@@ -140,7 +140,7 @@ export const Route = createFileRoute("/")({
     </div>
   ),
   head: () => {
-    const title = "Torah for the Table | Weekly Divrei Torah";
+    const title = "Torah for the Table — Weekly Divrei Torah";
     const description =
       "A weekly collection of Divrei Torah for Shabbos and Yom Tov — thoughtfully gathered in one quiet, uncluttered place for the Shabbos table.";
     const url = "https://torahforthetable.com/";
@@ -439,7 +439,7 @@ function Index() {
             )}
             {resources.length > 0 && (
               <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent">
-                {resources.length} {resources.length === 1 ? "Devar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : " this week"}
+                {resources.length} {resources.length === 1 ? "Dvar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : " this week"}
               </p>
             )}
 

@@ -1444,7 +1444,7 @@ function AdminPage() {
           <div className="parchment-panel">
             <h2 className="font-serif text-2xl font-semibold text-primary">Manual Parsha Override</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Leave empty to use Hebcal's automatic parsha. An override only applies to the current week's Shabbos — once that Shabbos passes, Hebcal automatically takes over again.
+              Leave empty to use Hebcal's automatic Parshas. An override only applies to the current week's Shabbos — once that Shabbos passes, Hebcal automatically takes over again.
             </p>
             <form onSubmit={handleOverride} className="mt-4 flex gap-3">
               <input
@@ -1933,7 +1933,7 @@ function AdminPage() {
             <h2 className="font-serif text-2xl font-semibold text-primary">Upload PDF</h2>
             <form onSubmit={handleUpload} className="mt-4 grid gap-4 md:grid-cols-2">
               <label className="block">
-                <span className="text-sm font-medium">Parsha</span>
+                <span className="text-sm font-medium">Parshas</span>
                 {!uploadParshaReady ? (
                   <div className="mt-1 rounded-md border-2 border-accent/60 bg-background px-3 py-2 text-sm text-muted-foreground">
                     Loading current parsha…
@@ -2255,7 +2255,7 @@ function AdminPage() {
                     <table className="w-full text-sm">
                       <thead className="text-left border-b">
                         <tr>
-                          <th className="py-2 pr-3">Parsha</th>
+                          <th className="py-2 pr-3">Parshas</th>
                           <th className="py-2 pr-3">Year</th>
                           <th className="py-2 pr-3">Title</th>
                           <th className="py-2 pr-3">Published</th>

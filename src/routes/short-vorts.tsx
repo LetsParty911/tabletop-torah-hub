@@ -60,9 +60,9 @@ export const Route = createFileRoute("/short-vorts")({
   component: ShortVortsPage,
   loader: () => loadVortsWeek(),
   head: ({ loaderData }) => {
-    const title = "Short Vorts | Quick Insights for the Table";
+    const title = "Short Vorts — Quick Insights for the Table";
     const description =
-      "Bite-sized Torah vorts on the parsha of the week — one-minute insights from Rashi, Midrash and Chazal, ready to share at the Shabbos table.";
+      "Bite-sized Torah vorts on Parshas Hashavua — one-minute insights from Rashi, Midrash and Chazal, ready to share at the Shabbos table.";
     const url = "https://torahforthetable.com/short-vorts";
     const image = "https://torahforthetable.com/og-image.png";
 
@@ -143,7 +143,7 @@ function ShortVortsPage() {
             Quick Insights for the Table
           </p>
           <h1 className="mt-4 font-serif text-3xl font-bold text-primary sm:text-4xl">
-            Short Vorts on the Parsha of the Week
+            Short Vorts on Parshas Hashavua
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
             One-minute Torah thoughts you can say over at the Shabbos table — drawn from
@@ -183,7 +183,7 @@ function ShortVortsPage() {
         {others.length > 0 && (
           <section className="mt-14" aria-labelledby="more-vorts">
             <h2 id="more-vorts" className="font-serif text-2xl font-bold text-primary">
-              More Short Vorts by Parsha
+              More Short Vorts by Parshas
             </h2>
             <div className="mt-5 space-y-8">
               {others.map((p) => (

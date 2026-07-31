@@ -11,7 +11,7 @@ export const Route = createFileRoute("/archive")({
   component: ArchivePage,
   loader: () => listArchive(),
   head: ({ loaderData }) => {
-    const title = "Archive | Torah for the Table";
+    const title = "Archive — Torah for the Table";
     const description =
       "Browse the archive of past weekly Divrei Torah collections for Shabbos and Yom Tov.";
     const url = "https://torahforthetable.com/archive";
@@ -147,12 +147,12 @@ function ArchivePage() {
               Archive
             </h1>
             <p className="mt-4 font-serif italic text-base sm:text-lg md:text-xl text-accent max-w-2xl mx-auto">
-              Past weeks' Divrei Torah, organized by Jewish year and parsha.
+              Past weeks' Divrei Torah, organized by Jewish year and Parshas.
             </p>
             <div className="mt-6 flex items-center justify-center gap-3 sm:gap-4 text-accent">
               <span aria-hidden className="h-px w-8 sm:w-16 bg-accent/60" />
               <span className="font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em]">
-                {totalPdfs} {totalPdfs === 1 ? "Devar" : "Divrei"} Torah
+                {totalPdfs} {totalPdfs === 1 ? "Dvar" : "Divrei"} Torah
               </span>
               <span aria-hidden className="h-px w-8 sm:w-16 bg-accent/60" />
             </div>
@@ -198,7 +198,7 @@ function ArchivePage() {
                     onChange={(e) => setParshaFilter(e.target.value)}
                     className="w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
                   >
-                    <option value="all">All parshiyos</option>
+                    <option value="all">All Parshas</option>
                     {allParshiyos.map((p) => (
                       <option key={p} value={p}>
                         {p}
@@ -263,7 +263,7 @@ function ArchivePage() {
                 No matches for these filters.
               </p>
               <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
-                Try clearing the search or choosing a different parsha or year.
+                Try clearing the search or choosing a different Parshas or year.
               </p>
             </div>
           </section>
@@ -280,7 +280,7 @@ function ArchivePage() {
                     const pdfCount = y.parshiyos.reduce((s: number, p: ArchiveParsha) => s + p.pdfs.length, 0);
                     return (
                       <span className="font-sans text-xs sm:text-sm uppercase tracking-[0.2em] text-accent">
-                        {y.parshiyos.length} {y.parshiyos.length === 1 ? "Parsha" : "Parshiyos"} · {pdfCount} {pdfCount === 1 ? "Devar" : "Divrei"} Torah
+                        {y.parshiyos.length} {y.parshiyos.length === 1 ? "Parshas" : "Parshas"} · {pdfCount} {pdfCount === 1 ? "Dvar" : "Divrei"} Torah
                       </span>
                     );
                   })()}
