@@ -1316,6 +1316,7 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
     pageCount?: number | null;
     badge?: string | null;
     featuredSlot?: string | null;
+    contentType?: string | null;
   }) =>
     z
       .object({
@@ -1332,6 +1333,18 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
         pageCount: z.number().int().min(0).max(10000).nullable().optional(),
         badge: z.enum(["Recommended", "Quick Read", "Kids' Pick"]).nullable().optional(),
         featuredSlot: z.enum(["children", "family", "quickest", "deeper"]).nullable().optional(),
+        contentType: z
+          .enum([
+            "Questions & Answers",
+            "Short Vorts",
+            "Stories",
+            "Parsha Essays",
+            "Halacha",
+            "In-Depth",
+            "Mixed Collection",
+          ])
+          .nullable()
+          .optional(),
       })
       .parse(input),
   )
@@ -1350,6 +1363,7 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
     if (data.pageCount !== undefined) update.page_count = data.pageCount;
     if (data.badge !== undefined) update.badge = data.badge;
     if (data.featuredSlot !== undefined) update.featured_slot = data.featuredSlot;
+    if (data.contentType !== undefined) update.content_type = data.contentType;
     if (Object.keys(update).length === 0) return { ok: true };
     const metaKeys = ["description", "audience", "format_type", "page_count", "badge", "publication", "featured_slot"] as const;
     let current: Record<string, unknown> = { ...update };

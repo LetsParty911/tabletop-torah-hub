@@ -225,10 +225,16 @@ function Index() {
   const [signupMsg, setSignupMsg] = useState<string | null>(null);
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
 
-  const filteredResources =
+  const [shortOnly, setShortOnly] = useState(false);
+
+  const audienceFiltered =
     audienceFilter === "All"
       ? resources
       : resources.filter((r) => normalizeAudience(r.audience, r.title) === audienceFilter);
+
+  const filteredResources = shortOnly
+    ? audienceFiltered.filter((r) => typeof r.page_count === "number" && r.page_count < 5)
+    : audienceFiltered;
 
 
   const featuredPicks = FEATURED_SLOTS.map((slot) => ({
@@ -467,6 +473,27 @@ function Index() {
                         );
                       })}
                   </div>
+                  <button
+                    type="button"
+                    aria-pressed={shortOnly}
+                    onClick={() => setShortOnly((v) => !v)}
+                    className={`mt-1 inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
+                      shortOnly
+                        ? "border-accent bg-accent text-accent-foreground shadow-sm"
+                        : "border-accent/40 bg-background/70 text-primary hover:bg-accent/12"
+                    }`}
+                  >
+                    Under 5 Pages
+                    <span
+                      className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
+                        shortOnly
+                          ? "bg-accent-foreground/20 text-accent-foreground"
+                          : "bg-accent/15 text-accent"
+                      }`}
+                    >
+                      {resources.filter((r) => typeof r.page_count === "number" && r.page_count < 5).length}
+                    </span>
+                  </button>
                 </div>
 
 
@@ -540,7 +567,7 @@ function Index() {
 
                 {filteredResources.length === 0 && (
                   <p className="mt-8 text-center text-muted-foreground max-w-md mx-auto">
-                    No Divrei Torah match this audience filter.
+                    No Divrei Torah match these filters.
                   </p>
                 )}
               </>
