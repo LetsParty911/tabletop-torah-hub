@@ -236,24 +236,25 @@ function SiteNav() {
   if (isAdmin) return null;
 
   const linkCls =
-    "font-serif text-sm sm:text-base text-primary/80 hover:text-primary transition-colors";
+    "font-serif whitespace-nowrap text-xs sm:text-base text-primary/80 hover:text-primary transition-colors";
   const activeCls = "text-primary font-semibold";
 
   return (
     <nav
       aria-label="Primary"
-      className="border-b border-accent/30 bg-background/70 backdrop-blur-sm"
+      className="sticky top-0 z-40 border-b border-accent/30 bg-background/90 backdrop-blur-sm"
     >
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
         <Link
           to="/"
-          className="font-serif text-sm sm:text-base font-semibold text-primary tracking-tight"
+          className="font-serif text-xs sm:text-base font-semibold text-primary tracking-tight whitespace-nowrap"
         >
-          Torah for the Table
+          <span className="sm:hidden">TFTT</span>
+          <span className="hidden sm:inline">Torah for the Table</span>
         </Link>
-        <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex items-center gap-3 sm:gap-6 overflow-x-auto">
           <Link to="/" activeOptions={{ exact: true }} className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
-            This Week
+            Home
           </Link>
           <Link to="/short-vorts" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
             Short Vorts
@@ -261,7 +262,6 @@ function SiteNav() {
           <Link to="/archive" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
             Archive
           </Link>
-
           <Link to="/about" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
             About
           </Link>
