@@ -30,30 +30,35 @@ async function getTitleSortOrderMap(
   return map;
 }
 
-// Canonical publications: maps pdfs.id -> publications.name via pdfs.publication_id.
+// Canonical publications: maps pdfs.id -> { name, publisher } via pdfs.publication_id.
 // Tolerates the table/column not existing yet (pre-migration) by returning an empty map,
 // in which case callers fall back to pdfs.title.
-async function getCanonicalNameByPdfId(
+type CanonicalInfo = { name: string; publisher: string | null };
+async function getCanonicalByPdfId(
   admin: ReturnType<typeof getSupabaseAdmin>,
-): Promise<Map<string, string>> {
-  const out = new Map<string, string>();
+): Promise<Map<string, CanonicalInfo>> {
+  const out = new Map<string, CanonicalInfo>();
   try {
-    const pubs = await admin.from("publications").select("id, name");
+    const pubs = await admin.from("publications").select("id, name, publisher");
     if (pubs.error) return out;
-    const byId = new Map<string, string>(
-      (pubs.data ?? []).map((p: any) => [p.id as string, p.name as string]),
+    const byId = new Map<string, CanonicalInfo>(
+      (pubs.data ?? []).map((p: any) => [
+        p.id as string,
+        { name: p.name as string, publisher: (p.publisher as string | null) ?? null },
+      ]),
     );
     const links = await admin.from("pdfs").select("id, publication_id");
     if (links.error) return out;
     for (const r of links.data ?? []) {
-      const name = r.publication_id ? byId.get(r.publication_id as string) : undefined;
-      if (name) out.set(r.id as string, name);
+      const info = r.publication_id ? byId.get(r.publication_id as string) : undefined;
+      if (info?.name) out.set(r.id as string, info);
     }
   } catch {
     /* pre-migration: fall back to titles */
   }
   return out;
 }
+
 
 export type CanonicalPublication = {
   id: string;
