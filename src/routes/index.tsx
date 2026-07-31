@@ -352,6 +352,11 @@ function Index() {
                 Get the Thursday Email
               </a>
             </div>
+            {resources.length > 0 && (
+              <div className="mt-4 flex justify-center">
+                <ShareButton />
+              </div>
+            )}
           </div>
         </section>
 
