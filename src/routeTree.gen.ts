@@ -18,6 +18,7 @@ import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as UnsubscribeIndexRouteImport } from './routes/unsubscribe.index'
 import { Route as ViewIdRouteImport } from './routes/view.$id'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
@@ -69,6 +70,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UnsubscribeIndexRoute = UnsubscribeIndexRouteImport.update({
+  id: '/unsubscribe/',
+  path: '/unsubscribe/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ViewIdRoute = ViewIdRouteImport.update({
   id: '/view/$id',
   path: '/view/$id',
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
+  '/unsubscribe/': typeof UnsubscribeIndexRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/pdf': typeof ViewIdPdfRoute
 }
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
+  '/unsubscribe': typeof UnsubscribeIndexRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/pdf': typeof ViewIdPdfRoute
 }
@@ -141,6 +149,7 @@ export interface FileRoutesById {
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
+  '/unsubscribe/': typeof UnsubscribeIndexRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/pdf': typeof ViewIdPdfRoute
 }
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/api/track-download'
     | '/unsubscribe/$token'
     | '/view/$id'
+    | '/unsubscribe/'
     | '/view/$id/download'
     | '/view/$id/pdf'
   fileRoutesByTo: FileRoutesByTo
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/api/track-download'
     | '/unsubscribe/$token'
     | '/view/$id'
+    | '/unsubscribe'
     | '/view/$id/download'
     | '/view/$id/pdf'
   id:
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
     | '/api/track-download'
     | '/unsubscribe/$token'
     | '/view/$id'
+    | '/unsubscribe/'
     | '/view/$id/download'
     | '/view/$id/pdf'
   fileRoutesById: FileRoutesById
@@ -208,6 +220,7 @@ export interface RootRouteChildren {
   ApiTrackDownloadRoute: typeof ApiTrackDownloadRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ViewIdRoute: typeof ViewIdRouteWithChildren
+  UnsubscribeIndexRoute: typeof UnsubscribeIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -275,6 +288,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/unsubscribe/': {
+      id: '/unsubscribe/'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe/'
+      preLoaderRoute: typeof UnsubscribeIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/view/$id': {
       id: '/view/$id'
       path: '/view/$id'
@@ -339,17 +359,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTrackDownloadRoute: ApiTrackDownloadRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ViewIdRoute: ViewIdRouteWithChildren,
+  UnsubscribeIndexRoute: UnsubscribeIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

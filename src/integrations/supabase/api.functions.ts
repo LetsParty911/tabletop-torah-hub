@@ -640,8 +640,10 @@ export const getParshaOverride = createServerFn({ method: "GET" }).handler(async
 
 // ---------- Public: subscribe email (unsubscribe-aware reactivation) ----------
 export const subscribeEmail = createServerFn({ method: "POST" })
-  .inputValidator((input: { email: string }) =>
-    z.object({ email: z.string().email().max(254) }).parse(input),
+  .inputValidator((input: { email: string; source?: string }) =>
+    z
+      .object({ email: z.string().email().max(254), source: z.string().max(64).optional() })
+      .parse(input),
   )
   .handler(async ({ data }) => {
     const admin = getSupabaseAdmin();
@@ -686,7 +688,11 @@ export const subscribeEmail = createServerFn({ method: "POST" })
       return { ok: true, error: null, welcomeEmailSent: false as const, alreadySubscribed: true as const };
     }
 
-    const { error } = await admin.from("subscribers").insert({ email });
+    let { error } = await admin.from("subscribers").insert({ email, source: data.source ?? null });
+    // Older deployments may not have the optional `source` column — retry plainly.
+    if (error && /source/i.test(error.message ?? "")) {
+      ({ error } = await admin.from("subscribers").insert({ email }));
+    }
     if (error) {
       if (error.message.toLowerCase().includes("duplicate")) {
         console.log(`${tag} duplicate race -> welcome skipped`);
