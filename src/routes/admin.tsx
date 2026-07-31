@@ -80,10 +80,10 @@ type PdfRow = {
 };
 
 const AUDIENCE_OPTIONS = ["Adults", "Families", "Children"] as const;
-const FORMAT_TYPE_OPTIONS = ["Short Vorts", "Stories", "Halacha", "Essays"] as const;
+const FORMAT_TYPE_OPTIONS = ["Brief Insights", "Stories", "Halacha", "Essays"] as const;
 const CONTENT_TYPE_OPTIONS = [
   "Questions & Answers",
-  "Short Vorts",
+  "Brief Insights",
   "Stories",
   "Parsha Essays",
   "Halacha",

@@ -1205,7 +1205,7 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
         tags: z.array(z.string().min(1).max(60)).max(20).nullable().optional(),
         description: z.string().max(500).nullable().optional(),
         audience: z.enum(["Adults", "Families", "Children"]).nullable().optional(),
-        formatType: z.enum(["Short Vorts", "Stories", "Halacha", "Essays"]).nullable().optional(),
+        formatType: z.enum(["Brief Insights", "Stories", "Halacha", "Essays"]).nullable().optional(),
         pageCount: z.number().int().min(0).max(10000).nullable().optional(),
         badge: z.enum(["Recommended", "Quick Read", "Kids' Pick"]).nullable().optional(),
         featuredSlot: z.enum(["children", "family", "quickest", "deeper"]).nullable().optional(),
@@ -1329,14 +1329,14 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
         tags: z.array(z.string().min(1).max(60)).max(20).nullable().optional(),
         description: z.string().max(500).nullable().optional(),
         audience: z.enum(["Adults", "Families", "Children"]).nullable().optional(),
-        formatType: z.enum(["Short Vorts", "Stories", "Halacha", "Essays"]).nullable().optional(),
+        formatType: z.enum(["Brief Insights", "Stories", "Halacha", "Essays"]).nullable().optional(),
         pageCount: z.number().int().min(0).max(10000).nullable().optional(),
         badge: z.enum(["Recommended", "Quick Read", "Kids' Pick"]).nullable().optional(),
         featuredSlot: z.enum(["children", "family", "quickest", "deeper"]).nullable().optional(),
         contentType: z
           .enum([
             "Questions & Answers",
-            "Short Vorts",
+            "Brief Insights",
             "Stories",
             "Parsha Essays",
             "Halacha",
@@ -2602,7 +2602,7 @@ Respond ONLY with a JSON object with exactly these keys:
 {
   "description": string,      // one short sentence (max 200 chars) describing this publication's style/content
   "audience": string,          // exactly one of: "Adults", "Families", "Children"
-  "format_type": string        // exactly one of: "Short Vorts", "Stories", "Halacha", "Essays"
+  "format_type": string        // exactly one of: "Brief Insights", "Stories", "Halacha", "Essays"
 }
 Choose the single best value for audience and format_type. No prose, no code fences.`;
     const userPrompt = `Publication title: ${row.title}${row.subtitle ? ` — ${row.subtitle}` : ""}
@@ -2672,7 +2672,7 @@ Analyze the attached PDF and return the json object described in the system prom
     }
 
     const audienceAllowed = ["Adults", "Families", "Children"];
-    const formatAllowed = ["Short Vorts", "Stories", "Halacha", "Essays"];
+    const formatAllowed = ["Brief Insights", "Stories", "Halacha", "Essays"];
     const description =
       typeof parsed.description === "string" && parsed.description.trim().length > 0
         ? parsed.description.trim().slice(0, 500)
