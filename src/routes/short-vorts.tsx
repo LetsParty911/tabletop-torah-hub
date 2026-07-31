@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sparkles } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, Sparkles } from "lucide-react";
+import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { VORTS, getVortsForParsha, type Vort } from "@/data/vorts";
@@ -128,11 +130,99 @@ function VortCard({ vort }: { vort: Vort }) {
   );
 }
 
+function ParshaSection({
+  id,
+  heading,
+  vorts,
+  defaultOpen,
+}: {
+  id: string;
+  heading: string;
+  vorts: Vort[];
+  defaultOpen: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <section id={id} className="scroll-mt-24 rounded-xl border border-border bg-card/40">
+      <h2>
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-controls={`${id}-panel`}
+          className="flex w-full items-center justify-between gap-3 rounded-xl px-4 py-4 text-left transition-colors hover:bg-accent/10"
+        >
+          <span className="font-serif text-lg font-bold text-primary sm:text-xl">
+            {heading}
+          </span>
+          <span className="flex items-center gap-3">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {vorts.length} {vorts.length === 1 ? "vort" : "vorts"}
+            </span>
+            <ChevronDown
+              className={`h-5 w-5 text-accent transition-transform ${open ? "rotate-180" : ""}`}
+              aria-hidden="true"
+            />
+          </span>
+        </button>
+      </h2>
+      {open && (
+        <div id={`${id}-panel`} className="px-4 pb-5">
+          {vorts.length > 0 ? (
+            <div className="grid gap-5 sm:grid-cols-2">
+              {vorts.map((v) => (
+                <VortCard key={v.id} vort={v} />
+              ))}
+            </div>
+          ) : (
+            <div className="parchment-frame">
+              <div className="parchment-panel text-center">
+                <p className="text-sm text-muted-foreground">
+                  Vorts for {heading} are being prepared. In the meantime, browse the earlier
+                  weeks below, or download this week's full collection.
+                </p>
+                <Link
+                  to="/"
+                  className="mt-4 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                  Browse this week's collection
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function sectionId(key: string): string {
+  return `vorts-${key.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+}
+
 function ShortVortsPage() {
   const { label, parshaKey, current } = Route.useLoaderData();
-  const others = VORTS.filter(
-    (p) => p.parshaKey.toLowerCase() !== (parshaKey ?? "").replace(/^parshas\s+/i, "").trim().toLowerCase(),
-  );
+  const normalizedCurrent = (parshaKey ?? "")
+    .replace(/^parshas\s+/i, "")
+    .trim()
+    .toLowerCase();
+  const others = VORTS.filter((p) => p.parshaKey.toLowerCase() !== normalizedCurrent);
+
+  const sections = [
+    { key: "current", heading: `This Week — ${label}`, vorts: current, defaultOpen: true },
+    ...others.map((p) => ({
+      key: p.parshaKey,
+      heading: `Parshas ${p.parshaKey}`,
+      vorts: p.vorts,
+      defaultOpen: false,
+    })),
+  ].map((s) => ({ ...s, id: sectionId(s.key) }));
+
+  const jumpTo = (id: string) => {
+    if (!id || typeof document === "undefined") return;
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -152,57 +242,45 @@ function ShortVortsPage() {
           </p>
         </header>
 
-        <section className="mt-10" aria-labelledby="this-week-vorts">
-          <h2 id="this-week-vorts" className="font-serif text-2xl font-bold text-primary">
-            This Week — {label}
-          </h2>
-          {current.length > 0 ? (
-            <div className="mt-5 grid gap-5 sm:grid-cols-2">
-              {current.map((v: Vort) => (
-                <VortCard key={v.id} vort={v} />
-              ))}
-            </div>
-          ) : (
-            <div className="parchment-frame mt-5">
-              <div className="parchment-panel text-center">
-                <p className="text-sm text-muted-foreground">
-                  Vorts for {label} are being prepared. In the meantime, browse the vorts below,
-                  or download this week's full collection.
-                </p>
-                <Link
-                  to="/"
-                  className="mt-4 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                  Browse this week's collection
-                </Link>
-              </div>
-            </div>
-          )}
-        </section>
+        <div className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+          <label
+            htmlFor="parsha-jump"
+            className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+          >
+            Jump to Parshas
+          </label>
+          <select
+            id="parsha-jump"
+            defaultValue=""
+            onChange={(e) => jumpTo(e.target.value)}
+            className="w-full max-w-xs rounded-full border-2 border-accent/50 bg-background px-4 py-2 font-serif text-sm text-foreground transition-colors focus:border-primary focus:outline-none"
+          >
+            <option value="">Select a Parshas…</option>
+            {sections.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.heading}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        {others.length > 0 && (
-          <section className="mt-14" aria-labelledby="more-vorts">
-            <h2 id="more-vorts" className="font-serif text-2xl font-bold text-primary">
-              More Short Vorts by Parshas
-            </h2>
-            <div className="mt-5 space-y-8">
-              {others.map((p) => (
-                <div key={p.parshaKey}>
-                  <h3 className="font-serif text-lg font-semibold text-foreground">
-                    Parshas {p.parshaKey}
-                  </h3>
-                  <div className="mt-3 grid gap-5 sm:grid-cols-2">
-                    {p.vorts.map((v: Vort) => (
-                      <VortCard key={v.id} vort={v} />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        <div className="mt-8 space-y-4">
+          {sections.map((s) => (
+            <ParshaSection
+              key={s.id}
+              id={s.id}
+              heading={s.heading}
+              vorts={s.vorts}
+              defaultOpen={s.defaultOpen}
+            />
+          ))}
+        </div>
 
-        <div className="mt-14 text-center">
+        <div className="mt-14">
+          <WeeklyEmailSignup sourceId="short-vorts" />
+        </div>
+
+        <div className="mt-10 text-center">
           <Link
             to="/archive"
             className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
