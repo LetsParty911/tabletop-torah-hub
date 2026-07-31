@@ -236,7 +236,7 @@ function SiteNav() {
   if (isAdmin) return null;
 
   const linkCls =
-    "font-serif whitespace-nowrap text-xs sm:text-base text-primary/80 hover:text-primary transition-colors";
+    "font-serif whitespace-nowrap text-xs sm:text-base text-primary/80 hover:text-primary hover:underline transition-colors duration-150";
   const activeCls = "text-primary font-semibold";
 
   return (
