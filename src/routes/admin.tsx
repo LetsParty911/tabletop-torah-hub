@@ -125,6 +125,33 @@ const PARSHA_VARIANT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bhaazinu\b/g, "haazinu"],
 ];
 
+const countWords = (text: string) => {
+  return text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
+};
+
+const WordCountHint = ({
+  text,
+  min = 12,
+  max = 22,
+}: {
+  text: string;
+  min?: number;
+  max?: number;
+}) => {
+  const words = countWords(text);
+  const overMax = words > max;
+  return (
+    <div className="mt-1 flex items-center justify-between text-xs">
+      <span className="text-muted-foreground">
+        One sentence, {min}–{max} words.
+      </span>
+      <span className={overMax ? "font-medium text-amber-600" : "text-muted-foreground"}>
+        {words} word{words === 1 ? "" : "s"}
+      </span>
+    </div>
+  );
+};
+
 const toParshaComparableKey = (value: string) => {
   let normalized = value
     .normalize("NFKD")
@@ -1952,7 +1979,7 @@ function AdminPage() {
                 />
               </label>
               <label className="block md:col-span-2">
-                <span className="text-sm font-medium">Description (one short sentence)</span>
+                <span className="text-sm font-medium">Description</span>
                 <input
                   value={uploadDescription}
                   onChange={(e) => setUploadDescription(e.target.value)}
@@ -1960,6 +1987,7 @@ function AdminPage() {
                   placeholder="e.g. Short vorts drawn from the classic meforshim."
                   className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
                 />
+                <WordCountHint text={uploadDescription} />
               </label>
               <label className="block">
                 <span className="text-sm font-medium">Audience</span>
@@ -2387,6 +2415,7 @@ function AdminPage() {
                                           maxLength={500}
                                           className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
                                         />
+                                        <WordCountHint text={editMetaDescription} />
                                       </label>
                                       <label className="block">
                                         <span className="text-xs font-medium">Audience</span>
