@@ -1979,7 +1979,7 @@ function AdminPage() {
                 />
               </label>
               <label className="block md:col-span-2">
-                <span className="text-sm font-medium">Description (one short sentence)</span>
+                <span className="text-sm font-medium">Description</span>
                 <input
                   value={uploadDescription}
                   onChange={(e) => setUploadDescription(e.target.value)}
@@ -1987,6 +1987,7 @@ function AdminPage() {
                   placeholder="e.g. Short vorts drawn from the classic meforshim."
                   className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
                 />
+                <WordCountHint text={uploadDescription} />
               </label>
               <label className="block">
                 <span className="text-sm font-medium">Audience</span>
@@ -2414,6 +2415,7 @@ function AdminPage() {
                                           maxLength={500}
                                           className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
                                         />
+                                        <WordCountHint text={editMetaDescription} />
                                       </label>
                                       <label className="block">
                                         <span className="text-xs font-medium">Audience</span>
