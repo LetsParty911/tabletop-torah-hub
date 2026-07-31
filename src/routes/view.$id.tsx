@@ -126,6 +126,11 @@ function ViewPdf() {
                 </span>
               )}
             </div>
+            {pdf.publisher && (
+              <p className="mt-1 text-sm font-normal text-muted-foreground">
+                By {pdf.publisher}
+              </p>
+            )}
             {pdf.subtitle && (
               <p className="mt-1 text-sm text-muted-foreground">
                 {standardizeCopy(pdf.subtitle)}
