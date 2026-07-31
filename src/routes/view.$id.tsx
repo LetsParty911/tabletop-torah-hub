@@ -1,9 +1,15 @@
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { ArrowLeft, Download, Printer } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { getPdfById } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
+import { normalizeAudience } from "@/lib/audience";
+import { formatTypeLabel } from "@/lib/format-labels";
+import { buildDownloadFilename } from "@/lib/download-filename";
+import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
+
 
 export const Route = createFileRoute("/view/$id")({
   loader: async ({ params }) => {
@@ -94,64 +100,91 @@ function ViewPdf() {
     });
   }, [pdf.id, pdf.title]);
 
+  const metaLine = [
+    normalizeAudience(pdf.audience, pdf.title) ?? pdf.audience,
+    formatTypeLabel(pdf.format_type),
+    typeof pdf.page_count === "number"
+      ? `${pdf.page_count} ${pdf.page_count === 1 ? "page" : "pages"}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <header className="border-b border-accent/30 bg-background/80 backdrop-blur sticky top-0 z-10">
-        <div className="mx-auto max-w-6xl px-3 sm:px-6 py-3 flex items-center gap-3">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 rounded-full border-2 border-primary/60 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-colors shrink-0"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to Home
-          </Link>
+      <main className="flex-1 mx-auto w-full max-w-5xl px-4 sm:px-6 py-6 sm:py-10">
+        <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
-            <h1 className="font-serif text-base sm:text-xl font-semibold text-primary truncate">
-              {pdf.title}
-            </h1>
+            <div className="flex items-start gap-2">
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-primary leading-snug">
+                {pdf.title}
+              </h1>
+              {pdf.badge && (
+                <span className="mt-1 shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
+                  {pdf.badge}
+                </span>
+              )}
+            </div>
             {pdf.subtitle && (
-              <p className="text-xs text-muted-foreground truncate">{standardizeCopy(pdf.subtitle)}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {standardizeCopy(pdf.subtitle)}
+              </p>
+            )}
+            {pdf.description && (
+              <p className="mt-3 text-base text-foreground/85 leading-relaxed">
+                {standardizeCopy(pdf.description)}
+              </p>
+            )}
+            {metaLine && (
+              <p className="mt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {metaLine}
+              </p>
             )}
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <a
-              href={`/view/${pdf.id}/download`}
-              onClick={() =>
-                trackEvent("pdf_download", {
-                  file_id: pdf.id,
-                  file_title: pdf.title,
-                  source_name: pdf.title,
-                })
-              }
-              className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <Download className="h-4 w-4" /> Download
-            </a>
-            <a
-              href={`/view/${pdf.id}/pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() =>
-                trackEvent("pdf_print", {
-                  file_id: pdf.id,
-                  file_title: pdf.title,
-                  source_name: pdf.title,
-                })
-              }
-              className="hidden sm:inline-flex items-center gap-2 rounded-full border-2 border-accent/70 px-4 py-1.5 text-sm font-medium text-accent hover:bg-accent hover:text-accent-foreground transition-colors"
-            >
-              <Printer className="h-4 w-4" /> Print PDF
-            </a>
-          </div>
         </div>
-      </header>
-      <main className="flex-1 flex">
-        <iframe
-          src={viewerSrc}
-          title={pdf.title}
-          className="w-full border-0 bg-muted h-[calc(100vh-64px)]"
-        />
+
+        <div className="mt-5">
+          <DownloadToPrintButton
+            href={`/view/${pdf.id}/download`}
+            publicationId={pdf.id}
+            publicationTitle={pdf.title}
+            filename={buildDownloadFilename(
+              pdf.parsha_key,
+              pdf.publication || pdf.title,
+            )}
+            onClick={() =>
+              trackEvent("pdf_download", {
+                file_id: pdf.id,
+                file_title: pdf.title,
+                source_name: pdf.title,
+              })
+            }
+            className="px-5 py-2.5"
+          />
+        </div>
+
+        <div className="mt-6">
+          <iframe
+            src={viewerSrc}
+            title={pdf.title}
+            className="w-full border-0 bg-muted h-[80vh] rounded-lg"
+          />
+        </div>
+
+        <div className="mt-6">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 font-serif italic text-accent hover:text-primary transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to this week's collection
+          </Link>
+        </div>
+
+        <div className="mt-10">
+          <WeeklyEmailSignup sourceId="view" />
+        </div>
       </main>
     </div>
   );
 }
+
