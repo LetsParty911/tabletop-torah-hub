@@ -688,7 +688,11 @@ export const subscribeEmail = createServerFn({ method: "POST" })
       return { ok: true, error: null, welcomeEmailSent: false as const, alreadySubscribed: true as const };
     }
 
-    const { error } = await admin.from("subscribers").insert({ email });
+    let { error } = await admin.from("subscribers").insert({ email, source: data.source ?? null });
+    // Older deployments may not have the optional `source` column — retry plainly.
+    if (error && /source/i.test(error.message ?? "")) {
+      ({ error } = await admin.from("subscribers").insert({ email }));
+    }
     if (error) {
       if (error.message.toLowerCase().includes("duplicate")) {
         console.log(`${tag} duplicate race -> welcome skipped`);
