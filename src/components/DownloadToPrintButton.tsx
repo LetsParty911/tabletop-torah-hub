@@ -226,12 +226,13 @@ export function DownloadToPrintButton({
   return (
     <a
       href={href}
+      download={preferredFilename ?? ""}
       onClick={handleClick}
       aria-disabled={loading}
       aria-busy={loading}
       tabIndex={loading ? -1 : 0}
       className={[
-        "relative overflow-hidden inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors",
+        "relative overflow-hidden inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors duration-150",
         loading
           ? "bg-accent/20 text-accent-foreground pointer-events-none cursor-wait"
           : "bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground",

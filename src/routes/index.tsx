@@ -523,7 +523,7 @@ function Index() {
                   {filteredResources.map((r) => (
                     <article
                       key={r.id}
-                      className="rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent transition-colors flex flex-col"
+                      className="rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent hover:shadow-md transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-accent/15 text-primary shrink-0">
@@ -712,15 +712,15 @@ function Index() {
         </section>
 
         <footer className="text-center text-sm text-muted-foreground py-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-          <Link to="/about" className="hover:text-primary transition-colors">
+          <Link to="/about" className="hover:text-primary hover:underline transition-colors duration-150">
             About
           </Link>
           <span aria-hidden>·</span>
-          <Link to="/archive" className="hover:text-primary transition-colors">
+          <Link to="/archive" className="hover:text-primary hover:underline transition-colors duration-150">
             Browse Archive
           </Link>
           <span aria-hidden>·</span>
-          <Link to="/contact" className="hover:text-primary transition-colors">
+          <Link to="/contact" className="hover:text-primary hover:underline transition-colors duration-150">
             Contact
           </Link>
           <span aria-hidden>·</span>

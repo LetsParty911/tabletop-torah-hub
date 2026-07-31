@@ -180,7 +180,8 @@ function ViewPdf() {
             Can't read the embedded viewer?{" "}
             <a
               href={`/view/${pdf.id}/download`}
-              className="font-medium text-accent underline hover:text-primary"
+              download
+              className="font-medium text-accent underline hover:text-primary transition-colors duration-150"
             >
               Download the PDF file for {pdf.title}
             </a>
