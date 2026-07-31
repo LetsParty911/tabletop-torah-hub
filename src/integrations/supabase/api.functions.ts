@@ -218,6 +218,7 @@ async function resolveCurrentFeatured(): Promise<{
 type PdfResource = {
   id: string;
   title: string;
+  publisher: string | null;
   subtitle: string | null;
   url: string;
   summary_quick: string | null;
