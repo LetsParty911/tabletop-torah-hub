@@ -81,6 +81,15 @@ type PdfRow = {
 
 const AUDIENCE_OPTIONS = ["Adults", "Families", "Children"] as const;
 const FORMAT_TYPE_OPTIONS = ["Short Vorts", "Stories", "Halacha", "Essays"] as const;
+const CONTENT_TYPE_OPTIONS = [
+  "Questions & Answers",
+  "Short Vorts",
+  "Stories",
+  "Parsha Essays",
+  "Halacha",
+  "In-Depth",
+  "Mixed Collection",
+] as const;
 const BADGE_OPTIONS = ["Recommended", "Quick Read", "Kids' Pick"] as const;
 
 type Subscriber = { id: string; email: string; created_at: string };
