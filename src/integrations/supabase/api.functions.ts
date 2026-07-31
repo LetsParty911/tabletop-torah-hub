@@ -1189,7 +1189,6 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     pageCount?: number | null;
     badge?: string | null;
     featuredSlot?: string | null;
-    contentType?: string | null;
   }) =>
     z
       .object({
@@ -1210,18 +1209,6 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
         pageCount: z.number().int().min(0).max(10000).nullable().optional(),
         badge: z.enum(["Recommended", "Quick Read", "Kids' Pick"]).nullable().optional(),
         featuredSlot: z.enum(["children", "family", "quickest", "deeper"]).nullable().optional(),
-        contentType: z
-          .enum([
-            "Questions & Answers",
-            "Short Vorts",
-            "Stories",
-            "Parsha Essays",
-            "Halacha",
-            "In-Depth",
-            "Mixed Collection",
-          ])
-          .nullable()
-          .optional(),
       })
       .parse(input),
   )
@@ -1329,6 +1316,7 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
     pageCount?: number | null;
     badge?: string | null;
     featuredSlot?: string | null;
+    contentType?: string | null;
   }) =>
     z
       .object({
@@ -1345,6 +1333,18 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
         pageCount: z.number().int().min(0).max(10000).nullable().optional(),
         badge: z.enum(["Recommended", "Quick Read", "Kids' Pick"]).nullable().optional(),
         featuredSlot: z.enum(["children", "family", "quickest", "deeper"]).nullable().optional(),
+        contentType: z
+          .enum([
+            "Questions & Answers",
+            "Short Vorts",
+            "Stories",
+            "Parsha Essays",
+            "Halacha",
+            "In-Depth",
+            "Mixed Collection",
+          ])
+          .nullable()
+          .optional(),
       })
       .parse(input),
   )
