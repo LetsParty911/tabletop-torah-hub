@@ -5,6 +5,7 @@ import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } fr
 import { trackEvent } from "@/lib/analytics";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { buildDownloadFilename } from "@/lib/download-filename";
+import { normalizeAudience, type AudienceKey } from "@/lib/audience";
 
 
 
@@ -101,6 +102,7 @@ function ArchivePage() {
   const [yearFilter, setYearFilter] = useState<string>("all");
   const [parshaFilter, setParshaFilter] = useState<string>("all");
   const [query, setQuery] = useState<string>("");
+  const [audienceFilter, setAudienceFilter] = useState<"All" | AudienceKey>("All");
 
   const allParshiyos = useMemo(() => {
     const set = new Set<string>();
@@ -116,18 +118,53 @@ function ArchivePage() {
       const parshiyos: ArchiveParsha[] = [];
       for (const p of y.parshiyos) {
         if (parshaFilter !== "all" && p.parshaKey !== parshaFilter) continue;
-        const pdfs = q
+        let pdfs = q
           ? p.pdfs.filter((r) =>
               [r.title, r.subtitle, r.description]
                 .filter(Boolean)
                 .some((v) => (v as string).toLowerCase().includes(q)),
             )
           : p.pdfs;
+        if (audienceFilter !== "All") {
+          pdfs = pdfs.filter(
+            (r) => normalizeAudience(r.audience, r.title) === audienceFilter,
+          );
+        }
         if (pdfs.length) parshiyos.push({ ...p, pdfs });
       }
       if (parshiyos.length) out.push({ ...y, parshiyos });
     }
     return out;
+  }, [years, yearFilter, parshaFilter, query, audienceFilter]);
+
+  // Audience counts reflect the other active filters (year, parsha, search).
+  const audienceCounts = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const counts: Record<"All" | AudienceKey, number> = {
+      All: 0,
+      Children: 0,
+      Families: 0,
+      Adults: 0,
+    };
+    for (const y of years) {
+      if (yearFilter !== "all" && String(y.year) !== yearFilter) continue;
+      for (const p of y.parshiyos) {
+        if (parshaFilter !== "all" && p.parshaKey !== parshaFilter) continue;
+        for (const r of p.pdfs) {
+          if (
+            q &&
+            ![r.title, r.subtitle, r.description]
+              .filter(Boolean)
+              .some((v) => (v as string).toLowerCase().includes(q))
+          )
+            continue;
+          counts.All += 1;
+          const a = normalizeAudience(r.audience, r.title);
+          if (a) counts[a] += 1;
+        }
+      }
+    }
+    return counts;
   }, [years, yearFilter, parshaFilter, query]);
 
   const totalPdfs = filteredYears.reduce(
@@ -136,7 +173,11 @@ function ArchivePage() {
     0,
   );
 
-  const hasActiveFilters = yearFilter !== "all" || parshaFilter !== "all" || query.trim() !== "";
+  const hasActiveFilters =
+    yearFilter !== "all" ||
+    parshaFilter !== "all" ||
+    query.trim() !== "" ||
+    audienceFilter !== "All";
 
   return (
     <div className="min-h-screen bg-background">
@@ -217,12 +258,51 @@ function ArchivePage() {
                       type="search"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
-                      placeholder="Search titles or publications…"
+                      placeholder="Search publication name or description…"
                       className="w-full rounded-lg border-2 border-accent/40 bg-background/60 pl-9 pr-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
                     />
                   </div>
                 </label>
               </div>
+
+              <div className="mt-4 flex flex-col items-center gap-2">
+                <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Filter by audience
+                </span>
+                <div className="inline-flex max-w-full flex-wrap items-center justify-center gap-1 rounded-full border border-accent/40 bg-background/70 p-1 shadow-sm">
+                  {(["All", "Children", "Families", "Adults"] as const)
+                    .map((audience) => ({ audience, count: audienceCounts[audience] }))
+                    .filter(({ audience, count }) => audience === "All" || count > 0)
+                    .map(({ audience, count }) => {
+                      const active = audienceFilter === audience;
+                      return (
+                        <button
+                          key={audience}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => setAudienceFilter(active ? "All" : audience)}
+                          className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
+                            active
+                              ? "bg-accent text-accent-foreground shadow-sm"
+                              : "text-primary hover:bg-accent/12"
+                          }`}
+                        >
+                          {audience}
+                          <span
+                            className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
+                              active
+                                ? "bg-accent-foreground/20 text-accent-foreground"
+                                : "bg-accent/15 text-accent"
+                            }`}
+                          >
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+
               {hasActiveFilters && (
                 <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                   <span>
@@ -234,6 +314,7 @@ function ArchivePage() {
                       setYearFilter("all");
                       setParshaFilter("all");
                       setQuery("");
+                      setAudienceFilter("All");
                     }}
                     className="text-accent hover:text-primary underline"
                   >
