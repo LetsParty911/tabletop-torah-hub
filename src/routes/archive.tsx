@@ -445,6 +445,13 @@ function ArchivePage() {
                                 }}
                                 className="w-full"
                               />
+                              <div className="mt-2 flex justify-center">
+                                <SharePublicationButton
+                                  pdfId={r.id}
+                                  title={r.title}
+                                  parsha={p.parshaKey}
+                                />
+                              </div>
                             </div>
                           </article>
                         ))}
