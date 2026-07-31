@@ -5,6 +5,8 @@ import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } fr
 import { trackEvent } from "@/lib/analytics";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
+import { BackToTop } from "@/components/BackToTop";
+import { SiteFooter } from "@/components/SiteFooter";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { normalizeAudience, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
