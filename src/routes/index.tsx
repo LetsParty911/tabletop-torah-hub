@@ -6,6 +6,7 @@ import { WhatsNewBanner } from "@/components/WhatsNewBanner";
 import { WhatsNewPopup } from "@/components/WhatsNewPopup";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { normalizeAudience } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
@@ -397,6 +398,13 @@ function Index() {
                             }}
                             className="w-full px-3 py-2.5 lg:py-2"
                           />
+                          <div className="mt-2 flex justify-center">
+                            <SharePublicationButton
+                              pdfId={r.id}
+                              title={r.title}
+                              parsha={(r as { parsha_key?: string | null }).parsha_key ?? currentParshaKey}
+                            />
+                          </div>
                         </div>
                       </article>
                     );
@@ -574,7 +582,13 @@ function Index() {
                           }}
                           className="w-full px-3 py-2.5 lg:py-2"
                         />
-
+                        <div className="mt-2 flex justify-center">
+                          <SharePublicationButton
+                            pdfId={r.id}
+                            title={r.title}
+                            parsha={(r as { parsha_key?: string | null }).parsha_key ?? currentParshaKey}
+                          />
+                        </div>
                       </div>
                     </article>
                   ))}
