@@ -636,6 +636,7 @@ export const getPdfById = createServerFn({ method: "GET" })
     }
     // Prefer the canonical publication name when the row is linked.
     let displayTitle = row.title;
+    let publisher: string | null = null;
     try {
       const link = await admin
         .from("pdfs")
@@ -646,11 +647,12 @@ export const getPdfById = createServerFn({ method: "GET" })
       if (pubId) {
         const pub = await admin
           .from("publications")
-          .select("name")
+          .select("name, publisher")
           .eq("id", pubId)
           .maybeSingle();
         const name = (pub.data as any)?.name as string | undefined;
         if (name) displayTitle = name;
+        publisher = ((pub.data as any)?.publisher as string | null) ?? null;
       }
     } catch {
       /* pre-migration: keep pdfs.title */
@@ -662,7 +664,9 @@ export const getPdfById = createServerFn({ method: "GET" })
       pdf: {
         id: row.id,
         title: displayTitle,
+        publisher,
         subtitle: row.subtitle,
+
         url: signed?.signedUrl ?? "",
         createdAt: row.created_at ?? null,
         updatedAt: row.updated_at ?? null,
