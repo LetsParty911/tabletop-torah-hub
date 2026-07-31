@@ -496,6 +496,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
     const current = await resolveCurrentFeatured();
     const displayed = await resolveDisplayedCollection(admin, current.comparableKey);
     const orderMap = await getTitleSortOrderMap(admin);
+    const canonical = await getCanonicalNameByPdfId(admin);
     const orderFor = (title: string): number => {
       const v = orderMap.get(title.trim().toLowerCase());
       return typeof v === "number" ? v : 999999;
