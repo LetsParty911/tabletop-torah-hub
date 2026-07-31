@@ -7,6 +7,7 @@ import { WhatsNewPopup } from "@/components/WhatsNewPopup";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { buildDownloadFilename } from "@/lib/download-filename";
+import { normalizeAudience } from "@/lib/audience";
 
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 import {
