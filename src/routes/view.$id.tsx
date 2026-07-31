@@ -10,6 +10,7 @@ import { buildDownloadFilename } from "@/lib/download-filename";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
+import { SiteFooter } from "@/components/SiteFooter";
 
 
 export const Route = createFileRoute("/view/$id")({
@@ -206,6 +207,7 @@ function ViewPdf() {
           <WeeklyEmailSignup sourceId="view" />
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

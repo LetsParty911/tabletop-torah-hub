@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
+import { SiteFooter } from "@/components/SiteFooter";
 import { confirmUnsubscribe } from "@/integrations/supabase/api.functions";
 
 export const Route = createFileRoute("/unsubscribe/")({
@@ -41,8 +42,8 @@ function UnsubscribeByQuery() {
   }, [token]);
 
   return (
-    <div className="min-h-screen bg-background px-4 py-16 flex items-start justify-center">
-      <div className="parchment-frame max-w-lg w-full">
+    <div className="min-h-screen bg-background px-4 py-16 flex flex-col items-start justify-center">
+      <div className="parchment-frame max-w-lg w-full mx-auto">
         <div className="parchment-panel text-center">
           <h1 className="font-serif text-3xl font-bold text-primary">Unsubscribe</h1>
           <p className="mt-4 text-foreground">{message}</p>
@@ -50,6 +51,9 @@ function UnsubscribeByQuery() {
             Return to homepage
           </a>
         </div>
+      </div>
+      <div className="w-full mt-auto">
+        <SiteFooter />
       </div>
     </div>
   );
