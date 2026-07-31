@@ -33,6 +33,7 @@ type Resource = {
   format_type: string | null;
   page_count: number | null;
   badge: string | null;
+  featured_slot: string | null;
 };
 
 type LoaderData = {
@@ -210,6 +211,13 @@ function normalizeAudience(
   return null;
 }
 
+const FEATURED_SLOTS = [
+  { key: "children", label: "Best for Children" },
+  { key: "family", label: "Best for the Family Table" },
+  { key: "quickest", label: "Quickest Read" },
+  { key: "deeper", label: "Deeper Learning" },
+] as const;
+
 function Index() {
   const { label: currentLabel, parshaKey: currentParshaKey, resources, isFallback, fallbackParshaLabel } =
     Route.useLoaderData() as LoaderData;
@@ -222,6 +230,13 @@ function Index() {
       ? resources
       : resources.filter((r) => normalizeAudience(r.audience, r.title) === audienceFilter);
 
+
+  const featuredPicks = FEATURED_SLOTS.map((slot) => ({
+    ...slot,
+    resource: resources.find(
+      (r) => (r.featured_slot ?? "").trim().toLowerCase() === slot.key,
+    ),
+  })).filter((p) => !!p.resource);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -320,6 +335,62 @@ function Index() {
 
         <div className="gold-divider" aria-hidden><span className="gold-divider-dot" /></div>
 
+
+        {featuredPicks.length > 0 && (
+          <>
+            <section className="parchment-frame">
+              <div className="parchment-panel">
+                <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
+                  This Week's Recommended Picks
+                </h2>
+                <div className="mt-6 grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
+                  {featuredPicks.map(({ key, label, resource }) => {
+                    const r = resource!;
+                    return (
+                      <article
+                        key={key}
+                        className="rounded-2xl border-2 border-accent bg-background/70 p-4 sm:p-5 flex flex-col"
+                      >
+                        <span className="self-start rounded-full bg-accent px-3 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-accent-foreground">
+                          {label}
+                        </span>
+                        <h3 className="mt-3 font-serif text-base sm:text-xl font-bold text-primary leading-snug">
+                          {r.title}
+                        </h3>
+                        {r.subtitle && (
+                          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                            {r.subtitle}
+                          </p>
+                        )}
+                        {typeof r.page_count === "number" && (
+                          <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            {r.page_count} {r.page_count === 1 ? "page" : "pages"}
+                          </p>
+                        )}
+                        <div className="mt-auto pt-4">
+                          <DownloadToPrintButton
+                            href={`/view/${r.id}/download`}
+                            publicationId={r.id}
+                            publicationTitle={r.title}
+                            onClick={() => {
+                              trackEvent("pdf_download", pdfParams(r));
+                              if (typeof window !== "undefined") {
+                                window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
+                              }
+                            }}
+                            className="w-full px-3 py-2.5 lg:py-2"
+                          />
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+
+            <div className="gold-divider" aria-hidden><span className="gold-divider-dot" /></div>
+          </>
+        )}
 
         {/* Resource collection */}
         <section id="this-weeks-collection" className="parchment-frame scroll-mt-8">
