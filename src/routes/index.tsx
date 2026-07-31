@@ -283,38 +283,25 @@ function Index() {
         {/* Hero */}
         <section className="parchment-frame">
           <div className="parchment-panel text-center">
-            <h1 className="font-serif text-[2.25rem] leading-[1.05] sm:text-5xl md:text-7xl font-bold tracking-tight text-primary">
-              <span className="block">Torah for the Table</span>
-              <span className="mt-2 block font-serif text-base sm:text-xl md:text-2xl font-medium tracking-normal text-primary/80">
-                — Weekly Divrei Torah for Shabbos &amp; Yom Tov
-              </span>
+            <h1 className="font-serif text-[2.25rem] leading-[1.05] sm:text-5xl md:text-6xl font-bold tracking-tight text-primary">
+              Free Divrei Torah for Your Shabbos Table
             </h1>
-            {resources.length > 0 && (
-              <p className="mt-4 sm:mt-6 font-sans text-[0.7rem] sm:text-sm uppercase tracking-[0.25em] sm:tracking-[0.3em] font-semibold text-accent">
-                {resources.length} Free Hand-Picked {resources.length === 1 ? "Devar" : "Divrei"} Torah
-              </p>
-            )}
-            <p className="mt-3 sm:mt-4 font-serif text-xl sm:text-2xl md:text-3xl text-primary">
-              {currentLabel} <span className="text-accent">•</span> New every Thursday
-            </p>
-            <p className="mt-3 sm:mt-4 font-serif italic text-base sm:text-lg md:text-xl text-accent max-w-2xl mx-auto">
-              Ready-to-print Torah sheets for children, families, and adults.
+            <p className="mt-4 sm:mt-6 font-serif text-lg sm:text-xl md:text-2xl text-primary max-w-2xl mx-auto">
+              {resources.length} handpicked, print-ready {resources.length === 1 ? "selection" : "selections"} for {currentLabel} — for children, families, and adults.
             </p>
             <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-              {resources.length > 0 && (
-                <a
-                  href="#this-weeks-collection"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    document
-                      .getElementById("this-weeks-collection")
-                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }}
-                  className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md"
-                >
-                  Browse This Week's Collection ↓
-                </a>
-              )}
+              <a
+                href="#this-weeks-collection"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document
+                    .getElementById("this-weeks-collection")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md"
+              >
+                Browse This Week's Collection ↓
+              </a>
               <a
                 href="#weekly-email-signup"
                 onClick={(e) => {
@@ -325,16 +312,9 @@ function Index() {
                 }}
                 className="inline-flex items-center justify-center rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors"
               >
-                Get the Weekly Email
+                Get the Thursday Email
               </a>
-              <Link
-                to="/short-vorts"
-                className="inline-flex items-center justify-center rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors"
-              >
-                Short Vorts
-              </Link>
             </div>
-
           </div>
         </section>
 
