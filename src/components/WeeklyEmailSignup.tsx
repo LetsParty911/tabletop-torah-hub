@@ -99,6 +99,9 @@ export function WeeklyEmailSignup({
         {signupMsg && (
           <p className="mt-4 text-sm text-accent font-serif">{signupMsg}</p>
         )}
+        <p className="mt-4 text-xs text-muted-foreground">
+          No spam. Unsubscribe anytime.
+        </p>
       </div>
     </section>
   );
