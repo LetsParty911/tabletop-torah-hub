@@ -173,9 +173,16 @@ type PdfResource = {
   format_type: string | null;
   page_count: number | null;
   badge: string | null;
+  featured_slot: string | null;
 };
 
 async function fetchAllPublishedRows(admin: ReturnType<typeof getSupabaseAdmin>) {
+  const withSlot = await admin
+    .from("pdfs")
+    .select("id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, description, audience, format_type, page_count, badge, featured_slot")
+    .eq("published", true)
+    .order("created_at", { ascending: false });
+  if (!withSlot.error) return withSlot.data ?? [];
   const withMeta = await admin
     .from("pdfs")
     .select("id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, description, audience, format_type, page_count, badge")
@@ -237,6 +244,7 @@ async function buildResources(
         format_type: (r.format_type as string | null) ?? null,
         page_count: typeof r.page_count === "number" ? r.page_count : null,
         badge: (r.badge as string | null) ?? null,
+        featured_slot: (r.featured_slot as string | null) ?? null,
       };
     }),
   );
@@ -1083,6 +1091,11 @@ export const adminListPdfs = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
+    const withSlot = await admin
+      .from("pdfs")
+      .select("id, parsha_key, title, subtitle, file_path, published, jewish_year, created_at, summary_quick, content_type, primary_category, tags, publication, description, audience, format_type, page_count, badge, featured_slot")
+      .order("created_at", { ascending: false });
+    if (!withSlot.error) return { pdfs: withSlot.data ?? [] };
     const withMeta = await admin
       .from("pdfs")
       .select("id, parsha_key, title, subtitle, file_path, published, jewish_year, created_at, summary_quick, content_type, primary_category, tags, publication, description, audience, format_type, page_count, badge")
@@ -1175,6 +1188,7 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     formatType?: string | null;
     pageCount?: number | null;
     badge?: string | null;
+    featuredSlot?: string | null;
   }) =>
     z
       .object({
@@ -1194,6 +1208,7 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
         formatType: z.enum(["Short Vorts", "Stories", "Halacha", "Essays"]).nullable().optional(),
         pageCount: z.number().int().min(0).max(10000).nullable().optional(),
         badge: z.enum(["Recommended", "Quick Read", "Kids' Pick"]).nullable().optional(),
+        featuredSlot: z.enum(["children", "family", "quickest", "deeper"]).nullable().optional(),
       })
       .parse(input),
   )
@@ -1260,8 +1275,10 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     if (data.formatType !== undefined && data.formatType !== null) insertRow.format_type = data.formatType;
     if (data.pageCount !== undefined && data.pageCount !== null) insertRow.page_count = data.pageCount;
     if (data.badge !== undefined && data.badge !== null) insertRow.badge = data.badge;
+    if (data.featuredSlot !== undefined && data.featuredSlot !== null)
+      insertRow.featured_slot = data.featuredSlot;
 
-    const metaKeys = ["description", "audience", "format_type", "page_count", "badge"] as const;
+    const metaKeys = ["description", "audience", "format_type", "page_count", "badge", "featured_slot"] as const;
     const tryInsert = async (row: Record<string, unknown>) => (await admin.from("pdfs").insert(row)).error;
     let currentRow: Record<string, unknown> = { ...insertRow };
     let insErr = await tryInsert(currentRow);
@@ -1298,6 +1315,7 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
     formatType?: string | null;
     pageCount?: number | null;
     badge?: string | null;
+    featuredSlot?: string | null;
   }) =>
     z
       .object({
@@ -1313,6 +1331,7 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
         formatType: z.enum(["Short Vorts", "Stories", "Halacha", "Essays"]).nullable().optional(),
         pageCount: z.number().int().min(0).max(10000).nullable().optional(),
         badge: z.enum(["Recommended", "Quick Read", "Kids' Pick"]).nullable().optional(),
+        featuredSlot: z.enum(["children", "family", "quickest", "deeper"]).nullable().optional(),
       })
       .parse(input),
   )
@@ -1330,8 +1349,9 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
     if (data.formatType !== undefined) update.format_type = data.formatType;
     if (data.pageCount !== undefined) update.page_count = data.pageCount;
     if (data.badge !== undefined) update.badge = data.badge;
+    if (data.featuredSlot !== undefined) update.featured_slot = data.featuredSlot;
     if (Object.keys(update).length === 0) return { ok: true };
-    const metaKeys = ["description", "audience", "format_type", "page_count", "badge", "publication"] as const;
+    const metaKeys = ["description", "audience", "format_type", "page_count", "badge", "publication", "featured_slot"] as const;
     let current: Record<string, unknown> = { ...update };
     let { error } = await admin.from("pdfs").update(current).eq("id", data.id);
     while (error) {
