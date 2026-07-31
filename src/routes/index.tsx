@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { FileText } from "lucide-react";
+import { FileText, Share2 } from "lucide-react";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { WhatsNewBanner } from "@/components/WhatsNewBanner";
 import { WhatsNewPopup } from "@/components/WhatsNewPopup";
@@ -293,6 +293,22 @@ function Index() {
     parsha: currentParshaKey ?? undefined,
   });
 
+  const shareText = `${resources.length} free, handpicked Divrei Torah for ${currentLabel} — ready to download and print: TorahForTheTable.com`;
+  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+
+  const ShareButton = ({ className }: { className?: string }) => (
+    <a
+      href={whatsappHref}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() => trackEvent("share_whatsapp", { parsha: currentParshaKey ?? currentLabel, count: resources.length })}
+      className={`inline-flex items-center justify-center gap-2 rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors ${className ?? ""}`}
+    >
+      <Share2 className="h-4 w-4" />
+      Share This Week's Divrei Torah
+    </a>
+  );
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -336,6 +352,11 @@ function Index() {
                 Get the Thursday Email
               </a>
             </div>
+            {resources.length > 0 && (
+              <div className="mt-4 flex justify-center">
+                <ShareButton />
+              </div>
+            )}
           </div>
         </section>
 
@@ -580,6 +601,11 @@ function Index() {
                 >
                   Browse Archive →
                 </Link>
+              </div>
+            )}
+            {resources.length > 0 && (
+              <div className="mt-5 flex justify-center">
+                <ShareButton />
               </div>
             )}
           </div>
