@@ -334,14 +334,9 @@ function Index() {
                 }}
                 className="inline-flex items-center justify-center rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors"
               >
-                Get the Thursday Email
+                Remind Me Weekly
               </a>
             </div>
-            {resources.length > 0 && (
-              <div className="mt-4 flex justify-center">
-                <ShareButton />
-              </div>
-            )}
           </div>
         </section>
 
