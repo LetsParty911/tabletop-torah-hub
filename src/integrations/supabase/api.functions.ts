@@ -276,7 +276,7 @@ async function buildResources(
   rows: any[],
 ): Promise<PdfResource[]> {
   const orderMap = await getTitleSortOrderMap(admin);
-  const canonical = await getCanonicalNameByPdfId(admin);
+  const canonical = await getCanonicalByPdfId(admin);
   const displayTitle = (r: any): string => canonical.get(r.id as string) ?? r.title;
   const orderFor = (title: string): number => {
     const v = orderMap.get(title.trim().toLowerCase());
@@ -501,7 +501,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
     const current = await resolveCurrentFeatured();
     const displayed = await resolveDisplayedCollection(admin, current.comparableKey);
     const orderMap = await getTitleSortOrderMap(admin);
-    const canonical = await getCanonicalNameByPdfId(admin);
+    const canonical = await getCanonicalByPdfId(admin);
     const orderFor = (title: string): number => {
       const v = orderMap.get(title.trim().toLowerCase());
       return typeof v === "number" ? v : 999999;
