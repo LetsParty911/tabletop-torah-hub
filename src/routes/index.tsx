@@ -217,10 +217,24 @@ function Index() {
 
   const [shortOnly, setShortOnly] = useState(false);
 
+  const audienceRank = (r: (typeof resources)[number]) => {
+    const a = normalizeAudience(r.audience, r.title);
+    return a === "Children" ? 0 : a === "Families" ? 1 : a === "Adults" ? 2 : 3;
+  };
+
+  const sortedResources = [...resources].sort((a, b) => {
+    const rank = audienceRank(a) - audienceRank(b);
+    if (rank !== 0) return rank;
+    const pa = typeof a.page_count === "number" ? a.page_count : Number.POSITIVE_INFINITY;
+    const pb = typeof b.page_count === "number" ? b.page_count : Number.POSITIVE_INFINITY;
+    return pa - pb;
+  });
+
   const audienceFiltered =
     audienceFilter === "All"
-      ? resources
-      : resources.filter((r) => normalizeAudience(r.audience, r.title) === audienceFilter);
+      ? sortedResources
+      : sortedResources.filter((r) => normalizeAudience(r.audience, r.title) === audienceFilter);
+
 
   const filteredResources = shortOnly
     ? audienceFiltered.filter((r) => typeof r.page_count === "number" && r.page_count < 5)
