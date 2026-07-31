@@ -1281,6 +1281,7 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     fileName: string;
     fileBase64: string;
     jewishYear: number;
+    publicationId?: string | null;
     primaryCategory?: string | null;
     publication?: string | null;
     tags?: string[] | null;
@@ -1301,6 +1302,7 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
         fileName: z.string().min(1).max(255),
         fileBase64: z.string().min(10),
         jewishYear: z.number().int().min(5000).max(7000),
+        publicationId: z.string().uuid().nullable().optional(),
         primaryCategory: z.enum(["kids", "family", "in_depth", "reference"]).nullable().optional(),
         publication: z.enum(["tftt_original", "mikaamcha", "peninei_mechkerei"]).nullable().optional(),
         tags: z.array(z.string().min(1).max(60)).max(20).nullable().optional(),
@@ -1367,6 +1369,7 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
       jewish_year: data.jewishYear,
       created_by: createdBy,
     };
+    if (data.publicationId) insertRow.publication_id = data.publicationId;
     if (data.primaryCategory) insertRow.primary_category = data.primaryCategory;
     const finalPublication = data.publication ?? autoPublication;
     if (finalPublication) insertRow.publication = finalPublication;
@@ -1379,7 +1382,7 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     if (data.featuredSlot !== undefined && data.featuredSlot !== null)
       insertRow.featured_slot = data.featuredSlot;
 
-    const metaKeys = ["description", "audience", "format_type", "page_count", "badge", "featured_slot"] as const;
+    const metaKeys = ["publication_id", "description", "audience", "format_type", "page_count", "badge", "featured_slot"] as const;
     const tryInsert = async (row: Record<string, unknown>) => (await admin.from("pdfs").insert(row)).error;
     let currentRow: Record<string, unknown> = { ...insertRow };
     let insErr = await tryInsert(currentRow);
@@ -1407,6 +1410,7 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
     accessToken: string;
     id: string;
     title?: string;
+    publicationId?: string | null;
     subtitle?: string | null;
     primaryCategory?: string | null;
     publication?: string | null;
@@ -1424,6 +1428,7 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
         accessToken: z.string().min(10),
         id: z.string().uuid(),
         title: z.string().min(1).max(300).optional(),
+        publicationId: z.string().uuid().nullable().optional(),
         subtitle: z.string().max(500).nullable().optional(),
         primaryCategory: z.enum(["kids", "family", "in_depth", "reference"]).nullable().optional(),
         publication: z.enum(["tftt_original", "mikaamcha", "peninei_mechkerei"]).nullable().optional(),
@@ -1454,6 +1459,7 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
     const admin = getSupabaseAdmin();
     const update: Record<string, unknown> = {};
     if (data.title !== undefined) update.title = data.title;
+    if (data.publicationId !== undefined) update.publication_id = data.publicationId;
     if (data.subtitle !== undefined) update.subtitle = data.subtitle;
     if (data.primaryCategory !== undefined) update.primary_category = data.primaryCategory;
     if (data.publication !== undefined) update.publication = data.publication;
@@ -1466,7 +1472,7 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
     if (data.featuredSlot !== undefined) update.featured_slot = data.featuredSlot;
     if (data.contentType !== undefined) update.content_type = data.contentType;
     if (Object.keys(update).length === 0) return { ok: true };
-    const metaKeys = ["description", "audience", "format_type", "page_count", "badge", "publication", "featured_slot"] as const;
+    const metaKeys = ["publication_id", "description", "audience", "format_type", "page_count", "badge", "publication", "featured_slot"] as const;
     let current: Record<string, unknown> = { ...update };
     let { error } = await admin.from("pdfs").update(current).eq("id", data.id);
     while (error) {
