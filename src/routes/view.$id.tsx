@@ -173,9 +173,18 @@ function ViewPdf() {
         <div className="mt-6">
           <iframe
             src={viewerSrc}
-            title={pdf.title}
+            title={`Embedded PDF viewer: ${pdf.title}`}
             className="w-full border-0 bg-muted h-[80vh] rounded-lg"
           />
+          <p className="mt-2 text-sm text-muted-foreground">
+            Can't read the embedded viewer?{" "}
+            <a
+              href={`/view/${pdf.id}/download`}
+              className="font-medium text-accent underline hover:text-primary"
+            >
+              Download the PDF file for {pdf.title}
+            </a>
+          </p>
         </div>
 
         <div className="mt-6">

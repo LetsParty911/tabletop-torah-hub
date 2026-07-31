@@ -283,6 +283,7 @@ function ArchivePage() {
                           key={audience}
                           type="button"
                           aria-pressed={active}
+                          aria-label={`Filter by audience: ${audience}, ${count} ${count === 1 ? "publication" : "publications"}`}
                           onClick={() => setAudienceFilter(active ? "All" : audience)}
                           className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
                             active

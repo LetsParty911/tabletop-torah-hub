@@ -471,6 +471,7 @@ function Index() {
                             key={audience}
                             type="button"
                             aria-pressed={active}
+                            aria-label={`Filter by audience: ${audience}, ${count} ${count === 1 ? "publication" : "publications"}`}
                             onClick={() => setAudienceFilter(active ? "All" : audience)}
                             className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
                               active
@@ -495,6 +496,7 @@ function Index() {
                   <button
                     type="button"
                     aria-pressed={shortOnly}
+                    aria-label={`Filter by length: under 5 pages, ${resources.filter((r) => typeof r.page_count === "number" && r.page_count < 5).length} publications`}
                     onClick={() => setShortOnly((v) => !v)}
                     className={`mt-1 inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
                       shortOnly
@@ -682,6 +684,7 @@ function Index() {
             </div>
             <h2
               dir="rtl"
+              lang="he"
               className="mt-5 font-serif font-semibold text-primary"
               style={{ fontSize: "1.25rem", letterSpacing: "0.04em" }}
             >
@@ -689,6 +692,7 @@ function Index() {
             </h2>
             <div
               dir="rtl"
+              lang="he"
               className="mt-5 space-y-2 font-serif"
               style={{
                 fontSize: "1.05rem",
