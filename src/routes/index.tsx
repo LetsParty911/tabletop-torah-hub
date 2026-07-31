@@ -161,6 +161,32 @@ export const Route = createFileRoute("/")({
         { name: "twitter:image", content: image },
       ],
       links: [{ rel: "canonical", href: url }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "Torah for the Table",
+            url: "https://torahforthetable.com",
+            logo: "https://torahforthetable.com/favicon.png",
+            image,
+            description,
+            email: "torahforthetableinc@gmail.com",
+            sameAs: ["https://torahforthetable.com"],
+          }),
+        },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "Torah for the Table",
+            url: "https://torahforthetable.com",
+            description,
+          }),
+        },
+      ],
     };
   },
 });
