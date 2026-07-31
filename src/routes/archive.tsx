@@ -356,120 +356,122 @@ function ArchivePage() {
             </div>
           </section>
         ) : (
-          filteredYears.map((y: ArchiveYear) => (
+          <div id="archive-results" className="space-y-5 sm:space-y-8 md:space-y-10">
+            {filteredYears.map((y: ArchiveYear) => (
 
-            <section key={y.year} className="parchment-frame">
-              <div className="parchment-panel">
-                <div className="flex items-baseline justify-between gap-4 border-b-2 border-accent/30 pb-4 mb-6">
-                  <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-primary">
-                    {y.year}
-                  </h2>
-                  {(() => {
-                    const pdfCount = y.parshiyos.reduce((s: number, p: ArchiveParsha) => s + p.pdfs.length, 0);
-                    return (
-                      <span className="font-sans text-xs sm:text-sm uppercase tracking-[0.2em] text-accent">
-                        {y.parshiyos.length} {y.parshiyos.length === 1 ? "Parshas" : "Parshas"} · {pdfCount} {pdfCount === 1 ? "Dvar" : "Divrei"} Torah
-                      </span>
-                    );
-                  })()}
-                </div>
-                <div className="space-y-8">
-                  {y.parshiyos.map((p: ArchiveParsha) => (
-                    <div key={`${y.year}-${p.parshaKey}`}>
-                      <h3 className="font-serif text-xl sm:text-2xl font-semibold text-primary mb-4">
-                        Parshas {p.parshaKey}
-                      </h3>
-                      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                        {p.pdfs.map((r: ArchivePdf) => (
-                          <article
-                            key={r.id}
-                            className="rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent hover:shadow-md transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-accent/15 text-primary shrink-0">
-                                <FileText className="h-5 w-5" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-start justify-between gap-2">
-                                  <h4 className="font-serif text-base sm:text-lg font-bold text-primary line-clamp-2 leading-snug">
-                                    {r.title}
-                                  </h4>
-                                  {r.badge && (
-                                    <span className="shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
-                                      {r.badge}
-                                    </span>
+              <section key={y.year} className="parchment-frame">
+                <div className="parchment-panel">
+                  <div className="flex items-baseline justify-between gap-4 border-b-2 border-accent/30 pb-4 mb-6">
+                    <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-primary">
+                      {y.year}
+                    </h2>
+                    {(() => {
+                      const pdfCount = y.parshiyos.reduce((s: number, p: ArchiveParsha) => s + p.pdfs.length, 0);
+                      return (
+                        <span className="font-sans text-xs sm:text-sm uppercase tracking-[0.2em] text-accent">
+                          {y.parshiyos.length} {y.parshiyos.length === 1 ? "Parshas" : "Parshas"} · {pdfCount} {pdfCount === 1 ? "Dvar" : "Divrei"} Torah
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  <div className="space-y-8">
+                    {y.parshiyos.map((p: ArchiveParsha) => (
+                      <div key={`${y.year}-${p.parshaKey}`}>
+                        <h3 className="font-serif text-xl sm:text-2xl font-semibold text-primary mb-4">
+                          Parshas {p.parshaKey}
+                        </h3>
+                        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                          {p.pdfs.map((r: ArchivePdf) => (
+                            <article
+                              key={r.id}
+                              className="rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent hover:shadow-md transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-accent/15 text-primary shrink-0">
+                                  <FileText className="h-5 w-5" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <h4 className="font-serif text-base sm:text-lg font-bold text-primary line-clamp-2 leading-snug">
+                                      {r.title}
+                                    </h4>
+                                    {r.badge && (
+                                      <span className="shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
+                                        {r.badge}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {r.publisher && (
+                                    <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">
+                                      By {r.publisher}
+                                    </p>
+                                  )}
+                                  {r.subtitle && (
+                                    <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                                      {standardizeCopy(r.subtitle)}
+                                    </p>
+                                  )}
+                                  {r.description && (
+                                    <p className="mt-2 text-sm text-foreground/85 leading-snug">
+                                      {standardizeCopy(r.description)}
+                                    </p>
+                                  )}
+                                  {(r.audience || r.format_type || typeof r.page_count === "number") && (
+                                    <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                      {[
+                                        r.audience,
+                                        formatTypeLabel(r.format_type),
+                                        typeof r.page_count === "number"
+                                          ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
+                                          : null,
+                                      ].filter(Boolean).join(" · ")}
+                                    </p>
                                   )}
                                 </div>
-                                {r.publisher && (
-                                  <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">
-                                    By {r.publisher}
-                                  </p>
-                                )}
-                                {r.subtitle && (
-                                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                                    {standardizeCopy(r.subtitle)}
-                                  </p>
-                                )}
-                                {r.description && (
-                                  <p className="mt-2 text-sm text-foreground/85 leading-snug">
-                                    {standardizeCopy(r.description)}
-                                  </p>
-                                )}
-                                {(r.audience || r.format_type || typeof r.page_count === "number") && (
-                                  <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                    {[
-                                      r.audience,
-                                      formatTypeLabel(r.format_type),
-                                      typeof r.page_count === "number"
-                                        ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
-                                        : null,
-                                    ].filter(Boolean).join(" · ")}
-                                  </p>
-                                )}
                               </div>
-                            </div>
 
-                            <div className="mt-4">
-                              <DownloadToPrintButton
-                                href={`/view/${r.id}/download`}
-                                publicationId={r.id}
-                                publicationTitle={r.title}
-                                filename={buildDownloadFilename(
-                                  p.parshaKey,
-                                  (r as { publication?: string | null }).publication || r.title,
-                                )}
+                              <div className="mt-4">
+                                <DownloadToPrintButton
+                                  href={`/view/${r.id}/download`}
+                                  publicationId={r.id}
+                                  publicationTitle={r.title}
+                                  filename={buildDownloadFilename(
+                                    p.parshaKey,
+                                    (r as { publication?: string | null }).publication || r.title,
+                                  )}
 
-                                onClick={() => {
-                                  trackEvent("pdf_download", {
-                                    file_id: r.id,
-                                    file_title: r.title,
-                                    source_name: r.title,
-                                    parsha: p.parshaKey,
-                                    jewish_year: y.year,
-                                  });
-                                  if (typeof window !== "undefined") {
-                                    window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
-                                  }
-                                }}
-                                className="w-full"
-                              />
-                              <div className="mt-2 flex justify-center">
-                                <SharePublicationButton
-                                  pdfId={r.id}
-                                  title={r.title}
-                                  parsha={p.parshaKey}
+                                  onClick={() => {
+                                    trackEvent("pdf_download", {
+                                      file_id: r.id,
+                                      file_title: r.title,
+                                      source_name: r.title,
+                                      parsha: p.parshaKey,
+                                      jewish_year: y.year,
+                                    });
+                                    if (typeof window !== "undefined") {
+                                      window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
+                                    }
+                                  }}
+                                  className="w-full"
                                 />
+                                <div className="mt-2 flex justify-center">
+                                  <SharePublicationButton
+                                    pdfId={r.id}
+                                    title={r.title}
+                                    parsha={p.parshaKey}
+                                  />
+                                </div>
                               </div>
-                            </div>
-                          </article>
-                        ))}
+                            </article>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </section>
-          ))
+              </section>
+            ))}
+          </div>
         )}
 
         <footer className="text-center text-sm text-muted-foreground py-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
