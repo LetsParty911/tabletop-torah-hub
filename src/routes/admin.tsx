@@ -235,6 +235,7 @@ function AdminPage() {
   const [editMetaAudience, setEditMetaAudience] = useState<string>("");
   const [editMetaFeaturedSlot, setEditMetaFeaturedSlot] = useState<string>("");
   const [editMetaFormatType, setEditMetaFormatType] = useState<string>("");
+  const [editMetaContentType, setEditMetaContentType] = useState<string>("");
   const [editMetaPageCount, setEditMetaPageCount] = useState<string>("");
   const [editMetaBadge, setEditMetaBadge] = useState<string>("");
   const [savingMeta, setSavingMeta] = useState(false);
@@ -948,6 +949,7 @@ function AdminPage() {
     setEditMetaAudience((row?.audience as string) ?? "");
     setEditMetaFeaturedSlot((row?.featured_slot as string) ?? "");
     setEditMetaFormatType((row?.format_type as string) ?? "");
+    setEditMetaContentType((row?.content_type as string) ?? "");
     setEditMetaPageCount(row?.page_count != null ? String(row.page_count) : "");
     setEditMetaBadge((row?.badge as string) ?? "");
   };
@@ -975,6 +977,7 @@ function AdminPage() {
           audience: (editMetaAudience || null) as any,
           featuredSlot: (editMetaFeaturedSlot || null) as any,
           formatType: (editMetaFormatType || null) as any,
+          contentType: (editMetaContentType || null) as any,
           pageCount: editMetaPageCount.trim() ? Number(editMetaPageCount) : null,
           badge: (editMetaBadge || null) as any,
         },
@@ -2401,6 +2404,19 @@ function AdminPage() {
                   <option value="family">Best for the Family Table</option>
                   <option value="quickest">Quickest Read</option>
                   <option value="deeper">Deeper Learning</option>
+                                        </select>
+                                      </label>
+                                      <label className="block">
+                                        <span className="text-xs font-medium">Content type</span>
+                                        <select
+                                          value={editMetaContentType}
+                                          onChange={(e) => setEditMetaContentType(e.target.value)}
+                                          className="mt-1 w-full rounded-md border border-accent/60 bg-background px-2 py-1 text-sm"
+                                        >
+                                          <option value="">— none —</option>
+                                          {CONTENT_TYPE_OPTIONS.map((o) => (
+                                            <option key={o} value={o}>{o}</option>
+                                          ))}
                                         </select>
                                       </label>
                                       <label className="block">
