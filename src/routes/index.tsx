@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { FileText } from "lucide-react";
+import { FileText, Share2 } from "lucide-react";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { WhatsNewBanner } from "@/components/WhatsNewBanner";
 import { WhatsNewPopup } from "@/components/WhatsNewPopup";
