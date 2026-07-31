@@ -293,6 +293,7 @@ async function buildResources(
       return {
         id: r.id,
         title: displayTitle(r),
+        publisher: canonical.get(r.id as string)?.publisher ?? null,
         subtitle: r.subtitle,
         url: signed?.signedUrl ?? "#",
         summary_quick: r.summary_quick,
