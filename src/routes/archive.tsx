@@ -6,6 +6,7 @@ import { trackEvent } from "@/lib/analytics";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { normalizeAudience, type AudienceKey } from "@/lib/audience";
+import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 
 
@@ -409,7 +410,7 @@ function ArchivePage() {
                                   <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                     {[
                                       r.audience,
-                                      r.format_type,
+                                      formatTypeLabel(r.format_type),
                                       typeof r.page_count === "number"
                                         ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
                                         : null,

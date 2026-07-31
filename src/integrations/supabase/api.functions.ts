@@ -1336,7 +1336,7 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
         contentType: z
           .enum([
             "Questions & Answers",
-            "Short Vorts",
+            "Brief Insights",
             "Stories",
             "Parsha Essays",
             "Halacha",
