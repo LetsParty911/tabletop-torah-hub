@@ -624,13 +624,34 @@ export const getPdfById = createServerFn({ method: "GET" })
     if (!resolved || !row || !row.published) {
       return { pdf: null as null | PublicPdf };
     }
+    // Prefer the canonical publication name when the row is linked.
+    let displayTitle = row.title;
+    try {
+      const link = await admin
+        .from("pdfs")
+        .select("publication_id")
+        .eq("id", data.id)
+        .maybeSingle();
+      const pubId = (link.data as any)?.publication_id as string | null | undefined;
+      if (pubId) {
+        const pub = await admin
+          .from("publications")
+          .select("name")
+          .eq("id", pubId)
+          .maybeSingle();
+        const name = (pub.data as any)?.name as string | undefined;
+        if (name) displayTitle = name;
+      }
+    } catch {
+      /* pre-migration: keep pdfs.title */
+    }
     const { data: signed } = await admin.storage
       .from("pdfs")
       .createSignedUrl(row.file_path, 60 * 60);
     return {
       pdf: {
         id: row.id,
-        title: row.title,
+        title: displayTitle,
         subtitle: row.subtitle,
         url: signed?.signedUrl ?? "",
         createdAt: row.created_at ?? null,
