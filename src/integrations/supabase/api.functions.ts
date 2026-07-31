@@ -30,6 +30,59 @@ async function getTitleSortOrderMap(
   return map;
 }
 
+// Canonical publications: maps pdfs.id -> publications.name via pdfs.publication_id.
+// Tolerates the table/column not existing yet (pre-migration) by returning an empty map,
+// in which case callers fall back to pdfs.title.
+async function getCanonicalNameByPdfId(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  try {
+    const pubs = await admin.from("publications").select("id, name");
+    if (pubs.error) return out;
+    const byId = new Map<string, string>(
+      (pubs.data ?? []).map((p: any) => [p.id as string, p.name as string]),
+    );
+    const links = await admin.from("pdfs").select("id, publication_id");
+    if (links.error) return out;
+    for (const r of links.data ?? []) {
+      const name = r.publication_id ? byId.get(r.publication_id as string) : undefined;
+      if (name) out.set(r.id as string, name);
+    }
+  } catch {
+    /* pre-migration: fall back to titles */
+  }
+  return out;
+}
+
+export type CanonicalPublication = {
+  id: string;
+  name: string;
+  publisher: string | null;
+  default_audience: string | null;
+  default_format_type: string | null;
+  sort_order: number;
+  active: boolean;
+};
+
+// Public list of canonical publications (empty before the migration runs).
+export const listCanonicalPublications = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ publications: CanonicalPublication[] }> => {
+    const admin = getSupabaseAdmin();
+    try {
+      const { data, error } = await admin
+        .from("publications")
+        .select("id, name, publisher, default_audience, default_format_type, sort_order, active")
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true });
+      if (error) return { publications: [] };
+      return { publications: (data ?? []) as CanonicalPublication[] };
+    } catch {
+      return { publications: [] };
+    }
+  },
+);
+
 // Fetch the current Shabbos date (YYYY-MM-DD, NYC timezone) from Hebcal.
 // Returns null if Hebcal is unreachable or no parsha item is present.
 async function fetchCurrentShabbosDate(): Promise<string | null> {
