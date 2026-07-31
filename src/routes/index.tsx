@@ -451,75 +451,90 @@ function Index() {
               </p>
             ) : (
               <>
-                <div className="mt-5 sm:mt-6 flex flex-col items-center gap-2">
-                  <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Filter by audience
-                  </span>
-                  <div className="inline-flex max-w-full flex-wrap items-center justify-center gap-1 rounded-full border border-accent/40 bg-background/70 p-1 shadow-sm">
-                    {(["All", "Children", "Families", "Adults"] as const)
-                      .map((audience) => ({
-                        audience,
-                        count:
-                          audience === "All"
-                            ? resources.length
-                            : resources.filter(
-                                (r) => normalizeAudience(r.audience, r.title) === audience,
-                              ).length,
-
-                      }))
-                      .filter(({ audience, count }) => audience === "All" || count > 0)
-                      .map(({ audience, count }) => {
-                        const active = audienceFilter === audience;
-                        return (
-                          <button
-                            key={audience}
-                            type="button"
-                            aria-pressed={active}
-                            aria-label={`Filter by audience: ${audience}, ${count} ${count === 1 ? "publication" : "publications"}`}
-                            onClick={() => setAudienceFilter(active ? "All" : audience)}
-                            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
-                              active
-                                ? "bg-accent text-accent-foreground shadow-sm"
-                                : "text-primary hover:bg-accent/12"
-                            }`}
-                          >
-                            {audience}
-                            <span
-                              className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
+                <div className="mt-5 sm:mt-6 flex flex-col items-center gap-3">
+                  <div className="flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-2">
+                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      By audience:
+                    </span>
+                    <div className="flex max-w-full flex-wrap items-center justify-center gap-2">
+                      {(["All", "Children", "Families", "Adults"] as const)
+                        .map((audience) => ({
+                          audience,
+                          count:
+                            audience === "All"
+                              ? resources.length
+                              : resources.filter(
+                                  (r) => normalizeAudience(r.audience, r.title) === audience,
+                                ).length,
+                        }))
+                        .filter(({ audience, count }) => audience === "All" || count > 0)
+                        .map(({ audience, count }) => {
+                          const active = audienceFilter === audience;
+                          return (
+                            <button
+                              key={audience}
+                              type="button"
+                              aria-pressed={active}
+                              aria-label={`Filter by audience: ${audience}, ${count} ${count === 1 ? "publication" : "publications"}`}
+                              onClick={() => setAudienceFilter(active ? "All" : audience)}
+                              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 ${
                                 active
-                                  ? "bg-accent-foreground/20 text-accent-foreground"
-                                  : "bg-accent/15 text-accent"
+                                  ? "border-accent bg-accent text-accent-foreground shadow-sm"
+                                  : "border-accent/40 bg-background/70 text-primary hover:border-accent hover:bg-accent/12 hover:shadow-sm"
                               }`}
                             >
-                              {count}
-                            </span>
-                          </button>
-                        );
-                      })}
+                              {audience}
+                              <span
+                                className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
+                                  active
+                                    ? "bg-accent-foreground/20 text-accent-foreground"
+                                    : "bg-accent/15 text-accent"
+                                }`}
+                              >
+                                {count}
+                              </span>
+                            </button>
+                          );
+                        })}
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    aria-pressed={shortOnly}
-                    aria-label={`Filter by length: under 5 pages, ${resources.filter((r) => typeof r.page_count === "number" && r.page_count < 5).length} publications`}
-                    onClick={() => setShortOnly((v) => !v)}
-                    className={`mt-1 inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
-                      shortOnly
-                        ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                        : "border-accent/40 bg-background/70 text-primary hover:bg-accent/12"
-                    }`}
-                  >
-                    Under 5 Pages
-                    <span
-                      className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
-                        shortOnly
-                          ? "bg-accent-foreground/20 text-accent-foreground"
-                          : "bg-accent/15 text-accent"
-                      }`}
-                    >
-                      {resources.filter((r) => typeof r.page_count === "number" && r.page_count < 5).length}
+
+                  <div className="flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-2">
+                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      By length:
                     </span>
-                  </button>
+                    {(() => {
+                      const shortCount = audienceFiltered.filter(
+                        (r) => typeof r.page_count === "number" && r.page_count < 5,
+                      ).length;
+                      return (
+                        <button
+                          type="button"
+                          aria-pressed={shortOnly}
+                          aria-label={`Filter by length: under 5 pages, ${shortCount} ${shortCount === 1 ? "publication" : "publications"}`}
+                          onClick={() => setShortOnly((v) => !v)}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 ${
+                            shortOnly
+                              ? "border-accent bg-accent text-accent-foreground shadow-sm"
+                              : "border-accent/40 bg-background/70 text-primary hover:border-accent hover:bg-accent/12 hover:shadow-sm"
+                          }`}
+                        >
+                          Under 5 Pages
+                          <span
+                            className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
+                              shortOnly
+                                ? "bg-accent-foreground/20 text-accent-foreground"
+                                : "bg-accent/15 text-accent"
+                            }`}
+                          >
+                            {shortCount}
+                          </span>
+                        </button>
+                      );
+                    })()}
+                  </div>
                 </div>
+
 
 
 
