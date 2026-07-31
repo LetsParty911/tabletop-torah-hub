@@ -572,6 +572,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
 export type PublicPdf = {
   id: string;
   title: string;
+  publisher: string | null;
   subtitle: string | null;
   url: string;
   createdAt: string | null;
