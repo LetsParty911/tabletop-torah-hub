@@ -397,12 +397,12 @@ function ArchivePage() {
                                 </div>
                                 {r.subtitle && (
                                   <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                                    {r.subtitle}
+                                    {standardizeCopy(r.subtitle)}
                                   </p>
                                 )}
                                 {r.description && (
                                   <p className="mt-2 text-sm text-foreground/85 leading-snug">
-                                    {r.description}
+                                    {standardizeCopy(r.description)}
                                   </p>
                                 )}
                                 {(r.audience || r.format_type || typeof r.page_count === "number") && (
