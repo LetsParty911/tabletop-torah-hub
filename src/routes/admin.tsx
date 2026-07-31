@@ -1442,7 +1442,7 @@ function AdminPage() {
         {/* Parsha override */}
         <section className="parchment-frame">
           <div className="parchment-panel">
-            <h2 className="font-serif text-2xl font-semibold text-primary">Manual Parsha Override</h2>
+            <h2 className="font-serif text-2xl font-semibold text-primary">Manual Parshas Override</h2>
             <p className="text-sm text-muted-foreground mt-1">
               Leave empty to use Hebcal's automatic Parshas. An override only applies to the current week's Shabbos — once that Shabbos passes, Hebcal automatically takes over again.
             </p>
