@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { normalizeAudience, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
@@ -444,6 +445,13 @@ function ArchivePage() {
                                 }}
                                 className="w-full"
                               />
+                              <div className="mt-2 flex justify-center">
+                                <SharePublicationButton
+                                  pdfId={r.id}
+                                  title={r.title}
+                                  parsha={p.parshaKey}
+                                />
+                              </div>
                             </div>
                           </article>
                         ))}

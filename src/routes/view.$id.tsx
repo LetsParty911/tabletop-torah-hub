@@ -8,6 +8,7 @@ import { normalizeAudience } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 
 
@@ -143,7 +144,7 @@ function ViewPdf() {
           </div>
         </div>
 
-        <div className="mt-5">
+        <div className="mt-5 flex flex-wrap items-center gap-3">
           <DownloadToPrintButton
             href={`/view/${pdf.id}/download`}
             publicationId={pdf.id}
@@ -160,6 +161,12 @@ function ViewPdf() {
               })
             }
             className="px-5 py-2.5"
+          />
+          <SharePublicationButton
+            pdfId={pdf.id}
+            title={pdf.title}
+            parsha={pdf.parsha_key}
+            variant="inline"
           />
         </div>
 
