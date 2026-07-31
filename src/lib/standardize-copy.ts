@@ -7,9 +7,25 @@
  * contents, or admin-entered values as stored in the database.
  */
 const RULES: Array<[RegExp, string]> = [
-  // Shabbat -> Shabbos
+  // Shabbat / Shabbatos -> Shabbos / Shabbosos
+  [/\bShabbatos\b/g, "Shabbosos"],
+  [/\bshabbatos\b/g, "Shabbosos"],
+  [/\bShabbatot\b/g, "Shabbosos"],
+  [/\bshabbatot\b/g, "Shabbosos"],
   [/\bShabbat\b/g, "Shabbos"],
   [/\bshabbat\b/g, "Shabbos"],
+  // Haftarah
+  [/\bHaftorahs\b/g, "Haftarahs"],
+  [/\bhaftorahs\b/g, "Haftarahs"],
+  [/\bHaftorah\b/g, "Haftarah"],
+  [/\bhaftorah\b/g, "Haftarah"],
+  [/\bHaftorat\b/g, "Haftarah"],
+  [/\bhaftorat\b/g, "Haftarah"],
+  [/\bHaftara\b/g, "Haftarah"],
+  [/\bhaftara\b/g, "Haftarah"],
+  [/\bHaftarat\b/g, "Haftarah"],
+  [/\bhaftarat\b/g, "Haftarah"],
+
   // Parashat / Parshat / Parasha / Parashah / Parsha -> Parshas / parsha forms
   [/\bParashat\b/g, "Parshas"],
   [/\bparashat\b/g, "Parshas"],
