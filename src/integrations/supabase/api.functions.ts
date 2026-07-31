@@ -271,11 +271,15 @@ async function buildResources(
   rows: any[],
 ): Promise<PdfResource[]> {
   const orderMap = await getTitleSortOrderMap(admin);
+  const canonical = await getCanonicalNameByPdfId(admin);
+  const displayTitle = (r: any): string => canonical.get(r.id as string) ?? r.title;
   const orderFor = (title: string): number => {
     const v = orderMap.get(title.trim().toLowerCase());
     return typeof v === "number" ? v : 999999;
   };
-  const sorted = [...rows].sort((a, b) => orderFor(a.title) - orderFor(b.title));
+  const sorted = [...rows].sort(
+    (a, b) => orderFor(displayTitle(a)) - orderFor(displayTitle(b)),
+  );
   return Promise.all(
     sorted.map(async (r: any) => {
       const { data: signed } = await admin.storage
@@ -283,7 +287,7 @@ async function buildResources(
         .createSignedUrl(r.file_path, 60 * 60);
       return {
         id: r.id,
-        title: r.title,
+        title: displayTitle(r),
         subtitle: r.subtitle,
         url: signed?.signedUrl ?? "#",
         summary_quick: r.summary_quick,
