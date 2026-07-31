@@ -1,9 +1,15 @@
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { ArrowLeft, Download, Printer } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { getPdfById } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
+import { normalizeAudience } from "@/lib/audience";
+import { formatTypeLabel } from "@/lib/format-labels";
+import { buildDownloadFilename } from "@/lib/download-filename";
+import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
+
 
 export const Route = createFileRoute("/view/$id")({
   loader: async ({ params }) => {
