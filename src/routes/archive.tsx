@@ -398,6 +398,11 @@ function ArchivePage() {
                                     </span>
                                   )}
                                 </div>
+                                {r.publisher && (
+                                  <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">
+                                    By {r.publisher}
+                                  </p>
+                                )}
                                 {r.subtitle && (
                                   <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                                     {standardizeCopy(r.subtitle)}

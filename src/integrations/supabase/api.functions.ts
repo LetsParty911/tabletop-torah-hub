@@ -30,30 +30,35 @@ async function getTitleSortOrderMap(
   return map;
 }
 
-// Canonical publications: maps pdfs.id -> publications.name via pdfs.publication_id.
+// Canonical publications: maps pdfs.id -> { name, publisher } via pdfs.publication_id.
 // Tolerates the table/column not existing yet (pre-migration) by returning an empty map,
 // in which case callers fall back to pdfs.title.
-async function getCanonicalNameByPdfId(
+type CanonicalInfo = { name: string; publisher: string | null };
+async function getCanonicalByPdfId(
   admin: ReturnType<typeof getSupabaseAdmin>,
-): Promise<Map<string, string>> {
-  const out = new Map<string, string>();
+): Promise<Map<string, CanonicalInfo>> {
+  const out = new Map<string, CanonicalInfo>();
   try {
-    const pubs = await admin.from("publications").select("id, name");
+    const pubs = await admin.from("publications").select("id, name, publisher");
     if (pubs.error) return out;
-    const byId = new Map<string, string>(
-      (pubs.data ?? []).map((p: any) => [p.id as string, p.name as string]),
+    const byId = new Map<string, CanonicalInfo>(
+      (pubs.data ?? []).map((p: any) => [
+        p.id as string,
+        { name: p.name as string, publisher: (p.publisher as string | null) ?? null },
+      ]),
     );
     const links = await admin.from("pdfs").select("id, publication_id");
     if (links.error) return out;
     for (const r of links.data ?? []) {
-      const name = r.publication_id ? byId.get(r.publication_id as string) : undefined;
-      if (name) out.set(r.id as string, name);
+      const info = r.publication_id ? byId.get(r.publication_id as string) : undefined;
+      if (info?.name) out.set(r.id as string, info);
     }
   } catch {
     /* pre-migration: fall back to titles */
   }
   return out;
 }
+
 
 export type CanonicalPublication = {
   id: string;
@@ -213,6 +218,7 @@ async function resolveCurrentFeatured(): Promise<{
 type PdfResource = {
   id: string;
   title: string;
+  publisher: string | null;
   subtitle: string | null;
   url: string;
   summary_quick: string | null;
@@ -271,8 +277,8 @@ async function buildResources(
   rows: any[],
 ): Promise<PdfResource[]> {
   const orderMap = await getTitleSortOrderMap(admin);
-  const canonical = await getCanonicalNameByPdfId(admin);
-  const displayTitle = (r: any): string => canonical.get(r.id as string) ?? r.title;
+  const canonical = await getCanonicalByPdfId(admin);
+  const displayTitle = (r: any): string => canonical.get(r.id as string)?.name ?? r.title;
   const orderFor = (title: string): number => {
     const v = orderMap.get(title.trim().toLowerCase());
     return typeof v === "number" ? v : 999999;
@@ -288,6 +294,7 @@ async function buildResources(
       return {
         id: r.id,
         title: displayTitle(r),
+        publisher: canonical.get(r.id as string)?.publisher ?? null,
         subtitle: r.subtitle,
         url: signed?.signedUrl ?? "#",
         summary_quick: r.summary_quick,
@@ -454,6 +461,7 @@ export const listPublicationsMeta = createServerFn({ method: "GET" }).handler(
 export type ArchivePdf = {
   id: string;
   title: string;
+  publisher: string | null;
   subtitle: string | null;
   summary_quick: string | null;
   description: string | null;
@@ -496,7 +504,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
     const current = await resolveCurrentFeatured();
     const displayed = await resolveDisplayedCollection(admin, current.comparableKey);
     const orderMap = await getTitleSortOrderMap(admin);
-    const canonical = await getCanonicalNameByPdfId(admin);
+    const canonical = await getCanonicalByPdfId(admin);
     const orderFor = (title: string): number => {
       const v = orderMap.get(title.trim().toLowerCase());
       return typeof v === "number" ? v : 999999;
@@ -522,7 +530,8 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
       if (!pmap.has(r.parsha_key)) pmap.set(r.parsha_key, []);
       pmap.get(r.parsha_key)!.push({
         id: r.id,
-        title: canonical.get(r.id as string) ?? r.title,
+        title: canonical.get(r.id as string)?.name ?? r.title,
+        publisher: canonical.get(r.id as string)?.publisher ?? null,
         subtitle: r.subtitle,
         summary_quick: r.summary_quick,
         description: (r.description as string | null) ?? null,
@@ -563,6 +572,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
 export type PublicPdf = {
   id: string;
   title: string;
+  publisher: string | null;
   subtitle: string | null;
   url: string;
   createdAt: string | null;
@@ -626,6 +636,7 @@ export const getPdfById = createServerFn({ method: "GET" })
     }
     // Prefer the canonical publication name when the row is linked.
     let displayTitle = row.title;
+    let publisher: string | null = null;
     try {
       const link = await admin
         .from("pdfs")
@@ -636,11 +647,12 @@ export const getPdfById = createServerFn({ method: "GET" })
       if (pubId) {
         const pub = await admin
           .from("publications")
-          .select("name")
+          .select("name, publisher")
           .eq("id", pubId)
           .maybeSingle();
         const name = (pub.data as any)?.name as string | undefined;
         if (name) displayTitle = name;
+        publisher = ((pub.data as any)?.publisher as string | null) ?? null;
       }
     } catch {
       /* pre-migration: keep pdfs.title */
@@ -652,7 +664,9 @@ export const getPdfById = createServerFn({ method: "GET" })
       pdf: {
         id: row.id,
         title: displayTitle,
+        publisher,
         subtitle: row.subtitle,
+
         url: signed?.signedUrl ?? "",
         createdAt: row.created_at ?? null,
         updatedAt: row.updated_at ?? null,
