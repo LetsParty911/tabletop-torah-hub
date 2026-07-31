@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSupabaseAdmin, getSupabaseForUser } from "@/integrations/supabase/ext.server";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
+import { standardizeCopy } from "@/lib/standardize-copy";
 
 // Build a map of normalized title -> sort_order from checklist_sources.
 // This is the same admin-managed order shown in the admin UI (10/20/30/40…).
@@ -295,7 +296,7 @@ async function buildResources(
         id: r.id,
         title: displayTitle(r),
         publisher: canonical.get(r.id as string)?.publisher ?? null,
-        subtitle: r.subtitle,
+        subtitle: standardizeCopy(r.subtitle),
         url: signed?.signedUrl ?? "#",
         summary_quick: r.summary_quick,
         content_type: r.content_type,
@@ -303,7 +304,7 @@ async function buildResources(
         primary_category: (r.primary_category as string | null) ?? null,
         publication: (r.publication as string | null) ?? null,
         tags: Array.isArray(r.tags) ? (r.tags as string[]) : [],
-        description: (r.description as string | null) ?? null,
+        description: standardizeCopy((r.description as string | null) ?? null),
         audience: (r.audience as string | null) ?? null,
         format_type: (r.format_type as string | null) ?? null,
         page_count: typeof r.page_count === "number" ? r.page_count : null,
@@ -532,9 +533,9 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
         id: r.id,
         title: canonical.get(r.id as string)?.name ?? r.title,
         publisher: canonical.get(r.id as string)?.publisher ?? null,
-        subtitle: r.subtitle,
+        subtitle: standardizeCopy(r.subtitle),
         summary_quick: r.summary_quick,
-        description: (r.description as string | null) ?? null,
+        description: standardizeCopy((r.description as string | null) ?? null),
         audience: (r.audience as string | null) ?? null,
         format_type: (r.format_type as string | null) ?? null,
         page_count: typeof r.page_count === "number" ? r.page_count : null,
@@ -665,13 +666,13 @@ export const getPdfById = createServerFn({ method: "GET" })
         id: row.id,
         title: displayTitle,
         publisher,
-        subtitle: row.subtitle,
+        subtitle: standardizeCopy(row.subtitle),
 
         url: signed?.signedUrl ?? "",
         createdAt: row.created_at ?? null,
         updatedAt: row.updated_at ?? null,
         weekOf: row.week_of ?? null,
-        description: row.description ?? null,
+        description: standardizeCopy(row.description ?? null),
         audience: row.audience ?? null,
         format_type: row.format_type ?? null,
         page_count: typeof row.page_count === "number" ? row.page_count : null,
