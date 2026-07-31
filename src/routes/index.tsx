@@ -8,6 +8,7 @@ import { UpdateCountdown } from "@/components/UpdateCountdown";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { normalizeAudience } from "@/lib/audience";
+import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
@@ -539,7 +540,7 @@ function Index() {
                             <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                               {[
                                 normalizeAudience(r.audience, r.title) ?? r.audience,
-                                r.format_type,
+                                formatTypeLabel(r.format_type),
 
                                 typeof r.page_count === "number"
                                   ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`

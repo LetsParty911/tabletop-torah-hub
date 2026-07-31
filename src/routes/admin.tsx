@@ -79,6 +79,8 @@ type PdfRow = {
   badge?: string | null;
 };
 
+import { formatTypeLabel } from "@/lib/format-labels";
+
 const AUDIENCE_OPTIONS = ["Adults", "Families", "Children"] as const;
 const FORMAT_TYPE_OPTIONS = ["Short Vorts", "Stories", "Halacha", "Essays"] as const;
 const CONTENT_TYPE_OPTIONS = [
@@ -1998,7 +2000,7 @@ function AdminPage() {
                 >
                   <option value="">— none —</option>
                   {AUDIENCE_OPTIONS.map((o) => (
-                    <option key={o} value={o}>{o}</option>
+                    <option key={o} value={o}>{formatTypeLabel(o)}</option>
                   ))}
                 </select>
               </label>
@@ -2025,7 +2027,7 @@ function AdminPage() {
                 >
                   <option value="">— none —</option>
                   {FORMAT_TYPE_OPTIONS.map((o) => (
-                    <option key={o} value={o}>{o}</option>
+                    <option key={o} value={o}>{formatTypeLabel(o)}</option>
                   ))}
                 </select>
               </label>
@@ -2048,7 +2050,7 @@ function AdminPage() {
                 >
                   <option value="">— none —</option>
                   {BADGE_OPTIONS.map((o) => (
-                    <option key={o} value={o}>{o}</option>
+                    <option key={o} value={o}>{formatTypeLabel(o)}</option>
                   ))}
                 </select>
               </label>
@@ -2426,7 +2428,7 @@ function AdminPage() {
                                         >
                                           <option value="">— none —</option>
                                           {AUDIENCE_OPTIONS.map((o) => (
-                                            <option key={o} value={o}>{o}</option>
+                                            <option key={o} value={o}>{formatTypeLabel(o)}</option>
                                           ))}
                                         </select>
                                       </label>
@@ -2453,7 +2455,7 @@ function AdminPage() {
                                         >
                                           <option value="">— none —</option>
                                           {CONTENT_TYPE_OPTIONS.map((o) => (
-                                            <option key={o} value={o}>{o}</option>
+                                            <option key={o} value={o}>{formatTypeLabel(o)}</option>
                                           ))}
                                         </select>
                                       </label>
@@ -2466,7 +2468,7 @@ function AdminPage() {
                                         >
                                           <option value="">— none —</option>
                                           {FORMAT_TYPE_OPTIONS.map((o) => (
-                                            <option key={o} value={o}>{o}</option>
+                                            <option key={o} value={o}>{formatTypeLabel(o)}</option>
                                           ))}
                                         </select>
                                       </label>
@@ -2489,7 +2491,7 @@ function AdminPage() {
                                         >
                                           <option value="">— none —</option>
                                           {BADGE_OPTIONS.map((o) => (
-                                            <option key={o} value={o}>{o}</option>
+                                            <option key={o} value={o}>{formatTypeLabel(o)}</option>
                                           ))}
                                         </select>
                                       </label>
