@@ -191,7 +191,7 @@ function ArchivePage() {
                 </label>
                 <label className="block text-left">
                   <span className="block font-sans text-[0.65rem] uppercase tracking-[0.2em] text-accent mb-1.5">
-                    Parsha
+                    Parshas
                   </span>
                   <select
                     value={parshaFilter}
