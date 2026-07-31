@@ -640,8 +640,10 @@ export const getParshaOverride = createServerFn({ method: "GET" }).handler(async
 
 // ---------- Public: subscribe email (unsubscribe-aware reactivation) ----------
 export const subscribeEmail = createServerFn({ method: "POST" })
-  .inputValidator((input: { email: string }) =>
-    z.object({ email: z.string().email().max(254) }).parse(input),
+  .inputValidator((input: { email: string; source?: string }) =>
+    z
+      .object({ email: z.string().email().max(254), source: z.string().max(64).optional() })
+      .parse(input),
   )
   .handler(async ({ data }) => {
     const admin = getSupabaseAdmin();
