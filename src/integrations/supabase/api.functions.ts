@@ -277,7 +277,7 @@ async function buildResources(
 ): Promise<PdfResource[]> {
   const orderMap = await getTitleSortOrderMap(admin);
   const canonical = await getCanonicalByPdfId(admin);
-  const displayTitle = (r: any): string => canonical.get(r.id as string) ?? r.title;
+  const displayTitle = (r: any): string => canonical.get(r.id as string)?.name ?? r.title;
   const orderFor = (title: string): number => {
     const v = orderMap.get(title.trim().toLowerCase());
     return typeof v === "number" ? v : 999999;
