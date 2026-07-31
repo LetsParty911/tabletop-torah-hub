@@ -1,3 +1,4 @@
+import { standardizeCopy } from "@/lib/standardize-copy";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { ArrowLeft, Download, Printer } from "lucide-react";
@@ -109,7 +110,7 @@ function ViewPdf() {
               {pdf.title}
             </h1>
             {pdf.subtitle && (
-              <p className="text-xs text-muted-foreground truncate">{pdf.subtitle}</p>
+              <p className="text-xs text-muted-foreground truncate">{standardizeCopy(pdf.subtitle)}</p>
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
