@@ -339,6 +339,10 @@ function Index() {
                 Remind Me Weekly
               </a>
             </div>
+            <div className="mt-4 flex justify-center">
+              <ShareButton />
+            </div>
+
           </div>
         </section>
 
