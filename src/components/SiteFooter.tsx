@@ -31,7 +31,15 @@ export function SiteFooter() {
         Contact
       </Link>
       <span aria-hidden>·</span>
+      <Link
+        to="/privacy"
+        className="hover:text-primary hover:underline transition-colors duration-150"
+      >
+        Privacy
+      </Link>
+      <span aria-hidden>·</span>
       <span>© {new Date().getFullYear()} Torah for the Table</span>
+
     </footer>
   );
 }
