@@ -6,7 +6,7 @@ const NAVY = "#1A365D";
 const CREAM = "#FBF7EE";
 const GOLD = "#B8912F";
 
-const YOGA_WASM_URL = "https://unpkg.com/yoga-wasm-web@0.3.3/dist/yoga.wasm";
+const YOGA_WASM_URL = "https://unpkg.com/satori@0.29.0/yoga.wasm";
 const RESVG_WASM_URL = "https://unpkg.com/@resvg/resvg-wasm@2.6.2/index_bg.wasm";
 
 type SerifFonts = { regular: ArrayBuffer; bold: ArrayBuffer };
