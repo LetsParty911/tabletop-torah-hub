@@ -20,24 +20,23 @@ let fontsPromise: Promise<SerifFonts> | null = null;
 async function fetchWasm(url: string) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch wasm: ${url}`);
-  return WebAssembly.compile(await res.arrayBuffer());
+  return res.arrayBuffer();
 }
 
 /** Compile the layout + raster engines once per isolate. */
 function getRenderer() {
   if (!rendererPromise) {
     rendererPromise = (async () => {
-      const [{ default: satori, init }, initYoga, resvg] = await Promise.all([
+      const [{ default: satori, init }, resvg] = await Promise.all([
         import("satori/standalone"),
-        import("yoga-wasm-web").then((m) => m.default),
         import("@resvg/resvg-wasm"),
       ]);
-      const [yogaModule, resvgModule] = await Promise.all([
+      const [yogaBytes, resvgBytes] = await Promise.all([
         fetchWasm(YOGA_WASM_URL),
         fetchWasm(RESVG_WASM_URL),
       ]);
-      init(await initYoga(yogaModule));
-      await resvg.initWasm(resvgModule);
+      await init(yogaBytes);
+      await resvg.initWasm(resvgBytes);
       return { satori, Resvg: resvg.Resvg };
     })().catch((e) => {
       rendererPromise = null;
