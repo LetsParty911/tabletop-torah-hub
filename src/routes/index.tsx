@@ -51,6 +51,7 @@ type LoaderData = {
   resources: Resource[];
   isFallback: boolean;
   fallbackParshaLabel: string | null;
+  fallbackParshaKey: string | null;
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
@@ -111,11 +112,13 @@ async function loadCurrentWeek(): Promise<LoaderData> {
   let resources: Resource[] = [];
   let isFallback = false;
   let fallbackParshaLabel: string | null = null;
+  let fallbackParshaKey: string | null = null;
   try {
     const r = await listHomepageWeek({ data: { parshaKey } });
     resources = r.resources;
     isFallback = r.isFallback;
     if (r.isFallback && r.fallbackParshaKey) {
+      fallbackParshaKey = r.fallbackParshaKey;
       fallbackParshaLabel = r.fallbackParshaKey.startsWith("Parshas")
         ? r.fallbackParshaKey
         : `Parshas ${r.fallbackParshaKey}`;
@@ -124,7 +127,7 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     console.error("Failed to load PDFs", e);
   }
 
-  return { label, parshaKey, resources, isFallback, fallbackParshaLabel };
+  return { label, parshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey };
 }
 
 export const Route = createFileRoute("/")({
@@ -211,13 +214,18 @@ const FEATURED_SLOTS = [
 ] as const;
 
 function Index() {
-  const { label: currentLabel, parshaKey: currentParshaKey, resources, isFallback, fallbackParshaLabel } =
+  const { label: currentLabel, parshaKey: currentParshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey } =
     Route.useLoaderData() as LoaderData;
+
+  // Everything user-facing (hero copy, counts, share text) derives from the
+  // collection actually displayed on the page, not the upcoming parsha.
+  const displayedLabel = isFallback && fallbackParshaLabel ? fallbackParshaLabel : currentLabel;
+  const displayedParshaKey = isFallback && fallbackParshaKey ? fallbackParshaKey : currentParshaKey;
   const [email, setEmail] = useState("");
   const [signupMsg, setSignupMsg] = useState<string | null>(null);
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
 
-  const [shortOnly, setShortOnly] = useState(false);
+  const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long">("All");
 
   const audienceRank = (r: (typeof resources)[number]) => {
     const a = normalizeAudience(r.audience, r.title);
@@ -238,9 +246,16 @@ function Index() {
       : sortedResources.filter((r) => normalizeAudience(r.audience, r.title) === audienceFilter);
 
 
-  const filteredResources = shortOnly
-    ? audienceFiltered.filter((r) => typeof r.page_count === "number" && r.page_count < 5)
-    : audienceFiltered;
+  const filteredResources =
+    lengthFilter === "All"
+      ? audienceFiltered
+      : audienceFiltered.filter((r) =>
+          typeof r.page_count === "number"
+            ? lengthFilter === "short"
+              ? r.page_count < 5
+              : r.page_count >= 5
+            : false,
+        );
 
 
   const featuredPicks = FEATURED_SLOTS.map((slot) => ({
@@ -296,10 +311,10 @@ function Index() {
     file_id: r.id,
     file_title: r.title,
     source_name: r.title,
-    parsha: currentParshaKey ?? undefined,
+    parsha: displayedParshaKey ?? undefined,
   });
 
-  const shareText = `${resources.length} free, handpicked Divrei Torah for ${currentLabel} — ready to download and print: TorahForTheTable.com`;
+  const shareText = `${resources.length} free, handpicked Divrei Torah for ${displayedLabel} — ready to download and print: TorahForTheTable.com`;
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
   const ShareButton = ({ className }: { className?: string }) => (
@@ -307,7 +322,7 @@ function Index() {
       href={whatsappHref}
       target="_blank"
       rel="noopener noreferrer"
-      onClick={() => trackEvent("share_whatsapp", { parsha: currentParshaKey ?? currentLabel, count: resources.length })}
+      onClick={() => trackEvent("share_whatsapp", { parsha: displayedParshaKey ?? displayedLabel, count: resources.length })}
       className={`inline-flex items-center justify-center gap-2 rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors ${className ?? ""}`}
     >
       <Share2 className="h-4 w-4" />
@@ -330,8 +345,13 @@ function Index() {
               Free Divrei Torah for Your Shabbos Table
             </h1>
             <p className="mt-4 sm:mt-6 font-serif text-lg sm:text-xl md:text-2xl text-primary max-w-2xl mx-auto">
-              {resources.length} handpicked, print-ready selections for {currentLabel} — for children, families, and adults.
+              {resources.length} handpicked, print-ready selections for {displayedLabel} — for children, families, and adults.
             </p>
+            {isFallback && resources.length > 0 && (
+              <p className="mt-2 font-serif italic text-sm sm:text-base text-accent">
+                {currentLabel} coming soon.
+              </p>
+            )}
             <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <a
                 href="#this-weeks-collection"
@@ -412,7 +432,7 @@ function Index() {
                             publicationId={r.id}
                             publicationTitle={r.title}
                             filename={buildDownloadFilename(
-                              (r as { parsha_key?: string | null }).parsha_key ?? currentParshaKey,
+                              (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
                               r.publication || r.title,
                             )}
                             onClick={() => {
@@ -427,7 +447,7 @@ function Index() {
                             <SharePublicationButton
                               pdfId={r.id}
                               title={r.title}
-                              parsha={(r as { parsha_key?: string | null }).parsha_key ?? currentParshaKey}
+                              parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
                             />
                           </div>
                         </div>
@@ -528,30 +548,42 @@ function Index() {
                       const shortCount = audienceFiltered.filter(
                         (r) => typeof r.page_count === "number" && r.page_count < 5,
                       ).length;
-                      return (
-                        <button
-                          type="button"
-                          aria-pressed={shortOnly}
-                          aria-label={`Filter by length: under 5 pages, ${shortCount} ${shortCount === 1 ? "publication" : "publications"}`}
-                          onClick={() => setShortOnly((v) => !v)}
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 ${
-                            shortOnly
-                              ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                              : "border-accent/40 bg-background/70 text-primary hover:border-accent hover:bg-accent/12 hover:shadow-sm"
-                          }`}
-                        >
-                          Under 5 Pages
-                          <span
-                            className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
-                              shortOnly
-                                ? "bg-accent-foreground/20 text-accent-foreground"
-                                : "bg-accent/15 text-accent"
+                      const longCount = audienceFiltered.filter(
+                        (r) => typeof r.page_count === "number" && r.page_count >= 5,
+                      ).length;
+                      const options = [
+                        { key: "All" as const, label: "All", count: audienceFiltered.length },
+                        { key: "short" as const, label: "Under 5 Pages", count: shortCount },
+                        { key: "long" as const, label: "5+ Pages", count: longCount },
+                      ].filter((o) => o.key === "All" || o.count > 0);
+                      return options.map((o) => {
+                        const active = lengthFilter === o.key;
+                        return (
+                          <button
+                            key={o.key}
+                            type="button"
+                            aria-pressed={active}
+                            aria-label={`Filter by length: ${o.label}, ${o.count} ${o.count === 1 ? "publication" : "publications"}`}
+                            onClick={() => setLengthFilter(active ? "All" : o.key)}
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 ${
+                              active
+                                ? "border-accent bg-accent text-accent-foreground shadow-sm"
+                                : "border-accent/40 bg-background/70 text-primary hover:border-accent hover:bg-accent/12 hover:shadow-sm"
                             }`}
                           >
-                            {shortCount}
-                          </span>
-                        </button>
-                      );
+                            {o.label}
+                            <span
+                              className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
+                                active
+                                  ? "bg-accent-foreground/20 text-accent-foreground"
+                                  : "bg-accent/15 text-accent"
+                              }`}
+                            >
+                              {o.count}
+                            </span>
+                          </button>
+                        );
+                      });
                     })()}
                   </div>
                 </div>
@@ -618,7 +650,7 @@ function Index() {
                           publicationId={r.id}
                           publicationTitle={r.title}
                           filename={buildDownloadFilename(
-                            (r as { parsha_key?: string | null }).parsha_key ?? currentParshaKey,
+                            (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
                             r.publication || r.title,
                           )}
                           onClick={() => {
@@ -633,7 +665,7 @@ function Index() {
                           <SharePublicationButton
                             pdfId={r.id}
                             title={r.title}
-                            parsha={(r as { parsha_key?: string | null }).parsha_key ?? currentParshaKey}
+                            parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
                           />
                         </div>
                       </div>
