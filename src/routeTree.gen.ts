@@ -21,6 +21,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as UnsubscribeIndexRouteImport } from './routes/unsubscribe.index'
 import { Route as ViewIdRouteImport } from './routes/view.$id'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
+import { Route as OgParshaDotpngRouteImport } from './routes/og.$parsha[.]png'
 import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
 import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
@@ -85,6 +86,11 @@ const UnsubscribeTokenRoute = UnsubscribeTokenRouteImport.update({
   path: '/unsubscribe/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OgParshaDotpngRoute = OgParshaDotpngRouteImport.update({
+  id: '/og/$parsha.png',
+  path: '/og/$parsha.png',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTrackDownloadRoute = ApiTrackDownloadRouteImport.update({
   id: '/api/track-download',
   path: '/api/track-download',
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
+  '/og/$parsha.png': typeof OgParshaDotpngRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe/': typeof UnsubscribeIndexRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
+  '/og/$parsha.png': typeof OgParshaDotpngRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe': typeof UnsubscribeIndexRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
+  '/og/$parsha.png': typeof OgParshaDotpngRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe/': typeof UnsubscribeIndexRoute
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/short-vorts'
     | '/sitemap.xml'
     | '/api/track-download'
+    | '/og/$parsha.png'
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe/'
@@ -183,6 +193,7 @@ export interface FileRouteTypes {
     | '/short-vorts'
     | '/sitemap.xml'
     | '/api/track-download'
+    | '/og/$parsha.png'
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe'
@@ -200,6 +211,7 @@ export interface FileRouteTypes {
     | '/short-vorts'
     | '/sitemap.xml'
     | '/api/track-download'
+    | '/og/$parsha.png'
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe/'
@@ -218,6 +230,7 @@ export interface RootRouteChildren {
   ShortVortsRoute: typeof ShortVortsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiTrackDownloadRoute: typeof ApiTrackDownloadRoute
+  OgParshaDotpngRoute: typeof OgParshaDotpngRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ViewIdRoute: typeof ViewIdRouteWithChildren
   UnsubscribeIndexRoute: typeof UnsubscribeIndexRoute
@@ -309,6 +322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UnsubscribeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/og/$parsha.png': {
+      id: '/og/$parsha.png'
+      path: '/og/$parsha.png'
+      fullPath: '/og/$parsha.png'
+      preLoaderRoute: typeof OgParshaDotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/track-download': {
       id: '/api/track-download'
       path: '/api/track-download'
@@ -357,6 +377,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShortVortsRoute: ShortVortsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiTrackDownloadRoute: ApiTrackDownloadRoute,
+  OgParshaDotpngRoute: OgParshaDotpngRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ViewIdRoute: ViewIdRouteWithChildren,
   UnsubscribeIndexRoute: UnsubscribeIndexRoute,
