@@ -1,3 +1,5 @@
+import { publicationLabel } from "@/lib/badges";
+
 // Shared download filename builder.
 // Format: TorahForTheTable.com_Parshas-{Parsha}_{PublicationName}.pdf
 // Spaces become hyphens; characters illegal in filenames are stripped.
@@ -20,7 +22,9 @@ export function buildDownloadFilename(
   const parsha = sanitizeSegment(
     (parshaKey || "").replace(/^(parshas|parashat|parsha)\s+/i, ""),
   );
-  const pub = sanitizeSegment(publicationName || "Publication") || "Publication";
+  // `publication` may be an internal slug; map it to the human-readable name.
+  const display = publicationLabel(publicationName) || publicationName;
+  const pub = sanitizeSegment(display || "Publication") || "Publication";
   const parts = ["TorahForTheTable.com"];
   if (parsha) parts.push(`Parshas-${parsha}`);
   parts.push(pub);
