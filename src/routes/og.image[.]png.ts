@@ -80,11 +80,25 @@ function getFonts() {
 type Node = { type: string; props: Record<string, unknown> };
 const el = (type: string, props: Record<string, unknown>): Node => ({ type, props });
 
-function buildTree(parshaLabel: string, count: number): Node {
-  const headline =
-    count > 0
+/** Trim to a word boundary so long publication titles never overflow. */
+function clampText(value: string, max: number) {
+  if (value.length <= max) return value;
+  const cut = value.slice(0, max);
+  const space = cut.lastIndexOf(" ");
+  return `${(space > max * 0.6 ? cut.slice(0, space) : cut).trimEnd()}…`;
+}
+
+function buildTree(parshaLabel: string, count: number, pubTitle: string | null): Node {
+  // Publication cards lead with the title; the weekly card leads with the parsha.
+  const headline = pubTitle
+    ? clampText(pubTitle, 62)
+    : count > 0
       ? `${parshaLabel} — ${count} ${count === 1 ? "Dvar" : "Divrei"} Torah, ready to print`
       : `${parshaLabel} — Divrei Torah, ready to print`;
+
+  const subline = pubTitle ? parshaLabel || "Divrei Torah, ready to print" : null;
+
+  const headlineSize = headline.length > 46 ? (headline.length > 62 ? 50 : 58) : 68;
 
   return el("div", {
     style: {
@@ -125,7 +139,7 @@ function buildTree(parshaLabel: string, count: number): Node {
           style: {
             display: "flex",
             textAlign: "center",
-            fontSize: headline.length > 58 ? 58 : 68,
+            fontSize: headlineSize,
             fontWeight: 700,
             lineHeight: 1.2,
             color: NAVY,
@@ -133,6 +147,22 @@ function buildTree(parshaLabel: string, count: number): Node {
           },
           children: headline,
         }),
+        ...(subline
+          ? [
+              el("div", {
+                style: {
+                  display: "flex",
+                  marginTop: 26,
+                  textAlign: "center",
+                  fontSize: 38,
+                  color: NAVY,
+                  opacity: 0.8,
+                  maxWidth: 940,
+                },
+                children: subline,
+              }),
+            ]
+          : []),
         el("div", {
           style: { marginTop: 46, fontSize: 30, color: NAVY, opacity: 0.72 },
           children: "TorahForTheTable.com",
@@ -167,10 +197,16 @@ export const Route = createFileRoute("/og/image.png")({
           : 0;
 
         const raw = (url.searchParams.get("parsha") ?? "").slice(0, 60).trim();
-        if (!raw) return staticFallback(request);
-        const parshaLabel = /^(parshas|parashat)\s/i.test(raw) ? raw : `Parshas ${raw}`;
+        const pubTitle = (url.searchParams.get("title") ?? "").slice(0, 120).trim() || null;
+        // A card needs at least one of parsha / title to say anything useful.
+        if (!raw && !pubTitle) return staticFallback(request);
+        const parshaLabel = !raw
+          ? ""
+          : /^(parshas|parashat)\s/i.test(raw)
+            ? raw
+            : `Parshas ${raw}`;
 
-        // Edge cache keyed on parsha + count so each card renders at most once.
+        // Edge cache keyed on the full query so each card renders at most once.
         const cache = (globalThis as { caches?: { default?: Cache } }).caches?.default;
         const cacheKey = new Request(url.toString(), { method: "GET" });
         if (cache) {
@@ -181,7 +217,7 @@ export const Route = createFileRoute("/og/image.png")({
         try {
           const [{ satori, Resvg }, fonts] = await Promise.all([getRenderer(), getFonts()]);
 
-          const svg = await satori(buildTree(parshaLabel, count) as never, {
+          const svg = await satori(buildTree(parshaLabel, count, pubTitle) as never, {
             width: WIDTH,
             height: HEIGHT,
             fonts: [

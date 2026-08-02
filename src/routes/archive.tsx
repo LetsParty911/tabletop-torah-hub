@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack/react-router";
 import { FileText, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
@@ -12,18 +12,87 @@ import { normalizeAudience, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 
+type ArchiveSearch = {
+  year: string;
+  parsha: string;
+  audience: "All" | AudienceKey;
+  q: string;
+};
+
+const AUDIENCE_VALUES = ["All", "Children", "Families", "Adults"] as const;
+
+/** Lenient parsing: any unexpected value falls back to the default. */
+function parseArchiveSearch(input: Record<string, unknown>): ArchiveSearch {
+  const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  const audience = str(input['audience']) as ArchiveSearch["audience"];
+  return {
+    year: str(input['year']).slice(0, 10) || "all",
+    parsha: str(input['parsha']).slice(0, 60) || "all",
+    audience: (AUDIENCE_VALUES as readonly string[]).includes(audience) ? audience : "All",
+    q: str(input['q']).slice(0, 100),
+  };
+}
+
+/** Keep default-valued params out of the URL so a clean /archive stays clean. */
+function stripDefaults(s: ArchiveSearch) {
+  const out: Partial<ArchiveSearch> = {};
+  if (s.year !== "all") out.year = s.year;
+  if (s.parsha !== "all") out.parsha = s.parsha;
+  if (s.audience !== "All") out.audience = s.audience;
+  if (s.q) out.q = s.q;
+  return out;
+}
+
+
 
 
 export const Route = createFileRoute("/archive")({
   component: ArchivePage,
   loader: () => listArchive(),
-  head: ({ loaderData }) => {
-    const title = "Archive — Torah for the Table";
-    const description =
-      "Browse the archive of past weekly Divrei Torah collections for Shabbos and Yom Tov.";
-    const url = "https://torahforthetable.com/archive";
-    const image =
-      "https://torahforthetable.com/og-image.png";
+  // Filters live in the URL, but they must not re-run the loader.
+  validateSearch: (search: Record<string, unknown>): ArchiveSearch =>
+    parseArchiveSearch(search),
+  // Default values never appear in the URL, so a clean /archive stays clean.
+  search: {
+    middlewares: [
+      stripSearchParams({ year: "all", parsha: "all", audience: "All", q: "" }),
+    ],
+  },
+  head: (ctx) => {
+    const { loaderData } = ctx;
+    const search = parseArchiveSearch(
+      ((ctx as { match?: { search?: Record<string, unknown> } }).match?.search ??
+        {}) as Record<string, unknown>,
+    );
+
+    const parshaLabel =
+      search.parsha !== "all"
+        ? /^(parshas|parashat)\s/i.test(search.parsha)
+          ? search.parsha
+          : `Parshas ${search.parsha}`
+        : null;
+    const yearPart = search.year !== "all" ? ` ${search.year}` : "";
+
+    const title = parshaLabel
+      ? `${parshaLabel}${yearPart} — Archive | Torah for the Table`
+      : "Archive — Torah for the Table";
+    const description = parshaLabel
+      ? `Printable Divrei Torah for ${parshaLabel}${yearPart} from the Torah for the Table archive — free downloads for children, families, and adults.`
+      : "Browse the archive of past weekly Divrei Torah collections for Shabbos and Yom Tov.";
+
+    // Filtered permutations canonicalize to their own parsha/year URL; everything
+    // else points at the bare /archive so indexing doesn't fragment.
+    const base = "https://torahforthetable.com/archive";
+    const canonicalParams = new URLSearchParams();
+    if (parshaLabel) {
+      canonicalParams.set("parsha", search.parsha);
+      if (search.year !== "all") canonicalParams.set("year", search.year);
+    }
+    const url = canonicalParams.toString() ? `${base}?${canonicalParams}` : base;
+
+    const image = parshaLabel
+      ? `${base.replace("/archive", "")}/og/image.png?parsha=${encodeURIComponent(search.parsha)}`
+      : "https://torahforthetable.com/og-image.png";
 
     const items = (loaderData?.years ?? [])
       .flatMap((y) => y.parshiyos.flatMap((p) => p.pdfs))
@@ -103,11 +172,46 @@ export const Route = createFileRoute("/archive")({
 
 function ArchivePage() {
   const { years } = Route.useLoaderData() as { years: ArchiveYear[] };
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
 
-  const [yearFilter, setYearFilter] = useState<string>("all");
-  const [parshaFilter, setParshaFilter] = useState<string>("all");
-  const [query, setQuery] = useState<string>("");
-  const [audienceFilter, setAudienceFilter] = useState<"All" | AudienceKey>("All");
+  const yearFilter = search.year;
+  const parshaFilter = search.parsha;
+  const audienceFilter = search.audience;
+  const query = search.q;
+
+  const setSearch = (patch: Partial<ArchiveSearch>, replace = false) => {
+    void navigate({
+      search: (prev: Record<string, unknown>) =>
+        stripDefaults(parseArchiveSearch({ ...prev, ...patch })) as never,
+      replace,
+      resetScroll: false,
+    });
+  };
+
+  const setYearFilter = (year: string) => setSearch({ year });
+  const setParshaFilter = (parsha: string) => setSearch({ parsha });
+  const setAudienceFilter = (audience: ArchiveSearch["audience"]) => setSearch({ audience });
+
+  // The search box stays instant locally; URL writes are debounced and replace
+  // history so typing doesn't create a back-button entry per keystroke.
+  const [queryDraft, setQueryDraft] = useState(query);
+  const lastPushedQuery = useRef(query);
+  useEffect(() => {
+    if (query !== lastPushedQuery.current) {
+      lastPushedQuery.current = query;
+      setQueryDraft(query);
+    }
+  }, [query]);
+  useEffect(() => {
+    if (queryDraft === query) return;
+    const t = setTimeout(() => {
+      lastPushedQuery.current = queryDraft;
+      setSearch({ q: queryDraft }, true);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [queryDraft, query]);
+
 
   const allParshiyos = useMemo(() => {
     const set = new Set<string>();
@@ -261,8 +365,8 @@ function ArchivePage() {
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-accent/70" />
                     <input
                       type="search"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
+                      value={queryDraft}
+                      onChange={(e) => setQueryDraft(e.target.value)}
                       placeholder="Search publication name or description…"
                       className="w-full rounded-lg border-2 border-accent/40 bg-background/60 pl-9 pr-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
                     />
@@ -317,10 +421,9 @@ function ArchivePage() {
                   <button
                     type="button"
                     onClick={() => {
-                      setYearFilter("all");
-                      setParshaFilter("all");
-                      setQuery("");
-                      setAudienceFilter("All");
+                      setQueryDraft("");
+                      lastPushedQuery.current = "";
+                      void navigate({ search: {} as never, resetScroll: false });
                     }}
                     className="text-accent hover:text-primary underline"
                   >

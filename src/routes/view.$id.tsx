@@ -22,10 +22,32 @@ export const Route = createFileRoute("/view/$id")({
   head: ({ loaderData, params }) => {
     const title = loaderData?.pdf?.title ?? "View PDF";
     const subtitle = loaderData?.pdf?.subtitle;
-    const pageTitle = subtitle ? `${title} — ${subtitle}` : title;
-    const description = subtitle ?? "Torah resource";
+
+    // Parsha comes from the record; never hardcoded, never an empty "Parshas " stub.
+    const rawParsha = (loaderData?.pdf?.parsha_key ?? "").trim();
+    const parshaLabel = rawParsha
+      ? /^(parshas|parashat)\s/i.test(rawParsha)
+        ? rawParsha
+        : `Parshas ${rawParsha}`
+      : null;
+
+    const pageTitle = parshaLabel
+      ? `${title} — ${parshaLabel} | Torah for the Table`
+      : `${title} | Torah for the Table`;
+
+    const clamp = (v: string) => (v.length > 155 ? `${v.slice(0, 152).trimEnd()}…` : v);
+    const description = clamp(
+      loaderData?.pdf?.description?.trim() ||
+        subtitle?.trim() ||
+        (parshaLabel
+          ? `A printable Dvar Torah for ${parshaLabel}, free from Torah for the Table.`
+          : "A printable Dvar Torah, free from Torah for the Table."),
+    );
+
     const url = `https://torahforthetable.com/view/${params.id}`;
-    const image = "https://torahforthetable.com/og-image.png";
+    const ogParams = new URLSearchParams({ title });
+    if (rawParsha) ogParams.set("parsha", rawParsha);
+    const image = `https://torahforthetable.com/og/image.png?${ogParams.toString()}`;
 
     // Best available publish/update dates, safely normalized to ISO strings.
     const toIso = (v: string | null | undefined): string | null => {
@@ -40,7 +62,7 @@ export const Route = createFileRoute("/view/$id")({
     const jsonLd: Record<string, unknown> = {
       "@context": "https://schema.org",
       "@type": "Article",
-      headline: title,
+      headline: parshaLabel ? `${title} — ${parshaLabel}` : title,
       name: title,
       description,
       url,
@@ -53,6 +75,7 @@ export const Route = createFileRoute("/view/$id")({
         logo: "https://torahforthetable.com/favicon.png",
       },
     };
+    if (parshaLabel) jsonLd.about = { "@type": "Thing", name: parshaLabel };
     if (datePublished) jsonLd.datePublished = datePublished;
     if (dateModified) jsonLd.dateModified = dateModified;
 
