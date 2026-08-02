@@ -241,6 +241,7 @@ function Index() {
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
 
   const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long">("All");
+  const [contentTypeFilter, setContentTypeFilter] = useState<string>("All");
 
   const audienceRank = (r: (typeof resources)[number]) => {
     const a = normalizeAudience(r.audience, r.title);
@@ -255,22 +256,43 @@ function Index() {
     return pa - pb;
   });
 
-  const audienceFiltered =
-    audienceFilter === "All"
-      ? sortedResources
-      : sortedResources.filter((r) => normalizeAudience(r.audience, r.title) === audienceFilter);
+  // Each filter is independent so every row's counts can respect the others.
+  const matchesAudience = (r: Resource, value = audienceFilter) =>
+    value === "All" || normalizeAudience(r.audience, r.title) === value;
+  const matchesLength = (r: Resource, value = lengthFilter) =>
+    value === "All"
+      ? true
+      : typeof r.page_count === "number"
+        ? value === "short"
+          ? r.page_count < 5
+          : r.page_count >= 5
+        : false;
+  const resourceContentType = (r: Resource) =>
+    formatTypeLabel(r.format_type) ?? formatTypeLabel(r.content_type);
+  const matchesContentType = (r: Resource, value = contentTypeFilter) =>
+    value === "All" || resourceContentType(r) === value;
 
+  const audienceFiltered = sortedResources.filter(
+    (r) => matchesLength(r) && matchesContentType(r),
+  );
+  const lengthScoped = sortedResources.filter(
+    (r) => matchesAudience(r) && matchesContentType(r),
+  );
+  const contentTypeScoped = sortedResources.filter(
+    (r) => matchesAudience(r) && matchesLength(r),
+  );
 
-  const filteredResources =
-    lengthFilter === "All"
-      ? audienceFiltered
-      : audienceFiltered.filter((r) =>
-          typeof r.page_count === "number"
-            ? lengthFilter === "short"
-              ? r.page_count < 5
-              : r.page_count >= 5
-            : false,
-        );
+  const contentTypeOptions = Array.from(
+    new Set(
+      sortedResources
+        .map((r) => resourceContentType(r))
+        .filter((v): v is string => !!v),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
+
+  const filteredResources = sortedResources.filter(
+    (r) => matchesAudience(r) && matchesLength(r) && matchesContentType(r),
+  );
 
 
   const featuredPicks = FEATURED_SLOTS.map((slot) => ({
@@ -518,8 +540,8 @@ function Index() {
                           audience,
                           count:
                             audience === "All"
-                              ? resources.length
-                              : resources.filter(
+                              ? audienceFiltered.length
+                              : audienceFiltered.filter(
                                   (r) => normalizeAudience(r.audience, r.title) === audience,
                                 ).length,
                         }))
@@ -560,14 +582,14 @@ function Index() {
                       By length:
                     </span>
                     {(() => {
-                      const shortCount = audienceFiltered.filter(
+                      const shortCount = lengthScoped.filter(
                         (r) => typeof r.page_count === "number" && r.page_count < 5,
                       ).length;
-                      const longCount = audienceFiltered.filter(
+                      const longCount = lengthScoped.filter(
                         (r) => typeof r.page_count === "number" && r.page_count >= 5,
                       ).length;
                       const options = [
-                        { key: "All" as const, label: "All", count: audienceFiltered.length },
+                        { key: "All" as const, label: "All", count: lengthScoped.length },
                         { key: "short" as const, label: "Under 5 Pages", count: shortCount },
                         { key: "long" as const, label: "5+ Pages", count: longCount },
                       ].filter((o) => o.key === "All" || o.count > 0);
@@ -601,6 +623,51 @@ function Index() {
                       });
                     })()}
                   </div>
+
+                  {contentTypeOptions.length > 0 && (
+                    <div className="flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-2">
+                      <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        By content type:
+                      </span>
+                      {[
+                        { key: "All", label: "All", count: contentTypeScoped.length },
+                        ...contentTypeOptions.map((t) => ({
+                          key: t,
+                          label: t,
+                          count: contentTypeScoped.filter((r) => resourceContentType(r) === t).length,
+                        })),
+                      ]
+                        .filter((o) => o.key === "All" || o.count > 0)
+                        .map((o) => {
+                          const active = contentTypeFilter === o.key;
+                          return (
+                            <button
+                              key={o.key}
+                              type="button"
+                              aria-pressed={active}
+                              aria-label={`Filter by content type: ${o.label}, ${o.count} ${o.count === 1 ? "publication" : "publications"}`}
+                              onClick={() => setContentTypeFilter(active ? "All" : o.key)}
+                              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 ${
+                                active
+                                  ? "border-accent bg-accent text-accent-foreground shadow-sm"
+                                  : "border-accent/40 bg-background/70 text-primary hover:border-accent hover:bg-accent/12 hover:shadow-sm"
+                              }`}
+                            >
+                              {o.label}
+                              <span
+                                className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
+                                  active
+                                    ? "bg-accent-foreground/20 text-accent-foreground"
+                                    : "bg-accent/15 text-accent"
+                                }`}
+                              >
+                                {o.count}
+                              </span>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  )}
                 </div>
 
 
@@ -690,7 +757,7 @@ function Index() {
 
                 {filteredResources.length === 0 && (
                   <p className="mt-8 text-center text-muted-foreground max-w-md mx-auto">
-                    No Divrei Torah match these filters.
+                    No Divrei Torah match this combination of filters — try clearing one.
                   </p>
                 )}
               </>
