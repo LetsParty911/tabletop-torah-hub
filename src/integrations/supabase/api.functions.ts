@@ -615,11 +615,11 @@ export const getPdfById = createServerFn({ method: "GET" })
     };
     // Ladder degrades one optional column group at a time so a single missing
     // legacy column can't drop parsha_key/description from the response.
+    // NOTE: updated_at does not exist on this table; keep it out of the base set.
     const selects = [
-      "id, title, subtitle, file_path, published, created_at, week_of, updated_at, description, audience, format_type, page_count, badge, publication, parsha_key",
-      "id, title, subtitle, file_path, published, created_at, week_of, updated_at, description, audience, format_type, page_count, badge, parsha_key",
-      "id, title, subtitle, file_path, published, created_at, week_of, updated_at, description, parsha_key",
-      "id, title, subtitle, file_path, published, created_at, week_of, updated_at",
+      "id, title, subtitle, file_path, published, created_at, week_of, description, audience, format_type, page_count, badge, publication, parsha_key",
+      "id, title, subtitle, file_path, published, created_at, week_of, description, audience, format_type, page_count, badge, parsha_key",
+      "id, title, subtitle, file_path, published, created_at, week_of, description, parsha_key",
       "id, title, subtitle, file_path, published, created_at, week_of",
     ];
     let row: PdfRow | null = null;
