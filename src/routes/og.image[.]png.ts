@@ -6,47 +6,136 @@ const NAVY = "#1A365D";
 const CREAM = "#FBF7EE";
 const GOLD = "#B8912F";
 
-/** Fetch a TTF for Playfair Display so the card matches the site's serif. */
-async function loadSerif(weight: 400 | 700): Promise<ArrayBuffer | null> {
-  try {
-    const css = await fetch(
-      `https://fonts.googleapis.com/css?family=Playfair+Display:${weight}`,
-      { headers: { "User-Agent": "Mozilla/5.0" }, cf: { cacheTtl: 86400 } } as RequestInit,
-    );
-    if (!css.ok) return null;
-    const text = await css.text();
-    const match = text.match(/src:\s*url\((https:[^)]+\.(?:ttf|otf))\)/);
-    if (!match?.[1]) return null;
-    const font = await fetch(match[1]);
-    if (!font.ok) return null;
-    return await font.arrayBuffer();
-  } catch {
-    return null;
+const YOGA_WASM_URL = "https://unpkg.com/yoga-wasm-web@0.3.3/dist/yoga.wasm";
+const RESVG_WASM_URL = "https://unpkg.com/@resvg/resvg-wasm@2.6.2/index_bg.wasm";
+
+type SerifFonts = { regular: ArrayBuffer; bold: ArrayBuffer };
+
+let rendererPromise: Promise<{
+  satori: typeof import("satori/wasm").default;
+  Resvg: typeof import("@resvg/resvg-wasm").Resvg;
+}> | null = null;
+let fontsPromise: Promise<SerifFonts> | null = null;
+
+async function fetchWasm(url: string) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch wasm: ${url}`);
+  return WebAssembly.compile(await res.arrayBuffer());
+}
+
+/** Compile the layout + raster engines once per isolate. */
+function getRenderer() {
+  if (!rendererPromise) {
+    rendererPromise = (async () => {
+      const [{ default: satori, init }, initYoga, resvg] = await Promise.all([
+        import("satori/wasm"),
+        import("yoga-wasm-web").then((m) => m.default),
+        import("@resvg/resvg-wasm"),
+      ]);
+      const [yogaModule, resvgModule] = await Promise.all([
+        fetchWasm(YOGA_WASM_URL),
+        fetchWasm(RESVG_WASM_URL),
+      ]);
+      init(await initYoga(yogaModule));
+      await resvg.initWasm(resvgModule);
+      return { satori, Resvg: resvg.Resvg };
+    })().catch((e) => {
+      rendererPromise = null;
+      throw e;
+    });
   }
+  return rendererPromise;
 }
 
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+/** Playfair Display TTFs so the card matches the site's serif. */
+function getFonts() {
+  if (!fontsPromise) {
+    fontsPromise = (async () => {
+      const load = async (weight: 400 | 700) => {
+        const css = await fetch(
+          `https://fonts.googleapis.com/css?family=Playfair+Display:${weight}`,
+          { headers: { "User-Agent": "Mozilla/5.0 (compatible; TorahForTheTable/1.0)" } },
+        );
+        if (!css.ok) throw new Error("font css fetch failed");
+        const match = (await css.text()).match(/url\((https:[^)]+\.(?:ttf|otf))\)/);
+        if (!match?.[1]) throw new Error("no ttf url in font css");
+        const font = await fetch(match[1]);
+        if (!font.ok) throw new Error("font fetch failed");
+        return font.arrayBuffer();
+      };
+      const [regular, bold] = await Promise.all([load(400), load(700)]);
+      return { regular, bold };
+    })().catch((e) => {
+      fontsPromise = null;
+      throw e;
+    });
+  }
+  return fontsPromise;
 }
 
-function buildMarkup(parshaLabel: string, count: number) {
-  const countLine =
+type Node = { type: string; props: Record<string, unknown> };
+const el = (type: string, props: Record<string, unknown>): Node => ({ type, props });
+
+function buildTree(parshaLabel: string, count: number): Node {
+  const headline =
     count > 0
       ? `${parshaLabel} — ${count} ${count === 1 ? "Dvar" : "Divrei"} Torah, ready to print`
       : `${parshaLabel} — Divrei Torah, ready to print`;
 
-  return `<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;width:100%;height:100%;background-color:${CREAM};padding:80px;">
-    <div style="display:flex;width:100%;height:100%;flex-direction:column;justify-content:center;align-items:center;border:6px solid ${GOLD};border-radius:24px;padding:64px;">
-      <div style="display:flex;font-family:PlayfairDisplay;font-size:34px;letter-spacing:6px;color:${GOLD};text-transform:uppercase;">Torah for the Table</div>
-      <div style="display:flex;width:160px;height:3px;background-color:${GOLD};margin-top:28px;margin-bottom:44px;"></div>
-      <div style="display:flex;text-align:center;font-family:PlayfairDisplay;font-weight:700;font-size:70px;line-height:1.15;color:${NAVY};">${escapeHtml(countLine)}</div>
-      <div style="display:flex;margin-top:48px;font-family:PlayfairDisplay;font-size:32px;color:${NAVY};opacity:0.75;">TorahForTheTable.com</div>
-    </div>
-  </div>`;
+  return el("div", {
+    style: {
+      display: "flex",
+      width: "100%",
+      height: "100%",
+      padding: 56,
+      backgroundColor: CREAM,
+      fontFamily: "Playfair Display",
+    },
+    children: el("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+        height: "100%",
+        border: `5px solid ${GOLD}`,
+        borderRadius: 22,
+        padding: 56,
+        backgroundColor: CREAM,
+      },
+      children: [
+        el("div", {
+          style: {
+            fontSize: 30,
+            letterSpacing: 8,
+            textTransform: "uppercase",
+            color: GOLD,
+          },
+          children: "Torah for the Table",
+        }),
+        el("div", {
+          style: { width: 150, height: 3, backgroundColor: GOLD, margin: "30px 0 44px" },
+        }),
+        el("div", {
+          style: {
+            display: "flex",
+            textAlign: "center",
+            fontSize: headline.length > 58 ? 58 : 68,
+            fontWeight: 700,
+            lineHeight: 1.2,
+            color: NAVY,
+            maxWidth: 940,
+          },
+          children: headline,
+        }),
+        el("div", {
+          style: { marginTop: 46, fontSize: 30, color: NAVY, opacity: 0.72 },
+          children: "TorahForTheTable.com",
+        }),
+      ],
+    }),
+  });
 }
 
 async function staticFallback(request: Request) {
@@ -54,10 +143,7 @@ async function staticFallback(request: Request) {
     const res = await fetch(new URL("/og-image.png", request.url).toString());
     if (res.ok) {
       return new Response(res.body, {
-        headers: {
-          "Content-Type": "image/png",
-          "Cache-Control": "public, max-age=3600",
-        },
+        headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=3600" },
       });
     }
   } catch {
@@ -72,13 +158,15 @@ export const Route = createFileRoute("/og/image.png")({
       GET: async ({ request }) => {
         const url = new URL(request.url);
         const rawCount = Number(url.searchParams.get("count") ?? "0");
-        const count = Number.isFinite(rawCount) ? Math.max(0, Math.min(99, Math.trunc(rawCount))) : 0;
+        const count = Number.isFinite(rawCount)
+          ? Math.max(0, Math.min(99, Math.trunc(rawCount)))
+          : 0;
 
         const raw = (url.searchParams.get("parsha") ?? "").slice(0, 60).trim();
         if (!raw) return staticFallback(request);
         const parshaLabel = /^(parshas|parashat)\s/i.test(raw) ? raw : `Parshas ${raw}`;
 
-        // Serve from the edge cache when this parsha/count pair was rendered before.
+        // Edge cache keyed on parsha + count so each card renders at most once.
         const cache = (globalThis as { caches?: { default?: Cache } }).caches?.default;
         const cacheKey = new Request(url.toString(), { method: "GET" });
         if (cache) {
@@ -87,21 +175,22 @@ export const Route = createFileRoute("/og/image.png")({
         }
 
         try {
-          const { ImageResponse } = await import("workers-og");
-          const [regular, bold] = await Promise.all([loadSerif(400), loadSerif(700)]);
-          const fonts = [
-            ...(regular ? [{ name: "PlayfairDisplay", data: regular, weight: 400 as const }] : []),
-            ...(bold ? [{ name: "PlayfairDisplay", data: bold, weight: 700 as const }] : []),
-          ];
+          const [{ satori, Resvg }, fonts] = await Promise.all([getRenderer(), getFonts()]);
 
-          const image = new ImageResponse(buildMarkup(parshaLabel, count), {
+          const svg = await satori(buildTree(parshaLabel, count) as never, {
             width: WIDTH,
             height: HEIGHT,
-            ...(fonts.length > 0 ? { fonts } : {}),
+            fonts: [
+              { name: "Playfair Display", data: fonts.regular, weight: 400, style: "normal" },
+              { name: "Playfair Display", data: fonts.bold, weight: 700, style: "normal" },
+            ],
           });
 
-          const body = await image.arrayBuffer();
-          const response = new Response(body, {
+          const png = new Resvg(svg, { fitTo: { mode: "width", value: WIDTH } })
+            .render()
+            .asPng();
+
+          const response = new Response(png as unknown as BodyInit, {
             headers: {
               "Content-Type": "image/png",
               "Cache-Control": "public, max-age=86400, immutable",
