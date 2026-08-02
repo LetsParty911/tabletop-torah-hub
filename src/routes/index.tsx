@@ -214,13 +214,18 @@ const FEATURED_SLOTS = [
 ] as const;
 
 function Index() {
-  const { label: currentLabel, parshaKey: currentParshaKey, resources, isFallback, fallbackParshaLabel } =
+  const { label: currentLabel, parshaKey: currentParshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey } =
     Route.useLoaderData() as LoaderData;
+
+  // Everything user-facing (hero copy, counts, share text) derives from the
+  // collection actually displayed on the page, not the upcoming parsha.
+  const displayedLabel = isFallback && fallbackParshaLabel ? fallbackParshaLabel : currentLabel;
+  const displayedParshaKey = isFallback && fallbackParshaKey ? fallbackParshaKey : currentParshaKey;
   const [email, setEmail] = useState("");
   const [signupMsg, setSignupMsg] = useState<string | null>(null);
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
 
-  const [shortOnly, setShortOnly] = useState(false);
+  const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long">("All");
 
   const audienceRank = (r: (typeof resources)[number]) => {
     const a = normalizeAudience(r.audience, r.title);
@@ -241,9 +246,16 @@ function Index() {
       : sortedResources.filter((r) => normalizeAudience(r.audience, r.title) === audienceFilter);
 
 
-  const filteredResources = shortOnly
-    ? audienceFiltered.filter((r) => typeof r.page_count === "number" && r.page_count < 5)
-    : audienceFiltered;
+  const filteredResources =
+    lengthFilter === "All"
+      ? audienceFiltered
+      : audienceFiltered.filter((r) =>
+          typeof r.page_count === "number"
+            ? lengthFilter === "short"
+              ? r.page_count < 5
+              : r.page_count >= 5
+            : false,
+        );
 
 
   const featuredPicks = FEATURED_SLOTS.map((slot) => ({
@@ -299,10 +311,10 @@ function Index() {
     file_id: r.id,
     file_title: r.title,
     source_name: r.title,
-    parsha: currentParshaKey ?? undefined,
+    parsha: displayedParshaKey ?? undefined,
   });
 
-  const shareText = `${resources.length} free, handpicked Divrei Torah for ${currentLabel} — ready to download and print: TorahForTheTable.com`;
+  const shareText = `${resources.length} free, handpicked Divrei Torah for ${displayedLabel} — ready to download and print: TorahForTheTable.com`;
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
   const ShareButton = ({ className }: { className?: string }) => (
@@ -310,7 +322,7 @@ function Index() {
       href={whatsappHref}
       target="_blank"
       rel="noopener noreferrer"
-      onClick={() => trackEvent("share_whatsapp", { parsha: currentParshaKey ?? currentLabel, count: resources.length })}
+      onClick={() => trackEvent("share_whatsapp", { parsha: displayedParshaKey ?? displayedLabel, count: resources.length })}
       className={`inline-flex items-center justify-center gap-2 rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors ${className ?? ""}`}
     >
       <Share2 className="h-4 w-4" />
@@ -333,8 +345,13 @@ function Index() {
               Free Divrei Torah for Your Shabbos Table
             </h1>
             <p className="mt-4 sm:mt-6 font-serif text-lg sm:text-xl md:text-2xl text-primary max-w-2xl mx-auto">
-              {resources.length} handpicked, print-ready selections for {currentLabel} — for children, families, and adults.
+              {resources.length} handpicked, print-ready selections for {displayedLabel} — for children, families, and adults.
             </p>
+            {isFallback && resources.length > 0 && (
+              <p className="mt-2 font-serif italic text-sm sm:text-base text-accent">
+                {currentLabel} coming soon.
+              </p>
+            )}
             <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <a
                 href="#this-weeks-collection"
@@ -415,7 +432,7 @@ function Index() {
                             publicationId={r.id}
                             publicationTitle={r.title}
                             filename={buildDownloadFilename(
-                              (r as { parsha_key?: string | null }).parsha_key ?? currentParshaKey,
+                              (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
                               r.publication || r.title,
                             )}
                             onClick={() => {
@@ -430,7 +447,7 @@ function Index() {
                             <SharePublicationButton
                               pdfId={r.id}
                               title={r.title}
-                              parsha={(r as { parsha_key?: string | null }).parsha_key ?? currentParshaKey}
+                              parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
                             />
                           </div>
                         </div>
@@ -621,7 +638,7 @@ function Index() {
                           publicationId={r.id}
                           publicationTitle={r.title}
                           filename={buildDownloadFilename(
-                            (r as { parsha_key?: string | null }).parsha_key ?? currentParshaKey,
+                            (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
                             r.publication || r.title,
                           )}
                           onClick={() => {
@@ -636,7 +653,7 @@ function Index() {
                           <SharePublicationButton
                             pdfId={r.id}
                             title={r.title}
-                            parsha={(r as { parsha_key?: string | null }).parsha_key ?? currentParshaKey}
+                            parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
                           />
                         </div>
                       </div>
