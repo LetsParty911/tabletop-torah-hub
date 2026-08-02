@@ -635,6 +635,7 @@ export const getPdfById = createServerFn({ method: "GET" })
         resolved = true;
         break;
       }
+      console.warn("getPdfById select failed", select, res.error?.message);
     }
     if (!resolved || !row || !row.published) {
       return { pdf: null as null | PublicPdf };
