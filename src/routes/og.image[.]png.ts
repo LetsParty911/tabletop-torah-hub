@@ -36,7 +36,12 @@ function getRenderer() {
         fetchWasm(RESVG_WASM_URL),
       ]);
       await init(yogaBytes);
-      await resvg.initWasm(resvgBytes);
+      try {
+        await resvg.initWasm(resvgBytes);
+      } catch (e) {
+        // A hot-reloaded module may have initialized resvg already; that's fine.
+        if (!String((e as Error)?.message ?? e).includes("Already initialized")) throw e;
+      }
       return { satori, Resvg: resvg.Resvg };
     })().catch((e) => {
       rendererPromise = null;
