@@ -111,6 +111,9 @@ export const Route = createFileRoute("/og/image.png")({
           return response;
         } catch (e) {
           console.error("OG image generation failed", e);
+          if (url.searchParams.get("debug") === "1") {
+            return new Response(String((e as Error)?.stack ?? e), { status: 500 });
+          }
           return staticFallback(request);
         }
       },
