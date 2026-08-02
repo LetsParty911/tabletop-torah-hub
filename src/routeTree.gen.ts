@@ -21,7 +21,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as UnsubscribeIndexRouteImport } from './routes/unsubscribe.index'
 import { Route as ViewIdRouteImport } from './routes/view.$id'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
-import { Route as OgParshaDotpngRouteImport } from './routes/og.$parsha[.]png'
+import { Route as OgImageDotpngRouteImport } from './routes/og.image[.]png'
 import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
 import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
@@ -86,9 +86,9 @@ const UnsubscribeTokenRoute = UnsubscribeTokenRouteImport.update({
   path: '/unsubscribe/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OgParshaDotpngRoute = OgParshaDotpngRouteImport.update({
-  id: '/og/$parsha.png',
-  path: '/og/$parsha.png',
+const OgImageDotpngRoute = OgImageDotpngRouteImport.update({
+  id: '/og/image.png',
+  path: '/og/image.png',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiTrackDownloadRoute = ApiTrackDownloadRouteImport.update({
@@ -118,7 +118,7 @@ export interface FileRoutesByFullPath {
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
-  '/og/$parsha.png': typeof OgParshaDotpngRoute
+  '/og/image.png': typeof OgImageDotpngRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe/': typeof UnsubscribeIndexRoute
@@ -136,7 +136,7 @@ export interface FileRoutesByTo {
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
-  '/og/$parsha.png': typeof OgParshaDotpngRoute
+  '/og/image.png': typeof OgImageDotpngRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe': typeof UnsubscribeIndexRoute
@@ -155,7 +155,7 @@ export interface FileRoutesById {
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
-  '/og/$parsha.png': typeof OgParshaDotpngRoute
+  '/og/image.png': typeof OgImageDotpngRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe/': typeof UnsubscribeIndexRoute
@@ -175,7 +175,7 @@ export interface FileRouteTypes {
     | '/short-vorts'
     | '/sitemap.xml'
     | '/api/track-download'
-    | '/og/$parsha.png'
+    | '/og/image.png'
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe/'
@@ -193,7 +193,7 @@ export interface FileRouteTypes {
     | '/short-vorts'
     | '/sitemap.xml'
     | '/api/track-download'
-    | '/og/$parsha.png'
+    | '/og/image.png'
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe'
@@ -211,7 +211,7 @@ export interface FileRouteTypes {
     | '/short-vorts'
     | '/sitemap.xml'
     | '/api/track-download'
-    | '/og/$parsha.png'
+    | '/og/image.png'
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe/'
@@ -230,7 +230,7 @@ export interface RootRouteChildren {
   ShortVortsRoute: typeof ShortVortsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiTrackDownloadRoute: typeof ApiTrackDownloadRoute
-  OgParshaDotpngRoute: typeof OgParshaDotpngRoute
+  OgImageDotpngRoute: typeof OgImageDotpngRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ViewIdRoute: typeof ViewIdRouteWithChildren
   UnsubscribeIndexRoute: typeof UnsubscribeIndexRoute
@@ -322,11 +322,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UnsubscribeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/og/$parsha.png': {
-      id: '/og/$parsha.png'
-      path: '/og/$parsha.png'
-      fullPath: '/og/$parsha.png'
-      preLoaderRoute: typeof OgParshaDotpngRouteImport
+    '/og/image.png': {
+      id: '/og/image.png'
+      path: '/og/image.png'
+      fullPath: '/og/image.png'
+      preLoaderRoute: typeof OgImageDotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/track-download': {
@@ -377,7 +377,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShortVortsRoute: ShortVortsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiTrackDownloadRoute: ApiTrackDownloadRoute,
-  OgParshaDotpngRoute: OgParshaDotpngRoute,
+  OgImageDotpngRoute: OgImageDotpngRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ViewIdRoute: ViewIdRouteWithChildren,
   UnsubscribeIndexRoute: UnsubscribeIndexRoute,

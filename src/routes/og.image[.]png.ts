@@ -66,15 +66,15 @@ async function staticFallback(request: Request) {
   return Response.redirect(new URL("/og-image.png", request.url).toString(), 302);
 }
 
-export const Route = createFileRoute("/og/$parsha.png")({
+export const Route = createFileRoute("/og/image.png")({
   server: {
     handlers: {
-      GET: async ({ request, params }) => {
+      GET: async ({ request }) => {
         const url = new URL(request.url);
         const rawCount = Number(url.searchParams.get("count") ?? "0");
         const count = Number.isFinite(rawCount) ? Math.max(0, Math.min(99, Math.trunc(rawCount))) : 0;
 
-        const raw = decodeURIComponent(params.parsha ?? "").slice(0, 60).trim();
+        const raw = (url.searchParams.get("parsha") ?? "").slice(0, 60).trim();
         if (!raw) return staticFallback(request);
         const parshaLabel = /^(parshas|parashat)\s/i.test(raw) ? raw : `Parshas ${raw}`;
 
