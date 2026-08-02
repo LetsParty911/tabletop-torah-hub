@@ -548,30 +548,42 @@ function Index() {
                       const shortCount = audienceFiltered.filter(
                         (r) => typeof r.page_count === "number" && r.page_count < 5,
                       ).length;
-                      return (
-                        <button
-                          type="button"
-                          aria-pressed={shortOnly}
-                          aria-label={`Filter by length: under 5 pages, ${shortCount} ${shortCount === 1 ? "publication" : "publications"}`}
-                          onClick={() => setShortOnly((v) => !v)}
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 ${
-                            shortOnly
-                              ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                              : "border-accent/40 bg-background/70 text-primary hover:border-accent hover:bg-accent/12 hover:shadow-sm"
-                          }`}
-                        >
-                          Under 5 Pages
-                          <span
-                            className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
-                              shortOnly
-                                ? "bg-accent-foreground/20 text-accent-foreground"
-                                : "bg-accent/15 text-accent"
+                      const longCount = audienceFiltered.filter(
+                        (r) => typeof r.page_count === "number" && r.page_count >= 5,
+                      ).length;
+                      const options = [
+                        { key: "All" as const, label: "All", count: audienceFiltered.length },
+                        { key: "short" as const, label: "Under 5 Pages", count: shortCount },
+                        { key: "long" as const, label: "5+ Pages", count: longCount },
+                      ].filter((o) => o.key === "All" || o.count > 0);
+                      return options.map((o) => {
+                        const active = lengthFilter === o.key;
+                        return (
+                          <button
+                            key={o.key}
+                            type="button"
+                            aria-pressed={active}
+                            aria-label={`Filter by length: ${o.label}, ${o.count} ${o.count === 1 ? "publication" : "publications"}`}
+                            onClick={() => setLengthFilter(active ? "All" : o.key)}
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 ${
+                              active
+                                ? "border-accent bg-accent text-accent-foreground shadow-sm"
+                                : "border-accent/40 bg-background/70 text-primary hover:border-accent hover:bg-accent/12 hover:shadow-sm"
                             }`}
                           >
-                            {shortCount}
-                          </span>
-                        </button>
-                      );
+                            {o.label}
+                            <span
+                              className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
+                                active
+                                  ? "bg-accent-foreground/20 text-accent-foreground"
+                                  : "bg-accent/15 text-accent"
+                              }`}
+                            >
+                              {o.count}
+                            </span>
+                          </button>
+                        );
+                      });
                     })()}
                   </div>
                 </div>
