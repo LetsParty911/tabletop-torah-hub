@@ -151,13 +151,25 @@ export const Route = createFileRoute("/")({
       <Link to="/archive" className="text-primary underline">Browse archive</Link>
     </div>
   ),
-  head: () => {
-    const title = "Torah for the Table — Weekly Divrei Torah";
-    const description =
-      "A weekly collection of Divrei Torah for Shabbos and Yom Tov — thoughtfully gathered in one quiet, uncluttered place for the Shabbos table.";
+  head: ({ loaderData }) => {
+    const data = loaderData as LoaderData | undefined;
+    // Mirror the page: everything reflects the collection actually displayed.
+    const displayedLabel =
+      data?.isFallback && data.fallbackParshaLabel
+        ? data.fallbackParshaLabel
+        : (data?.label ?? "Parshas Hashavua");
+    const count = data?.resources.length ?? 0;
+
+    const title = count > 0
+      ? `Print Divrei Torah for ${displayedLabel} — Torah for the Table`
+      : "Torah for the Table — Weekly Divrei Torah";
+    const description = count > 0
+      ? `${count} handpicked, print-ready ${count === 1 ? "Dvar" : "Divrei"} Torah for ${displayedLabel} — free downloads for children, families, and adults.`
+      : "A weekly collection of Divrei Torah for Shabbos and Yom Tov — thoughtfully gathered in one quiet, uncluttered place for the Shabbos table.";
     const url = "https://torahforthetable.com/";
-    const image =
-      "https://torahforthetable.com/og-image.png";
+    const image = count > 0
+      ? `https://torahforthetable.com/og/image.png?parsha=${encodeURIComponent(displayedLabel)}&count=${count}`
+      : "https://torahforthetable.com/og-image.png";
     return {
       meta: [
         { title },
@@ -168,12 +180,15 @@ export const Route = createFileRoute("/")({
         { property: "og:url", content: url },
         { property: "og:site_name", content: "Torah for the Table" },
         { property: "og:image", content: image },
+        { property: "og:image:width", content: "1200" },
+        { property: "og:image:height", content: "630" },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: description },
         { name: "twitter:image", content: image },
       ],
       links: [{ rel: "canonical", href: url }],
+
       scripts: [
         {
           type: "application/ld+json",
