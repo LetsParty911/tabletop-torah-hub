@@ -51,6 +51,7 @@ type LoaderData = {
   resources: Resource[];
   isFallback: boolean;
   fallbackParshaLabel: string | null;
+  fallbackParshaKey: string | null;
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
@@ -111,11 +112,13 @@ async function loadCurrentWeek(): Promise<LoaderData> {
   let resources: Resource[] = [];
   let isFallback = false;
   let fallbackParshaLabel: string | null = null;
+  let fallbackParshaKey: string | null = null;
   try {
     const r = await listHomepageWeek({ data: { parshaKey } });
     resources = r.resources;
     isFallback = r.isFallback;
     if (r.isFallback && r.fallbackParshaKey) {
+      fallbackParshaKey = r.fallbackParshaKey;
       fallbackParshaLabel = r.fallbackParshaKey.startsWith("Parshas")
         ? r.fallbackParshaKey
         : `Parshas ${r.fallbackParshaKey}`;
@@ -124,7 +127,7 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     console.error("Failed to load PDFs", e);
   }
 
-  return { label, parshaKey, resources, isFallback, fallbackParshaLabel };
+  return { label, parshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey };
 }
 
 export const Route = createFileRoute("/")({
