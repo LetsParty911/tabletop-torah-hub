@@ -1,3 +1,5 @@
+import { publicationLabel } from "@/lib/badges";
+
 // Shared download filename builder.
 // Format: TorahForTheTable.com_Parshas-{Parsha}_{PublicationName}.pdf
 // Spaces become hyphens; characters illegal in filenames are stripped.
