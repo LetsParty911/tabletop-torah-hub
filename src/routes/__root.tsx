@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPwa } from "@/pwa-register";
-import { InstallAppButton } from "@/components/InstallAppButton";
+
 import { EmailCapturePopup } from "@/components/EmailCapturePopup";
 import { getSafePostLoginRedirect, POST_LOGIN_REDIRECT_KEY } from "@/lib/auth-redirect";
 
@@ -283,11 +283,6 @@ function RootComponent() {
       <SiteNav />
       <Outlet />
       <EmailCapturePopup />
-      <div className="pointer-events-none fixed bottom-4 right-4 z-50">
-        <div className="pointer-events-auto">
-          <InstallAppButton />
-        </div>
-      </div>
     </>
   );
 }
