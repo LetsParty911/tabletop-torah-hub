@@ -12,7 +12,7 @@ const RESVG_WASM_URL = "https://unpkg.com/@resvg/resvg-wasm@2.6.2/index_bg.wasm"
 type SerifFonts = { regular: ArrayBuffer; bold: ArrayBuffer };
 
 let rendererPromise: Promise<{
-  satori: typeof import("satori/wasm").default;
+  satori: typeof import("satori/standalone").default;
   Resvg: typeof import("@resvg/resvg-wasm").Resvg;
 }> | null = null;
 let fontsPromise: Promise<SerifFonts> | null = null;
@@ -28,7 +28,7 @@ function getRenderer() {
   if (!rendererPromise) {
     rendererPromise = (async () => {
       const [{ default: satori, init }, initYoga, resvg] = await Promise.all([
-        import("satori/wasm"),
+        import("satori/standalone"),
         import("yoga-wasm-web").then((m) => m.default),
         import("@resvg/resvg-wasm"),
       ]);
