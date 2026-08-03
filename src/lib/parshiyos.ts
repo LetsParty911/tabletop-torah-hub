@@ -16,8 +16,32 @@ export const PARSHIYOS: string[] = [
   "Simchas Torah", "Pesach", "Shavuos",
 ];
 
+/** The 54 weekly parshiyos in reading order (no combined readings). */
+export const PARSHIYOS_54: string[] = [
+  "Bereishis", "Noach", "Lech Lecha", "Vayeira", "Chayei Sarah", "Toldos",
+  "Vayeitzei", "Vayishlach", "Vayeishev", "Mikeitz", "Vayigash", "Vayechi",
+  "Shemos", "Va'eira", "Bo", "Beshalach", "Yisro", "Mishpatim", "Terumah",
+  "Tetzaveh", "Ki Sisa", "Vayakhel", "Pekudei", "Vayikra", "Tzav", "Shemini",
+  "Tazria", "Metzora", "Acharei Mos", "Kedoshim", "Emor", "Behar",
+  "Bechukosai", "Bamidbar", "Naso", "Beha'aloscha", "Shelach", "Korach",
+  "Chukas", "Balak", "Pinchas", "Matos", "Masei", "Devarim", "Va'eschanan",
+  "Eikev", "Re'eh", "Shoftim", "Ki Seitzei", "Ki Savo", "Nitzavim",
+  "Vayeilech", "Ha'azinu", "Vezos Habrachah",
+];
+
+/**
+ * Normalize a Hebcal reading name before lookup: drop the "Parashat " prefix
+ * and convert typographic apostrophes (U+2019) to straight ASCII ones.
+ */
+export function normalizeHebcalName(title: string): string {
+  return title
+    .replace(/\u2019/g, "'")
+    .replace(/^Parashat\s+/i, "")
+    .trim();
+}
+
 export function hebcalToParshaKey(hebcalTitle: string): string {
-  const cleaned = hebcalTitle.replace(/^Parashat\s+/, "").trim();
+  const cleaned = normalizeHebcalName(hebcalTitle);
   const map: Record<string, string> = {
     "Vaera": "Va'eira",
     "Va'era": "Va'eira",

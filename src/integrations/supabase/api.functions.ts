@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSupabaseAdmin, getSupabaseForUser } from "@/integrations/supabase/ext.server";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
+import { fetchHebcalShabbat } from "@/lib/hebcal";
 import { standardizeCopy } from "@/lib/standardize-copy";
 
 // Build a map of normalized title -> sort_order from checklist_sources.
@@ -93,13 +94,8 @@ export const listCanonicalPublications = createServerFn({ method: "GET" }).handl
 // Returns null if Hebcal is unreachable or no parsha item is present.
 async function fetchCurrentShabbosDate(): Promise<string | null> {
   try {
-    const res = await fetch(
-      "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
-    );
-    const data = (await res.json()) as {
-      items?: Array<{ category: string; date: string }>;
-    };
-    const parsha = data?.items?.find((i) => i.category === "parashat");
+    const items = await fetchHebcalShabbat();
+    const parsha = items.find((i) => i.category === "parashat");
     return parsha?.date?.slice(0, 10) ?? null;
   } catch {
     return null;
@@ -157,13 +153,7 @@ async function resolveCurrentFeatured(): Promise<{
   let shabbosDate: string | null = null;
 
   try {
-    const res = await fetch(
-      "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
-    );
-    const data = (await res.json()) as {
-      items?: Array<{ title: string; category: string; subcat?: string; date: string; hdate?: string }>;
-    };
-    const items = data?.items ?? [];
+    const items = await fetchHebcalShabbat();
     const parsha = items.find((i) => i.category === "parashat");
     shabbosDate = parsha?.date?.slice(0, 10) ?? null;
     const yomTovOnShabbos = parsha
@@ -694,13 +684,7 @@ export const getPdfById = createServerFn({ method: "GET" })
 // even if a stale display-override exists in settings.
 export const getLiveCurrentParsha = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const res = await fetch(
-      "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
-    );
-    const data = (await res.json()) as {
-      items?: Array<{ title: string; category: string; subcat?: string; date: string; hdate?: string }>;
-    };
-    const items = data?.items ?? [];
+    const items = await fetchHebcalShabbat();
     const parsha = items.find((i) => i.category === "parashat");
     const yomTov = parsha
       ? items.find(
@@ -2284,11 +2268,7 @@ async function resolveCurrentParshaLabel(): Promise<{
 
   // Hebcal first.
   try {
-    const res = await fetch("https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on");
-    const data = (await res.json()) as {
-      items?: Array<{ title: string; category: string; subcat?: string; date: string }>;
-    };
-    const items = data?.items ?? [];
+    const items = await fetchHebcalShabbat();
     const parsha = items.find((i) => i.category === "parashat");
     shabbosDate = parsha?.date?.slice(0, 10) ?? null;
     const yomTov = parsha

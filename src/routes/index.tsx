@@ -15,7 +15,7 @@ import { normalizeAudience } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 
-import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
+import { resolveHebcalParsha, nextParshaAfter } from "@/lib/hebcal";
 import {
   listHomepageWeek,
   getParshaOverride,
@@ -71,41 +71,11 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     // ignore
   }
 
-  // 2. Hebcal fallback
+  // 2. Hebcal (Diaspora schedule, 24h cached, static fallback on failure)
   if (!parshaKey) {
-    try {
-      const res = await fetch(
-        "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
-      );
-      const data = await res.json();
-      const items: Array<{
-        title: string;
-        category: string;
-        subcat?: string;
-        date: string;
-      }> = data?.items ?? [];
-
-      const parsha = items.find((i) => i.category === "parashat");
-      const yomTovOnShabbos = parsha
-        ? items.find(
-            (i) =>
-              i.category === "holiday" &&
-              i.subcat === "major" &&
-              i.date.slice(0, 10) === parsha.date.slice(0, 10),
-          )
-        : undefined;
-
-      if (yomTovOnShabbos) {
-        const ytKey = hebcalYomTovToKey(yomTovOnShabbos.title);
-        parshaKey = ytKey ?? yomTovOnShabbos.title;
-        label = parshaKey;
-      } else if (parsha) {
-        parshaKey = hebcalToParshaKey(parsha.title);
-        label = `Parshas ${parshaKey}`;
-      }
-    } catch (e) {
-      console.error("Hebcal load error", e);
-    }
+    const resolved = await resolveHebcalParsha();
+    parshaKey = resolved.parshaKey;
+    label = resolved.label;
   }
 
   // 3. PDFs with fallback to most recent published collection
@@ -236,6 +206,11 @@ function Index() {
   // collection actually displayed on the page, not the upcoming parsha.
   const displayedLabel = isFallback && fallbackParshaLabel ? fallbackParshaLabel : currentLabel;
   const displayedParshaKey = isFallback && fallbackParshaKey ? fallbackParshaKey : currentParshaKey;
+  // The upcoming reading: when we're showing last week's collection, that's
+  // the live parsha; otherwise it's the next one in the reading order.
+  const upcomingParsha = isFallback
+    ? (currentParshaKey ?? nextParshaAfter(displayedParshaKey))
+    : nextParshaAfter(displayedParshaKey);
   const [email, setEmail] = useState("");
   const [signupMsg, setSignupMsg] = useState<string | null>(null);
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
@@ -384,9 +359,9 @@ function Index() {
             <p className="mt-4 sm:mt-6 font-serif text-lg sm:text-xl md:text-2xl text-primary max-w-2xl mx-auto">
               {resources.length} handpicked, print-ready selections for {displayedLabel} — for children, families, and adults.
             </p>
-            {isFallback && resources.length > 0 && (
+            {upcomingParsha && (
               <p className="mt-2 font-serif italic text-sm sm:text-base text-accent">
-                {currentLabel} coming soon.
+                {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`} posts Thursday.
               </p>
             )}
             <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
