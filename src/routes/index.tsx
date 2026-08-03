@@ -15,7 +15,7 @@ import { normalizeAudience } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 
-import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
+import { resolveHebcalParsha, nextParshaAfter } from "@/lib/hebcal";
 import {
   listHomepageWeek,
   getParshaOverride,
