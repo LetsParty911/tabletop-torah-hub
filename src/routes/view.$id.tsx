@@ -35,7 +35,13 @@ export const Route = createFileRoute("/view/$id")({
       ? `${title} — ${parshaLabel} | Torah for the Table`
       : `${title} | Torah for the Table`;
 
-    const clamp = (v: string) => (v.length > 155 ? `${v.slice(0, 152).trimEnd()}…` : v);
+    // Trim to 160 chars at a word boundary so crawlers get a clean sentence.
+    const clamp = (v: string) => {
+      if (v.length <= 160) return v;
+      const cut = v.slice(0, 159);
+      const space = cut.lastIndexOf(" ");
+      return `${(space > 100 ? cut.slice(0, space) : cut).trimEnd()}…`;
+    };
     const description = clamp(
       loaderData?.pdf?.description?.trim() ||
         subtitle?.trim() ||
@@ -89,6 +95,9 @@ export const Route = createFileRoute("/view/$id")({
         { property: "og:url", content: url },
         { property: "og:site_name", content: "Torah for the Table" },
         { property: "og:image", content: image },
+        { property: "og:image:width", content: "1200" },
+        { property: "og:image:height", content: "630" },
+        { property: "og:image:alt", content: pageTitle },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: pageTitle },
         { name: "twitter:description", content: description },
