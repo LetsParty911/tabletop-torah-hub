@@ -45,39 +45,9 @@ export function useCurrentParsha(): CurrentParsha {
       }
 
       if (!parshaKey) {
-        try {
-          const res = await fetch(
-            "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
-          );
-          const data = await res.json();
-          const items: Array<{
-            title: string;
-            category: string;
-            subcat?: string;
-            date: string;
-          }> = data?.items ?? [];
-
-          const parsha = items.find((i) => i.category === "parashat");
-          const yomTovOnShabbos = parsha
-            ? items.find(
-                (i) =>
-                  i.category === "holiday" &&
-                  i.subcat === "major" &&
-                  i.date.slice(0, 10) === parsha.date.slice(0, 10),
-              )
-            : undefined;
-
-          if (yomTovOnShabbos) {
-            const ytKey = hebcalYomTovToKey(yomTovOnShabbos.title);
-            parshaKey = ytKey ?? yomTovOnShabbos.title;
-            displayLabel = parshaKey;
-          } else if (parsha) {
-            parshaKey = hebcalToParshaKey(parsha.title);
-            displayLabel = `Parshas ${parshaKey}`;
-          }
-        } catch {
-          // ignore
-        }
+        const resolved = await resolveHebcalParsha();
+        parshaKey = resolved.parshaKey;
+        displayLabel = resolved.label;
       }
 
       if (!cancelled) {
