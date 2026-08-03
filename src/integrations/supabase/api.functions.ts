@@ -93,13 +93,8 @@ export const listCanonicalPublications = createServerFn({ method: "GET" }).handl
 // Returns null if Hebcal is unreachable or no parsha item is present.
 async function fetchCurrentShabbosDate(): Promise<string | null> {
   try {
-    const res = await fetch(
-      "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
-    );
-    const data = (await res.json()) as {
-      items?: Array<{ category: string; date: string }>;
-    };
-    const parsha = data?.items?.find((i) => i.category === "parashat");
+    const items = await fetchHebcalShabbat();
+    const parsha = items.find((i) => i.category === "parashat");
     return parsha?.date?.slice(0, 10) ?? null;
   } catch {
     return null;
