@@ -9,6 +9,7 @@ export type HebcalItem = {
   category: string;
   subcat?: string;
   date: string;
+  hdate?: string;
 };
 
 /**
