@@ -206,6 +206,11 @@ function Index() {
   // collection actually displayed on the page, not the upcoming parsha.
   const displayedLabel = isFallback && fallbackParshaLabel ? fallbackParshaLabel : currentLabel;
   const displayedParshaKey = isFallback && fallbackParshaKey ? fallbackParshaKey : currentParshaKey;
+  // The upcoming reading: when we're showing last week's collection, that's
+  // the live parsha; otherwise it's the next one in the reading order.
+  const upcomingParsha = isFallback
+    ? (currentParshaKey ?? nextParshaAfter(displayedParshaKey))
+    : nextParshaAfter(displayedParshaKey);
   const [email, setEmail] = useState("");
   const [signupMsg, setSignupMsg] = useState<string | null>(null);
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
