@@ -684,13 +684,7 @@ export const getPdfById = createServerFn({ method: "GET" })
 // even if a stale display-override exists in settings.
 export const getLiveCurrentParsha = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const res = await fetch(
-      "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
-    );
-    const data = (await res.json()) as {
-      items?: Array<{ title: string; category: string; subcat?: string; date: string; hdate?: string }>;
-    };
-    const items = data?.items ?? [];
+    const items = await fetchHebcalShabbat();
     const parsha = items.find((i) => i.category === "parashat");
     const yomTov = parsha
       ? items.find(
