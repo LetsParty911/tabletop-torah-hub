@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ChevronDown, Sparkles } from "lucide-react";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
-import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
+import { resolveHebcalParsha } from "@/lib/hebcal";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { VORTS, getVortsForParsha, type Vort } from "@/data/vorts";
 
