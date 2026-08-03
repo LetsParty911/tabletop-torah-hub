@@ -2268,11 +2268,7 @@ async function resolveCurrentParshaLabel(): Promise<{
 
   // Hebcal first.
   try {
-    const res = await fetch("https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on");
-    const data = (await res.json()) as {
-      items?: Array<{ title: string; category: string; subcat?: string; date: string }>;
-    };
-    const items = data?.items ?? [];
+    const items = await fetchHebcalShabbat();
     const parsha = items.find((i) => i.category === "parashat");
     shabbosDate = parsha?.date?.slice(0, 10) ?? null;
     const yomTov = parsha
