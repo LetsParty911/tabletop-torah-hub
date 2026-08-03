@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSupabaseAdmin, getSupabaseForUser } from "@/integrations/supabase/ext.server";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
+import { fetchHebcalShabbat } from "@/lib/hebcal";
 import { standardizeCopy } from "@/lib/standardize-copy";
 
 // Build a map of normalized title -> sort_order from checklist_sources.
