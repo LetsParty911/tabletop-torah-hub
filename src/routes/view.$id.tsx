@@ -31,9 +31,9 @@ export const Route = createFileRoute("/view/$id")({
         : `Parshas ${rawParsha}`
       : null;
 
-    const pageTitle = parshaLabel
-      ? `${title} — ${parshaLabel} | Torah for the Table`
-      : `${title} | Torah for the Table`;
+    // Share cards lead with the publication + parsha; the tab title adds the site name.
+    const shareTitle = parshaLabel ? `${title} — ${parshaLabel}` : title;
+    const pageTitle = `${shareTitle} | Torah for the Table`;
 
     // Trim to 160 chars at a word boundary so crawlers get a clean sentence.
     const clamp = (v: string) => {
