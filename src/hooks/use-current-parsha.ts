@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
+import { resolveHebcalParsha } from "@/lib/hebcal";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 
 export type CurrentParsha = {
