@@ -31,11 +31,17 @@ export const Route = createFileRoute("/view/$id")({
         : `Parshas ${rawParsha}`
       : null;
 
-    const pageTitle = parshaLabel
-      ? `${title} — ${parshaLabel} | Torah for the Table`
-      : `${title} | Torah for the Table`;
+    // Share cards lead with the publication + parsha; the tab title adds the site name.
+    const shareTitle = parshaLabel ? `${title} — ${parshaLabel}` : title;
+    const pageTitle = `${shareTitle} | Torah for the Table`;
 
-    const clamp = (v: string) => (v.length > 155 ? `${v.slice(0, 152).trimEnd()}…` : v);
+    // Trim to 160 chars at a word boundary so crawlers get a clean sentence.
+    const clamp = (v: string) => {
+      if (v.length <= 160) return v;
+      const cut = v.slice(0, 159);
+      const space = cut.lastIndexOf(" ");
+      return `${(space > 100 ? cut.slice(0, space) : cut).trimEnd()}…`;
+    };
     const description = clamp(
       loaderData?.pdf?.description?.trim() ||
         subtitle?.trim() ||
@@ -84,13 +90,16 @@ export const Route = createFileRoute("/view/$id")({
         { title: pageTitle },
         { name: "description", content: description },
         { property: "og:type", content: "article" },
-        { property: "og:title", content: pageTitle },
+        { property: "og:title", content: shareTitle },
         { property: "og:description", content: description },
         { property: "og:url", content: url },
         { property: "og:site_name", content: "Torah for the Table" },
         { property: "og:image", content: image },
+        { property: "og:image:width", content: "1200" },
+        { property: "og:image:height", content: "630" },
+        { property: "og:image:alt", content: shareTitle },
         { name: "twitter:card", content: "summary_large_image" },
-        { name: "twitter:title", content: pageTitle },
+        { name: "twitter:title", content: shareTitle },
         { name: "twitter:description", content: description },
         { name: "twitter:image", content: image },
       ],
