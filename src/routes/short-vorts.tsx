@@ -28,32 +28,9 @@ async function loadVortsWeek(): Promise<LoaderData> {
   }
 
   if (!parshaKey) {
-    try {
-      const res = await fetch(
-        "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
-      );
-      const data = await res.json();
-      const items: Array<{ title: string; category: string; subcat?: string; date: string }> =
-        data?.items ?? [];
-      const parsha = items.find((i) => i.category === "parashat");
-      const yomTovOnShabbos = parsha
-        ? items.find(
-            (i) =>
-              i.category === "holiday" &&
-              i.subcat === "major" &&
-              i.date.slice(0, 10) === parsha.date.slice(0, 10),
-          )
-        : undefined;
-      if (yomTovOnShabbos) {
-        parshaKey = hebcalYomTovToKey(yomTovOnShabbos.title) ?? yomTovOnShabbos.title;
-        label = parshaKey;
-      } else if (parsha) {
-        parshaKey = hebcalToParshaKey(parsha.title);
-        label = `Parshas ${parshaKey}`;
-      }
-    } catch (e) {
-      console.error("Hebcal load error (vorts)", e);
-    }
+    const resolved = await resolveHebcalParsha();
+    parshaKey = resolved.parshaKey;
+    label = resolved.label;
   }
 
   return { label, parshaKey, current: getVortsForParsha(parshaKey) };
