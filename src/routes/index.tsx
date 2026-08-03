@@ -359,9 +359,9 @@ function Index() {
             <p className="mt-4 sm:mt-6 font-serif text-lg sm:text-xl md:text-2xl text-primary max-w-2xl mx-auto">
               {resources.length} handpicked, print-ready selections for {displayedLabel} — for children, families, and adults.
             </p>
-            {isFallback && resources.length > 0 && (
+            {upcomingParsha && (
               <p className="mt-2 font-serif italic text-sm sm:text-base text-accent">
-                {currentLabel} coming soon.
+                {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`} posts Thursday.
               </p>
             )}
             <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
