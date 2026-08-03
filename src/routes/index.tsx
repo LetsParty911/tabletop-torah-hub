@@ -71,41 +71,11 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     // ignore
   }
 
-  // 2. Hebcal fallback
+  // 2. Hebcal (Diaspora schedule, 24h cached, static fallback on failure)
   if (!parshaKey) {
-    try {
-      const res = await fetch(
-        "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on",
-      );
-      const data = await res.json();
-      const items: Array<{
-        title: string;
-        category: string;
-        subcat?: string;
-        date: string;
-      }> = data?.items ?? [];
-
-      const parsha = items.find((i) => i.category === "parashat");
-      const yomTovOnShabbos = parsha
-        ? items.find(
-            (i) =>
-              i.category === "holiday" &&
-              i.subcat === "major" &&
-              i.date.slice(0, 10) === parsha.date.slice(0, 10),
-          )
-        : undefined;
-
-      if (yomTovOnShabbos) {
-        const ytKey = hebcalYomTovToKey(yomTovOnShabbos.title);
-        parshaKey = ytKey ?? yomTovOnShabbos.title;
-        label = parshaKey;
-      } else if (parsha) {
-        parshaKey = hebcalToParshaKey(parsha.title);
-        label = `Parshas ${parshaKey}`;
-      }
-    } catch (e) {
-      console.error("Hebcal load error", e);
-    }
+    const resolved = await resolveHebcalParsha();
+    parshaKey = resolved.parshaKey;
+    label = resolved.label;
   }
 
   // 3. PDFs with fallback to most recent published collection
