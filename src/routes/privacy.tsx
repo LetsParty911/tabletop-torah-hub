@@ -1,30 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/SiteFooter";
 
-/* ------------------------------------------------------------------
- * FILL THESE IN — the only place these values need to be edited.
- * While ANY value below is an empty string, the page renders a draft
- * banner and is marked noindex. Fill all four to publish.
- * ------------------------------------------------------------------ */
-const PRIVACY_EMAIL = "";
-const ENTITY_NAME = "";
-const EMAIL_PROVIDER = "";
-const LAST_UPDATED = "";
-/* ---------------------------------------------------------------- */
+const PRIVACY_EMAIL = "hello@torahforthetable.com";
+const ENTITY_NAME = "Torah For The Table Inc.";
+const LAST_UPDATED = "August 4, 2026";
 
-const IS_DRAFT =
-  !PRIVACY_EMAIL.trim() ||
-  !ENTITY_NAME.trim() ||
-  !EMAIL_PROVIDER.trim() ||
-  !LAST_UPDATED.trim();
-
-/** Renders a placeholder visibly when it has not been filled in yet. */
-function Val({ value, label }: { value: string; label: string }) {
-  if (value.trim()) return <>{value}</>;
-  return (
-    <span className="rounded bg-accent/15 px-1 text-accent">{`{${label}}`}</span>
-  );
-}
+const mailLink = (
+  <a
+    href={`mailto:${PRIVACY_EMAIL}`}
+    className="text-accent underline hover:text-primary transition-colors"
+  >
+    {PRIVACY_EMAIL}
+  </a>
+);
 
 export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
@@ -45,8 +33,6 @@ export const Route = createFileRoute("/privacy")({
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: description },
-        // Draft policies must never be indexed.
-        ...(IS_DRAFT ? [{ name: "robots", content: "noindex" }] : []),
       ],
       links: [{ rel: "canonical", href: url }],
     };
@@ -102,18 +88,9 @@ function PrivacyPage() {
                 Privacy Policy
               </h1>
               <p className="mt-3 font-serif italic text-base text-accent">
-                Last updated: <Val value={LAST_UPDATED} label="LAST_UPDATED" />
+                Last updated: {LAST_UPDATED}
               </p>
             </div>
-
-            {IS_DRAFT && (
-              <div
-                role="status"
-                className="mt-6 rounded-md border-2 border-accent bg-accent/10 px-4 py-3 text-center font-serif text-sm font-semibold text-primary"
-              >
-                Draft — not yet finalized. Do not treat as published policy.
-              </div>
-            )}
 
             <div className="mt-8 space-y-8 font-serif text-base sm:text-lg text-foreground leading-relaxed max-w-2xl mx-auto text-left">
               <p>
@@ -126,12 +103,10 @@ function PrivacyPage() {
 
               <Section heading="Who we are">
                 <p>
-                  Torah for the Table is operated by{" "}
-                  <Val value={ENTITY_NAME} label="ENTITY_NAME" />, a nonprofit
+                  Torah for the Table is operated by {ENTITY_NAME}, a nonprofit
                   corporation organized in New Jersey and recognized by the IRS
                   as a tax-exempt organization under Section 501(c)(3). You can
-                  reach us about anything in this policy at{" "}
-                  <Val value={PRIVACY_EMAIL} label="PRIVACY_EMAIL" />.
+                  reach us about anything in this policy at {mailLink}.
                 </p>
               </Section>
 
@@ -235,10 +210,7 @@ function PrivacyPage() {
                     records
                   </li>
                   <li>Google — Tag Manager and Analytics</li>
-                  <li>
-                    <Val value={EMAIL_PROVIDER} label="EMAIL_PROVIDER" /> —
-                    sending the weekly email
-                  </li>
+                  <li>Resend — sending the weekly email</li>
                 </ul>
                 <p>
                   We may also disclose information if we are legally required to
@@ -274,8 +246,7 @@ function PrivacyPage() {
                   about you, and ask us to correct or delete it. Depending on
                   where you live, you may have additional rights under laws such
                   as the GDPR or the CCPA. We aim to honor these requests for
-                  everyone, not only where required. Write to{" "}
-                  <Val value={PRIVACY_EMAIL} label="PRIVACY_EMAIL" /> and we
+                  everyone, not only where required. Write to {mailLink} and we
                   will respond.
                 </p>
               </Section>
@@ -289,9 +260,9 @@ function PrivacyPage() {
 
               <Section heading="Contact">
                 <p>
-                  <Val value={PRIVACY_EMAIL} label="PRIVACY_EMAIL" />
+                  {mailLink}
                   <br />
-                  <Val value={ENTITY_NAME} label="ENTITY_NAME" />
+                  {ENTITY_NAME}
                 </p>
               </Section>
             </div>
