@@ -170,7 +170,7 @@ export const Route = createFileRoute("/")({
             logo: "https://torahforthetable.com/favicon.png",
             image,
             description,
-            email: "torahforthetableinc@gmail.com",
+            email: "hello@torahforthetable.com",
             sameAs: ["https://torahforthetable.com"],
           }),
         },

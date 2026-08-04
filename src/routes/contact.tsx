@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { submitContactMessage } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 
-const CONTACT_EMAIL = "torahforthetableinc@gmail.com";
+const CONTACT_EMAIL = "hello@torahforthetable.com";
 
 export const Route = createFileRoute("/contact")({
   head: () => {
