@@ -14,6 +14,7 @@ import { Route as ShortVortsRouteImport } from './routes/short-vorts'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OfflineRouteImport } from './routes/offline'
+import { Route as MissionRouteImport } from './routes/mission'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -50,6 +51,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const OfflineRoute = OfflineRouteImport.update({
   id: '/offline',
   path: '/offline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MissionRoute = MissionRouteImport.update({
+  id: '/mission',
+  path: '/mission',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
+  '/mission': typeof MissionRoute
   '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -138,6 +145,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
+  '/mission': typeof MissionRoute
   '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -158,6 +166,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
+  '/mission': typeof MissionRoute
   '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -179,6 +188,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/archive'
     | '/contact'
+    | '/mission'
     | '/offline'
     | '/privacy'
     | '/robots.txt'
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/archive'
     | '/contact'
+    | '/mission'
     | '/offline'
     | '/privacy'
     | '/robots.txt'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/archive'
     | '/contact'
+    | '/mission'
     | '/offline'
     | '/privacy'
     | '/robots.txt'
@@ -237,6 +249,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ArchiveRoute: typeof ArchiveRoute
   ContactRoute: typeof ContactRoute
+  MissionRoute: typeof MissionRoute
   OfflineRoute: typeof OfflineRoute
   PrivacyRoute: typeof PrivacyRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
@@ -284,6 +297,13 @@ declare module '@tanstack/react-router' {
       path: '/offline'
       fullPath: '/offline'
       preLoaderRoute: typeof OfflineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mission': {
+      id: '/mission'
+      path: '/mission'
+      fullPath: '/mission'
+      preLoaderRoute: typeof MissionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -392,6 +412,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   ArchiveRoute: ArchiveRoute,
   ContactRoute: ContactRoute,
+  MissionRoute: MissionRoute,
   OfflineRoute: OfflineRoute,
   PrivacyRoute: PrivacyRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,

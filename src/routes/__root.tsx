@@ -265,6 +265,9 @@ function SiteNav() {
           <Link to="/about" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
             About
           </Link>
+          <Link to="/mission" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
+            Mission
+          </Link>
           <Link to="/contact" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
             Contact
           </Link>
