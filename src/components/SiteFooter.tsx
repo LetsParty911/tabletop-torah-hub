@@ -2,7 +2,8 @@ import { Link } from "@tanstack/react-router";
 
 export function SiteFooter() {
   return (
-    <footer className="text-center text-sm text-muted-foreground py-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+    <footer className="py-4 space-y-2">
+      <div className="text-center text-sm text-muted-foreground flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
       <Link
         to="/"
         className="hover:text-primary hover:underline transition-colors duration-150"
