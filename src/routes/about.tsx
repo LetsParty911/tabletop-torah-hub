@@ -66,6 +66,74 @@ function AboutPage() {
 
             <div className="mt-10 pt-8 border-t-2 border-accent/30 space-y-8 max-w-2xl mx-auto text-left">
               <section>
+                <h2 className="font-serif text-2xl font-bold text-primary">About the Organization</h2>
+                <p className="mt-2 font-serif text-base text-foreground leading-relaxed">
+                  Torah For The Table Inc. is a New Jersey nonprofit corporation recognized by the
+                  Internal Revenue Service as a tax-exempt organization under Section 501(c)(3).
+                  The organization was established to promote Torah learning by publishing and
+                  distributing free religious and educational materials through its website and
+                  other outreach programs.
+                </p>
+              </section>
+
+              <section>
+                <h2 className="font-serif text-2xl font-bold text-primary">Leadership</h2>
+                <ul className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 font-serif text-base text-foreground">
+                  <li>
+                    <span className="font-semibold text-primary">Daniel Kaplan</span> — President
+                  </li>
+                  <li>
+                    <span className="font-semibold text-primary">Simcha Kaplan</span> — Vice President
+                  </li>
+                  <li>
+                    <span className="font-semibold text-primary">Dovid Nisson Shonek</span> — Secretary
+                  </li>
+                  <li>
+                    <span className="font-semibold text-primary">Yosef Chaim Borenstein</span> — Treasurer
+                  </li>
+                </ul>
+              </section>
+
+              <section>
+                <h2 className="font-serif text-2xl font-bold text-primary">Our Activities</h2>
+                <ul className="mt-2 list-disc pl-6 space-y-1 font-serif text-base text-foreground leading-relaxed">
+                  <li>Publishes free weekly Torah resources</li>
+                  <li>Organizes Divrei Torah from multiple respected sources</li>
+                  <li>Creates original educational materials</li>
+                  <li>Provides content for children, families, and adults</li>
+                  <li>Helps visitors easily download and print materials before Shabbos</li>
+                  <li>Supports Torah learning in homes, schools, synagogues, and communities</li>
+                </ul>
+                <p className="mt-3 font-serif text-base text-foreground leading-relaxed">
+                  Materials from outside publishers are displayed with permission and proper
+                  attribution.
+                </p>
+              </section>
+
+              <section>
+                <h2 className="font-serif text-2xl font-bold text-primary">Contact</h2>
+                <div className="mt-2 font-serif text-base text-foreground leading-relaxed space-y-1">
+                  <p>Torah For The Table Inc.</p>
+                  <p>New Jersey, United States</p>
+                  <p>
+                    Email:{" "}
+                    <a
+                      href="mailto:hello@torahforthetable.com"
+                      className="text-accent hover:text-primary underline"
+                    >
+                      hello@torahforthetable.com
+                    </a>
+                  </p>
+                  <p>Website: TorahForTheTable.com</p>
+                </div>
+                <p className="mt-3 font-serif text-base text-foreground leading-relaxed">
+                  Torah For The Table does not charge visitors to access its educational
+                  materials. Its activities are operated for religious, charitable, and
+                  educational purposes.
+                </p>
+              </section>
+
+              <section>
                 <h2 className="font-serif text-2xl font-bold text-primary">A Nonprofit Project</h2>
                 <p className="mt-2 font-serif text-base text-foreground leading-relaxed">
                   Torah for the Table is a nonprofit Torah-distribution project. Third-party
