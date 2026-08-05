@@ -210,7 +210,6 @@ function PrivacyPage() {
                     records
                   </li>
                   <li>Google — Tag Manager and Analytics</li>
-                  <li>Resend — sending the weekly email</li>
                 </ul>
                 <p>
                   We may also disclose information if we are legally required to

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Mail, Send } from "lucide-react";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -88,14 +88,8 @@ function ContactPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 sm:py-12 max-w-3xl space-y-8">
-        <header className="text-center">
-          <Link
-            to="/"
-            className="inline-block text-sm text-accent hover:text-primary transition-colors"
-          >
-            ← Back to Home
-          </Link>
-          <h1 className="mt-4 font-serif text-4xl sm:text-5xl font-bold text-primary">
+        <header className="text-center pt-4 sm:pt-6">
+          <h1 className="font-serif text-4xl sm:text-5xl font-bold text-primary">
             Get in Touch
           </h1>
           <p className="mt-3 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
