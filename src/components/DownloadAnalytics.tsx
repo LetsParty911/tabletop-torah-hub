@@ -102,6 +102,17 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
     void load(fetchDays);
   }, [load, fetchDays]);
 
+  // When this week's collection is live (downloads landing in the last 3 days),
+  // default the table to "Last download" descending so recent activity leads.
+  const sortDefaulted = useRef(false);
+  useEffect(() => {
+    if (sortDefaulted.current || !raw?.events?.length) return;
+    sortDefaulted.current = true;
+    const cutoff = Date.now() - 3 * DAY_MS;
+    const liveWeek = raw.events.some((e) => new Date(e.at).getTime() >= cutoff);
+    if (liveWeek) setSort({ key: "last", dir: "desc" });
+  }, [raw]);
+
   const spanDays = Math.max(
     1,
     Math.round((startOfDay(range.to).getTime() - startOfDay(range.from).getTime()) / DAY_MS) + 1,
