@@ -1404,6 +1404,10 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
       await admin.storage.from("pdfs").remove([path]);
       throw new Error(`DB insert failed: ${insErr.message}`);
     }
+    try {
+      const { purgeCloudflareCache } = await import("@/lib/cloudflare-purge.server");
+      await purgeCloudflareCache("upload-pdf");
+    } catch { /* purge is best-effort */ }
     return { ok: true };
   });
 
@@ -1486,6 +1490,10 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
       ({ error } = await admin.from("pdfs").update(current).eq("id", data.id));
     }
     if (error) throw new Error(error.message);
+    try {
+      const { purgeCloudflareCache } = await import("@/lib/cloudflare-purge.server");
+      await purgeCloudflareCache("update-meta");
+    } catch { /* purge is best-effort */ }
     return { ok: true };
   });
 
@@ -1534,6 +1542,10 @@ export const adminReplacePdfFile = createServerFn({ method: "POST" })
     if (row.file_path && row.file_path !== path) {
       await admin.storage.from("pdfs").remove([row.file_path]);
     }
+    try {
+      const { purgeCloudflareCache } = await import("@/lib/cloudflare-purge.server");
+      await purgeCloudflareCache("replace-file");
+    } catch { /* purge is best-effort */ }
     return { ok: true, file_path: path };
   });
 
@@ -1599,6 +1611,10 @@ export const adminDeletePdf = createServerFn({ method: "POST" })
     }
     const { error } = await admin.from("pdfs").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    try {
+      const { purgeCloudflareCache } = await import("@/lib/cloudflare-purge.server");
+      await purgeCloudflareCache("delete-pdf");
+    } catch { /* purge is best-effort */ }
     return { ok: true };
   });
 
@@ -1620,6 +1636,10 @@ export const adminSetParshaOverride = createServerFn({ method: "POST" })
       .update({ parsha_override: data.override, updated_at: new Date().toISOString() })
       .eq("id", 1);
     if (error) throw new Error(error.message);
+    try {
+      const { purgeCloudflareCache } = await import("@/lib/cloudflare-purge.server");
+      await purgeCloudflareCache("parsha-override");
+    } catch { /* purge is best-effort */ }
     return { ok: true };
   });
 
