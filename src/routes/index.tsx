@@ -359,8 +359,11 @@ function Index() {
             <h1 className="font-serif text-[2.25rem] leading-[1.05] sm:text-5xl md:text-6xl font-bold tracking-tight text-primary">
               Free Divrei Torah for Your Shabbos Table
             </h1>
-            <p className="mt-4 sm:mt-6 font-serif text-lg sm:text-xl md:text-2xl text-primary max-w-2xl mx-auto">
-              {resources.length} handpicked, print-ready selections for {displayedLabel} — for children, families, and adults.
+            <p className="mt-4 sm:mt-6 font-serif text-lg sm:text-xl md:text-2xl text-primary max-w-2xl mx-auto leading-[1.35]">
+              <span className="inline-block align-baseline text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
+                {resources.length}
+              </span>{" "}
+              handpicked, print-ready selections for {displayedLabel} — for children, families, and adults.
             </p>
             {upcomingParsha && upcomingParsha !== displayedParshaKey && (
               <p className="mt-2 font-serif italic text-sm sm:text-base text-accent">
@@ -507,7 +510,10 @@ function Index() {
             )}
             {resources.length > 0 && (
               <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent">
-                {resources.length} {resources.length === 1 ? "Dvar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : " this week"}
+                <span className="inline-block align-baseline text-base sm:text-lg md:text-xl font-bold text-primary">
+                  {resources.length}
+                </span>{" "}
+                {resources.length === 1 ? "Dvar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : " this week"}
               </p>
             )}
 
