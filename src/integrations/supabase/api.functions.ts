@@ -1374,7 +1374,9 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
     const { publicationForTitle } = await import("@/lib/badges");
     const autoPublication = publicationForTitle(data.title);
+    const newId = crypto.randomUUID();
     const insertRow: Record<string, unknown> = {
+      id: newId,
       parsha_key: data.parshaKey,
       title: data.title,
       subtitle: data.subtitle,
