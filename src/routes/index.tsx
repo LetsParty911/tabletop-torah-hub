@@ -398,7 +398,7 @@ function Index() {
                 <ShareButton />
               </div>
             )}
-            <InlineEmailSignup sourceId="homepage-hero" className="mt-6 sm:mt-8" />
+            
           </div>
         </section>
 
