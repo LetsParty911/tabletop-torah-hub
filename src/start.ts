@@ -31,12 +31,12 @@ const cacheControl = createMiddleware().server(async ({ next, request }) => {
       return result;
     }
 
-    // HTML documents: browser must revalidate every visit, while Cloudflare's
-    // edge may serve a cached copy for up to 5 minutes (with SWR grace).
+    // HTML documents: no shared/edge cache retention (we have no way to purge
+    // the platform edge), and the browser must revalidate on every visit.
     if (contentType.includes("text/html")) {
       response.headers.set(
         "Cache-Control",
-        "public, max-age=0, must-revalidate, s-maxage=300, stale-while-revalidate=60",
+        "public, max-age=0, must-revalidate, s-maxage=0",
       );
       response.headers.delete("Pragma");
       response.headers.delete("Expires");
