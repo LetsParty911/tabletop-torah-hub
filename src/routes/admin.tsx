@@ -958,7 +958,7 @@ function AdminPage() {
         bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
       }
       const fileBase64 = btoa(bin);
-      await adminUploadPdf({
+      const uploaded = await adminUploadPdf({
         data: {
           accessToken,
           parshaKey,
@@ -980,6 +980,18 @@ function AdminPage() {
           badge: (uploadBadge || null) as any,
         },
       });
+      // Best-effort first-page preview; a failure must not fail the upload.
+      if (uploaded?.id) {
+        try {
+          const { renderFirstPageThumbBase64 } = await import("@/lib/pdf-thumb");
+          const pngBase64 = await renderFirstPageThumbBase64(file);
+          if (pngBase64) {
+            await adminUploadPdfThumb({ data: { accessToken, id: uploaded.id, pngBase64 } });
+          }
+        } catch (e) {
+          console.error("thumbnail generation failed", e);
+        }
+      }
       setTitle("");
       setPublicationId("");
       setTitleFreeText(false);
