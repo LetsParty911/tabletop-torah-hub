@@ -433,7 +433,7 @@ function Index() {
                     return (
                       <article
                         key={key}
-                        className="rounded-2xl border-2 border-accent bg-background/70 p-4 sm:p-5 flex flex-col"
+                        className="h-full rounded-2xl border-2 border-accent bg-background/70 p-4 sm:p-5 flex flex-col"
                       >
                         <span className="self-start rounded-full bg-accent px-3 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-accent-foreground">
                           {label}
