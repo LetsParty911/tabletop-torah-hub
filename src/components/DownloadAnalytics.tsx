@@ -335,10 +335,11 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
           />
 
           <div className="grid gap-6 md:grid-cols-2">
-            <div>
+            <div className="min-w-0">
               <h3 className="text-sm font-medium mb-2">Downloads per day</h3>
-              <div className="max-h-72 overflow-y-auto rounded-md border border-border">
-                <table className="w-full text-sm">
+              <div className="max-h-72 overflow-y-auto overflow-x-auto rounded-md border border-border">
+                <table className="w-full min-w-[18rem] text-sm">
+
                   <tbody>
                     {stats.byDay.length === 0 && (
                       <tr>
