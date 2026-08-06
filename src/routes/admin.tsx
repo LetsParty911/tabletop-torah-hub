@@ -1108,6 +1108,16 @@ function AdminPage() {
       await adminReplacePdfFile({
         data: { accessToken, id, fileName: replaceFile.name, fileBase64 },
       });
+      // Regenerate the preview so the card never shows the previous sheet.
+      try {
+        const { renderFirstPageThumbBase64 } = await import("@/lib/pdf-thumb");
+        const pngBase64 = await renderFirstPageThumbBase64(replaceFile);
+        if (pngBase64) {
+          await adminUploadPdfThumb({ data: { accessToken, id, pngBase64 } });
+        }
+      } catch (e) {
+        console.error("thumbnail regeneration failed", e);
+      }
       setMsg({ kind: "success", text: "PDF replaced." });
       cancelEditPdf();
       await refresh();
