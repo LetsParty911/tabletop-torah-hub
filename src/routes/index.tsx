@@ -394,27 +394,29 @@ function Index() {
               >
                 Browse This Week's Collection
               </a>
-              <a
-                href="#weekly-email-signup"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document
-                    .getElementById("weekly-email-signup")
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-                className="inline-flex items-center justify-center rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors"
-              >
-                Remind Me Weekly
-              </a>
+              <div className="flex flex-col items-center gap-1">
+                <a
+                  href="#weekly-email-signup"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document
+                      .getElementById("weekly-email-signup")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className="inline-flex items-center justify-center rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  Remind Me Weekly
+                </a>
+                <p className="font-serif italic text-sm sm:text-base text-accent">
+                  One email every Thursday when the new collection posts.
+                </p>
+              </div>
             </div>
             {resources.length > 0 && (
               <div className="mt-4 flex justify-center">
                 <ShareButton />
               </div>
             )}
-            <p className="mt-3 font-serif italic text-sm sm:text-base text-accent">
-              One email every Thursday when the new collection posts.
-            </p>
           </div>
         </section>
 
