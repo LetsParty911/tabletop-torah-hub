@@ -219,11 +219,23 @@ function ViewPdf() {
 
         <div className="mt-6">
           {canEmbed ? (
-            <iframe
-              src={viewerSrc}
-              title={`Embedded PDF viewer: ${pdf.title}`}
-              className="w-full border-0 bg-muted h-[80vh] rounded-lg"
-            />
+            <>
+              <iframe
+                src={viewerSrc}
+                title={`Embedded PDF viewer: ${pdf.title}`}
+                className="w-full border-0 bg-muted h-[80vh] rounded-lg"
+              />
+              <p className="mt-2 text-sm text-muted-foreground">
+                Can't read the embedded viewer?{" "}
+                <a
+                  href={`/view/${pdf.id}/download`}
+                  download
+                  className="font-medium text-accent underline hover:text-primary transition-colors duration-150"
+                >
+                  Download the PDF file for {pdf.title}
+                </a>
+              </p>
+            </>
           ) : (
             <div className="rounded-lg border border-accent/40 bg-accent/10 p-6 text-center">
               <h2 className="font-serif text-xl font-bold text-primary">
@@ -235,7 +247,7 @@ function ViewPdf() {
                 </p>
               )}
               <p className="mt-3 text-sm text-foreground/80">
-                Your phone can't show PDFs inside the page. Download it to read or print.
+                Mobile browsers can't preview PDFs. Download it to read or print.
               </p>
               <div className="mt-4 flex justify-center">
                 <DownloadToPrintButton
@@ -251,16 +263,6 @@ function ViewPdf() {
               </div>
             </div>
           )}
-          <p className="mt-2 text-sm text-muted-foreground">
-            Can't read the embedded viewer?{" "}
-            <a
-              href={`/view/${pdf.id}/download`}
-              download
-              className="font-medium text-accent underline hover:text-primary transition-colors duration-150"
-            >
-              Download the PDF file for {pdf.title}
-            </a>
-          </p>
         </div>
 
 
