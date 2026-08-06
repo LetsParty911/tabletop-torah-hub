@@ -616,10 +616,10 @@ function Index() {
                               aria-pressed={active}
                               aria-label={`Filter by length: ${o.label}, ${o.count} ${o.count === 1 ? "publication" : "publications"}`}
                               onClick={() => setLengthFilter(active ? "All" : o.key)}
-                              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 ${
+                              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                 active
                                   ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                                  : "border-accent/40 bg-background/70 text-primary hover:border-accent hover:bg-accent/12 hover:shadow-sm"
+                                  : "border-accent/60 bg-background/70 text-primary hover:border-accent hover:bg-accent/15 hover:shadow-sm active:bg-accent/20 active:border-accent"
                               }`}
                             >
                               {o.label}
