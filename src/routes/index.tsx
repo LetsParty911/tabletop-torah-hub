@@ -118,7 +118,7 @@ export const Route = createFileRoute("/")({
   },
   notFoundComponent: () => (
     <div className="min-h-screen flex items-center justify-center">
-      <Link to="/archive" className="text-primary underline">Browse archive</Link>
+      <Link to="/archive" search={{}} className="text-primary underline">Browse archive</Link>
     </div>
   ),
   head: ({ loaderData }) => {
@@ -514,12 +514,12 @@ function Index() {
               </p>
             ) : (
               <>
-                <div className="mt-5 sm:mt-6 flex flex-col items-center gap-3">
-                  <div className="flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-2">
-                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      By audience:
+                <div className="mt-5 sm:mt-6 space-y-4">
+                  <div>
+                    <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      By audience
                     </span>
-                    <div className="flex max-w-full flex-wrap items-center justify-center gap-2">
+                    <div className="mt-2 flex flex-wrap justify-start gap-2">
                       {(["All", "Children", "Families", "Adults"] as const)
                         .map((audience) => ({
                           audience,
@@ -562,76 +562,32 @@ function Index() {
                     </div>
                   </div>
 
-                  <div className="flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-2">
-                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      By length:
+                  <div>
+                    <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      By length
                     </span>
-                    {(() => {
-                      const shortCount = lengthScoped.filter(
-                        (r) => typeof r.page_count === "number" && r.page_count < 5,
-                      ).length;
-                      const longCount = lengthScoped.filter(
-                        (r) => typeof r.page_count === "number" && r.page_count >= 5,
-                      ).length;
-                      const options = [
-                        { key: "All" as const, label: "All", count: lengthScoped.length },
-                        { key: "short" as const, label: "Under 5 Pages", count: shortCount },
-                        { key: "long" as const, label: "5+ Pages", count: longCount },
-                      ].filter((o) => o.key === "All" || o.count > 0);
-                      return options.map((o) => {
-                        const active = lengthFilter === o.key;
-                        return (
-                          <button
-                            key={o.key}
-                            type="button"
-                            aria-pressed={active}
-                            aria-label={`Filter by length: ${o.label}, ${o.count} ${o.count === 1 ? "publication" : "publications"}`}
-                            onClick={() => setLengthFilter(active ? "All" : o.key)}
-                            className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 ${
-                              active
-                                ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                                : "border-accent/40 bg-background/70 text-primary hover:border-accent hover:bg-accent/12 hover:shadow-sm"
-                            }`}
-                          >
-                            {o.label}
-                            <span
-                              className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
-                                active
-                                  ? "bg-accent-foreground/20 text-accent-foreground"
-                                  : "bg-accent/15 text-accent"
-                              }`}
-                            >
-                              {o.count}
-                            </span>
-                          </button>
-                        );
-                      });
-                    })()}
-                  </div>
-
-                  {contentTypeOptions.length > 0 && (
-                    <div className="flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-2">
-                      <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        By content type:
-                      </span>
-                      {[
-                        { key: "All", label: "All", count: contentTypeScoped.length },
-                        ...contentTypeOptions.map((t) => ({
-                          key: t,
-                          label: t,
-                          count: contentTypeScoped.filter((r) => resourceContentType(r) === t).length,
-                        })),
-                      ]
-                        .filter((o) => o.key === "All" || o.count > 0)
-                        .map((o) => {
-                          const active = contentTypeFilter === o.key;
+                    <div className="mt-2 flex flex-wrap justify-start gap-2">
+                      {(() => {
+                        const shortCount = lengthScoped.filter(
+                          (r) => typeof r.page_count === "number" && r.page_count < 5,
+                        ).length;
+                        const longCount = lengthScoped.filter(
+                          (r) => typeof r.page_count === "number" && r.page_count >= 5,
+                        ).length;
+                        const options = [
+                          { key: "All" as const, label: "All", count: lengthScoped.length },
+                          { key: "short" as const, label: "Under 5 Pages", count: shortCount },
+                          { key: "long" as const, label: "5+ Pages", count: longCount },
+                        ].filter((o) => o.key === "All" || o.count > 0);
+                        return options.map((o) => {
+                          const active = lengthFilter === o.key;
                           return (
                             <button
                               key={o.key}
                               type="button"
                               aria-pressed={active}
-                              aria-label={`Filter by content type: ${o.label}, ${o.count} ${o.count === 1 ? "publication" : "publications"}`}
-                              onClick={() => setContentTypeFilter(active ? "All" : o.key)}
+                              aria-label={`Filter by length: ${o.label}, ${o.count} ${o.count === 1 ? "publication" : "publications"}`}
+                              onClick={() => setLengthFilter(active ? "All" : o.key)}
                               className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 ${
                                 active
                                   ? "border-accent bg-accent text-accent-foreground shadow-sm"
@@ -650,7 +606,55 @@ function Index() {
                               </span>
                             </button>
                           );
-                        })}
+                        });
+                      })()}
+                    </div>
+                  </div>
+
+                  {contentTypeOptions.length > 0 && (
+                    <div>
+                      <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        By content type
+                      </span>
+                      <div className="mt-2 flex flex-wrap justify-start gap-2">
+                        {[
+                          { key: "All", label: "All", count: contentTypeScoped.length },
+                          ...contentTypeOptions.map((t) => ({
+                            key: t,
+                            label: t,
+                            count: contentTypeScoped.filter((r) => resourceContentType(r) === t).length,
+                          })),
+                        ]
+                          .filter((o) => o.key === "All" || o.count > 0)
+                          .map((o) => {
+                            const active = contentTypeFilter === o.key;
+                            return (
+                              <button
+                                key={o.key}
+                                type="button"
+                                aria-pressed={active}
+                                aria-label={`Filter by content type: ${o.label}, ${o.count} ${o.count === 1 ? "publication" : "publications"}`}
+                                onClick={() => setContentTypeFilter(active ? "All" : o.key)}
+                                className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 ${
+                                  active
+                                    ? "border-accent bg-accent text-accent-foreground shadow-sm"
+                                    : "border-accent/40 bg-background/70 text-primary hover:border-accent hover:bg-accent/12 hover:shadow-sm"
+                                }`}
+                              >
+                                {o.label}
+                                <span
+                                  className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
+                                    active
+                                      ? "bg-accent-foreground/20 text-accent-foreground"
+                                      : "bg-accent/15 text-accent"
+                                  }`}
+                                >
+                                  {o.count}
+                                </span>
+                              </button>
+                            );
+                          })}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -751,6 +755,7 @@ function Index() {
               <div className="mt-6 sm:mt-8 text-center">
                 <Link
                   to="/archive"
+                  search={{}}
                   className="inline-flex items-center gap-1.5 font-serif italic text-sm sm:text-base text-accent hover:text-primary transition-colors"
                 >
                   Browse Archive →
