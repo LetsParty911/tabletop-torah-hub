@@ -528,6 +528,21 @@ function Index() {
             ) : (
               <>
                 <div className="mt-5 sm:mt-6 space-y-4">
+                  {(audienceFilter !== "All" || lengthFilter !== "All" || contentTypeFilter !== "All") && (
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAudienceFilter("All");
+                          setLengthFilter("All");
+                          setContentTypeFilter("All");
+                        }}
+                        className="text-xs font-serif italic text-accent hover:text-primary hover:underline transition-colors"
+                      >
+                        Clear filters
+                      </button>
+                    </div>
+                  )}
                   <div>
                     <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       By audience
