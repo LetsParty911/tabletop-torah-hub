@@ -357,7 +357,9 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                             />
                           </div>
                         </td>
-                        <td className="px-3 py-2 text-right font-medium tabular-nums">{d.count}</td>
+                        <td className="px-3 py-2 text-right font-medium tabular-nums whitespace-nowrap">
+                          {d.count}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
