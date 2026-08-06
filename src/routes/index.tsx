@@ -394,7 +394,7 @@ function Index() {
               >
                 Browse This Week's Collection
               </a>
-              <div className="flex flex-col items-center gap-1">
+              <div className="flex flex-col items-center gap-1 sm:contents">
                 <a
                   href="#weekly-email-signup"
                   onClick={(e) => {
@@ -407,18 +407,18 @@ function Index() {
                 >
                   Remind Me Weekly
                 </a>
-                <p className="font-serif italic text-sm sm:text-base text-accent">
+                <p className="font-serif italic text-sm sm:text-base text-accent sm:hidden">
                   One email every Thursday when the new collection posts.
                 </p>
               </div>
+              {resources.length > 0 && <ShareButton />}
             </div>
-            {resources.length > 0 && (
-              <div className="mt-4 flex justify-center">
-                <ShareButton />
-              </div>
-            )}
+            <p className="mt-3 hidden sm:block font-serif italic text-base text-accent text-center">
+              One email every Thursday when the new collection posts.
+            </p>
           </div>
         </section>
+
 
         {featuredPicks.length > 0 && (
           <>
@@ -433,7 +433,7 @@ function Index() {
                     return (
                       <article
                         key={key}
-                        className="rounded-2xl border-2 border-accent bg-background/70 p-4 sm:p-5 flex flex-col"
+                        className="h-full rounded-2xl border-2 border-accent bg-background/70 p-4 sm:p-5 flex flex-col"
                       >
                         <span className="self-start rounded-full bg-accent px-3 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-accent-foreground">
                           {label}
@@ -677,9 +677,10 @@ function Index() {
                   {filteredResources.map((r) => (
                     <article
                       key={r.id}
-                      className="rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent hover:shadow-md transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
+                      className="h-full rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent hover:shadow-md transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex flex-1 items-start gap-3">
+
                         <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-accent/15 text-primary shrink-0">
                           <FileText className="h-5 w-5" />
                         </div>
