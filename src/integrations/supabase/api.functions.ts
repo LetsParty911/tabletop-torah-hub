@@ -576,7 +576,17 @@ export type PublicPdf = {
   badge: string | null;
   publication: string | null;
   parsha_key: string | null;
+  thumb_url: string | null;
 };
+
+// First-page preview images live in the public `pdf-thumbs` bucket, keyed by
+// the pdfs row id. No DB column is needed — the path is deterministic and the
+// UI falls back to a text panel when the object is missing.
+export function pdfThumbUrl(id: string): string | null {
+  const base = process.env.EXT_SUPABASE_URL || process.env.SUPABASE_URL;
+  if (!base) return null;
+  return `${base.replace(/\/$/, "")}/storage/v1/object/public/pdf-thumbs/${id}.png`;
+}
 
 export const getPdfById = createServerFn({ method: "GET" })
   .inputValidator((input: { id: string }) =>
@@ -673,6 +683,7 @@ export const getPdfById = createServerFn({ method: "GET" })
         badge: row.badge ?? null,
         publication: row.publication ?? null,
         parsha_key: row.parsha_key ?? null,
+        thumb_url: pdfThumbUrl(row.id),
       } as PublicPdf,
     };
   });
@@ -1363,7 +1374,9 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
     const { publicationForTitle } = await import("@/lib/badges");
     const autoPublication = publicationForTitle(data.title);
+    const newId = crypto.randomUUID();
     const insertRow: Record<string, unknown> = {
+      id: newId,
       parsha_key: data.parshaKey,
       title: data.title,
       subtitle: data.subtitle,
@@ -1404,8 +1417,36 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
       await admin.storage.from("pdfs").remove([path]);
       throw new Error(`DB insert failed: ${insErr.message}`);
     }
-    return { ok: true };
+    return { ok: true, id: newId };
   });
+
+// ---------- Admin: store first-page thumbnail for a PDF row ----------
+// The image is rendered in the admin browser (pdf.js) and stored in the public
+// `pdf-thumbs` bucket as `<pdf id>.png`, overwriting any previous preview.
+export const adminUploadPdfThumb = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; id: string; pngBase64: string }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        id: z.string().uuid(),
+        pngBase64: z.string().min(10),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const buf = Buffer.from(data.pngBase64, "base64");
+    const { error } = await admin.storage
+      .from("pdf-thumbs")
+      .upload(`${data.id}.png`, buf, { contentType: "image/png", upsert: true });
+    if (error) {
+      console.error("adminUploadPdfThumb error", error);
+      return { ok: false, error: error.message };
+    }
+    return { ok: true, error: null };
+  });
+
 
 // ---------- Admin: update PDF metadata (category, publication, tags, title/subtitle) ----------
 export const adminUpdatePdfMeta = createServerFn({ method: "POST" })

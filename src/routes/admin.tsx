@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import {
   adminListPdfs,
   adminUploadPdf,
+  adminUploadPdfThumb,
   listCanonicalPublications,
   adminReplacePdfFile,
   adminTogglePublished,
@@ -958,7 +959,7 @@ function AdminPage() {
         bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
       }
       const fileBase64 = btoa(bin);
-      await adminUploadPdf({
+      const uploaded = await adminUploadPdf({
         data: {
           accessToken,
           parshaKey,
@@ -980,6 +981,18 @@ function AdminPage() {
           badge: (uploadBadge || null) as any,
         },
       });
+      // Best-effort first-page preview; a failure must not fail the upload.
+      if (uploaded?.id) {
+        try {
+          const { renderFirstPageThumbBase64 } = await import("@/lib/pdf-thumb");
+          const pngBase64 = await renderFirstPageThumbBase64(file);
+          if (pngBase64) {
+            await adminUploadPdfThumb({ data: { accessToken, id: uploaded.id, pngBase64 } });
+          }
+        } catch (e) {
+          console.error("thumbnail generation failed", e);
+        }
+      }
       setTitle("");
       setPublicationId("");
       setTitleFreeText(false);
@@ -1095,6 +1108,16 @@ function AdminPage() {
       await adminReplacePdfFile({
         data: { accessToken, id, fileName: replaceFile.name, fileBase64 },
       });
+      // Regenerate the preview so the card never shows the previous sheet.
+      try {
+        const { renderFirstPageThumbBase64 } = await import("@/lib/pdf-thumb");
+        const pngBase64 = await renderFirstPageThumbBase64(replaceFile);
+        if (pngBase64) {
+          await adminUploadPdfThumb({ data: { accessToken, id, pngBase64 } });
+        }
+      } catch (e) {
+        console.error("thumbnail regeneration failed", e);
+      }
       setMsg({ kind: "success", text: "PDF replaced." });
       cancelEditPdf();
       await refresh();

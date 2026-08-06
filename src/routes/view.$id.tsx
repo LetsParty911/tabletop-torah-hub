@@ -129,6 +129,7 @@ function ViewPdf() {
   const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=FitH`;
   const isMobile = useIsMobile();
   const [mounted, setMounted] = useState(false);
+  const [thumbFailed, setThumbFailed] = useState(false);
   useEffect(() => setMounted(true), []);
   // Mobile browsers (Android Chrome / iOS Safari) can't render PDFs inline —
   // they show a black frame. Only embed once we know we're on desktop.
@@ -246,9 +247,33 @@ function ViewPdf() {
                   {pdf.page_count} {pdf.page_count === 1 ? "page" : "pages"} · PDF
                 </p>
               )}
-              <p className="mt-3 text-sm text-foreground/80">
-                Mobile browsers can't preview PDFs. Download it to read or print.
-              </p>
+              {pdf.thumb_url && !thumbFailed ? (
+                <a
+                  href={`/view/${pdf.id}/download`}
+                  download
+                  onClick={() =>
+                    trackEvent("pdf_download", {
+                      file_id: pdf.id,
+                      file_title: pdf.title,
+                      source_name: pdf.title,
+                    })
+                  }
+                  className="mt-4 block"
+                  aria-label={`Download ${pdf.title}`}
+                >
+                  <img
+                    src={pdf.thumb_url}
+                    alt={`First page preview of ${pdf.title}`}
+                    loading="lazy"
+                    onError={() => setThumbFailed(true)}
+                    className="mx-auto w-full max-w-sm rounded-md border border-accent/40 bg-background shadow-sm"
+                  />
+                </a>
+              ) : (
+                <p className="mt-3 text-sm text-foreground/80">
+                  Mobile browsers can't preview PDFs. Download it to read or print.
+                </p>
+              )}
               <div className="mt-4 flex justify-center">
                 <DownloadToPrintButton
                   href={`/view/${pdf.id}/download`}
