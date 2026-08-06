@@ -210,7 +210,7 @@ const FEATURED_SLOTS = [
 ] as const;
 
 function Index() {
-  const { label: currentLabel, parshaKey: currentParshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey } =
+  const { label: currentLabel, parshaKey: currentParshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey, subscriberCount } =
     Route.useLoaderData() as LoaderData;
 
   // Everything user-facing (hero copy, counts, share text) derives from the
@@ -412,7 +412,9 @@ function Index() {
                 <ShareButton />
               </div>
             )}
-            
+            <p className="mt-3 font-serif italic text-sm sm:text-base text-accent">
+              One email every Thursday when the new collection posts.
+            </p>
           </div>
         </section>
 
@@ -828,6 +830,11 @@ function Index() {
                 Remind Me Weekly
               </button>
             </form>
+            {typeof subscriberCount === "number" && subscriberCount >= 25 && (
+              <p className="mt-3 text-xs sm:text-sm text-muted-foreground">
+                Join {subscriberCount.toLocaleString()} people who get it every week.
+              </p>
+            )}
             {signupMsg && (
               <p className="mt-4 text-sm text-accent font-serif">{signupMsg}</p>
             )}
