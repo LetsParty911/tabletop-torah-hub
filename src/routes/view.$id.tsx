@@ -1,6 +1,8 @@
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+
 import { ArrowLeft } from "lucide-react";
 import { getPdfById } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
@@ -125,6 +127,13 @@ export const Route = createFileRoute("/view/$id")({
 function ViewPdf() {
   const { pdf } = Route.useLoaderData();
   const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=FitH`;
+  const isMobile = useIsMobile();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  // Mobile browsers (Android Chrome / iOS Safari) can't render PDFs inline —
+  // they show a black frame. Only embed once we know we're on desktop.
+  const canEmbed = mounted && !isMobile;
+
 
   useEffect(() => {
     trackEvent("pdf_view", {
@@ -209,11 +218,39 @@ function ViewPdf() {
         </div>
 
         <div className="mt-6">
-          <iframe
-            src={viewerSrc}
-            title={`Embedded PDF viewer: ${pdf.title}`}
-            className="w-full border-0 bg-muted h-[80vh] rounded-lg"
-          />
+          {canEmbed ? (
+            <iframe
+              src={viewerSrc}
+              title={`Embedded PDF viewer: ${pdf.title}`}
+              className="w-full border-0 bg-muted h-[80vh] rounded-lg"
+            />
+          ) : (
+            <div className="rounded-lg border border-accent/40 bg-accent/10 p-6 text-center">
+              <h2 className="font-serif text-xl font-bold text-primary">
+                {pdf.publication || pdf.title}
+              </h2>
+              {typeof pdf.page_count === "number" && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {pdf.page_count} {pdf.page_count === 1 ? "page" : "pages"} · PDF
+                </p>
+              )}
+              <p className="mt-3 text-sm text-foreground/80">
+                Your phone can't show PDFs inside the page. Download it to read or print.
+              </p>
+              <div className="mt-4 flex justify-center">
+                <DownloadToPrintButton
+                  href={`/view/${pdf.id}/download`}
+                  publicationId={pdf.id}
+                  publicationTitle={pdf.title}
+                  filename={buildDownloadFilename(
+                    pdf.parsha_key,
+                    pdf.publication || pdf.title,
+                  )}
+                  className="px-5 py-2.5"
+                />
+              </div>
+            </div>
+          )}
           <p className="mt-2 text-sm text-muted-foreground">
             Can't read the embedded viewer?{" "}
             <a
@@ -225,6 +262,7 @@ function ViewPdf() {
             </a>
           </p>
         </div>
+
 
         <div className="mt-6">
           <Link
