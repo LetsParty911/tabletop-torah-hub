@@ -21,6 +21,7 @@ import {
   listHomepageWeek,
   getParshaOverride,
   subscribeEmail,
+  getActiveSubscriberCount,
 } from "@/integrations/supabase/api.functions";
 import { trackEvent, trackEventOnce } from "@/lib/analytics";
 
@@ -53,6 +54,7 @@ type LoaderData = {
   isFallback: boolean;
   fallbackParshaLabel: string | null;
   fallbackParshaKey: string | null;
+  subscriberCount: number | null;
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
@@ -98,7 +100,15 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     console.error("Failed to load PDFs", e);
   }
 
-  return { label, parshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey };
+  let subscriberCount: number | null = null;
+  try {
+    const { count } = await getActiveSubscriberCount();
+    if (count >= 25) subscriberCount = count;
+  } catch (e) {
+    console.error("Failed to load subscriber count", e);
+  }
+
+  return { label, parshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey, subscriberCount };
 }
 
 export const Route = createFileRoute("/")({
