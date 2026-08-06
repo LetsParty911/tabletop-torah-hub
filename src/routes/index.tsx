@@ -326,7 +326,7 @@ function Index() {
     parsha: displayedParshaKey ?? undefined,
   });
 
-  const shareText = `${resources.length} free, handpicked Divrei Torah for ${displayedLabel} — ready to download and print: https://torahforthetable.com/`;
+  const shareText = `${resources.length} free, handpicked Divrei Torah for ${displayedLabel} — ready to download and print: ${SITE_URL}/`;
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
   const ShareButton = ({ className }: { className?: string }) => (
