@@ -21,6 +21,7 @@ import {
   listHomepageWeek,
   getParshaOverride,
   subscribeEmail,
+  getActiveSubscriberCount,
 } from "@/integrations/supabase/api.functions";
 import { trackEvent, trackEventOnce } from "@/lib/analytics";
 
@@ -53,6 +54,7 @@ type LoaderData = {
   isFallback: boolean;
   fallbackParshaLabel: string | null;
   fallbackParshaKey: string | null;
+  subscriberCount: number | null;
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
@@ -98,7 +100,15 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     console.error("Failed to load PDFs", e);
   }
 
-  return { label, parshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey };
+  let subscriberCount: number | null = null;
+  try {
+    const { count } = await getActiveSubscriberCount();
+    if (count >= 25) subscriberCount = count;
+  } catch (e) {
+    console.error("Failed to load subscriber count", e);
+  }
+
+  return { label, parshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey, subscriberCount };
 }
 
 export const Route = createFileRoute("/")({
@@ -200,7 +210,7 @@ const FEATURED_SLOTS = [
 ] as const;
 
 function Index() {
-  const { label: currentLabel, parshaKey: currentParshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey } =
+  const { label: currentLabel, parshaKey: currentParshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey, subscriberCount } =
     Route.useLoaderData() as LoaderData;
 
   // Everything user-facing (hero copy, counts, share text) derives from the
@@ -402,7 +412,9 @@ function Index() {
                 <ShareButton />
               </div>
             )}
-            
+            <p className="mt-3 font-serif italic text-sm sm:text-base text-accent">
+              One email every Thursday when the new collection posts.
+            </p>
           </div>
         </section>
 
@@ -818,6 +830,11 @@ function Index() {
                 Remind Me Weekly
               </button>
             </form>
+            {typeof subscriberCount === "number" && subscriberCount >= 25 && (
+              <p className="mt-3 text-xs sm:text-sm text-muted-foreground">
+                Join {subscriberCount.toLocaleString()} people who get it every week.
+              </p>
+            )}
             {signupMsg && (
               <p className="mt-4 text-sm text-accent font-serif">{signupMsg}</p>
             )}

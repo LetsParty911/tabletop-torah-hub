@@ -837,6 +837,23 @@ export const subscribeEmail = createServerFn({ method: "POST" })
     return respondFromWelcome(r);
   });
 
+// ---------- Public: active subscriber count ----------
+export const getActiveSubscriberCount = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ count: number }> => {
+    try {
+      const admin = getSupabaseAdmin();
+      const { count } = await admin
+        .from("subscribers")
+        .select("id", { count: "exact", head: true })
+        .eq("active", true);
+      return { count: count ?? 0 };
+    } catch (e) {
+      console.error("getActiveSubscriberCount error", e);
+      return { count: 0 };
+    }
+  },
+);
+
 // ---------- Internal: welcome email for new subscribers ----------
 // Best-effort: a send failure must NEVER break the subscribe flow.
 // Returns a small status object so callers can log what happened without
