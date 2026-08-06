@@ -830,11 +830,9 @@ function Index() {
                 Remind Me Weekly
               </button>
             </form>
-            {typeof subscriberCount === "number" && subscriberCount >= 25 && (
-              <p className="mt-3 text-xs sm:text-sm text-muted-foreground">
-                Join {subscriberCount.toLocaleString()} people who get it every week.
-              </p>
-            )}
+            <p className="mt-3 text-xs sm:text-sm text-muted-foreground">
+              Join the many who get it every week.
+            </p>
             {signupMsg && (
               <p className="mt-4 text-sm text-accent font-serif">{signupMsg}</p>
             )}
