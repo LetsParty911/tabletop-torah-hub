@@ -285,6 +285,26 @@ export function DownloadTimeline({
         </ResponsiveContainer>
       </div>
 
+      {clamp && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Y-axis clamped to the 95th percentile ({p95}).
+          {outliers.length > 0 && (
+            <>
+              {" "}
+              Off-scale:{" "}
+              {outliers.map((p, i) => (
+                <span key={p.day} className="text-foreground">
+                  {i > 0 ? ", " : ""}
+                  {p.day} ({p.total})
+                </span>
+              ))}
+              .
+            </>
+          )}
+        </p>
+      )}
+
+
       {spikes && (
         <div className="mt-3 border-t border-border pt-2 text-xs">
           {spikeDays.length === 0 ? (
