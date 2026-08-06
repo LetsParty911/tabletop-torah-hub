@@ -576,7 +576,17 @@ export type PublicPdf = {
   badge: string | null;
   publication: string | null;
   parsha_key: string | null;
+  thumb_url: string | null;
 };
+
+// First-page preview images live in the public `pdf-thumbs` bucket, keyed by
+// the pdfs row id. No DB column is needed — the path is deterministic and the
+// UI falls back to a text panel when the object is missing.
+export function pdfThumbUrl(id: string): string | null {
+  const base = process.env.EXT_SUPABASE_URL || process.env.SUPABASE_URL;
+  if (!base) return null;
+  return `${base.replace(/\/$/, "")}/storage/v1/object/public/pdf-thumbs/${id}.png`;
+}
 
 export const getPdfById = createServerFn({ method: "GET" })
   .inputValidator((input: { id: string }) =>
