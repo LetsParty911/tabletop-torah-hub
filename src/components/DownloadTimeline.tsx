@@ -36,6 +36,7 @@ export function DownloadTimeline({
   const [pdfKey, setPdfKey] = useState<string>("");
   const [avgWindow, setAvgWindow] = useState<0 | 3 | 7>(0);
   const [spikes, setSpikes] = useState(false);
+  const [clamp, setClamp] = useState(false);
 
   const fromTime = from.getTime();
   const toTime = to.getTime();
