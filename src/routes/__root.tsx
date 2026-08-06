@@ -237,8 +237,11 @@ function SiteNav() {
   if (isAdmin) return null;
 
   const linkCls =
-    "font-serif whitespace-nowrap text-xs sm:text-base text-primary/80 hover:text-primary hover:underline transition-colors duration-150";
+    "font-serif whitespace-nowrap text-[11px] sm:text-base text-primary/80 hover:text-primary hover:underline transition-colors duration-150";
   const activeCls = "text-primary font-semibold";
+
+  // Flip to false to render the whole wordmark in navy instead of gilding "Table".
+  const goldTable = true;
 
   return (
     <nav
@@ -248,12 +251,14 @@ function SiteNav() {
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
         <Link
           to="/"
-          className="font-serif text-xs sm:text-base font-semibold text-primary tracking-tight whitespace-nowrap"
+          aria-label="Torah for the Table — home"
+          className="shrink-0 font-serif text-[0.8rem] xs:text-sm sm:text-lg font-semibold tracking-[-0.015em] text-primary whitespace-nowrap leading-none"
         >
-          <span className="sm:hidden">TFTT</span>
-          <span className="hidden sm:inline">Torah for the Table</span>
+          Torah for the{" "}
+          <span className={goldTable ? "text-accent" : undefined}>Table</span>
         </Link>
-        <div className="flex items-center gap-3 sm:gap-6 overflow-x-auto">
+        <div className="flex min-w-0 items-center gap-2.5 sm:gap-6 overflow-x-auto">
+
           <Link to="/" activeOptions={{ exact: true }} className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
             Home
           </Link>
