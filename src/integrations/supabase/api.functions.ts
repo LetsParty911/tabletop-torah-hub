@@ -1553,6 +1553,10 @@ export const adminTogglePublished = createServerFn({ method: "POST" })
     const admin = getSupabaseAdmin();
     const { error } = await admin.from("pdfs").update({ published: data.published }).eq("id", data.id);
     if (error) throw new Error(error.message);
+    try {
+      const { purgeCloudflareCache } = await import("@/lib/cloudflare-purge.server");
+      await purgeCloudflareCache("toggle-published");
+    } catch { /* purge is best-effort */ }
     return { ok: true };
   });
 
@@ -1574,6 +1578,10 @@ export const adminBulkPublish = createServerFn({ method: "POST" })
       .update({ published: true })
       .in("id", data.ids);
     if (error) throw new Error(error.message);
+    try {
+      const { purgeCloudflareCache } = await import("@/lib/cloudflare-purge.server");
+      await purgeCloudflareCache("bulk-publish");
+    } catch { /* purge is best-effort */ }
     return { ok: true, count: data.ids.length };
   });
 
