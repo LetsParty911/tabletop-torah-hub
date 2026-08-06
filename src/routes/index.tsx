@@ -7,6 +7,7 @@ import { WhatsNewPopup } from "@/components/WhatsNewPopup";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
+import { SITE_URL } from "@/lib/site-url";
 
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
