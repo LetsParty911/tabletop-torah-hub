@@ -381,41 +381,43 @@ function Index() {
                 {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`} posts Thursday.
               </p>
             )}
-            <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-              <a
-                href="#this-weeks-collection"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document
-                    .getElementById("this-weeks-collection")
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-                className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md"
-              >
-                Browse This Week's Collection
-              </a>
-              <div className="flex flex-col items-center gap-1 sm:contents">
+            <div className="mt-6 sm:mt-8 flex flex-col items-center gap-3 sm:gap-4">
+              <div className="flex w-full flex-col items-center justify-center gap-3 sm:gap-4 md:flex-row">
                 <a
-                  href="#weekly-email-signup"
+                  href="#this-weeks-collection"
                   onClick={(e) => {
                     e.preventDefault();
                     document
-                      .getElementById("weekly-email-signup")
+                      .getElementById("this-weeks-collection")
                       ?.scrollIntoView({ behavior: "smooth", block: "start" });
                   }}
-                  className="inline-flex items-center justify-center rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors"
+                  className="inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-3 font-serif font-semibold text-primary-foreground shadow-md transition-colors hover:bg-accent hover:text-accent-foreground md:w-auto"
                 >
-                  Remind Me Weekly
+                  Browse This Week's Collection
                 </a>
-                <p className="font-serif italic text-sm sm:text-base text-accent sm:hidden">
-                  One email every Thursday when the new collection posts.
-                </p>
+                <div className="flex w-full flex-col items-center gap-1 md:w-auto">
+                  <a
+                    href="#weekly-email-signup"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      document
+                        .getElementById("weekly-email-signup")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                    className="inline-flex w-full items-center justify-center rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground md:w-auto"
+                  >
+                    Remind Me Weekly
+                  </a>
+                  <p className="font-serif text-sm italic text-accent sm:text-base md:hidden">
+                    One email every Thursday when the new collection posts.
+                  </p>
+                </div>
+                {resources.length > 0 && <ShareButton className="w-full md:w-auto" />}
               </div>
-              {resources.length > 0 && <ShareButton />}
+              <p className="hidden font-serif text-base italic text-accent text-center md:block">
+                One email every Thursday when the new collection posts.
+              </p>
             </div>
-            <p className="mt-3 hidden sm:block font-serif italic text-base text-accent text-center">
-              One email every Thursday when the new collection posts.
-            </p>
           </div>
         </section>
 
