@@ -139,7 +139,7 @@ function NotFoundComponent() {
           </Link>
           <Link
             to="/archive"
-            search={{}}
+            search={{ year: "all", parsha: "all", audience: "All", q: "" }}
             className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             Archive
@@ -260,7 +260,7 @@ function SiteNav() {
           <Link to="/short-vorts" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
             Short Vorts
           </Link>
-          <Link to="/archive" search={{}} className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
+          <Link to="/archive" search={{ year: "all", parsha: "all", audience: "All", q: "" }} className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
             Archive
           </Link>
           <Link to="/about" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>

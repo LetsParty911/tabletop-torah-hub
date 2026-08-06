@@ -16,7 +16,7 @@ export function SiteFooter() {
         <span aria-hidden>·</span>
         <Link
           to="/archive"
-          search={{}}
+          search={{ year: "all", parsha: "all", audience: "All", q: "" }}
           className="hover:text-primary hover:underline transition-colors duration-150"
         >
           Archive

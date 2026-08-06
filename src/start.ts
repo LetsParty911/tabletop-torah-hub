@@ -31,12 +31,15 @@ const cacheControl = createMiddleware().server(async ({ next, request }) => {
       return result;
     }
 
-    // Always revalidate HTML documents (the SSR shell).
+    // HTML documents: browser must revalidate every visit, while Cloudflare's
+    // edge may serve a cached copy for up to 5 minutes (with SWR grace).
     if (contentType.includes("text/html")) {
-      response.headers.set("Cache-Control", "no-cache, must-revalidate");
-      // Belt-and-suspenders for legacy caches.
-      response.headers.set("Pragma", "no-cache");
-      response.headers.set("Expires", "0");
+      response.headers.set(
+        "Cache-Control",
+        "public, max-age=0, must-revalidate, s-maxage=300, stale-while-revalidate=60",
+      );
+      response.headers.delete("Pragma");
+      response.headers.delete("Expires");
     }
   } catch {
     /* header mutation is best-effort; never break the response */
