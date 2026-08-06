@@ -267,7 +267,7 @@ export function DownloadTimeline({
                   fill="hsl(var(--destructive))"
                   stroke="hsl(var(--background))"
                   strokeWidth={2}
-                  ifOverflow="extendDomain"
+                  ifOverflow={clamp ? "hidden" : "extendDomain"}
                 />
               ))}
             {pdfKey && (
