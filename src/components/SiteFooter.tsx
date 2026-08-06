@@ -1,52 +1,32 @@
 import { Link } from "@tanstack/react-router";
 
 export function SiteFooter() {
+  const linkClass =
+    "hover:text-primary hover:underline transition-colors duration-150 after:content-['·'] after:mx-3 after:text-muted-foreground last:after:hidden";
+
   return (
-    <footer
-      id="site-footer"
-      className="space-y-2 px-4 pb-24 pt-4 md:pb-20"
-    >
-      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center text-sm text-muted-foreground">
-        <Link
-          to="/"
-          className="hover:text-primary hover:underline transition-colors duration-150"
-        >
+    <footer id="site-footer" className="space-y-2 px-4 pb-24 pt-4 md:pb-20">
+      <div className="flex flex-wrap items-center justify-center gap-y-2 text-center text-sm text-muted-foreground">
+        <Link to="/" className={linkClass}>
           Home
         </Link>
-        <span aria-hidden>·</span>
         <Link
           to="/archive"
           search={{ year: "all", parsha: "all", audience: "All", q: "" }}
-          className="hover:text-primary hover:underline transition-colors duration-150"
+          className={linkClass}
         >
           Archive
         </Link>
-        <span aria-hidden>·</span>
-        <Link
-          to="/about"
-          className="hover:text-primary hover:underline transition-colors duration-150"
-        >
+        <Link to="/about" className={linkClass}>
           About
         </Link>
-        <span aria-hidden>·</span>
-        <Link
-          to="/contact"
-          className="hover:text-primary hover:underline transition-colors duration-150"
-        >
+        <Link to="/contact" className={linkClass}>
           Contact
         </Link>
-        <span aria-hidden>·</span>
-        <Link
-          to="/mission"
-          className="hover:text-primary hover:underline transition-colors duration-150"
-        >
+        <Link to="/mission" className={linkClass}>
           Mission
         </Link>
-        <span aria-hidden>·</span>
-        <Link
-          to="/privacy"
-          className="hover:text-primary hover:underline transition-colors duration-150"
-        >
+        <Link to="/privacy" className={linkClass}>
           Privacy
         </Link>
       </div>
@@ -64,3 +44,4 @@ export function SiteFooter() {
     </footer>
   );
 }
+
