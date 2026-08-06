@@ -170,6 +170,19 @@ export function DownloadTimeline({
         >
           Spike detection
         </button>
+        <button
+          type="button"
+          onClick={() => setClamp((v) => !v)}
+          aria-pressed={clamp}
+          className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
+            clamp
+              ? "border-accent bg-accent text-accent-foreground"
+              : "border-border text-muted-foreground hover:text-foreground"
+          }`}
+          title="Clamp the y-axis to the 95th percentile so a single huge day doesn't flatten the rest"
+        >
+          Clamp outliers
+        </button>
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
           Compare PDF
           <select
