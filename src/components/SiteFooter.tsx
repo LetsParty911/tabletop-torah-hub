@@ -13,6 +13,7 @@ export function SiteFooter() {
       <span aria-hidden>·</span>
       <Link
         to="/archive"
+        search={{}}
         className="hover:text-primary hover:underline transition-colors duration-150"
       >
         Archive

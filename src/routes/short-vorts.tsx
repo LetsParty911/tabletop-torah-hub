@@ -261,6 +261,7 @@ function ShortVortsPage() {
         <div className="mt-10 text-center">
           <Link
             to="/archive"
+            search={{}}
             className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             Browse the full archive
