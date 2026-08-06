@@ -7,7 +7,7 @@ import { WhatsNewPopup } from "@/components/WhatsNewPopup";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
-import { InlineEmailSignup } from "@/components/InlineEmailSignup";
+
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
 import { buildDownloadFilename } from "@/lib/download-filename";
@@ -348,7 +348,10 @@ function Index() {
       <WhatsNewPopup />
       <WhatsNewBanner />
       <AnnouncementBanner />
-      <UpdateCountdown />
+      <UpdateCountdown
+        contentLive={!isFallback && resources.length > 0}
+        liveParshaLabel={displayedLabel}
+      />
       <div className="mx-auto max-w-5xl px-3 py-5 sm:px-4 sm:py-8 md:px-8 md:py-14 space-y-5 sm:space-y-8 md:space-y-10">
         {/* Hero */}
         <section className="parchment-frame">
@@ -359,7 +362,7 @@ function Index() {
             <p className="mt-4 sm:mt-6 font-serif text-lg sm:text-xl md:text-2xl text-primary max-w-2xl mx-auto">
               {resources.length} handpicked, print-ready selections for {displayedLabel} — for children, families, and adults.
             </p>
-            {upcomingParsha && (
+            {upcomingParsha && upcomingParsha !== displayedParshaKey && (
               <p className="mt-2 font-serif italic text-sm sm:text-base text-accent">
                 {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`} posts Thursday.
               </p>
@@ -395,7 +398,7 @@ function Index() {
                 <ShareButton />
               </div>
             )}
-            <InlineEmailSignup sourceId="homepage-hero" className="mt-6 sm:mt-8" />
+            
           </div>
         </section>
 
