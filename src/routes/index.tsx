@@ -348,7 +348,10 @@ function Index() {
       <WhatsNewPopup />
       <WhatsNewBanner />
       <AnnouncementBanner />
-      <UpdateCountdown />
+      <UpdateCountdown
+        contentLive={!isFallback && resources.length > 0}
+        liveParshaLabel={displayedLabel}
+      />
       <div className="mx-auto max-w-5xl px-3 py-5 sm:px-4 sm:py-8 md:px-8 md:py-14 space-y-5 sm:space-y-8 md:space-y-10">
         {/* Hero */}
         <section className="parchment-frame">
