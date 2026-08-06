@@ -1417,8 +1417,36 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
       await admin.storage.from("pdfs").remove([path]);
       throw new Error(`DB insert failed: ${insErr.message}`);
     }
-    return { ok: true };
+    return { ok: true, id: newId };
   });
+
+// ---------- Admin: store first-page thumbnail for a PDF row ----------
+// The image is rendered in the admin browser (pdf.js) and stored in the public
+// `pdf-thumbs` bucket as `<pdf id>.png`, overwriting any previous preview.
+export const adminUploadPdfThumb = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; id: string; pngBase64: string }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        id: z.string().uuid(),
+        pngBase64: z.string().min(10),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const buf = Buffer.from(data.pngBase64, "base64");
+    const { error } = await admin.storage
+      .from("pdf-thumbs")
+      .upload(`${data.id}.png`, buf, { contentType: "image/png", upsert: true });
+    if (error) {
+      console.error("adminUploadPdfThumb error", error);
+      return { ok: false, error: error.message };
+    }
+    return { ok: true, error: null };
+  });
+
 
 // ---------- Admin: update PDF metadata (category, publication, tags, title/subtitle) ----------
 export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
