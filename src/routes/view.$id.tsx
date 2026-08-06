@@ -129,6 +129,7 @@ function ViewPdf() {
   const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=FitH`;
   const isMobile = useIsMobile();
   const [mounted, setMounted] = useState(false);
+  const [thumbFailed, setThumbFailed] = useState(false);
   useEffect(() => setMounted(true), []);
   // Mobile browsers (Android Chrome / iOS Safari) can't render PDFs inline —
   // they show a black frame. Only embed once we know we're on desktop.
