@@ -677,9 +677,10 @@ function Index() {
                   {filteredResources.map((r) => (
                     <article
                       key={r.id}
-                      className="rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent hover:shadow-md transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
+                      className="h-full rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent hover:shadow-md transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex flex-1 items-start gap-3">
+
                         <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-accent/15 text-primary shrink-0">
                           <FileText className="h-5 w-5" />
                         </div>
