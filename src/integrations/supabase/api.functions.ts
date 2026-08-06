@@ -683,6 +683,7 @@ export const getPdfById = createServerFn({ method: "GET" })
         badge: row.badge ?? null,
         publication: row.publication ?? null,
         parsha_key: row.parsha_key ?? null,
+        thumb_url: pdfThumbUrl(row.id),
       } as PublicPdf,
     };
   });
