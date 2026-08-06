@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import {
   adminListPdfs,
   adminUploadPdf,
+  adminUploadPdfThumb,
   listCanonicalPublications,
   adminReplacePdfFile,
   adminTogglePublished,
