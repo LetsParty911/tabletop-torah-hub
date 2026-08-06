@@ -394,7 +394,7 @@ function Index() {
               >
                 Browse This Week's Collection
               </a>
-              <div className="flex flex-col items-center gap-1">
+              <div className="flex flex-col items-center gap-1 sm:contents">
                 <a
                   href="#weekly-email-signup"
                   onClick={(e) => {
@@ -407,18 +407,18 @@ function Index() {
                 >
                   Remind Me Weekly
                 </a>
-                <p className="font-serif italic text-sm sm:text-base text-accent">
+                <p className="font-serif italic text-sm sm:text-base text-accent sm:hidden">
                   One email every Thursday when the new collection posts.
                 </p>
               </div>
+              {resources.length > 0 && <ShareButton />}
             </div>
-            {resources.length > 0 && (
-              <div className="mt-4 flex justify-center">
-                <ShareButton />
-              </div>
-            )}
+            <p className="mt-3 hidden sm:block font-serif italic text-base text-accent text-center">
+              One email every Thursday when the new collection posts.
+            </p>
           </div>
         </section>
+
 
         {featuredPicks.length > 0 && (
           <>
