@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Share2, Link2, Check } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { absoluteUrl } from "@/lib/site-url";
 
 type Props = {
   pdfId: string;
@@ -11,12 +12,9 @@ type Props = {
   className?: string;
 };
 
+// Always the canonical public origin — preview hosts are access-gated.
 function buildViewUrl(pdfId: string) {
-  const origin =
-    typeof window !== "undefined" && window.location?.origin
-      ? window.location.origin
-      : "https://torahforthetable.com";
-  return `${origin}/view/${pdfId}`;
+  return absoluteUrl(`/view/${pdfId}`);
 }
 
 export function SharePublicationButton({
