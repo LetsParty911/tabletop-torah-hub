@@ -510,7 +510,10 @@ function Index() {
             )}
             {resources.length > 0 && (
               <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent">
-                {resources.length} {resources.length === 1 ? "Dvar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : " this week"}
+                <span className="inline-block align-baseline text-base sm:text-lg md:text-xl font-bold text-primary">
+                  {resources.length}
+                </span>{" "}
+                {resources.length === 1 ? "Dvar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : " this week"}
               </p>
             )}
 
