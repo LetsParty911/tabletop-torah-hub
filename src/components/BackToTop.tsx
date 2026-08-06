@@ -6,7 +6,8 @@ type Props = {
 };
 
 export function BackToTop({ collectionId }: Props) {
-  const [visible, setVisible] = useState(false);
+  const [collectionScrolled, setCollectionScrolled] = useState(false);
+  const [footerVisible, setFooterVisible] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return;
@@ -17,7 +18,7 @@ export function BackToTop({ collectionId }: Props) {
     const observer = new IntersectionObserver(
       ([entry]) => {
         // Show once the entire collection has scrolled above the viewport.
-        setVisible(entry.boundingClientRect.bottom < 0);
+        setCollectionScrolled(entry.boundingClientRect.bottom < 0);
       },
       { threshold: 0, rootMargin: "0px" },
     );
@@ -26,10 +27,29 @@ export function BackToTop({ collectionId }: Props) {
     return () => observer.disconnect();
   }, [collectionId]);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    const footer = document.getElementById("site-footer");
+    if (!footer) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setFooterVisible(entry.isIntersecting);
+      },
+      { threshold: 0, rootMargin: "0px" },
+    );
+
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
+
   const scrollToTop = () => {
     if (typeof window === "undefined") return;
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const visible = collectionScrolled && !footerVisible;
 
   return (
     <button
