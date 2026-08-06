@@ -362,7 +362,7 @@ function Index() {
             <p className="mt-4 sm:mt-6 font-serif text-lg sm:text-xl md:text-2xl text-primary max-w-2xl mx-auto">
               {resources.length} handpicked, print-ready selections for {displayedLabel} — for children, families, and adults.
             </p>
-            {upcomingParsha && (
+            {upcomingParsha && upcomingParsha !== displayedParshaKey && (
               <p className="mt-2 font-serif italic text-sm sm:text-base text-accent">
                 {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`} posts Thursday.
               </p>
