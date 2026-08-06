@@ -2,7 +2,13 @@
 // Never registers in dev, iframe previews, or Lovable preview hosts.
 // Supports a kill switch via ?sw=off which unregisters existing workers.
 
+declare const __BUILD_ID__: string;
+
 const SW_URL = "/sw.js";
+// Cache-busting build id: changing the script URL forces the browser to fetch
+// and install the new worker, and the worker derives its cache names from it.
+const BUILD_ID = typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev";
+const SW_REGISTER_URL = `${SW_URL}?v=${encodeURIComponent(BUILD_ID)}`;
 
 function isPreviewHost(host: string): boolean {
   if (host.startsWith("id-preview--") || host.startsWith("preview--")) return true;
@@ -20,7 +26,7 @@ async function unregisterMatching() {
       regs
         .filter((r) => {
           const url = r.active?.scriptURL || r.installing?.scriptURL || r.waiting?.scriptURL || "";
-          return url.endsWith(SW_URL);
+          return url.split("?")[0]?.endsWith(SW_URL) ?? false;
         })
         .map((r) => r.unregister())
     );
@@ -45,7 +51,7 @@ export function registerPwa() {
   }
 
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register(SW_URL, { scope: "/" }).catch(() => {
+    navigator.serviceWorker.register(SW_REGISTER_URL, { scope: "/" }).catch(() => {
       /* registration failure is non-fatal */
     });
   });

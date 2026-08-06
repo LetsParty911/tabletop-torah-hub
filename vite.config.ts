@@ -6,4 +6,16 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-export default defineConfig();
+// __BUILD_ID__ rotates on every build so the service worker cache version
+// changes automatically without hand-bumping it.
+export default defineConfig({
+  vite: {
+    define: {
+      __BUILD_ID__: JSON.stringify(
+        process.env["CF_PAGES_COMMIT_SHA"] ||
+          process.env["GIT_COMMIT_SHA"] ||
+          Date.now().toString(36),
+      ),
+    },
+  },
+});

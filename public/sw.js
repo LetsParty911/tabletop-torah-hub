@@ -5,7 +5,8 @@
  *  - Static assets (fonts, images, icons, JS/CSS): cache-first
  *  - PDFs and audio: bypass (do NOT cache)
  */
-const VERSION = "v2";
+const VERSION =
+  new URL(self.location.href).searchParams.get("v") || "dev";
 const SHELL_CACHE = `tftt-shell-${VERSION}`;
 const STATIC_CACHE = `tftt-static-${VERSION}`;
 const DATA_CACHE = `tftt-data-${VERSION}`;
