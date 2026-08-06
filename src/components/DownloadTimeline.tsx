@@ -108,6 +108,24 @@ export function DownloadTimeline({
 
   const peak = series.reduce((m, p) => (p.total > m.total ? p : m), series[0] ?? { day: "", total: 0 });
 
+  // 95th-percentile clamp: keeps a single huge day from flattening the rest.
+  const p95 = useMemo(() => {
+    const vals = series.map((p) => p.total).sort((a, b) => a - b);
+    if (vals.length === 0) return 0;
+    const idx = Math.min(vals.length - 1, Math.floor(0.95 * (vals.length - 1)));
+    return Math.max(1, vals[idx]);
+  }, [series]);
+
+  const outliers = useMemo(
+    () => (clamp ? series.filter((p) => p.total > p95) : []),
+    [clamp, series, p95],
+  );
+
+  const yDomain: [number, number | "auto"] = clamp
+    ? [0, Math.ceil(p95 * 1.15)]
+    : [0, "auto"];
+
+
 
   return (
     <div className="mb-6 rounded-md border border-border p-3">
