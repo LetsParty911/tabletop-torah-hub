@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { adminDownloadStats } from "@/integrations/supabase/api.functions";
 import { DownloadTimeline } from "@/components/DownloadTimeline";
