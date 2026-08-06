@@ -528,6 +528,21 @@ function Index() {
             ) : (
               <>
                 <div className="mt-5 sm:mt-6 space-y-4">
+                  {(audienceFilter !== "All" || lengthFilter !== "All" || contentTypeFilter !== "All") && (
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAudienceFilter("All");
+                          setLengthFilter("All");
+                          setContentTypeFilter("All");
+                        }}
+                        className="text-xs font-serif italic text-accent hover:text-primary hover:underline transition-colors"
+                      >
+                        Clear filters
+                      </button>
+                    </div>
+                  )}
                   <div>
                     <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       By audience
@@ -553,10 +568,10 @@ function Index() {
                               aria-pressed={active}
                               aria-label={`Filter by audience: ${audience}, ${count} ${count === 1 ? "publication" : "publications"}`}
                               onClick={() => setAudienceFilter(active ? "All" : audience)}
-                              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 ${
+                              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                 active
                                   ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                                  : "border-accent/40 bg-background/70 text-primary hover:border-accent hover:bg-accent/12 hover:shadow-sm"
+                                  : "border-accent/60 bg-background/70 text-primary hover:border-accent hover:bg-accent/15 hover:shadow-sm active:bg-accent/20 active:border-accent"
                               }`}
                             >
                               {audience}
@@ -601,10 +616,10 @@ function Index() {
                               aria-pressed={active}
                               aria-label={`Filter by length: ${o.label}, ${o.count} ${o.count === 1 ? "publication" : "publications"}`}
                               onClick={() => setLengthFilter(active ? "All" : o.key)}
-                              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 ${
+                              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                 active
                                   ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                                  : "border-accent/40 bg-background/70 text-primary hover:border-accent hover:bg-accent/12 hover:shadow-sm"
+                                  : "border-accent/60 bg-background/70 text-primary hover:border-accent hover:bg-accent/15 hover:shadow-sm active:bg-accent/20 active:border-accent"
                               }`}
                             >
                               {o.label}
@@ -648,10 +663,10 @@ function Index() {
                                 aria-pressed={active}
                                 aria-label={`Filter by content type: ${o.label}, ${o.count} ${o.count === 1 ? "publication" : "publications"}`}
                                 onClick={() => setContentTypeFilter(active ? "All" : o.key)}
-                                className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 ${
+                                className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                   active
                                     ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                                    : "border-accent/40 bg-background/70 text-primary hover:border-accent hover:bg-accent/12 hover:shadow-sm"
+                                    : "border-accent/60 bg-background/70 text-primary hover:border-accent hover:bg-accent/15 hover:shadow-sm active:bg-accent/20 active:border-accent"
                                 }`}
                               >
                                 {o.label}
