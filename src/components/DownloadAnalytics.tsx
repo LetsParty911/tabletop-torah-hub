@@ -509,6 +509,9 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                   </tbody>
                 </table>
               </div>
+              <p className="mt-1 text-xs text-muted-foreground md:hidden">
+                Swipe sideways to see all columns →
+              </p>
             </div>
           </div>
         </>
