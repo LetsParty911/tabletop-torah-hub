@@ -51,7 +51,17 @@ async function fetchParshaLabelForDate(target: Date): Promise<string | null> {
   return null;
 }
 
-export function UpdateCountdown() {
+type UpdateCountdownProps = {
+  /** True when the currently displayed collection is this week's live content. */
+  contentLive?: boolean;
+  /** Label of the collection that is actually live right now. */
+  liveParshaLabel?: string | null;
+};
+
+export function UpdateCountdown({
+  contentLive = false,
+  liveParshaLabel,
+}: UpdateCountdownProps) {
   const [message, setMessage] = useState<string | null>(null);
   const [isUpdateDay, setIsUpdateDay] = useState(false);
 
@@ -67,6 +77,11 @@ export function UpdateCountdown() {
         return;
       }
 
+      // "Update day" is only real once the new collection is actually live.
+      if (daysUntilThursday === 0 && !contentLive) {
+        return;
+      }
+
       // Target Shabbos = Thursday + 2 days
       const target = new Date(now);
       target.setDate(now.getDate() + daysUntilThursday + 2);
@@ -79,7 +94,8 @@ export function UpdateCountdown() {
 
       if (daysUntilThursday === 0) {
         setIsUpdateDay(true);
-        const forPart = parshaLabel ? ` for ${parshaLabel}` : "";
+        const live = liveParshaLabel ?? parshaLabel;
+        const forPart = live ? ` for ${live}` : "";
         setMessage(
           `It's update day! Check out this week's new content${forPart}.`,
         );
@@ -94,7 +110,7 @@ export function UpdateCountdown() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [contentLive, liveParshaLabel]);
 
   if (!message) return null;
 
