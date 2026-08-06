@@ -70,32 +70,50 @@ export function WeeklyEmailSignup({
         <p className="mt-2 font-serif italic font-medium text-sm sm:text-base text-primary max-w-md mx-auto">
           One weekly email when the new collection is ready.
         </p>
-        <form
-          onSubmit={handleSignup}
-          className="mt-5 flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-        >
-          <input
-            type="email"
-            aria-label="Email address for weekly Torah reminders"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email address"
-            className="flex-1 rounded-full border-2 border-accent/50 bg-background px-5 py-3 font-serif text-foreground placeholder:font-serif placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
-          />
-          <button
-            type="submit"
-            className="rounded-full bg-primary px-8 py-3.5 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md"
+        {done ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mt-5 mx-auto max-w-md rounded-2xl border-2 border-accent/60 bg-accent/10 px-5 py-4"
           >
-            Remind Me Weekly
-          </button>
-        </form>
-        {signupMsg && (
-          <p className="mt-4 text-sm text-accent font-serif">{signupMsg}</p>
+            <p className="font-serif text-base sm:text-lg font-semibold text-primary">
+              {done === "already"
+                ? "You're already signed up."
+                : "You're on the list — we'll email you Thursday when the new collection posts."}
+            </p>
+          </div>
+        ) : (
+          <>
+            <form
+              onSubmit={handleSignup}
+              className="mt-5 flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+            >
+              <input
+                type="email"
+                aria-label="Email address for weekly Torah reminders"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email address"
+                className="flex-1 rounded-full border-2 border-accent/50 bg-background px-5 py-3 font-serif text-foreground placeholder:font-serif placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+              />
+              <button
+                type="submit"
+                disabled={submitting}
+                className="rounded-full bg-primary px-8 py-3.5 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {submitting ? "Signing you up…" : "Remind Me Weekly"}
+              </button>
+            </form>
+            {signupMsg && (
+              <p className="mt-4 text-sm text-accent font-serif">{signupMsg}</p>
+            )}
+            <p className="mt-4 text-xs text-muted-foreground">
+              Join the many who get it every week.
+            </p>
+          </>
         )}
-        <p className="mt-4 text-xs text-muted-foreground">
-          No spam. Unsubscribe anytime.
-        </p>
+
       </div>
     </section>
   );
