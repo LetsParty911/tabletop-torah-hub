@@ -844,7 +844,7 @@ function Index() {
 
 
         {/* Memorial */}
-        <section className="parchment-frame">
+        <section className="parchment-frame max-w-2xl mx-auto">
           <div
             className="parchment-panel text-center bg-card shadow-sm"
             dir="rtl"
