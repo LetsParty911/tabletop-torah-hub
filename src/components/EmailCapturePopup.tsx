@@ -30,7 +30,7 @@ export function EmailCapturePopup() {
   const [email, setEmail] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState<null | "new" | "already">(null);
   const [submitting, setSubmitting] = useState(false);
   const shownAtRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -119,7 +119,7 @@ export function EmailCapturePopup() {
         } catch {
           /* ignore */
         }
-        setSuccess(true);
+        setSuccess(r.alreadySubscribed ? "already" : "new");
         trackEventOnce(
           "newsletter_signup",
           {
@@ -169,10 +169,15 @@ export function EmailCapturePopup() {
             </button>
 
             {success ? (
-              <p className="font-serif text-lg font-semibold text-primary pr-6">
-                You're on the list — first email this Thursday.
-              </p>
+              <div role="status" aria-live="polite" className="rounded-2xl border-2 border-accent/60 bg-accent/10 px-4 py-4 pr-6">
+                <p className="font-serif text-lg font-semibold text-primary">
+                  {success === "already"
+                    ? "You're already signed up."
+                    : "You're on the list — we'll email you Thursday when the new collection posts."}
+                </p>
+              </div>
             ) : (
+
               <>
                 <h2 className="font-serif text-xl sm:text-2xl font-bold text-primary pr-6 leading-snug">
                   Get it before Shabbos
