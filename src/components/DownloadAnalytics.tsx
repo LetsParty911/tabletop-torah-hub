@@ -498,7 +498,7 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                         <td className="px-3 py-2 text-right font-semibold tabular-nums">
                           {p.count}
                         </td>
-                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">
                           {new Date(p.last).toLocaleString()}
                         </td>
                         <td className="px-3 py-2 text-muted-foreground">
