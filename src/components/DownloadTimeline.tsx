@@ -36,6 +36,7 @@ export function DownloadTimeline({
   const [pdfKey, setPdfKey] = useState<string>("");
   const [avgWindow, setAvgWindow] = useState<0 | 3 | 7>(0);
   const [spikes, setSpikes] = useState(false);
+  const [clamp, setClamp] = useState(false);
 
   const fromTime = from.getTime();
   const toTime = to.getTime();
@@ -108,6 +109,24 @@ export function DownloadTimeline({
 
   const peak = series.reduce((m, p) => (p.total > m.total ? p : m), series[0] ?? { day: "", total: 0 });
 
+  // 95th-percentile clamp: keeps a single huge day from flattening the rest.
+  const p95 = useMemo(() => {
+    const vals = series.map((p) => p.total).sort((a, b) => a - b);
+    if (vals.length === 0) return 0;
+    const idx = Math.min(vals.length - 1, Math.floor(0.95 * (vals.length - 1)));
+    return Math.max(1, vals[idx]);
+  }, [series]);
+
+  const outliers = useMemo(
+    () => (clamp ? series.filter((p) => p.total > p95) : []),
+    [clamp, series, p95],
+  );
+
+  const yDomain: [number, number | "auto"] = clamp
+    ? [0, Math.ceil(p95 * 1.15)]
+    : [0, "auto"];
+
+
 
   return (
     <div className="mb-6 rounded-md border border-border p-3">
@@ -151,6 +170,19 @@ export function DownloadTimeline({
         >
           Spike detection
         </button>
+        <button
+          type="button"
+          onClick={() => setClamp((v) => !v)}
+          aria-pressed={clamp}
+          className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
+            clamp
+              ? "border-accent bg-accent text-accent-foreground"
+              : "border-border text-muted-foreground hover:text-foreground"
+          }`}
+          title="Clamp the y-axis to the 95th percentile so a single huge day doesn't flatten the rest"
+        >
+          Clamp outliers
+        </button>
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
           Compare PDF
           <select
@@ -170,7 +202,7 @@ export function DownloadTimeline({
 
       <div className="h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={series} margin={{ top: 5, right: 8, bottom: 0, left: -20 }}>
+          <AreaChart data={series} margin={{ top: 5, right: 8, bottom: 0, left: 0 }}>
             <defs>
               <linearGradient id="dlTotal" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity={0.45} />
@@ -191,8 +223,11 @@ export function DownloadTimeline({
               tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
               tickLine={false}
               axisLine={false}
-              width={40}
+              width={44}
+              domain={yDomain}
+              allowDataOverflow={clamp}
             />
+
             <Tooltip
               contentStyle={{
                 background: "hsl(var(--background))",
@@ -232,7 +267,7 @@ export function DownloadTimeline({
                   fill="hsl(var(--destructive))"
                   stroke="hsl(var(--background))"
                   strokeWidth={2}
-                  ifOverflow="extendDomain"
+                  ifOverflow={clamp ? "hidden" : "extendDomain"}
                 />
               ))}
             {pdfKey && (
@@ -249,6 +284,26 @@ export function DownloadTimeline({
           </AreaChart>
         </ResponsiveContainer>
       </div>
+
+      {clamp && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Y-axis clamped to the 95th percentile ({p95}).
+          {outliers.length > 0 && (
+            <>
+              {" "}
+              Off-scale:{" "}
+              {outliers.map((p, i) => (
+                <span key={p.day} className="text-foreground">
+                  {i > 0 ? ", " : ""}
+                  {p.day} ({p.total})
+                </span>
+              ))}
+              .
+            </>
+          )}
+        </p>
+      )}
+
 
       {spikes && (
         <div className="mt-3 border-t border-border pt-2 text-xs">

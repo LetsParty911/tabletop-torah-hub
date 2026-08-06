@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { adminDownloadStats } from "@/integrations/supabase/api.functions";
 import { DownloadTimeline } from "@/components/DownloadTimeline";
@@ -101,6 +101,17 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
   useEffect(() => {
     void load(fetchDays);
   }, [load, fetchDays]);
+
+  // When this week's collection is live (downloads landing in the last 3 days),
+  // default the table to "Last download" descending so recent activity leads.
+  const sortDefaulted = useRef(false);
+  useEffect(() => {
+    if (sortDefaulted.current || !raw?.events?.length) return;
+    sortDefaulted.current = true;
+    const cutoff = Date.now() - 3 * DAY_MS;
+    const liveWeek = raw.events.some((e) => new Date(e.at).getTime() >= cutoff);
+    if (liveWeek) setSort({ key: "last", dir: "desc" });
+  }, [raw]);
 
   const spanDays = Math.max(
     1,
@@ -324,10 +335,11 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
           />
 
           <div className="grid gap-6 md:grid-cols-2">
-            <div>
+            <div className="min-w-0">
               <h3 className="text-sm font-medium mb-2">Downloads per day</h3>
-              <div className="max-h-72 overflow-y-auto rounded-md border border-border">
-                <table className="w-full text-sm">
+              <div className="max-h-72 overflow-y-auto overflow-x-auto rounded-md border border-border">
+                <table className="w-full min-w-[18rem] text-sm">
+
                   <tbody>
                     {stats.byDay.length === 0 && (
                       <tr>
@@ -345,7 +357,9 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                             />
                           </div>
                         </td>
-                        <td className="px-3 py-2 text-right font-medium tabular-nums">{d.count}</td>
+                        <td className="px-3 py-2 text-right font-medium tabular-nums whitespace-nowrap">
+                          {d.count}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -353,7 +367,7 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
               </div>
             </div>
 
-            <div>
+            <div className="min-w-0">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
                 <h3 className="text-sm font-medium">Downloads per PDF</h3>
                 <div className="relative flex-1 sm:max-w-xs">
@@ -382,12 +396,49 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                   </span>
                 )}
               </div>
-              <div className="max-h-72 overflow-y-auto rounded-md border border-border">
-                <table className="w-full text-sm">
+              <div className="mb-1 flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-muted-foreground">Sort:</span>
+                <button
+                  type="button"
+                  onClick={() => toggleSort("count")}
+                  className={`rounded-full border px-2.5 py-1 transition-colors ${
+                    sort.key === "count"
+                      ? "border-accent bg-accent text-accent-foreground"
+                      : "border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Most downloaded
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleSort("last")}
+                  className={`rounded-full border px-2.5 py-1 transition-colors ${
+                    sort.key === "last"
+                      ? "border-accent bg-accent text-accent-foreground"
+                      : "border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Most recent
+                </button>
+                <span className="text-muted-foreground">
+                  {sort.dir === "desc" ? "descending" : "ascending"}
+                </span>
+              </div>
+              <div className="max-h-72 overflow-y-auto overflow-x-auto rounded-md border border-border [scrollbar-width:thin]">
+                <table className="w-full min-w-[38rem] text-sm">
                   <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
                     <tr className="border-b border-border/60">
                       <th className="px-3 py-2 text-left font-medium">PDF</th>
-                      <th className="px-3 py-2 text-right font-medium">
+                      <th
+                        className="px-3 py-2 text-right font-medium whitespace-nowrap"
+                        aria-sort={
+                          sort.key === "count"
+                            ? sort.dir === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : "none"
+                        }
+                      >
                         <button
                           type="button"
                           onClick={() => toggleSort("count")}
@@ -396,7 +447,16 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                           Downloads <SortIcon active={sort.key === "count"} dir={sort.dir} />
                         </button>
                       </th>
-                      <th className="px-3 py-2 text-right font-medium">
+                      <th
+                        className="px-3 py-2 text-right font-medium whitespace-nowrap"
+                        aria-sort={
+                          sort.key === "last"
+                            ? sort.dir === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : "none"
+                        }
+                      >
                         <button
                           type="button"
                           onClick={() => toggleSort("last")}
@@ -405,9 +465,12 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                           Last download <SortIcon active={sort.key === "last"} dir={sort.dir} />
                         </button>
                       </th>
-                      <th className="px-3 py-2 text-left font-medium">Last downloader</th>
+                      <th className="px-3 py-2 text-left font-medium whitespace-nowrap">
+                        Downloaded by
+                      </th>
                     </tr>
                   </thead>
+
                   <tbody>
                     {filteredByPdf.length === 0 && (
                       <tr>
@@ -435,7 +498,7 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                         <td className="px-3 py-2 text-right font-semibold tabular-nums">
                           {p.count}
                         </td>
-                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">
                           {new Date(p.last).toLocaleString()}
                         </td>
                         <td className="px-3 py-2 text-muted-foreground">
@@ -446,6 +509,9 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                   </tbody>
                 </table>
               </div>
+              <p className="mt-1 text-xs text-muted-foreground md:hidden">
+                Swipe sideways to see all columns →
+              </p>
             </div>
           </div>
         </>
