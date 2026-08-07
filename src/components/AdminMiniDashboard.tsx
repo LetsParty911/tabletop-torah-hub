@@ -119,7 +119,14 @@ export default function AdminMiniDashboard({
                 ? "In the last 7 days"
                 : `Since ${formatAnchor(data.anchorIso)}`}
           </p>
+          {data && (data.visitorsSince ?? 0) > 0 && (
+            <p className="mt-2 font-serif text-base text-foreground">
+              {data.visitorsSince} {data.visitorsSince === 1 ? "visitor" : "visitors"} came by
+              {data.topSourceSince ? ` — mostly from ${data.topSourceSince}` : ""}.
+            </p>
+          )}
         </header>
+
 
         {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
 
