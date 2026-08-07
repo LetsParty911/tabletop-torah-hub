@@ -300,6 +300,7 @@ function RootComponent() {
     <>
       <AuthRedirectHandler />
       <GoogleAnalytics />
+      <PageViewTracker />
       <PwaRegistrar />
       <SiteNav />
       <Outlet />
