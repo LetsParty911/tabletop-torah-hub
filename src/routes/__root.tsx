@@ -231,6 +231,17 @@ function PwaRegistrar() {
   return null;
 }
 
+// First-party pageview tracking. Fires on every client-side route change
+// (this is a SPA, so a load-only hook would undercount). Admin paths are
+// skipped inside trackPageView.
+function PageViewTracker() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  useEffect(() => {
+    trackPageView(pathname);
+  }, [pathname]);
+  return null;
+}
+
 function SiteNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
