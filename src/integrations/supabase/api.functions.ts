@@ -2826,7 +2826,6 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
     const fallbackWindow = !anchorIso;
     const sinceIso =
       anchorIso ?? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const firstRun = false;
 
     // --- PDF id -> { title, parsha }; same attribution the download analytics uses ---
     const pdfRows = await admin.from("pdfs").select("id, title, parsha_key, created_at");
@@ -2850,9 +2849,7 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
     const previousParsha = orderedParshas[1] ?? null;
 
     // --- Since the anchor: subscribers ---
-    const newSubs = firstRun
-      ? { data: [] as any[] }
-      : await admin
+    const newSubs = await admin
           .from("subscribers")
           .select("email, created_at")
           .gt("created_at", sinceIso)
@@ -2863,9 +2860,7 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
       .filter(Boolean);
 
     // --- Since the anchor: downloads + top 3 PDFs ---
-    const recentDl = firstRun
-      ? { data: [] as any[] }
-      : await admin
+    const recentDl = await admin
           .from("download_events")
           .select("publication_id, publication_title, created_at")
           .gt("created_at", sinceIso)
@@ -2883,9 +2878,7 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
       .slice(0, 3);
 
     // --- Since the anchor: contact messages ---
-    const newMsgs = firstRun
-      ? { data: [] as any[] }
-      : await admin
+    const newMsgs = await admin
           .from("contact_messages")
           .select("name, created_at")
           .gt("created_at", sinceIso)
@@ -2911,8 +2904,8 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
     const subCount = await admin.from("subscribers").select("id", { count: "exact", head: true });
 
     return {
-      firstRun,
-      anchorIso: firstRun ? null : sinceIso,
+      fallbackWindow,
+      anchorIso: fallbackWindow ? null : sinceIso,
       newSubscriberCount: newSubscriberEmails.length,
       newSubscriberEmails: newSubscriberEmails.slice(0, 10),
       totalSubscribers: subCount.count ?? 0,
