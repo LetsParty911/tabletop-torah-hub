@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DownloadAnalytics } from "@/components/DownloadAnalytics";
+import AdminMiniDashboard from "@/components/AdminMiniDashboard";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -1335,6 +1336,16 @@ function AdminPage() {
             {msg.text}
           </div>
         )}
+
+        <AdminMiniDashboard
+          accessToken={accessToken}
+          checklist={{
+            uploadedCount,
+            countableTotal,
+            missingTitles: checklist.filter((c) => c.status === "missing").map((c) => c.title),
+            parshaLabel: currentParshaLabel,
+          }}
+        />
 
         {/* Weekly Email */}
         <section className="parchment-frame">
