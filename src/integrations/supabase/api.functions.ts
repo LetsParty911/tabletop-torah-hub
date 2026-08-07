@@ -2789,59 +2789,44 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
     z.object({ accessToken: z.string().min(10) }).parse(input),
   )
   .handler(async ({ data }) => {
-    const { userId } = await requireAdmin(data.accessToken);
+    await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
     const nowIso = new Date().toISOString();
 
-    // --- Anchor: read BEFORE updating, then roll the 30-minute session window ---
+    // --- Anchor: settings row (id = 1), read BEFORE rolling the 30-minute window ---
     let anchorIso: string | null = null;
-    let firstRun = false;
     try {
       const { data: row } = await admin
-        .from("admin_last_seen")
-        .select("last_seen_at, previous_seen_at")
-        .eq("user_id", userId)
+        .from("settings")
+        .select("admin_last_seen_at, admin_prev_seen_at")
+        .eq("id", 1)
         .maybeSingle();
 
-      if (!row) {
-        firstRun = true;
-        anchorIso = null;
-        await admin.from("admin_last_seen").insert({
-          user_id: userId,
-          last_seen_at: nowIso,
-          previous_seen_at: nowIso,
-          updated_at: nowIso,
-        });
+      const lastSeen = ((row as any)?.admin_last_seen_at as string | null) ?? null;
+      const prevSeen = ((row as any)?.admin_prev_seen_at as string | null) ?? null;
+      const gapMs = lastSeen ? Date.now() - new Date(lastSeen).getTime() : Infinity;
+
+      if (gapMs > 30 * 60 * 1000) {
+        // New session: roll the window forward; the anchor becomes the old last_seen.
+        anchorIso = lastSeen;
+        await admin
+          .from("settings")
+          .update({ admin_prev_seen_at: lastSeen ?? nowIso, admin_last_seen_at: nowIso })
+          .eq("id", 1);
       } else {
-        const lastSeen = (row as any).last_seen_at as string | null;
-        const prevSeen = (row as any).previous_seen_at as string | null;
-        // The anchor is previous_seen_at as it stood before this page load.
-        anchorIso = prevSeen ?? lastSeen ?? null;
-        const gapMs = lastSeen ? Date.now() - new Date(lastSeen).getTime() : Infinity;
-        if (gapMs > 30 * 60 * 1000) {
-          // New session: roll the window forward.
-          await admin
-            .from("admin_last_seen")
-            .update({
-              previous_seen_at: lastSeen ?? nowIso,
-              last_seen_at: nowIso,
-              updated_at: nowIso,
-            })
-            .eq("user_id", userId);
-          anchorIso = lastSeen ?? anchorIso;
-        } else {
-          // Same working session: a refresh must not blank the card out.
-          await admin
-            .from("admin_last_seen")
-            .update({ last_seen_at: nowIso, updated_at: nowIso })
-            .eq("user_id", userId);
-        }
+        // Same sitting: a refresh must not blank the card out.
+        anchorIso = prevSeen;
+        await admin.from("settings").update({ admin_last_seen_at: nowIso }).eq("id", 1);
       }
     } catch (e) {
       console.error("adminMiniDashboard anchor error", e);
     }
 
-    const sinceIso = anchorIso ?? nowIso;
+    // First-ever load (no anchor yet): fall back to the last 7 days.
+    const fallbackWindow = !anchorIso;
+    const sinceIso =
+      anchorIso ?? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const firstRun = false;
 
     // --- PDF id -> { title, parsha }; same attribution the download analytics uses ---
     const pdfRows = await admin.from("pdfs").select("id, title, parsha_key, created_at");
