@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DownloadAnalytics } from "@/components/DownloadAnalytics";
+import TrafficAnalytics from "@/components/TrafficAnalytics";
 import AdminMiniDashboard from "@/components/AdminMiniDashboard";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
