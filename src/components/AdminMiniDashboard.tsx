@@ -8,8 +8,10 @@ const SITE_TZ = "America/New_York";
 function formatAnchor(iso: string): string {
   try {
     const d = new Date(iso);
-    const day = new Intl.DateTimeFormat("en-US", {
-      weekday: "long",
+    const date = new Intl.DateTimeFormat("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
       timeZone: SITE_TZ,
     }).format(d);
     const time = new Intl.DateTimeFormat("en-US", {
@@ -17,16 +19,7 @@ function formatAnchor(iso: string): string {
       minute: "2-digit",
       timeZone: SITE_TZ,
     }).format(d);
-    const daysAgo = (Date.now() - d.getTime()) / 86400000;
-    if (daysAgo > 6) {
-      const date = new Intl.DateTimeFormat("en-US", {
-        month: "long",
-        day: "numeric",
-        timeZone: SITE_TZ,
-      }).format(d);
-      return `${date}, ${time}`;
-    }
-    return `${day} ${time}`;
+    return `${date} at ${time}`;
   } catch {
     return iso;
   }
@@ -105,7 +98,6 @@ export default function AdminMiniDashboard({
   const change = data ? data.currentParshaDownloads - data.previousParshaDownloads : 0;
   const nothingNew =
     !!data &&
-    !data.firstRun &&
     data.newSubscriberCount === 0 &&
     data.downloadsSince === 0 &&
     data.newContactCount === 0;
@@ -122,28 +114,23 @@ export default function AdminMiniDashboard({
               ? error
                 ? "Couldn't load your update."
                 : "Gathering the good news…"
-              : data.firstRun || !data.anchorIso
-                ? "First time here — welcome. We'll start counting from now."
+              : !data.anchorIso
+                ? "In the last 7 days"
                 : `Since ${formatAnchor(data.anchorIso)}`}
           </p>
         </header>
 
         {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
 
-        {data && data.firstRun && (
-          <p className="mt-6 font-serif text-lg text-foreground">
-            Everything's set up. Next time you sign in, this is where you'll see what happened while
-            you were away.
-          </p>
-        )}
-
-        {data && !data.firstRun && nothingNew && (
+        {data && nothingNew && (
           <p className="mt-6 font-serif text-xl text-foreground">
-            All quiet since {formatAnchor(data.anchorIso!)} — nothing new to catch up on.
+            {data.anchorIso
+              ? `All quiet since ${formatAnchor(data.anchorIso)} — nothing new to catch up on.`
+              : "All quiet in the last 7 days — nothing new to catch up on."}
           </p>
         )}
 
-        {data && !data.firstRun && !nothingNew && (
+        {data && !nothingNew && (
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
             {/* 1 — New subscribers */}
             <Tile label="New subscribers" quiet={data.newSubscriberCount === 0}>
