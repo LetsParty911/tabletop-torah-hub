@@ -969,7 +969,7 @@ function AdminPage() {
           accessToken,
           parshaKey,
           title,
-          subtitle: subtitle || null,
+          subtitle: null,
           published,
           fileName: file.name,
           fileBase64,
@@ -980,10 +980,11 @@ function AdminPage() {
           tags: null,
           description: uploadDescription.trim() ? uploadDescription.trim() : null,
           audience: (uploadAudience || null) as any,
-          featuredSlot: (uploadFeaturedSlot || null) as any,
+          featuredSlot: null,
           formatType: (uploadFormatType || null) as any,
-          pageCount: uploadPageCount.trim() ? Number(uploadPageCount) : null,
-          badge: (uploadBadge || null) as any,
+          // page_count is derived from the PDF server-side.
+          pageCount: null,
+          badge: null,
         },
       });
       // Best-effort first-page preview; a failure must not fail the upload.
