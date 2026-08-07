@@ -1434,6 +1434,7 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     }
     const finalPageCount = derivedPageCount ?? data.pageCount ?? null;
     if (finalPageCount !== null) insertRow.page_count = finalPageCount;
+    if (data.badge !== undefined && data.badge !== null) insertRow.badge = data.badge;
     if (data.featuredSlot !== undefined && data.featuredSlot !== null)
       insertRow.featured_slot = data.featuredSlot;
 
