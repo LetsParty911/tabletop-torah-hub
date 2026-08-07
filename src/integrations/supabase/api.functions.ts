@@ -2948,11 +2948,21 @@ export const adminDownloadStats = createServerFn({ method: "POST" })
       key: p.id || `title:${p.title}`,
     })).sort((a, b) => b.count - a.count);
 
-    const eventList = events.slice(0, 5000).map((e) => ({
-      key: e.publication_id || `title:${e.publication_title || "(untitled)"}`,
-      at: e.created_at,
-      who: whoOf(e),
-    }));
+    const eventList = events.slice(0, 20000).map((e) => {
+      const info = e.publication_id ? pdfInfo.get(e.publication_id) : undefined;
+      return {
+        key: e.publication_id || `title:${e.publication_title || "(untitled)"}`,
+        at: e.created_at,
+        who: whoOf(e),
+        parsha: info?.parsha ?? null,
+        title: info?.title ?? e.publication_title ?? "(untitled)",
+      };
+    });
 
-    return { days, total: events.length, byDay, byPdf, events: eventList };
+    const parshas = Array.from(parshaOrder.entries())
+      .map(([parsha, at]) => ({ parsha, at }))
+      .sort((a, b) => (a.at < b.at ? 1 : -1))
+      .map((p) => p.parsha);
+
+    return { days, total: events.length, byDay, byPdf, events: eventList, parshas };
   });
