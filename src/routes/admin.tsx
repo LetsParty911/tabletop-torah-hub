@@ -1012,6 +1012,7 @@ function AdminPage() {
       setUploadFormatType("");
       setUploadPageCount("");
       setUploadBadge("");
+      setShowUploadDetails(false);
       (document.getElementById("pdf-file-input") as HTMLInputElement | null)?.value &&
         ((document.getElementById("pdf-file-input") as HTMLInputElement).value = "");
       setMsg({ kind: "success", text: "Uploaded." });
