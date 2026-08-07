@@ -267,6 +267,7 @@ function AdminPage() {
     publisher: string | null;
     default_audience: string | null;
     default_format_type: string | null;
+    default_description?: string | null;
     sort_order: number;
     active: boolean;
   };
@@ -280,6 +281,8 @@ function AdminPage() {
   const [uploadFormatType, setUploadFormatType] = useState<string>("");
   const [uploadPageCount, setUploadPageCount] = useState<string>("");
   const [uploadBadge, setUploadBadge] = useState<string>("");
+  // Reveals the audience / format / description overrides beneath the publication picker.
+  const [showUploadDetails, setShowUploadDetails] = useState(false);
 
   // Inline metadata editor state (per row) — publication / title / subtitle
   const [editMetaTitle, setEditMetaTitle] = useState("");
@@ -763,8 +766,10 @@ function AdminPage() {
     const pub = canonicalPubs.find((p) => p.id === id);
     if (!pub) return;
     setTitle(pub.name);
-    if (pub.default_audience) setUploadAudience(pub.default_audience);
-    if (pub.default_format_type) setUploadFormatType(pub.default_format_type);
+    setUploadAudience(pub.default_audience ?? "");
+    setUploadFormatType(pub.default_format_type ?? "");
+    setUploadDescription((pub as { default_description?: string | null }).default_description ?? "");
+    setShowUploadDetails(false);
   };
 
   useEffect(() => {
@@ -964,7 +969,7 @@ function AdminPage() {
           accessToken,
           parshaKey,
           title,
-          subtitle: subtitle || null,
+          subtitle: null,
           published,
           fileName: file.name,
           fileBase64,
@@ -975,10 +980,11 @@ function AdminPage() {
           tags: null,
           description: uploadDescription.trim() ? uploadDescription.trim() : null,
           audience: (uploadAudience || null) as any,
-          featuredSlot: (uploadFeaturedSlot || null) as any,
+          featuredSlot: null,
           formatType: (uploadFormatType || null) as any,
-          pageCount: uploadPageCount.trim() ? Number(uploadPageCount) : null,
-          badge: (uploadBadge || null) as any,
+          // page_count is derived from the PDF server-side.
+          pageCount: null,
+          badge: null,
         },
       });
       // Best-effort first-page preview; a failure must not fail the upload.
@@ -1006,6 +1012,7 @@ function AdminPage() {
       setUploadFormatType("");
       setUploadPageCount("");
       setUploadBadge("");
+      setShowUploadDetails(false);
       (document.getElementById("pdf-file-input") as HTMLInputElement | null)?.value &&
         ((document.getElementById("pdf-file-input") as HTMLInputElement).value = "");
       setMsg({ kind: "success", text: "Uploaded." });
@@ -2035,140 +2042,109 @@ function AdminPage() {
                   </select>
                 )}
               </label>
-              <label className="block">
-                <span className="text-sm font-medium">Publication</span>
-                {canonicalPubs.length > 0 && !titleFreeText ? (
-                  <select
-                    required
-                    value={publicationId}
-                    onChange={(e) => {
-                      if (e.target.value === "__other__") {
-                        setTitleFreeText(true);
-                        setPublicationId("");
-                        setTitle("");
-                        return;
-                      }
-                      selectPublicationId(e.target.value);
-                    }}
-                    className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                  >
-                    <option value="" disabled>
-                      Select a publication
-                    </option>
-                    {canonicalPubs
-                      .filter((p) => p.active)
-                      .map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    <option value="__other__">Other (type a title)…</option>
-                  </select>
-                ) : (
-                  <>
-                    <input
+              <div className="block">
+                <label className="block">
+                  <span className="text-sm font-medium">Publication</span>
+                  {canonicalPubs.length > 0 && !titleFreeText ? (
+                    <select
                       required
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
+                      value={publicationId}
+                      onChange={(e) => selectPublicationId(e.target.value)}
+                      className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                    >
+                      <option value="" disabled>
+                        Select a publication
+                      </option>
+                      {canonicalPubs
+                        .filter((p) => p.active)
+                        .slice()
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                    </select>
+                  ) : (
+                    <>
+                      <input
+                        required
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                      />
+                      {canonicalPubs.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTitleFreeText(false);
+                            setTitle("");
+                          }}
+                          className="mt-1 text-xs font-semibold text-accent underline"
+                        >
+                          Choose from publications instead
+                        </button>
+                      )}
+                    </>
+                  )}
+                </label>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span>
+                    {[formatTypeLabel(uploadAudience), formatTypeLabel(uploadFormatType)]
+                      .filter(Boolean)
+                      .join(" · ") || "No defaults set"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowUploadDetails((v) => !v)}
+                    className="font-semibold text-accent underline"
+                  >
+                    {showUploadDetails ? "Hide details" : "Edit details"}
+                  </button>
+                </div>
+              </div>
+              {showUploadDetails && (
+                <>
+                  <label className="block md:col-span-2">
+                    <span className="text-sm font-medium">Description</span>
+                    <input
+                      value={uploadDescription}
+                      onChange={(e) => setUploadDescription(e.target.value)}
+                      maxLength={500}
+                      placeholder="e.g. Short vorts drawn from the classic meforshim."
                       className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
                     />
-                    {canonicalPubs.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setTitleFreeText(false);
-                          setTitle("");
-                        }}
-                        className="mt-1 text-xs font-semibold text-accent underline"
-                      >
-                        Choose from publications instead
-                      </button>
-                    )}
-                  </>
-                )}
-              </label>
-              <label className="block md:col-span-2">
-                <span className="text-sm font-medium">Subtitle (optional)</span>
-                <input
-                  value={subtitle}
-                  onChange={(e) => setSubtitle(e.target.value)}
-                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                />
-              </label>
-              <label className="block md:col-span-2">
-                <span className="text-sm font-medium">Description</span>
-                <input
-                  value={uploadDescription}
-                  onChange={(e) => setUploadDescription(e.target.value)}
-                  maxLength={500}
-                  placeholder="e.g. Short vorts drawn from the classic meforshim."
-                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                />
-                <WordCountHint text={uploadDescription} />
-              </label>
-              <label className="block">
-                <span className="text-sm font-medium">Audience</span>
-                <select
-                  value={uploadAudience}
-                  onChange={(e) => setUploadAudience(e.target.value)}
-                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                >
-                  <option value="">— none —</option>
-                  {AUDIENCE_OPTIONS.map((o) => (
-                    <option key={o} value={o}>{formatTypeLabel(o)}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-sm font-medium">Recommended pick slot (optional)</span>
-                <select
-                  value={uploadFeaturedSlot}
-                  onChange={(e) => setUploadFeaturedSlot(e.target.value)}
-                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                >
-                  <option value="">— none —</option>
-                  <option value="children">Best for Children</option>
-                  <option value="family">Best for the Family Table</option>
-                  <option value="quickest">Quickest Read</option>
-                  <option value="deeper">Deeper Learning</option>
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-sm font-medium">Format</span>
-                <select
-                  value={uploadFormatType}
-                  onChange={(e) => setUploadFormatType(e.target.value)}
-                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                >
-                  <option value="">— none —</option>
-                  {FORMAT_TYPE_OPTIONS.map((o) => (
-                    <option key={o} value={o}>{formatTypeLabel(o)}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-sm font-medium">Page count</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={uploadPageCount}
-                  onChange={(e) => setUploadPageCount(e.target.value)}
-                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                />
-              </label>
-              <label className="block">
-                <span className="text-sm font-medium">Highlight badge</span>
-                <select
-                  value={uploadBadge}
-                  onChange={(e) => setUploadBadge(e.target.value)}
-                  className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                >
-                  <option value="">— none —</option>
-                  {BADGE_OPTIONS.map((o) => (
-                    <option key={o} value={o}>{formatTypeLabel(o)}</option>
-                  ))}
-                </select>
-              </label>
+                    <WordCountHint text={uploadDescription} />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-medium">Audience</span>
+                    <select
+                      value={uploadAudience}
+                      onChange={(e) => setUploadAudience(e.target.value)}
+                      className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                    >
+                      <option value="">— none —</option>
+                      {AUDIENCE_OPTIONS.map((o) => (
+                        <option key={o} value={o}>{formatTypeLabel(o)}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-medium">Format</span>
+                    <select
+                      value={uploadFormatType}
+                      onChange={(e) => setUploadFormatType(e.target.value)}
+                      className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
+                    >
+                      <option value="">— none —</option>
+                      {FORMAT_TYPE_OPTIONS.map((o) => (
+                        <option key={o} value={o}>{formatTypeLabel(o)}</option>
+                      ))}
+                    </select>
+                  </label>
+                </>
+              )}
+
               <label className="block md:col-span-2">
                 <span className="text-sm font-medium">PDF file</span>
                 <input

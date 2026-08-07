@@ -68,6 +68,7 @@ export type CanonicalPublication = {
   publisher: string | null;
   default_audience: string | null;
   default_format_type: string | null;
+  default_description?: string | null;
   sort_order: number;
   active: boolean;
 };
@@ -76,11 +77,19 @@ export type CanonicalPublication = {
 export const listCanonicalPublications = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ publications: CanonicalPublication[] }> => {
     const admin = getSupabaseAdmin();
+    const baseCols =
+      "id, name, publisher, default_audience, default_format_type, sort_order, active";
     try {
+      const withDesc = await admin
+        .from("publications")
+        .select(`${baseCols}, default_description`)
+        .order("name", { ascending: true });
+      if (!withDesc.error) {
+        return { publications: (withDesc.data ?? []) as CanonicalPublication[] };
+      }
       const { data, error } = await admin
         .from("publications")
-        .select("id, name, publisher, default_audience, default_format_type, sort_order, active")
-        .order("sort_order", { ascending: true })
+        .select(baseCols)
         .order("name", { ascending: true });
       if (error) return { publications: [] };
       return { publications: (data ?? []) as CanonicalPublication[] };
@@ -89,6 +98,7 @@ export const listCanonicalPublications = createServerFn({ method: "GET" }).handl
     }
   },
 );
+
 
 // Fetch the current Shabbos date (YYYY-MM-DD, NYC timezone) from Hebcal.
 // Returns null if Hebcal is unreachable or no parsha item is present.
@@ -1410,7 +1420,20 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     if (data.description !== undefined && data.description !== null) insertRow.description = data.description;
     if (data.audience !== undefined && data.audience !== null) insertRow.audience = data.audience;
     if (data.formatType !== undefined && data.formatType !== null) insertRow.format_type = data.formatType;
-    if (data.pageCount !== undefined && data.pageCount !== null) insertRow.page_count = data.pageCount;
+    // Page count is always derived from the uploaded PDF itself.
+    let derivedPageCount: number | null = null;
+    try {
+      const { PDFDocument } = await import("pdf-lib");
+      const doc = await PDFDocument.load(new Uint8Array(buf), {
+        updateMetadata: false,
+        ignoreEncryption: true,
+      });
+      derivedPageCount = doc.getPageCount();
+    } catch {
+      derivedPageCount = null;
+    }
+    const finalPageCount = derivedPageCount ?? data.pageCount ?? null;
+    if (finalPageCount !== null) insertRow.page_count = finalPageCount;
     if (data.badge !== undefined && data.badge !== null) insertRow.badge = data.badge;
     if (data.featuredSlot !== undefined && data.featuredSlot !== null)
       insertRow.featured_slot = data.featuredSlot;
