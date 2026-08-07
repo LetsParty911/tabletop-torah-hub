@@ -2783,48 +2783,70 @@ export const adminDownloadStats = createServerFn({ method: "POST" })
     return { days, total: events.length, byDay, byPdf, events: eventList, parshas };
   });
 
-// ---------- Admin: mini dashboard (top of admin page) ----------
+// ---------- Admin: "Since you were last here" mini dashboard ----------
 export const adminMiniDashboard = createServerFn({ method: "POST" })
   .inputValidator((input: { accessToken: string }) =>
     z.object({ accessToken: z.string().min(10) }).parse(input),
   )
   .handler(async ({ data }) => {
-    await requireAdmin(data.accessToken);
+    const { userId } = await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
     const nowIso = new Date().toISOString();
 
-    // --- Roll the "since your last visit" window ---
-    let prevSeenAt: string | null = null;
+    // --- Anchor: read BEFORE updating, then roll the 30-minute session window ---
+    let anchorIso: string | null = null;
+    let firstRun = false;
     try {
-      const { data: srow } = await admin
-        .from("settings")
-        .select("admin_last_seen_at, admin_prev_seen_at")
-        .eq("id", 1)
+      const { data: row } = await admin
+        .from("admin_last_seen")
+        .select("last_seen_at, previous_seen_at")
+        .eq("user_id", userId)
         .maybeSingle();
-      const lastSeen = (srow as any)?.admin_last_seen_at as string | null | undefined;
-      const prevSeen = (srow as any)?.admin_prev_seen_at as string | null | undefined;
-      const gapMs = lastSeen ? Date.now() - new Date(lastSeen).getTime() : Infinity;
-      if (gapMs > 30 * 60 * 1000) {
-        // New session: roll the window so "since last visit" spans the real gap.
-        prevSeenAt = lastSeen ?? prevSeen ?? null;
-        await admin
-          .from("settings")
-          .update({ admin_prev_seen_at: prevSeenAt ?? nowIso, admin_last_seen_at: nowIso })
-          .eq("id", 1);
+
+      if (!row) {
+        firstRun = true;
+        anchorIso = null;
+        await admin.from("admin_last_seen").insert({
+          user_id: userId,
+          last_seen_at: nowIso,
+          previous_seen_at: nowIso,
+          updated_at: nowIso,
+        });
       } else {
-        // Same working session: keep the boundary, just touch last-seen.
-        prevSeenAt = prevSeen ?? lastSeen ?? null;
-        await admin.from("settings").update({ admin_last_seen_at: nowIso }).eq("id", 1);
+        const lastSeen = (row as any).last_seen_at as string | null;
+        const prevSeen = (row as any).previous_seen_at as string | null;
+        // The anchor is previous_seen_at as it stood before this page load.
+        anchorIso = prevSeen ?? lastSeen ?? null;
+        const gapMs = lastSeen ? Date.now() - new Date(lastSeen).getTime() : Infinity;
+        if (gapMs > 30 * 60 * 1000) {
+          // New session: roll the window forward.
+          await admin
+            .from("admin_last_seen")
+            .update({
+              previous_seen_at: lastSeen ?? nowIso,
+              last_seen_at: nowIso,
+              updated_at: nowIso,
+            })
+            .eq("user_id", userId);
+          anchorIso = lastSeen ?? anchorIso;
+        } else {
+          // Same working session: a refresh must not blank the card out.
+          await admin
+            .from("admin_last_seen")
+            .update({ last_seen_at: nowIso, updated_at: nowIso })
+            .eq("user_id", userId);
+        }
       }
     } catch (e) {
-      console.error("adminMiniDashboard settings window error", e);
+      console.error("adminMiniDashboard anchor error", e);
     }
-    const sinceIso = prevSeenAt ?? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    // --- PDF id -> { title, parsha } and parsha ordering ---
+    const sinceIso = anchorIso ?? nowIso;
+
+    // --- PDF id -> { title, parsha }; same attribution the download analytics uses ---
     const pdfRows = await admin.from("pdfs").select("id, title, parsha_key, created_at");
     const pdfInfo = new Map<string, { title: string; parsha: string }>();
-    const parshaOrder = new Map<string, string>();
+    const parshaOrder = new Map<string, string>(); // parsha -> latest pdf created_at
     for (const r of (pdfRows.data ?? []) as any[]) {
       const parsha = (r.parsha_key as string | null) ?? "";
       pdfInfo.set(r.id as string, {
@@ -2842,23 +2864,27 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
     const currentParsha = orderedParshas[0] ?? null;
     const previousParsha = orderedParshas[1] ?? null;
 
-    // --- Since last visit: subscribers ---
-    const newSubs = await admin
-      .from("subscribers")
-      .select("email, created_at")
-      .gte("created_at", sinceIso)
-      .order("created_at", { ascending: false })
-      .limit(500);
-    const newSubscriberEmails = ((newSubs.data ?? []) as any[]).map(
-      (r) => (r.email as string | null) ?? "",
-    );
+    // --- Since the anchor: subscribers ---
+    const newSubs = firstRun
+      ? { data: [] as any[] }
+      : await admin
+          .from("subscribers")
+          .select("email, created_at")
+          .gt("created_at", sinceIso)
+          .order("created_at", { ascending: false })
+          .limit(1000);
+    const newSubscriberEmails = ((newSubs.data ?? []) as any[])
+      .map((r) => (r.email as string | null) ?? "")
+      .filter(Boolean);
 
-    // --- Since last visit: downloads ---
-    const recentDl = await admin
-      .from("download_events")
-      .select("publication_id, publication_title, created_at")
-      .gte("created_at", sinceIso)
-      .limit(20000);
+    // --- Since the anchor: downloads + top 3 PDFs ---
+    const recentDl = firstRun
+      ? { data: [] as any[] }
+      : await admin
+          .from("download_events")
+          .select("publication_id, publication_title, created_at")
+          .gt("created_at", sinceIso)
+          .limit(20000);
     const recentEvents = (recentDl.data ?? []) as any[];
     const sinceTitleCounts = new Map<string, number>();
     for (const e of recentEvents) {
@@ -2871,11 +2897,22 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
       .sort((a, b) => b.count - a.count)
       .slice(0, 3);
 
-    // --- This week vs last week (by parsha of the downloaded PDF) ---
-    const allDl = await admin
-      .from("download_events")
-      .select("publication_id", { count: "exact" })
-      .limit(50000);
+    // --- Since the anchor: contact messages ---
+    const newMsgs = firstRun
+      ? { data: [] as any[] }
+      : await admin
+          .from("contact_messages")
+          .select("name, created_at")
+          .gt("created_at", sinceIso)
+          .order("created_at", { ascending: false })
+          .limit(200);
+    const newContactNames = ((newMsgs.data ?? []) as any[])
+      .map((r) => ((r.name as string | null) ?? "").trim() || "Someone")
+      .slice(0, 10);
+    const newContactCount = ((newMsgs.data ?? []) as any[]).length;
+
+    // --- This parsha vs last (same attribution as Download analytics) ---
+    const allDl = await admin.from("download_events").select("publication_id").limit(50000);
     const allEvents = (allDl.data ?? []) as any[];
     let currentParshaDownloads = 0;
     let previousParshaDownloads = 0;
@@ -2886,25 +2923,21 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
       else if (previousParsha && info.parsha === previousParsha) previousParshaDownloads += 1;
     }
 
-    // --- All time ---
-    const subCount = await admin
-      .from("subscribers")
-      .select("id", { count: "exact", head: true });
-    const dlCount = await admin
-      .from("download_events")
-      .select("id", { count: "exact", head: true });
+    const subCount = await admin.from("subscribers").select("id", { count: "exact", head: true });
 
     return {
-      sinceIso,
+      firstRun,
+      anchorIso: firstRun ? null : sinceIso,
       newSubscriberCount: newSubscriberEmails.length,
-      newSubscriberEmails: newSubscriberEmails.slice(0, 5),
+      newSubscriberEmails: newSubscriberEmails.slice(0, 10),
+      totalSubscribers: subCount.count ?? 0,
       downloadsSince: recentEvents.length,
       topSincePdfs,
+      newContactCount,
+      newContactNames,
       currentParsha,
       previousParsha,
       currentParshaDownloads,
       previousParshaDownloads,
-      totalSubscribers: subCount.count ?? 0,
-      totalDownloads: dlCount.count ?? allEvents.length,
     };
   });
