@@ -2051,7 +2051,15 @@ function AdminPage() {
                     <select
                       required
                       value={publicationId}
-                      onChange={(e) => selectPublicationId(e.target.value)}
+                      onChange={(e) => {
+                        if (e.target.value === "__other__") {
+                          setPublicationId("");
+                          setTitle("");
+                          setTitleFreeText(true);
+                          return;
+                        }
+                        selectPublicationId(e.target.value);
+                      }}
                       className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
                     >
                       <option value="" disabled>
@@ -2066,7 +2074,9 @@ function AdminPage() {
                             {p.name}
                           </option>
                         ))}
+                      <option value="__other__">Other (type a title)…</option>
                     </select>
+
                   ) : (
                     <>
                       <input
