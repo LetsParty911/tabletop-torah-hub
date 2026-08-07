@@ -2511,12 +2511,6 @@ function AdminPage() {
               subscribers={subscribers}
               onChanged={refresh}
             />
-
-            {/* Welcome email test tool */}
-            <div className="mt-6 rounded-md border border-border bg-background/60 p-3">
-              <div className="text-sm font-medium mb-2">Welcome email test</div>
-              <WelcomeEmailTester accessToken={accessToken} onResetDone={refresh} />
-            </div>
           </div>
         </section>
 
