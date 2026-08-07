@@ -1336,6 +1336,16 @@ function AdminPage() {
           </div>
         )}
 
+        <AdminMiniDashboard
+          accessToken={accessToken}
+          checklist={{
+            uploadedCount,
+            countableTotal,
+            missingTitles: checklist.filter((c) => c.status === "missing").map((c) => c.title),
+            parshaLabel: currentParshaLabel,
+          }}
+        />
+
         {/* Weekly Email */}
         <section className="parchment-frame">
           <div className="parchment-panel">
