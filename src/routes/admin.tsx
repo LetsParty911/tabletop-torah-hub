@@ -221,6 +221,8 @@ function AdminPage() {
   const [wnpVersion, setWnpVersion] = useState<string>("0");
   const [busy, setBusy] = useState(false);
   const [yearFilter, setYearFilter] = useState<string>("all");
+  const [showAllPdfs, setShowAllPdfs] = useState(false);
+
   const [msg, setMsg] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
   // Weekly email state
