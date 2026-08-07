@@ -2795,6 +2795,7 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
 
     // --- Anchor: settings row (id = 1), read BEFORE rolling the 30-minute window ---
     let anchorIso: string | null = null;
+    let lastSeen: string | null = null;
     try {
       const { data: row } = await admin
         .from("settings")
@@ -2802,7 +2803,7 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
         .eq("id", 1)
         .maybeSingle();
 
-      const lastSeen = ((row as any)?.admin_last_seen_at as string | null) ?? null;
+      lastSeen = ((row as any)?.admin_last_seen_at as string | null) ?? null;
       const prevSeen = ((row as any)?.admin_prev_seen_at as string | null) ?? null;
       const gapMs = lastSeen ? Date.now() - new Date(lastSeen).getTime() : Infinity;
 
@@ -2934,6 +2935,7 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
     return {
       fallbackWindow,
       anchorIso: fallbackWindow ? null : sinceIso,
+      lastSeenAt: fallbackWindow ? null : lastSeen,
       newSubscriberCount: newSubscriberEmails.length,
       newSubscriberEmails: newSubscriberEmails.slice(0, 10),
       totalSubscribers: subCount.count ?? 0,

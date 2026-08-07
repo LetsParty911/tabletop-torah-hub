@@ -25,6 +25,42 @@ function formatAnchor(iso: string): string {
   }
 }
 
+function isSameSiteDay(iso: string): boolean {
+  try {
+    const d = new Date(iso);
+    const now = new Date();
+    const fmt = new Intl.DateTimeFormat("en-US", {
+      timeZone: SITE_TZ,
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+    return fmt.format(d) === fmt.format(now);
+  } catch {
+    return false;
+  }
+}
+
+function formatShortTime(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const sameDay = isSameSiteDay(iso);
+    const time = new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: SITE_TZ,
+    }).format(d);
+    if (sameDay) return time;
+    const weekday = new Intl.DateTimeFormat("en-US", {
+      weekday: "short",
+      timeZone: SITE_TZ,
+    }).format(d);
+    return `${weekday} ${time}`;
+  } catch {
+    return iso;
+  }
+}
+
 function Tile({
   label,
   children,
@@ -115,9 +151,9 @@ export default function AdminMiniDashboard({
               ? error
                 ? "Couldn't load your update."
                 : "Gathering the good news…"
-              : !data.anchorIso
+              : data.fallbackWindow || !data.lastSeenAt || !data.anchorIso
                 ? "In the last 7 days"
-                : `Since ${formatAnchor(data.anchorIso)}`}
+                : `Last visit ${formatShortTime(data.lastSeenAt)} · comparing since ${formatShortTime(data.anchorIso)}`}
           </p>
           {data && (data.visitorsSince ?? 0) > 0 && (
             <p className="mt-2 font-serif text-base text-foreground">
