@@ -2903,6 +2903,34 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
 
     const subCount = await admin.from("subscribers").select("id", { count: "exact", head: true });
 
+    // --- Since the anchor: visitors + the single top traffic source ---
+    let visitorsSince = 0;
+    let topSourceSince: string | null = null;
+    try {
+      const pv = await admin
+        .from("page_views")
+        .select("session_id, utm_source, referrer_host")
+        .gt("created_at", sinceIso)
+        .limit(50000);
+      const sessions = new Set<string>();
+      const bySource = new Map<string, Set<string>>();
+      for (const r of (pv.data ?? []) as any[]) {
+        const sid = (r.session_id as string | null) ?? "";
+        if (sid) sessions.add(sid);
+        const src =
+          ((r.utm_source as string | null) ?? "").trim() ||
+          ((r.referrer_host as string | null) ?? "").trim() ||
+          "Direct";
+        if (!bySource.has(src)) bySource.set(src, new Set());
+        if (sid) bySource.get(src)!.add(sid);
+      }
+      visitorsSince = sessions.size;
+      const top = Array.from(bySource.entries()).sort((a, b) => b[1].size - a[1].size)[0];
+      topSourceSince = top ? top[0] : null;
+    } catch (e) {
+      console.error("adminMiniDashboard traffic error", e);
+    }
+
     return {
       fallbackWindow,
       anchorIso: fallbackWindow ? null : sinceIso,
@@ -2917,6 +2945,8 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
       previousParsha,
       currentParshaDownloads,
       previousParshaDownloads,
+      visitorsSince,
+      topSourceSince,
     };
   });
 
