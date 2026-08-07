@@ -100,7 +100,8 @@ export default function AdminMiniDashboard({
     !!data &&
     data.newSubscriberCount === 0 &&
     data.downloadsSince === 0 &&
-    data.newContactCount === 0;
+    data.newContactCount === 0 &&
+    (data.visitorsSince ?? 0) === 0;
 
   return (
     <section className="parchment-frame">
