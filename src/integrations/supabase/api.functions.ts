@@ -2872,6 +2872,30 @@ export const adminDownloadStats = createServerFn({ method: "POST" })
       .limit(20000);
     if (error) throw new Error(error.message);
 
+    // Map each PDF id to the parsha week it belongs to, so downloads can be
+    // grouped by parsha rather than by rolling date range.
+    const pdfRows = await admin
+      .from("pdfs")
+      .select("id, title, parsha_key, jewish_year, created_at");
+    const pdfInfo = new Map<
+      string,
+      { parsha: string; jewishYear: number | null; title: string; createdAt: string }
+    >();
+    const parshaOrder = new Map<string, string>(); // parsha -> latest pdf created_at
+    for (const r of (pdfRows.data ?? []) as any[]) {
+      const parsha = (r.parsha_key as string | null) ?? "";
+      if (!parsha) continue;
+      pdfInfo.set(r.id as string, {
+        parsha,
+        jewishYear: (r.jewish_year as number | null) ?? null,
+        title: (r.title as string | null) ?? "(untitled)",
+        createdAt: (r.created_at as string | null) ?? "",
+      });
+      const prev = parshaOrder.get(parsha);
+      const at = (r.created_at as string | null) ?? "";
+      if (!prev || at > prev) parshaOrder.set(parsha, at);
+    }
+
     const events = (rows ?? []) as Array<{
       created_at: string;
       publication_id: string | null;
