@@ -2872,6 +2872,30 @@ export const adminDownloadStats = createServerFn({ method: "POST" })
       .limit(20000);
     if (error) throw new Error(error.message);
 
+    // Map each PDF id to the parsha week it belongs to, so downloads can be
+    // grouped by parsha rather than by rolling date range.
+    const pdfRows = await admin
+      .from("pdfs")
+      .select("id, title, parsha_key, jewish_year, created_at");
+    const pdfInfo = new Map<
+      string,
+      { parsha: string; jewishYear: number | null; title: string; createdAt: string }
+    >();
+    const parshaOrder = new Map<string, string>(); // parsha -> latest pdf created_at
+    for (const r of (pdfRows.data ?? []) as any[]) {
+      const parsha = (r.parsha_key as string | null) ?? "";
+      if (!parsha) continue;
+      pdfInfo.set(r.id as string, {
+        parsha,
+        jewishYear: (r.jewish_year as number | null) ?? null,
+        title: (r.title as string | null) ?? "(untitled)",
+        createdAt: (r.created_at as string | null) ?? "",
+      });
+      const prev = parshaOrder.get(parsha);
+      const at = (r.created_at as string | null) ?? "";
+      if (!prev || at > prev) parshaOrder.set(parsha, at);
+    }
+
     const events = (rows ?? []) as Array<{
       created_at: string;
       publication_id: string | null;
@@ -2924,11 +2948,21 @@ export const adminDownloadStats = createServerFn({ method: "POST" })
       key: p.id || `title:${p.title}`,
     })).sort((a, b) => b.count - a.count);
 
-    const eventList = events.slice(0, 5000).map((e) => ({
-      key: e.publication_id || `title:${e.publication_title || "(untitled)"}`,
-      at: e.created_at,
-      who: whoOf(e),
-    }));
+    const eventList = events.slice(0, 20000).map((e) => {
+      const info = e.publication_id ? pdfInfo.get(e.publication_id) : undefined;
+      return {
+        key: e.publication_id || `title:${e.publication_title || "(untitled)"}`,
+        at: e.created_at,
+        who: whoOf(e),
+        parsha: info?.parsha ?? null,
+        title: info?.title ?? e.publication_title ?? "(untitled)",
+      };
+    });
 
-    return { days, total: events.length, byDay, byPdf, events: eventList };
+    const parshas = Array.from(parshaOrder.entries())
+      .map(([parsha, at]) => ({ parsha, at }))
+      .sort((a, b) => (a.at < b.at ? 1 : -1))
+      .map((p) => p.parsha);
+
+    return { days, total: events.length, byDay, byPdf, events: eventList, parshas };
   });

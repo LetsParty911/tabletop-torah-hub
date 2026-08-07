@@ -1,244 +1,115 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { DateRange } from "react-day-picker";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminDownloadStats } from "@/integrations/supabase/api.functions";
-import { DownloadTimeline } from "@/components/DownloadTimeline";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import {
-  ArrowDown,
-  ArrowUp,
-  Calendar as CalendarIcon,
-  Loader2,
-  RefreshCw,
-  Search,
-  X,
-} from "lucide-react";
+import { ArrowDown, ArrowUp, Loader2, Minus, RefreshCw, Search, X } from "lucide-react";
+
+type Ev = { key: string; at: string; who: string | null; parsha: string | null; title: string };
 
 type Stats = {
   days: number;
   total: number;
-  byDay: Array<{ day: string; count: number }>;
-  byPdf: Array<{
-    id: string | null;
-    title: string;
-    count: number;
-    last: string;
-    lastWho?: string | null;
-    key?: string;
-  }>;
-  events?: Array<{ key: string; at: string; who: string | null }>;
+  byPdf: Array<{ id: string | null; title: string; count: number; last: string; key?: string }>;
+  events?: Ev[];
+  parshas?: string[];
 };
-
-type SortKey = "count" | "last";
-type SortDir = "asc" | "desc";
-
-const RANGES = [7, 30, 90] as const;
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-const startOfDay = (d: Date) => {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-};
-const endOfDay = (d: Date) => {
-  const x = new Date(d);
-  x.setHours(23, 59, 59, 999);
-  return x;
-};
-const presetRange = (n: number) => ({
-  from: startOfDay(new Date(Date.now() - (n - 1) * DAY_MS)),
-  to: endOfDay(new Date()),
-});
-const fmtDate = (d: Date) =>
-  d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 
 export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
-  const [range, setRange] = useState<{ from: Date; to: Date }>(() => presetRange(30));
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [raw, setRaw] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
-    key: "count",
-    dir: "desc",
-  });
   const [search, setSearch] = useState("");
+  const [parsha, setParsha] = useState<string | null>(null);
 
-  const fetchDays = Math.min(
-    365,
-    Math.max(1, Math.ceil((Date.now() - startOfDay(range.from).getTime()) / DAY_MS)),
-  );
-
-  const activePreset = RANGES.find((r) => {
-    const p = presetRange(r);
-    return (
-      startOfDay(range.from).getTime() === p.from.getTime() &&
-      startOfDay(range.to).getTime() === startOfDay(p.to).getTime()
-    );
-  });
-
-  const load = useCallback(
-    async (rangeDays: number) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = (await adminDownloadStats({
-          data: { accessToken, days: rangeDays },
-        })) as Stats;
-        setRaw(res);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load download stats");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accessToken],
-  );
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = (await adminDownloadStats({
+        data: { accessToken, days: 365 },
+      })) as Stats;
+      setRaw(res);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load download stats");
+    } finally {
+      setLoading(false);
+    }
+  }, [accessToken]);
 
   useEffect(() => {
-    void load(fetchDays);
-  }, [load, fetchDays]);
+    void load();
+  }, [load]);
 
-  // When this week's collection is live (downloads landing in the last 3 days),
-  // default the table to "Last download" descending so recent activity leads.
-  const sortDefaulted = useRef(false);
+  const parshas = raw?.parshas ?? [];
+
+  // Default to the current (most recent) parsha week.
   useEffect(() => {
-    if (sortDefaulted.current || !raw?.events?.length) return;
-    sortDefaulted.current = true;
-    const cutoff = Date.now() - 3 * DAY_MS;
-    const liveWeek = raw.events.some((e) => new Date(e.at).getTime() >= cutoff);
-    if (liveWeek) setSort({ key: "last", dir: "desc" });
-  }, [raw]);
+    if (parsha === null && parshas.length) setParsha(parshas[0]!);
+  }, [parsha, parshas]);
 
-  const spanDays = Math.max(
-    1,
-    Math.round((startOfDay(range.to).getTime() - startOfDay(range.from).getTime()) / DAY_MS) + 1,
+  const prevParsha = useMemo(() => {
+    if (!parsha) return null;
+    const i = parshas.indexOf(parsha);
+    return i >= 0 && i + 1 < parshas.length ? parshas[i + 1]! : null;
+  }, [parsha, parshas]);
+
+  const eventsFor = useCallback(
+    (p: string | null) => (raw?.events ?? []).filter((e) => p && e.parsha === p),
+    [raw],
   );
 
-  // Re-derive all stats for the selected window from the raw event list.
-  const stats = useMemo<Stats | null>(() => {
-    if (!raw) return null;
-    const fromMs = startOfDay(range.from).getTime();
-    const toMs = endOfDay(range.to).getTime();
-    const events = (raw.events ?? []).filter((e) => {
-      const t = new Date(e.at).getTime();
-      return t >= fromMs && t <= toMs;
-    });
+  const weekEvents = useMemo(() => eventsFor(parsha), [eventsFor, parsha]);
+  const prevEvents = useMemo(() => eventsFor(prevParsha), [eventsFor, prevParsha]);
 
-    const byDayMap = new Map<string, number>();
-    const byPdfMap = new Map<
-      string,
-      { id: string | null; title: string; count: number; last: string; lastWho: string | null; key: string }
-    >();
-    const titleOf = new Map(raw.byPdf.map((p) => [p.key ?? p.id ?? `title:${p.title}`, p.title]));
-
-    for (const e of events) {
+  const byDay = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const e of weekEvents) {
       const day = new Date(e.at).toISOString().slice(0, 10);
-      byDayMap.set(day, (byDayMap.get(day) ?? 0) + 1);
-      const cur = byPdfMap.get(e.key);
-      if (cur) {
-        cur.count += 1;
-        if (e.at > cur.last) {
-          cur.last = e.at;
-          cur.lastWho = e.who;
-        }
-      } else {
-        byPdfMap.set(e.key, {
-          id: e.key.startsWith("title:") ? null : e.key,
-          title: titleOf.get(e.key) ?? e.key.replace(/^title:/, ""),
-          count: 1,
-          last: e.at,
-          lastWho: e.who,
-          key: e.key,
-        });
-      }
+      m.set(day, (m.get(day) ?? 0) + 1);
     }
-
-    return {
-      days: spanDays,
-      total: events.length,
-      byDay: Array.from(byDayMap.entries())
-        .map(([day, count]) => ({ day, count }))
-        .sort((a, b) => (a.day < b.day ? 1 : -1)),
-      byPdf: Array.from(byPdfMap.values()).sort((a, b) => b.count - a.count),
-      events,
-    };
-  }, [raw, range, spanDays]);
-
-  const maxDay = stats?.byDay.reduce((m, d) => Math.max(m, d.count), 0) ?? 0;
-
-  const sortedByPdf = useMemo(() => {
-    if (!stats) return [];
-    const list = [...stats.byPdf];
-    list.sort((a, b) => {
-      if (sort.key === "count") {
-        return sort.dir === "asc" ? a.count - b.count : b.count - a.count;
-      }
-      return sort.dir === "asc"
-        ? a.last.localeCompare(b.last)
-        : b.last.localeCompare(a.last);
-    });
-    return list;
-  }, [stats, sort]);
-
-  const filteredByPdf = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return sortedByPdf;
-    return sortedByPdf.filter((p) => p.title.toLowerCase().includes(q));
-  }, [sortedByPdf, search]);
-
-  const [selected, setSelected] = useState<{ key: string; title: string } | null>(null);
-
-  const drilldown = useMemo(() => {
-    if (!stats || !selected) return null;
-    const evs = (stats.events ?? [])
-      .filter((e) => e.key === selected.key)
-      .sort((a, b) => b.at.localeCompare(a.at));
-    const dayMap = new Map<string, number>();
-    for (const e of evs) {
-      const day = new Date(e.at).toISOString().slice(0, 10);
-      dayMap.set(day, (dayMap.get(day) ?? 0) + 1);
-    }
-    const byDay = Array.from(dayMap.entries())
+    return Array.from(m.entries())
       .map(([day, count]) => ({ day, count }))
       .sort((a, b) => (a.day < b.day ? 1 : -1));
-    const max = byDay.reduce((m, d) => Math.max(m, d.count), 0);
-    return { events: evs, byDay, max };
-  }, [stats, selected]);
+  }, [weekEvents]);
 
-  const toggleSort = (key: SortKey) => {
-    setSort((prev) => ({
-      key,
-      dir: prev.key === key && prev.dir === "desc" ? "asc" : "desc",
-    }));
+  const maxDay = byDay.reduce((m, d) => Math.max(m, d.count), 0);
+
+  const countByTitle = (evs: Ev[]) => {
+    const m = new Map<string, number>();
+    for (const e of evs) m.set(e.title, (m.get(e.title) ?? 0) + 1);
+    return m;
   };
 
-  const SortIcon = ({ active, dir }: { active: boolean; dir: SortDir }) => {
-    if (!active) return <ArrowUp className="h-3 w-3 opacity-30" />;
-    return dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
-  };
+  const rows = useMemo(() => {
+    const cur = countByTitle(weekEvents);
+    const prev = countByTitle(prevEvents);
+    return Array.from(cur.entries())
+      .map(([title, count]) => ({ title, count, prev: prev.get(title) ?? 0 }))
+      .sort((a, b) => b.count - a.count);
+  }, [weekEvents, prevEvents]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((r) => r.title.toLowerCase().includes(q));
+  }, [rows, search]);
+
+  const total = weekEvents.length;
 
   const exportCsv = () => {
-    if (!stats) return;
     const escape = (s: string) => `"${s.replace(/"/g, '""')}"`;
     const lines: string[] = [];
+    lines.push(`Downloads for Parshas ${parsha ?? ""}`);
     lines.push("Downloads per day");
     lines.push("Day,Downloads");
-    for (const d of stats.byDay) lines.push(`${d.day},${d.count}`);
+    for (const d of byDay) lines.push(`${d.day},${d.count}`);
     lines.push("");
     lines.push("Downloads per PDF");
-    lines.push("PDF Title,Downloads,Last download,Last downloader");
-    for (const p of filteredByPdf)
-      lines.push(
-        `${escape(p.title)},${p.count},${p.last},${escape(p.lastWho ?? "Anonymous")}`,
-      );
+    lines.push("PDF Title,This week,Last week,Change");
+    for (const r of filtered)
+      lines.push(`${escape(r.title)},${r.count},${r.prev},${r.count - r.prev}`);
     const url = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `downloads-${stats.days}d.csv`;
+    a.download = `downloads-${(parsha ?? "week").replace(/\s+/g, "-")}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -248,56 +119,27 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h2 className="text-lg font-semibold">Download analytics</h2>
         <div className="flex flex-wrap items-center gap-2">
-          {RANGES.map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setRange(presetRange(r))}
-              className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                activePreset === r
-                  ? "border-accent bg-accent text-accent-foreground"
-                  : "border-border bg-background/60 text-muted-foreground hover:border-accent"
-              }`}
-            >
-              Last {r} days
-            </button>
-          ))}
-          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "h-7 gap-2 px-3 text-xs font-normal",
-                  !activePreset && "border-accent text-accent-foreground",
-                )}
-              >
-                <CalendarIcon className="h-3.5 w-3.5" />
-                {fmtDate(range.from)} – {fmtDate(range.to)}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="range"
-                defaultMonth={range.from}
-                selected={{ from: range.from, to: range.to }}
-                onSelect={(r: DateRange | undefined) => {
-                  if (!r?.from) return;
-                  const to = r.to ?? r.from;
-                  setRange({ from: startOfDay(r.from), to: endOfDay(to) });
-                  if (r.to) setPickerOpen(false);
-                }}
-                disabled={{ after: new Date() }}
-                numberOfMonths={2}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
+          <label className="text-xs text-muted-foreground" htmlFor="parsha-select">
+            Parsha week
+          </label>
+          <select
+            id="parsha-select"
+            value={parsha ?? ""}
+            onChange={(e) => setParsha(e.target.value)}
+            className="rounded-md border border-border bg-background px-2 py-1 text-sm focus:border-accent focus:outline-none"
+          >
+            {parshas.length === 0 && <option value="">No data</option>}
+            {parshas.map((p) => (
+              <option key={p} value={p}>
+                Parshas {p}
+              </option>
+            ))}
+          </select>
           <button
             type="button"
-            onClick={() => void load(fetchDays)}
+            onClick={() => void load()}
             className="rounded-md border border-border px-2 py-1 text-xs hover:border-accent"
+            aria-label="Refresh"
           >
             {loading ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -308,7 +150,7 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
           <button
             type="button"
             onClick={exportCsv}
-            disabled={!stats}
+            disabled={!raw}
             className="rounded-md border border-border px-2 py-1 text-xs hover:border-accent disabled:opacity-50"
           >
             CSV
@@ -318,35 +160,26 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
 
       {error && <p className="text-sm text-destructive mb-3">{error}</p>}
 
-      {stats && (
+      {raw && (
         <>
           <p className="text-sm text-muted-foreground mb-4">
-            <span className="font-semibold text-foreground">{stats.total}</span> downloads from{" "}
-            {fmtDate(range.from)} to {fmtDate(range.to)} ({stats.days} days) across{" "}
-            <span className="font-semibold text-foreground">{stats.byPdf.length}</span> PDFs.
+            <span className="font-semibold text-foreground">{total}</span> downloads for{" "}
+            <span className="font-semibold text-foreground">Parshas {parsha ?? "—"}</span> across{" "}
+            <span className="font-semibold text-foreground">{rows.length}</span> PDFs.
           </p>
-
-          <DownloadTimeline
-            from={range.from}
-            to={range.to}
-            byDay={stats.byDay}
-            pdfs={stats.byPdf}
-            events={stats.events}
-          />
 
           <div className="grid gap-6 md:grid-cols-2">
             <div className="min-w-0">
               <h3 className="text-sm font-medium mb-2">Downloads per day</h3>
               <div className="max-h-72 overflow-y-auto overflow-x-auto rounded-md border border-border">
                 <table className="w-full min-w-[18rem] text-sm">
-
                   <tbody>
-                    {stats.byDay.length === 0 && (
+                    {byDay.length === 0 && (
                       <tr>
                         <td className="p-3 text-muted-foreground">No downloads yet.</td>
                       </tr>
                     )}
-                    {stats.byDay.map((d) => (
+                    {byDay.map((d) => (
                       <tr key={d.day} className="border-b border-border/60 last:border-0">
                         <td className="px-3 py-2 whitespace-nowrap">{d.day}</td>
                         <td className="px-3 py-2 w-full">
@@ -369,7 +202,9 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
 
             <div className="min-w-0">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                <h3 className="text-sm font-medium">Downloads per PDF</h3>
+                <h3 className="text-sm font-medium whitespace-nowrap">
+                  Downloads per PDF
+                </h3>
                 <div className="relative flex-1 sm:max-w-xs">
                   <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                   <input
@@ -390,122 +225,68 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                     </button>
                   )}
                 </div>
-                {search && (
-                  <span className="text-xs text-muted-foreground">
-                    {filteredByPdf.length} of {sortedByPdf.length}
-                  </span>
-                )}
-              </div>
-              <div className="mb-1 flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-muted-foreground">Sort:</span>
-                <button
-                  type="button"
-                  onClick={() => toggleSort("count")}
-                  className={`rounded-full border px-2.5 py-1 transition-colors ${
-                    sort.key === "count"
-                      ? "border-accent bg-accent text-accent-foreground"
-                      : "border-border text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Most downloaded
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toggleSort("last")}
-                  className={`rounded-full border px-2.5 py-1 transition-colors ${
-                    sort.key === "last"
-                      ? "border-accent bg-accent text-accent-foreground"
-                      : "border-border text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Most recent
-                </button>
-                <span className="text-muted-foreground">
-                  {sort.dir === "desc" ? "descending" : "ascending"}
-                </span>
               </div>
               <div className="max-h-72 overflow-y-auto overflow-x-auto rounded-md border border-border [scrollbar-width:thin]">
-                <table className="w-full min-w-[38rem] text-sm">
+                <table className="w-full min-w-[32rem] text-sm">
                   <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
                     <tr className="border-b border-border/60">
                       <th className="px-3 py-2 text-left font-medium">PDF</th>
-                      <th
-                        className="px-3 py-2 text-right font-medium whitespace-nowrap"
-                        aria-sort={
-                          sort.key === "count"
-                            ? sort.dir === "asc"
-                              ? "ascending"
-                              : "descending"
-                            : "none"
-                        }
-                      >
-                        <button
-                          type="button"
-                          onClick={() => toggleSort("count")}
-                          className="inline-flex items-center gap-1 hover:text-foreground"
-                        >
-                          Downloads <SortIcon active={sort.key === "count"} dir={sort.dir} />
-                        </button>
+                      <th className="px-3 py-2 text-right font-medium whitespace-nowrap">
+                        This week
                       </th>
-                      <th
-                        className="px-3 py-2 text-right font-medium whitespace-nowrap"
-                        aria-sort={
-                          sort.key === "last"
-                            ? sort.dir === "asc"
-                              ? "ascending"
-                              : "descending"
-                            : "none"
-                        }
-                      >
-                        <button
-                          type="button"
-                          onClick={() => toggleSort("last")}
-                          className="inline-flex items-center gap-1 hover:text-foreground"
-                        >
-                          Last download <SortIcon active={sort.key === "last"} dir={sort.dir} />
-                        </button>
+                      <th className="px-3 py-2 text-right font-medium whitespace-nowrap">
+                        {prevParsha ? `Parshas ${prevParsha}` : "Last week"}
                       </th>
-                      <th className="px-3 py-2 text-left font-medium whitespace-nowrap">
-                        Downloaded by
+                      <th className="px-3 py-2 text-right font-medium whitespace-nowrap">
+                        Change
                       </th>
                     </tr>
                   </thead>
-
                   <tbody>
-                    {filteredByPdf.length === 0 && (
+                    {filtered.length === 0 && (
                       <tr>
                         <td colSpan={4} className="p-3 text-muted-foreground">
                           {search ? "No PDFs match your filter." : "No downloads yet."}
                         </td>
                       </tr>
                     )}
-                    {filteredByPdf.map((p) => (
-                      <tr
-                        key={p.id ?? p.title}
-                        className="border-b border-border/60 last:border-0 align-top"
-                      >
-                        <td className="px-3 py-2 font-medium">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setSelected({ key: p.key ?? p.id ?? `title:${p.title}`, title: p.title })
-                            }
-                            className="text-left underline decoration-dotted underline-offset-4 hover:text-accent"
-                          >
-                            {p.title}
-                          </button>
-                        </td>
-                        <td className="px-3 py-2 text-right font-semibold tabular-nums">
-                          {p.count}
-                        </td>
-                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">
-                          {new Date(p.last).toLocaleString()}
-                        </td>
-                        <td className="px-3 py-2 text-muted-foreground">
-                          {p.lastWho ?? "Anonymous"}
-                        </td>
-                      </tr>
-                    ))}
+                    {filtered.map((r) => {
+                      const diff = r.count - r.prev;
+                      return (
+                        <tr
+                          key={r.title}
+                          className="border-b border-border/60 last:border-0 align-top"
+                        >
+                          <td className="px-3 py-2 font-medium">{r.title}</td>
+                          <td className="px-3 py-2 text-right font-semibold tabular-nums">
+                            {r.count}
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                            {r.prev}
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center gap-1 ${
+                                diff > 0
+                                  ? "text-emerald-600"
+                                  : diff < 0
+                                    ? "text-destructive"
+                                    : "text-muted-foreground"
+                              }`}
+                            >
+                              {diff > 0 ? (
+                                <ArrowUp className="h-3 w-3" />
+                              ) : diff < 0 ? (
+                                <ArrowDown className="h-3 w-3" />
+                              ) : (
+                                <Minus className="h-3 w-3" />
+                              )}
+                              {diff === 0 ? "0" : `${diff > 0 ? "+" : ""}${diff}`}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -515,87 +296,6 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
             </div>
           </div>
         </>
-      )}
-
-      {selected && drilldown && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setSelected(null)}
-        >
-          <div
-            className="w-full max-w-2xl rounded-lg border border-border bg-background shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
-              <div>
-                <h3 className="font-semibold">{selected.title}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {drilldown.events.length} downloads in the last {stats?.days} days
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelected(null)}
-                aria-label="Close"
-                className="rounded p-1 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="max-h-[70vh] overflow-y-auto p-4 space-y-5">
-              <div>
-                <h4 className="text-sm font-medium mb-2">Daily breakdown</h4>
-                {drilldown.byDay.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No downloads in this range.</p>
-                )}
-                <div className="space-y-1">
-                  {drilldown.byDay.map((d) => (
-                    <div key={d.day} className="flex items-center gap-2 text-xs">
-                      <span className="w-24 shrink-0 tabular-nums text-muted-foreground">{d.day}</span>
-                      <div className="h-2 flex-1 rounded bg-muted">
-                        <div
-                          className="h-2 rounded bg-accent"
-                          style={{ width: `${drilldown.max ? (d.count / drilldown.max) * 100 : 0}%` }}
-                        />
-                      </div>
-                      <span className="w-8 text-right font-semibold tabular-nums">{d.count}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium mb-2">Exact timestamps</h4>
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
-                    <tr className="border-b border-border/60">
-                      <th className="px-3 py-2 text-left font-medium">When</th>
-                      <th className="px-3 py-2 text-left font-medium">Downloader</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {drilldown.events.map((e, i) => (
-                      <tr key={`${e.at}-${i}`} className="border-b border-border/60 last:border-0">
-                        <td className="px-3 py-1.5 tabular-nums">{new Date(e.at).toLocaleString()}</td>
-                        <td className="px-3 py-1.5 text-muted-foreground">{e.who ?? "Anonymous"}</td>
-                      </tr>
-                    ))}
-                    {drilldown.events.length === 0 && (
-                      <tr>
-                        <td colSpan={2} className="px-3 py-2 text-muted-foreground">
-                          No events.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
