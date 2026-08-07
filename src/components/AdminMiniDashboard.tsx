@@ -3,37 +3,71 @@ import { adminMiniDashboard } from "@/integrations/supabase/api.functions";
 
 type DashboardData = Awaited<ReturnType<typeof adminMiniDashboard>>;
 
-function relativeTime(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  if (!Number.isFinite(ms) || ms < 0) return "just now";
-  const mins = Math.round(ms / 60000);
-  if (mins < 2) return "just now";
-  if (mins < 60) return `${mins} minutes ago`;
-  const hours = Math.round(mins / 60);
-  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
-  const days = Math.round(hours / 24);
-  if (days < 14) return `${days} day${days === 1 ? "" : "s"} ago`;
-  const weeks = Math.round(days / 7);
-  return `${weeks} weeks ago`;
+const SITE_TZ = "America/New_York";
+
+function formatAnchor(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const day = new Intl.DateTimeFormat("en-US", {
+      weekday: "long",
+      timeZone: SITE_TZ,
+    }).format(d);
+    const time = new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: SITE_TZ,
+    }).format(d);
+    const daysAgo = (Date.now() - d.getTime()) / 86400000;
+    if (daysAgo > 6) {
+      const date = new Intl.DateTimeFormat("en-US", {
+        month: "long",
+        day: "numeric",
+        timeZone: SITE_TZ,
+      }).format(d);
+      return `${date}, ${time}`;
+    }
+    return `${day} ${time}`;
+  } catch {
+    return iso;
+  }
 }
 
-function Card({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Tile({
+  label,
+  children,
+  quiet = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  quiet?: boolean;
+}) {
   return (
-    <div className="rounded-xl border-2 border-accent/50 bg-background/60 p-5">
-      <h3 className="font-serif text-lg font-semibold text-primary">{title}</h3>
-      {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
-      <div className="mt-4 space-y-4">{children}</div>
+    <div
+      className={
+        "rounded-2xl border-2 p-5 sm:p-6 " +
+        (quiet
+          ? "border-accent/30 bg-background/40"
+          : "border-accent/60 bg-background/70")
+      }
+    >
+      <div className="text-[0.7rem] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-3">{children}</div>
     </div>
   );
 }
 
-function Stat({ value, label }: { value: React.ReactNode; label: string }) {
+function BigNumber({ children }: { children: React.ReactNode }) {
   return (
-    <div>
-      <div className="font-serif text-3xl font-bold text-primary leading-none">{value}</div>
-      <div className="text-xs uppercase tracking-wide text-muted-foreground mt-1">{label}</div>
+    <div className="font-serif text-5xl sm:text-6xl font-bold leading-none text-primary">
+      {children}
     </div>
   );
+}
+
+function Quiet({ children }: { children: React.ReactNode }) {
+  return <p className="font-serif text-lg text-muted-foreground">{children}</p>;
 }
 
 export default function AdminMiniDashboard({
@@ -67,106 +101,155 @@ export default function AdminMiniDashboard({
     };
   }, [accessToken]);
 
+  const remaining = Math.max(0, checklist.countableTotal - checklist.uploadedCount);
   const change = data ? data.currentParshaDownloads - data.previousParshaDownloads : 0;
+  const nothingNew =
+    !!data &&
+    !data.firstRun &&
+    data.newSubscriberCount === 0 &&
+    data.downloadsSince === 0 &&
+    data.newContactCount === 0;
 
   return (
     <section className="parchment-frame">
       <div className="parchment-panel">
-        <h2 className="font-serif text-2xl font-semibold text-primary">At a glance</h2>
+        <header className="text-center sm:text-left">
+          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-primary">
+            Since you were last here
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {!data
+              ? error
+                ? "Couldn't load your update."
+                : "Gathering the good news…"
+              : data.firstRun || !data.anchorIso
+                ? "First time here — welcome. We'll start counting from now."
+                : `Since ${formatAnchor(data.anchorIso)}`}
+          </p>
+        </header>
 
-        {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
-        {!data && !error && <p className="mt-3 text-sm text-muted-foreground">Loading…</p>}
+        {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
 
-        {data && (
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* CARD 1 */}
-            <Card
-              title="Since your last visit"
-              subtitle={relativeTime(data.sinceIso)}
-            >
-              <div>
-                <Stat value={data.newSubscriberCount} label="New subscribers" />
-                {data.newSubscriberCount === 0 ? (
-                  <p className="text-sm text-muted-foreground mt-2">No new subscribers since then.</p>
-                ) : (
-                  <ul className="mt-2 space-y-0.5 text-sm text-foreground break-all">
+        {data && data.firstRun && (
+          <p className="mt-6 font-serif text-lg text-foreground">
+            Everything's set up. Next time you sign in, this is where you'll see what happened while
+            you were away.
+          </p>
+        )}
+
+        {data && !data.firstRun && nothingNew && (
+          <p className="mt-6 font-serif text-xl text-foreground">
+            All quiet since {formatAnchor(data.anchorIso!)} — nothing new to catch up on.
+          </p>
+        )}
+
+        {data && !data.firstRun && !nothingNew && (
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+            {/* 1 — New subscribers */}
+            <Tile label="New subscribers" quiet={data.newSubscriberCount === 0}>
+              {data.newSubscriberCount === 0 ? (
+                <Quiet>No new subscribers</Quiet>
+              ) : (
+                <>
+                  <BigNumber>{data.newSubscriberCount}</BigNumber>
+                  <ul className="mt-3 space-y-1 text-sm text-foreground break-all">
                     {data.newSubscriberEmails.map((e) => (
                       <li key={e}>{e}</li>
                     ))}
                     {data.newSubscriberCount > data.newSubscriberEmails.length && (
                       <li className="text-muted-foreground">
-                        +{data.newSubscriberCount - data.newSubscriberEmails.length} more
+                        and {data.newSubscriberCount - data.newSubscriberEmails.length} more
                       </li>
                     )}
                   </ul>
-                )}
-              </div>
+                </>
+              )}
+              <p className="mt-3 text-xs text-muted-foreground">
+                {data.totalSubscribers} subscribers in total
+              </p>
+            </Tile>
 
-              <div className="border-t border-accent/40 pt-4">
-                <Stat value={data.downloadsSince} label="Downloads" />
-                {data.topSincePdfs.length > 0 && (
-                  <ul className="mt-2 space-y-1 text-sm">
-                    {data.topSincePdfs.map((p) => (
-                      <li key={p.title} className="flex justify-between gap-3">
-                        <span className="text-foreground">{p.title}</span>
-                        <span className="font-medium text-primary tabular-nums">{p.count}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </Card>
+            {/* 2 — Downloads since last visit */}
+            <Tile label="Downloads since your last visit" quiet={data.downloadsSince === 0}>
+              {data.downloadsSince === 0 ? (
+                <Quiet>No downloads yet</Quiet>
+              ) : (
+                <>
+                  <BigNumber>{data.downloadsSince}</BigNumber>
+                  {data.topSincePdfs.length > 0 && (
+                    <p className="mt-3 text-sm text-foreground">
+                      Mostly{" "}
+                      {data.topSincePdfs
+                        .map((p) => `${p.title} (${p.count})`)
+                        .join(", ")}
+                    </p>
+                  )}
+                </>
+              )}
+            </Tile>
 
-            {/* CARD 2 */}
-            <Card title="This week" subtitle={checklist.parshaLabel}>
-              <div>
-                <div className="flex items-baseline gap-3">
-                  <Stat value={data.currentParshaDownloads} label="Downloads this parsha" />
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Last parsha: <span className="text-foreground font-medium">{data.previousParshaDownloads}</span>{" "}
-                  <span
-                    className={
-                      change > 0
-                        ? "text-primary font-medium"
-                        : change < 0
-                          ? "text-destructive font-medium"
-                          : "text-muted-foreground"
-                    }
-                  >
-                    {change > 0 ? "▲ +" : change < 0 ? "▼ −" : "→ "}
-                    {change === 0 ? "0" : Math.abs(change)}
-                  </span>
+            {/* 3 — This week's checklist */}
+            <Tile label={`This week's checklist — ${checklist.parshaLabel}`}>
+              {checklist.countableTotal > 0 && remaining === 0 ? (
+                <p className="font-serif text-2xl sm:text-3xl font-semibold text-primary">
+                  All {checklist.countableTotal} in — you're done for this week.
                 </p>
-              </div>
+              ) : (
+                <>
+                  <p className="font-serif text-2xl sm:text-3xl font-semibold text-primary">
+                    {checklist.uploadedCount} of {checklist.countableTotal} uploaded
+                    <span className="text-muted-foreground font-normal">
+                      {" "}
+                      — {remaining} remaining
+                    </span>
+                  </p>
+                  {checklist.missingTitles.length > 0 && (
+                    <p className="mt-3 text-sm text-foreground">
+                      Still to come: {checklist.missingTitles.join(", ")}
+                    </p>
+                  )}
+                </>
+              )}
+            </Tile>
 
-              <div className="border-t border-accent/40 pt-4">
-                <Stat
-                  value={`${checklist.uploadedCount} of ${checklist.countableTotal}`}
-                  label="Uploaded this week"
-                />
-                {checklist.missingTitles.length > 0 ? (
-                  <div className="mt-2 text-sm">
-                    <div className="text-muted-foreground">Still missing:</div>
-                    <ul className="mt-1 space-y-0.5 text-foreground">
-                      {checklist.missingTitles.map((t) => (
-                        <li key={t}>{t}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground mt-2">Everything is uploaded. 🎉</p>
-                )}
-              </div>
-            </Card>
+            {/* 4 — New contact messages */}
+            <Tile label="New contact messages" quiet={data.newContactCount === 0}>
+              {data.newContactCount === 0 ? (
+                <Quiet>No new messages</Quiet>
+              ) : (
+                <>
+                  <BigNumber>{data.newContactCount}</BigNumber>
+                  <p className="mt-3 text-sm text-foreground">
+                    From {data.newContactNames.join(", ")}
+                    {data.newContactCount > data.newContactNames.length
+                      ? ` and ${data.newContactCount - data.newContactNames.length} more`
+                      : ""}
+                  </p>
+                </>
+              )}
+            </Tile>
 
-            {/* CARD 3 */}
-            <Card title="All time">
-              <Stat value={data.totalSubscribers} label="Total subscribers" />
-              <div className="border-t border-accent/40 pt-4">
-                <Stat value={data.totalDownloads} label="Total downloads" />
-              </div>
-            </Card>
+            {/* 5 — This parsha vs last */}
+            <Tile label="This parsha vs last" quiet={data.currentParshaDownloads === 0}>
+              <p className="font-serif text-2xl sm:text-3xl font-semibold text-primary">
+                {data.currentParshaDownloads}
+                <span className="text-muted-foreground font-normal text-lg">
+                  {" "}
+                  vs {data.previousParshaDownloads} last parsha
+                </span>{" "}
+                <span
+                  className={
+                    change > 0
+                      ? "text-accent-foreground"
+                      : change < 0
+                        ? "text-destructive"
+                        : "text-muted-foreground"
+                  }
+                >
+                  {change > 0 ? `▲ +${change}` : change < 0 ? `▼ −${Math.abs(change)}` : "→ even"}
+                </span>
+              </p>
+            </Tile>
           </div>
         )}
       </div>
