@@ -3,6 +3,7 @@ import { FileText, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
+import { trackSearch } from "@/lib/site-analytics";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { BackToTop } from "@/components/BackToTop";
@@ -281,6 +282,18 @@ function ArchivePage() {
       sum + y.parshiyos.reduce((s: number, p: ArchiveParsha) => s + p.pdfs.length, 0),
     0,
   );
+
+  // Log one search_events row per settled (debounced) search term, with the
+  // number of results it returned. Fails silently.
+  const loggedQuery = useRef<string | null>(null);
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) return;
+    if (loggedQuery.current === q) return;
+    loggedQuery.current = q;
+    trackSearch(q, totalPdfs);
+  }, [query, totalPdfs]);
+
 
   const hasActiveFilters =
     yearFilter !== "all" ||

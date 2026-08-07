@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DownloadAnalytics } from "@/components/DownloadAnalytics";
+import TrafficAnalytics from "@/components/TrafficAnalytics";
 import AdminMiniDashboard from "@/components/AdminMiniDashboard";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
@@ -2510,6 +2511,14 @@ function AdminPage() {
             <DownloadAnalytics accessToken={accessToken ?? ""} />
           </div>
         </section>
+
+        {/* Site traffic */}
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <TrafficAnalytics accessToken={accessToken ?? ""} />
+          </div>
+        </section>
+
 
         {/* Subscribers */}
         <section className="parchment-frame">

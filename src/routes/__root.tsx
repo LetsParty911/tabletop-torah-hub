@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPwa } from "@/pwa-register";
+import { trackPageView } from "@/lib/site-analytics";
 
 import { EmailCapturePopup } from "@/components/EmailCapturePopup";
 import { getSafePostLoginRedirect, POST_LOGIN_REDIRECT_KEY } from "@/lib/auth-redirect";
@@ -231,6 +232,17 @@ function PwaRegistrar() {
   return null;
 }
 
+// First-party pageview tracking. Fires on every client-side route change
+// (this is a SPA, so a load-only hook would undercount). Admin paths are
+// skipped inside trackPageView.
+function PageViewTracker() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  useEffect(() => {
+    trackPageView(pathname);
+  }, [pathname]);
+  return null;
+}
+
 function SiteNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
@@ -288,6 +300,7 @@ function RootComponent() {
     <>
       <AuthRedirectHandler />
       <GoogleAnalytics />
+      <PageViewTracker />
       <PwaRegistrar />
       <SiteNav />
       <Outlet />
