@@ -33,9 +33,6 @@ import {
   adminGetWeeklyEmailPreview,
   adminSendWeeklyEmail,
   adminListWeeklyEmailSends,
-  adminSendTestWelcomeEmail,
-  adminResetSubscriber,
-  adminResendPreflight,
   getLiveCurrentParsha,
   adminGenerateSummary,
   adminGeneratePublicationMeta,
@@ -2511,12 +2508,6 @@ function AdminPage() {
               subscribers={subscribers}
               onChanged={refresh}
             />
-
-            {/* Welcome email test tool */}
-            <div className="mt-6 rounded-md border border-border bg-background/60 p-3">
-              <div className="text-sm font-medium mb-2">Welcome email test</div>
-              <WelcomeEmailTester accessToken={accessToken} onResetDone={refresh} />
-            </div>
           </div>
         </section>
 
@@ -2610,137 +2601,6 @@ function AdminPage() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function WelcomeEmailTester({
-  accessToken,
-  onResetDone,
-}: {
-  accessToken: string | null;
-  onResetDone: () => void | Promise<void>;
-}) {
-  const [email, setEmail] = useState("");
-  const [busy, setBusy] = useState<"send" | "reset" | "preflight" | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-
-  const preflight = async () => {
-    if (!accessToken) return;
-    setBusy("preflight");
-    setStatus("Checking Resend config…");
-    try {
-      const r = (await adminResendPreflight({ data: { accessToken } })) as {
-        ok: boolean;
-        step: string;
-        message: string;
-        fromDisplay?: string;
-        fromDomain?: string;
-        status?: string | number;
-        verified?: boolean;
-        sandbox?: boolean;
-        missing?: string[];
-        availableDomains?: Array<{ name: string; status: string }>;
-        errorSnippet?: string;
-      };
-      const icon = r.ok ? "✓" : r.sandbox ? "⚠" : "✗";
-      const from = r.fromDisplay ? ` — From: ${r.fromDisplay}` : "";
-      const avail =
-        r.availableDomains && r.availableDomains.length > 0
-          ? ` Available on account: ${r.availableDomains
-              .map((d) => `${d.name} (${d.status})`)
-              .join(", ")}.`
-          : "";
-      setStatus(`${icon} ${r.message}${from}${avail}`);
-    } catch (e) {
-      setStatus(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const send = async () => {
-    if (!accessToken || !email.trim()) return;
-    setBusy("send");
-    setStatus(null);
-    try {
-      const r = await adminSendTestWelcomeEmail({
-        data: { accessToken, email: email.trim() },
-      });
-      const res = (r as { result?: unknown }).result as
-        | { attempted: boolean; ok?: boolean; status?: number; reason?: string; missing?: string[]; errorSnippet?: string }
-        | undefined;
-      if (!res) setStatus("Sent (no details).");
-      else if (!res.attempted)
-        setStatus(`Skipped — email not configured. Missing: ${(res.missing ?? []).join(", ")}`);
-      else if (res.ok) setStatus(`Sent ✓ (Resend status ${res.status})`);
-      else setStatus(`Failed (status ${res.status}): ${res.errorSnippet ?? ""}`);
-    } catch (e) {
-      setStatus(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const reset = async () => {
-    if (!accessToken || !email.trim()) return;
-    if (!confirm(`Delete subscriber row for ${email.trim()}? They can re-subscribe to re-test the welcome flow.`)) return;
-    setBusy("reset");
-    setStatus(null);
-    try {
-      const r = await adminResetSubscriber({
-        data: { accessToken, email: email.trim() },
-      });
-      setStatus(`Deleted ${(r as { deleted: number }).deleted} row(s). Now re-subscribe from the public site to test.`);
-      await onResetDone();
-    } catch (e) {
-      setStatus(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-2 items-center">
-        <input
-          type="email"
-          placeholder="email@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="flex-1 min-w-[200px] rounded border border-input bg-background px-2 py-1 text-sm"
-        />
-        <button
-          type="button"
-          onClick={send}
-          disabled={busy !== null || !email.trim()}
-          className="rounded bg-primary px-3 py-1 text-sm text-primary-foreground disabled:opacity-50"
-        >
-          {busy === "send" ? "Sending…" : "Send test welcome"}
-        </button>
-        <button
-          type="button"
-          onClick={reset}
-          disabled={busy !== null || !email.trim()}
-          className="rounded border border-destructive px-3 py-1 text-sm text-destructive disabled:opacity-50"
-        >
-          {busy === "reset" ? "Resetting…" : "Reset subscriber row"}
-        </button>
-        <button
-          type="button"
-          onClick={preflight}
-          disabled={busy !== null}
-          className="rounded border border-input px-3 py-1 text-sm disabled:opacity-50"
-        >
-          {busy === "preflight" ? "Checking…" : "Preflight Resend config"}
-        </button>
-      </div>
-      {status && <div className="text-xs text-muted-foreground whitespace-pre-wrap">{status}</div>}
-      <div className="text-xs text-muted-foreground">
-        "Preflight Resend config" verifies RESEND_API_KEY works and checks whether the domain in EMAIL_FROM_ADDRESS is verified in Resend — no email is sent.
-        "Send test welcome" calls the same welcome email path used by new subscriptions (without creating a row).
-        "Reset subscriber row" deletes that email from the subscribers table so the next signup is treated as brand-new.
-      </div>
     </div>
   );
 }
