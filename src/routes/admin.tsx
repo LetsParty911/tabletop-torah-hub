@@ -2512,6 +2512,14 @@ function AdminPage() {
           </div>
         </section>
 
+        {/* Site traffic */}
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <TrafficAnalytics accessToken={accessToken ?? ""} />
+          </div>
+        </section>
+
+
         {/* Subscribers */}
         <section className="parchment-frame">
           <div className="parchment-panel">
