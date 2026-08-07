@@ -763,8 +763,10 @@ function AdminPage() {
     const pub = canonicalPubs.find((p) => p.id === id);
     if (!pub) return;
     setTitle(pub.name);
-    if (pub.default_audience) setUploadAudience(pub.default_audience);
-    if (pub.default_format_type) setUploadFormatType(pub.default_format_type);
+    setUploadAudience(pub.default_audience ?? "");
+    setUploadFormatType(pub.default_format_type ?? "");
+    setUploadDescription((pub as { default_description?: string | null }).default_description ?? "");
+    setShowUploadDetails(false);
   };
 
   useEffect(() => {
