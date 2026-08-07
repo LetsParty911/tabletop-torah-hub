@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DownloadAnalytics } from "@/components/DownloadAnalytics";
-import { UnifiedDashboard } from "@/components/UnifiedDashboard";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -39,8 +38,6 @@ import {
   adminResendPreflight,
   getLiveCurrentParsha,
   adminGenerateSummary,
-  adminListPdfsMissingAudio,
-  adminGenerateAudio,
   adminGeneratePublicationMeta,
   adminListPdfsMissingDescription,
   adminUpdatePdfMeta,
@@ -438,68 +435,6 @@ function AdminPage() {
   };
 
 
-  // Bulk audio generation state
-  const [audioBulk, setAudioBulk] = useState<
-    | { status: "idle" }
-    | { status: "running"; current: number; total: number; currentTitle: string }
-    | {
-        status: "done";
-        total: number;
-        successes: number;
-        failures: Array<{ id: string; title: string; error: string }>;
-      }
-  >({ status: "idle" });
-
-  const handleGenerateAllAudio = async () => {
-    if (!accessToken) return;
-    if (audioBulk.status === "running") return;
-    let list: Array<{ id: string; title: string }> = [];
-    try {
-      const r = await adminListPdfsMissingAudio({ data: { accessToken } });
-      list = r.rows;
-    } catch (e) {
-      setAudioBulk({
-        status: "done",
-        total: 0,
-        successes: 0,
-        failures: [
-          {
-            id: "",
-            title: "(list)",
-            error: e instanceof Error ? e.message : "Failed to load list",
-          },
-        ],
-      });
-      return;
-    }
-    if (list.length === 0) {
-      setAudioBulk({ status: "done", total: 0, successes: 0, failures: [] });
-      return;
-    }
-    const failures: Array<{ id: string; title: string; error: string }> = [];
-    let successes = 0;
-    for (let i = 0; i < list.length; i++) {
-      const row = list[i];
-      setAudioBulk({
-        status: "running",
-        current: i + 1,
-        total: list.length,
-        currentTitle: row.title,
-      });
-      try {
-        const r = await adminGenerateAudio({ data: { accessToken, id: row.id } });
-        if (r.ok) successes++;
-        else failures.push({ id: row.id, title: row.title, error: r.error });
-      } catch (e) {
-        failures.push({
-          id: row.id,
-          title: row.title,
-          error: e instanceof Error ? e.message : "Request failed",
-        });
-      }
-    }
-    setAudioBulk({ status: "done", total: list.length, successes, failures });
-  };
 
   const accessToken = session?.access_token ?? null;
   // Admin checklist + upload form intentionally use the LIVE Hebcal parsha
@@ -2558,13 +2493,6 @@ function AdminPage() {
                 </>
               );
             })()}
-          </div>
-        </section>
-
-        {/* Unified analytics overview */}
-        <section className="parchment-frame">
-          <div className="parchment-panel">
-            <UnifiedDashboard accessToken={accessToken ?? ""} />
           </div>
         </section>
 

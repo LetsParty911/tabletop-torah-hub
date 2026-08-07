@@ -2670,72 +2670,6 @@ export const confirmUnsubscribe = createServerFn({ method: "POST" })
     return { ok: true, alreadyInactive: false, error: null };
   });
 
-// ---------- Admin: list PDFs missing summary audio ----------
-export const adminListPdfsMissingAudio = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string }) =>
-    z.object({ accessToken: z.string().min(10) }).parse(input),
-  )
-  .handler(async ({ data }) => {
-    await requireAdmin(data.accessToken);
-    const admin = getSupabaseAdmin();
-    const { data: rows, error } = await admin
-      .from("pdfs")
-      .select("id, title")
-      .is("summary_audio_path", null)
-      .not("summary_quick", "is", null)
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    return { rows: (rows ?? []) as Array<{ id: string; title: string }> };
-  });
-
-// ---------- Admin: generate summary audio for one row ----------
-export const adminGenerateAudio = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; id: string }) =>
-    z.object({ accessToken: z.string().min(10), id: z.string().uuid() }).parse(input),
-  )
-  .handler(async ({ data }) => {
-    await requireAdmin(data.accessToken);
-    const serviceKey =
-      process.env.EXT_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceKey) {
-      return { ok: false as const, id: data.id, error: "Missing EXT_SUPABASE_SERVICE_ROLE_KEY" };
-    }
-    const url = "https://kwdeyzumetmjcvtbqnzl.supabase.co/functions/v1/generate-audio";
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 180_000);
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          Authorization: `Bearer ${serviceKey}`,
-        },
-        body: JSON.stringify({ id: data.id }),
-        signal: controller.signal,
-      });
-      const text = await res.text();
-      let json: any = null;
-      try {
-        json = JSON.parse(text);
-      } catch {
-        return { ok: false as const, id: data.id, error: `Non-JSON response (${res.status}): ${text.slice(0, 300)}` };
-      }
-      if (!res.ok || json?.error) {
-        return { ok: false as const, id: data.id, error: json?.error ?? `Edge function error ${res.status}` };
-      }
-      return {
-        ok: true as const,
-        id: data.id,
-        summary_audio_path: (json?.summary_audio_path ?? json?.saved?.summary_audio_path ?? null) as string | null,
-      };
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "unknown error";
-      return { ok: false as const, id: data.id, error: msg };
-    } finally {
-      clearTimeout(timeout);
-    }
-  });
-
 // ---------- Admin: generate publication metadata (description/audience/type + page_count) ----------
 // Uses Lovable AI Gateway directly (no external edge function needed).
 export const adminGeneratePublicationMeta = createServerFn({ method: "POST" })
@@ -2997,21 +2931,4 @@ export const adminDownloadStats = createServerFn({ method: "POST" })
     }));
 
     return { days, total: events.length, byDay, byPdf, events: eventList };
-  });
-
-// ---------- GA4 summary (admin) ----------
-export const adminGa4Summary = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; startDate: string; endDate: string }) =>
-    z
-      .object({
-        accessToken: z.string().min(10),
-        startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data }) => {
-    await requireAdmin(data.accessToken);
-    const { getGa4Summary } = await import("@/lib/ga4.server");
-    return await getGa4Summary(data.startDate, data.endDate);
   });
