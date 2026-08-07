@@ -151,9 +151,9 @@ export default function AdminMiniDashboard({
               ? error
                 ? "Couldn't load your update."
                 : "Gathering the good news…"
-              : !data.anchorIso
+              : data.fallbackWindow || !data.lastSeenAt || !data.anchorIso
                 ? "In the last 7 days"
-                : `Since ${formatAnchor(data.anchorIso)}`}
+                : `Last visit ${formatShortTime(data.lastSeenAt)} · comparing since ${formatShortTime(data.anchorIso)}`}
           </p>
           {data && (data.visitorsSince ?? 0) > 0 && (
             <p className="mt-2 font-serif text-base text-foreground">
