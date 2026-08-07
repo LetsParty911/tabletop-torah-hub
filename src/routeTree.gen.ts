@@ -25,6 +25,7 @@ import { Route as ViewIdRouteImport } from './routes/view.$id'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as OgImageDotpngRouteImport } from './routes/og.image[.]png'
 import { Route as ApiTrackViewRouteImport } from './routes/api/track-view'
+import { Route as ApiTrackSearchRouteImport } from './routes/api/track-search'
 import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
 import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
@@ -109,6 +110,11 @@ const ApiTrackViewRoute = ApiTrackViewRouteImport.update({
   path: '/api/track-view',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTrackSearchRoute = ApiTrackSearchRouteImport.update({
+  id: '/api/track-search',
+  path: '/api/track-search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTrackDownloadRoute = ApiTrackDownloadRouteImport.update({
   id: '/api/track-download',
   path: '/api/track-download',
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
+  '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
   '/og/image.png': typeof OgImageDotpngRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
@@ -159,6 +166,7 @@ export interface FileRoutesByTo {
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
+  '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
   '/og/image.png': typeof OgImageDotpngRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
+  '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
   '/og/image.png': typeof OgImageDotpngRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
@@ -204,6 +213,7 @@ export interface FileRouteTypes {
     | '/short-vorts'
     | '/sitemap.xml'
     | '/api/track-download'
+    | '/api/track-search'
     | '/api/track-view'
     | '/og/image.png'
     | '/unsubscribe/$token'
@@ -225,6 +235,7 @@ export interface FileRouteTypes {
     | '/short-vorts'
     | '/sitemap.xml'
     | '/api/track-download'
+    | '/api/track-search'
     | '/api/track-view'
     | '/og/image.png'
     | '/unsubscribe/$token'
@@ -246,6 +257,7 @@ export interface FileRouteTypes {
     | '/short-vorts'
     | '/sitemap.xml'
     | '/api/track-download'
+    | '/api/track-search'
     | '/api/track-view'
     | '/og/image.png'
     | '/unsubscribe/$token'
@@ -268,6 +280,7 @@ export interface RootRouteChildren {
   ShortVortsRoute: typeof ShortVortsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiTrackDownloadRoute: typeof ApiTrackDownloadRoute
+  ApiTrackSearchRoute: typeof ApiTrackSearchRoute
   ApiTrackViewRoute: typeof ApiTrackViewRoute
   OgImageDotpngRoute: typeof OgImageDotpngRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
@@ -389,6 +402,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTrackViewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/track-search': {
+      id: '/api/track-search'
+      path: '/api/track-search'
+      fullPath: '/api/track-search'
+      preLoaderRoute: typeof ApiTrackSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/track-download': {
       id: '/api/track-download'
       path: '/api/track-download'
@@ -439,6 +459,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShortVortsRoute: ShortVortsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiTrackDownloadRoute: ApiTrackDownloadRoute,
+  ApiTrackSearchRoute: ApiTrackSearchRoute,
   ApiTrackViewRoute: ApiTrackViewRoute,
   OgImageDotpngRoute: OgImageDotpngRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
