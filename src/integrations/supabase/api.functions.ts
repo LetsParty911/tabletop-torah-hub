@@ -1420,8 +1420,20 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     if (data.description !== undefined && data.description !== null) insertRow.description = data.description;
     if (data.audience !== undefined && data.audience !== null) insertRow.audience = data.audience;
     if (data.formatType !== undefined && data.formatType !== null) insertRow.format_type = data.formatType;
-    if (data.pageCount !== undefined && data.pageCount !== null) insertRow.page_count = data.pageCount;
-    if (data.badge !== undefined && data.badge !== null) insertRow.badge = data.badge;
+    // Page count is always derived from the uploaded PDF itself.
+    let derivedPageCount: number | null = null;
+    try {
+      const { PDFDocument } = await import("pdf-lib");
+      const doc = await PDFDocument.load(new Uint8Array(buf), {
+        updateMetadata: false,
+        ignoreEncryption: true,
+      });
+      derivedPageCount = doc.getPageCount();
+    } catch {
+      derivedPageCount = null;
+    }
+    const finalPageCount = derivedPageCount ?? data.pageCount ?? null;
+    if (finalPageCount !== null) insertRow.page_count = finalPageCount;
     if (data.featuredSlot !== undefined && data.featuredSlot !== null)
       insertRow.featured_slot = data.featuredSlot;
 
