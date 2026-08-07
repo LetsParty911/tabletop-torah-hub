@@ -267,6 +267,7 @@ function AdminPage() {
     publisher: string | null;
     default_audience: string | null;
     default_format_type: string | null;
+    default_description?: string | null;
     sort_order: number;
     active: boolean;
   };
@@ -280,6 +281,8 @@ function AdminPage() {
   const [uploadFormatType, setUploadFormatType] = useState<string>("");
   const [uploadPageCount, setUploadPageCount] = useState<string>("");
   const [uploadBadge, setUploadBadge] = useState<string>("");
+  // Reveals the audience / format / description overrides beneath the publication picker.
+  const [showUploadDetails, setShowUploadDetails] = useState(false);
 
   // Inline metadata editor state (per row) — publication / title / subtitle
   const [editMetaTitle, setEditMetaTitle] = useState("");
