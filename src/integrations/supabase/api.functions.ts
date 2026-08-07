@@ -2919,3 +2919,226 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
       previousParshaDownloads,
     };
   });
+
+// ---------- Admin: first-party site traffic ----------
+type TrafficWindow = { parsha: string; start: string; end: string };
+
+/**
+ * Parsha weeks derived from the pdfs table — the same grouping the Download
+ * analytics section uses. Each parsha owns the time window that starts when
+ * its first PDF was uploaded and ends when the next parsha's window begins.
+ */
+function buildParshaWindows(
+  pdfRows: Array<{ parsha_key: string | null; created_at: string | null }>,
+): TrafficWindow[] {
+  const firstAt = new Map<string, string>();
+  const lastAt = new Map<string, string>();
+  for (const r of pdfRows) {
+    const parsha = r.parsha_key ?? "";
+    const at = r.created_at ?? "";
+    if (!parsha || !at) continue;
+    const f = firstAt.get(parsha);
+    if (!f || at < f) firstAt.set(parsha, at);
+    const l = lastAt.get(parsha);
+    if (!l || at > l) lastAt.set(parsha, at);
+  }
+  // Newest first, ordered by the latest upload in each week.
+  const ordered = Array.from(lastAt.entries())
+    .sort((a, b) => (a[1] < b[1] ? 1 : -1))
+    .map(([p]) => p);
+
+  const out: TrafficWindow[] = [];
+  for (let i = 0; i < ordered.length; i += 1) {
+    const parsha = ordered[i]!;
+    const start = firstAt.get(parsha)!;
+    const end = i === 0 ? new Date(Date.now() + 60_000).toISOString() : out[i - 1]!.start;
+    out.push({ parsha, start, end });
+  }
+  return out;
+}
+
+type PageViewRow = {
+  created_at: string;
+  path: string | null;
+  referrer_host: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  session_id: string | null;
+  visitor_id: string | null;
+  is_new_visitor: boolean | null;
+  device_type: string | null;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+};
+
+function inWindow(at: string, w: TrafficWindow | null): boolean {
+  return !!w && at >= w.start && at < w.end;
+}
+
+function summarizeViews(rows: PageViewRow[]) {
+  const sessions = new Set<string>();
+  const visitors = new Set<string>();
+  const returningVisitors = new Set<string>();
+  const sourceSessions = new Map<string, Set<string>>();
+  const pathCounts = new Map<string, number>();
+  const cityCounts = new Map<string, number>();
+  const deviceSessions = new Map<string, Set<string>>();
+
+  for (const r of rows) {
+    const sid = r.session_id ?? "";
+    const vid = r.visitor_id ?? "";
+    if (sid) sessions.add(sid);
+    if (vid) {
+      visitors.add(vid);
+      if (r.is_new_visitor !== true) returningVisitors.add(vid);
+    }
+
+    const source = r.utm_source?.trim() || r.referrer_host?.trim() || "Direct";
+    if (!sourceSessions.has(source)) sourceSessions.set(source, new Set());
+    if (sid) sourceSessions.get(source)!.add(sid);
+
+    const path = r.path || "/";
+    pathCounts.set(path, (pathCounts.get(path) ?? 0) + 1);
+
+    const cityParts = [r.city, r.region, r.country].filter(Boolean) as string[];
+    if (cityParts.length) {
+      const label = cityParts.join(", ");
+      cityCounts.set(label, (cityCounts.get(label) ?? 0) + 1);
+    }
+
+    const device = r.device_type || "unknown";
+    if (!deviceSessions.has(device)) deviceSessions.set(device, new Set());
+    if (sid) deviceSessions.get(device)!.add(sid);
+  }
+
+  const sortedCounts = (m: Map<string, number>, limit: number) =>
+    Array.from(m.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit);
+
+  return {
+    pageviews: rows.length,
+    visitors: sessions.size,
+    uniqueVisitors: visitors.size,
+    returningVisitors: returningVisitors.size,
+    sources: Array.from(sourceSessions.entries())
+      .map(([label, set]) => ({ label, count: set.size }))
+      .sort((a, b) => b.count - a.count),
+    topPages: sortedCounts(pathCounts, 10),
+    topCities: sortedCounts(cityCounts, 10),
+    devices: Array.from(deviceSessions.entries())
+      .map(([label, set]) => ({ label, count: set.size }))
+      .sort((a, b) => b.count - a.count),
+  };
+}
+
+export const adminSiteTraffic = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; parsha?: string | null }) =>
+    z
+      .object({ accessToken: z.string().min(10), parsha: z.string().nullable().optional() })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+
+    const pdfRes = await admin.from("pdfs").select("id, title, parsha_key, created_at");
+    const pdfRows = (pdfRes.data ?? []) as Array<{
+      id: string;
+      title: string | null;
+      parsha_key: string | null;
+      created_at: string | null;
+    }>;
+    const windows = buildParshaWindows(pdfRows);
+    const parshaToWindow = new Map(windows.map((w) => [w.parsha, w]));
+    const pdfParsha = new Map<string, string>();
+    for (const r of pdfRows) if (r.parsha_key) pdfParsha.set(r.id, r.parsha_key);
+
+    const selected = data.parsha && parshaToWindow.has(data.parsha) ? data.parsha : (windows[0]?.parsha ?? null);
+    const selectedIdx = selected ? windows.findIndex((w) => w.parsha === selected) : -1;
+    const previous = selectedIdx >= 0 ? (windows[selectedIdx + 1]?.parsha ?? null) : null;
+    const curWin = selected ? parshaToWindow.get(selected)! : null;
+    const prevWin = previous ? parshaToWindow.get(previous)! : null;
+
+    const earliest = prevWin?.start ?? curWin?.start ?? new Date().toISOString();
+
+    const viewsRes = await admin
+      .from("page_views")
+      .select(
+        "created_at, path, referrer_host, utm_source, utm_medium, utm_campaign, session_id, visitor_id, is_new_visitor, device_type, city, region, country",
+      )
+      .gte("created_at", earliest)
+      .order("created_at", { ascending: false })
+      .limit(50000);
+    const allViews = (viewsRes.data ?? []) as PageViewRow[];
+
+    const curViews = allViews.filter((r) => inWindow(r.created_at, curWin));
+    const prevViews = allViews.filter((r) => inWindow(r.created_at, prevWin));
+
+    const current = summarizeViews(curViews);
+    const prev = summarizeViews(prevViews);
+
+    // Downloads for the same parsha week — attributed by the PDF's parsha,
+    // exactly as the Download analytics section does.
+    const dlRes = await admin.from("download_events").select("publication_id").limit(50000);
+    let currentDownloads = 0;
+    let previousDownloads = 0;
+    for (const e of (dlRes.data ?? []) as Array<{ publication_id: string | null }>) {
+      const p = e.publication_id ? pdfParsha.get(e.publication_id) : undefined;
+      if (!p) continue;
+      if (selected && p === selected) currentDownloads += 1;
+      else if (previous && p === previous) previousDownloads += 1;
+    }
+
+    // New subscribers in the same time windows.
+    const subsRes = await admin
+      .from("subscribers")
+      .select("created_at")
+      .gte("created_at", earliest)
+      .limit(20000);
+    const subRows = (subsRes.data ?? []) as Array<{ created_at: string }>;
+    const currentSubscribers = subRows.filter((r) => inWindow(r.created_at, curWin)).length;
+    const previousSubscribers = subRows.filter((r) => inWindow(r.created_at, prevWin)).length;
+
+    // Searches in the selected week.
+    const searchRes = await admin
+      .from("search_events")
+      .select("query, result_count, created_at")
+      .gte("created_at", curWin?.start ?? earliest)
+      .order("created_at", { ascending: false })
+      .limit(2000);
+    const searchRows = ((searchRes.data ?? []) as Array<{
+      query: string;
+      result_count: number;
+      created_at: string;
+    }>).filter((r) => inWindow(r.created_at, curWin));
+    const searchMap = new Map<string, { query: string; count: number; results: number }>();
+    for (const r of searchRows) {
+      const key = r.query.toLowerCase();
+      const cur = searchMap.get(key);
+      if (cur) {
+        cur.count += 1;
+        cur.results = r.result_count;
+      } else {
+        searchMap.set(key, { query: r.query, count: 1, results: r.result_count ?? 0 });
+      }
+    }
+    const searches = Array.from(searchMap.values()).sort((a, b) => b.count - a.count);
+
+    return {
+      parshas: windows.map((w) => w.parsha),
+      selectedParsha: selected,
+      previousParsha: previous,
+      current,
+      previous_: prev,
+      currentDownloads,
+      previousDownloads,
+      currentSubscribers,
+      previousSubscribers,
+      searches,
+      rawRows: curViews.slice(0, 5000),
+    };
+  });
