@@ -3,6 +3,7 @@ import { FileText, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
+import { trackSearch } from "@/lib/site-analytics";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { BackToTop } from "@/components/BackToTop";
