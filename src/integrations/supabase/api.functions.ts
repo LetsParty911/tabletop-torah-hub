@@ -2934,6 +2934,7 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
     return {
       fallbackWindow,
       anchorIso: fallbackWindow ? null : sinceIso,
+      lastSeenAt: fallbackWindow ? null : lastSeen,
       newSubscriberCount: newSubscriberEmails.length,
       newSubscriberEmails: newSubscriberEmails.slice(0, 10),
       totalSubscribers: subCount.count ?? 0,
