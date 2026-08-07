@@ -2226,18 +2226,34 @@ function AdminPage() {
               const availableYears = Array.from(
                 new Set(pdfs.map((p) => p.jewish_year).filter((y): y is number => !!y)),
               ).sort((a, b) => b - a);
+              const thisWeekPdfs = pdfs.filter(
+                (p) =>
+                  checklistParshaComparableKey != null &&
+                  toParshaComparableKey(p.parsha_key) === checklistParshaComparableKey &&
+                  (jewishYear == null || p.jewish_year === jewishYear),
+              );
+              const basePdfs = showAllPdfs ? pdfs : thisWeekPdfs;
               const filteredPdfs =
-                yearFilter === "all"
-                  ? pdfs
-                  : pdfs.filter((p) => String(p.jewish_year ?? "") === yearFilter);
+                showAllPdfs && yearFilter !== "all"
+                  ? basePdfs.filter((p) => String(p.jewish_year ?? "") === yearFilter)
+                  : basePdfs;
               return (
                 <>
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="font-serif text-2xl font-semibold text-primary">
-                      All PDFs ({filteredPdfs.length}
-                      {yearFilter !== "all" ? ` of ${pdfs.length}` : ""})
-                    </h2>
-                    {availableYears.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h2 className="font-serif text-2xl font-semibold text-primary">
+                        {showAllPdfs ? "All PDFs" : "This Week's PDFs"} ({filteredPdfs.length}
+                        {showAllPdfs && yearFilter !== "all" ? ` of ${pdfs.length}` : ""})
+                      </h2>
+                      <button
+                        type="button"
+                        onClick={() => setShowAllPdfs((v) => !v)}
+                        className="rounded-full border-2 border-accent/60 px-3 py-1 text-xs font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        {showAllPdfs ? "Show this week only" : "Show all PDFs"}
+                      </button>
+                    </div>
+                    {showAllPdfs && availableYears.length > 0 && (
                       <label className="flex items-center gap-2 text-sm">
                         <span className="text-muted-foreground">Jewish Year:</span>
                         <select
@@ -2255,94 +2271,7 @@ function AdminPage() {
                       </label>
                     )}
                   </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-border/60 bg-muted/30 p-3">
-                    <button
-                      type="button"
-                      onClick={handleGenerateAllAudio}
-                      disabled={audioBulk.status === "running"}
-                      className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
-                    >
-                      🔊{" "}
-                      {audioBulk.status === "running"
-                        ? `Generating audio: ${audioBulk.current} of ${audioBulk.total}...`
-                        : "Generate All Audio"}
-                    </button>
-                    {audioBulk.status === "running" && (
-                      <span className="text-xs text-muted-foreground truncate max-w-[60ch]">
-                        {audioBulk.currentTitle}
-                      </span>
-                    )}
-                    {audioBulk.status === "done" && (
-                      <div className="text-sm">
-                        {audioBulk.total === 0 ? (
-                          <span className="text-muted-foreground">
-                            No PDFs need audio generation.
-                          </span>
-                        ) : (
-                          <div className="space-y-1">
-                            <div>
-                              Done: <strong>{audioBulk.successes}</strong> succeeded,{" "}
-                              <strong>{audioBulk.failures.length}</strong> failed (of{" "}
-                              {audioBulk.total}).
-                            </div>
-                            {audioBulk.failures.length > 0 && (
-                              <ul className="list-disc pl-5 text-xs text-destructive space-y-0.5">
-                                {audioBulk.failures.map((f, i) => (
-                                  <li key={`${f.id}-${i}`}>
-                                    <span className="font-medium">{f.title}:</span> {f.error}
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-border/60 bg-muted/30 p-3">
-                    <button
-                      type="button"
-                      onClick={handleGenerateAllDescriptions}
-                      disabled={descBulk.status === "running"}
-                      className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
-                    >
-                      📝{" "}
-                      {descBulk.status === "running"
-                        ? `Generating descriptions: ${descBulk.current} of ${descBulk.total}...`
-                        : "Generate All Descriptions"}
-                    </button>
-                    {descBulk.status === "running" && (
-                      <span className="text-xs text-muted-foreground truncate max-w-[60ch]">
-                        {descBulk.currentTitle}
-                      </span>
-                    )}
-                    {descBulk.status === "done" && (
-                      <div className="text-sm">
-                        {descBulk.total === 0 ? (
-                          <span className="text-muted-foreground">
-                            All PDFs already have descriptions.
-                          </span>
-                        ) : (
-                          <div className="space-y-1">
-                            <div>
-                              Done: <strong>{descBulk.successes}</strong> succeeded,{" "}
-                              <strong>{descBulk.failures.length}</strong> failed (of{" "}
-                              {descBulk.total}).
-                            </div>
-                            {descBulk.failures.length > 0 && (
-                              <ul className="list-disc pl-5 text-xs text-destructive space-y-0.5">
-                                {descBulk.failures.map((f, i) => (
-                                  <li key={`${f.id}-${i}`}>
-                                    <span className="font-medium">{f.title}:</span> {f.error}
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+
 
                   <div className="mt-4 overflow-x-auto">
                     <table className="w-full text-sm">
