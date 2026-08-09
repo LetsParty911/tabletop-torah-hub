@@ -10,6 +10,17 @@ const SIGNED_URL_TTL_SECONDS = 60 * 60; // 1 hour signed URL
 const CACHE_SAFETY_MS = 5 * 60 * 1000; // refresh 5 min before expiry
 const cache = new Map<string, CacheEntry>();
 
+// File-delivery endpoint must never be indexed, redirect or not.
+const NOINDEX_HEADERS = { "X-Robots-Tag": "noindex" } as const;
+
+function redirectNoIndex(url: string): Response {
+  return new Response(null, {
+    status: 302,
+    headers: { Location: url, ...NOINDEX_HEADERS },
+  });
+}
+
+
 export const Route = createFileRoute("/view/$id/download")({
   server: {
     handlers: {
@@ -22,8 +33,9 @@ export const Route = createFileRoute("/view/$id/download")({
         const now = Date.now();
         const cached = cache.get(id);
         if (cached && cached.expiresAt - CACHE_SAFETY_MS > now) {
-          return Response.redirect(cached.url, 302);
+          return redirectNoIndex(cached.url);
         }
+
 
         const admin = getSupabaseAdmin();
         const { data: row, error } = await admin
