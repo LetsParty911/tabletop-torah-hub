@@ -230,9 +230,11 @@ function ViewPdf() {
                 Can't read the embedded viewer?{" "}
                 <a
                   href={`/view/${pdf.id}/download`}
+                  rel="nofollow"
                   download
                   className="font-medium text-accent underline hover:text-primary transition-colors duration-150"
                 >
+
                   Download the PDF file for {pdf.title}
                 </a>
               </p>
@@ -250,7 +252,9 @@ function ViewPdf() {
               {pdf.thumb_url && !thumbFailed ? (
                 <a
                   href={`/view/${pdf.id}/download`}
+                  rel="nofollow"
                   download
+
                   onClick={() =>
                     trackEvent("pdf_download", {
                       file_id: pdf.id,

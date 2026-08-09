@@ -226,8 +226,10 @@ export function DownloadToPrintButton({
   return (
     <a
       href={href}
+      rel="nofollow"
       download={preferredFilename ?? ""}
       onClick={handleClick}
+
       aria-disabled={loading}
       aria-busy={loading}
       tabIndex={loading ? -1 : 0}
