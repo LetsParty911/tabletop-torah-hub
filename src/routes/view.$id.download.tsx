@@ -27,8 +27,9 @@ export const Route = createFileRoute("/view/$id/download")({
       GET: async ({ params }) => {
         const id = params.id;
         if (!/^[0-9a-f-]{36}$/i.test(id)) {
-          return new Response("Bad request", { status: 400 });
+          return new Response("Bad request", { status: 400, headers: NOINDEX_HEADERS });
         }
+
 
         const now = Date.now();
         const cached = cache.get(id);
@@ -44,8 +45,9 @@ export const Route = createFileRoute("/view/$id/download")({
           .eq("id", id)
           .maybeSingle();
         if (error || !row || !row.published) {
-          return new Response("Not found", { status: 404 });
+          return new Response("Not found", { status: 404, headers: NOINDEX_HEADERS });
         }
+
 
         const safeName = buildDownloadFilename(
           row.parsha_key,
@@ -59,8 +61,9 @@ export const Route = createFileRoute("/view/$id/download")({
           });
 
         if (sErr || !signed?.signedUrl) {
-          return new Response("Download failed", { status: 500 });
+          return new Response("Download failed", { status: 500, headers: NOINDEX_HEADERS });
         }
+
 
         cache.set(id, {
           url: signed.signedUrl,
@@ -68,7 +71,7 @@ export const Route = createFileRoute("/view/$id/download")({
           expiresAt: now + SIGNED_URL_TTL_SECONDS * 1000,
         });
 
-        return Response.redirect(signed.signedUrl, 302);
+        return redirectNoIndex(signed.signedUrl);
       },
     },
   },
