@@ -96,8 +96,9 @@ ${urls
     const lastmodTag = u.lastmod
       ? `\n    <lastmod>${u.lastmod}</lastmod>`
       : "";
-    return `  <url>\n    <loc>${escapeXml(u.loc)}</loc>${lastmodTag}\n  </url>`;
+    return `  <url>\n    <loc>${escapeXml(u.loc)}</loc>${lastmodTag}\n    <changefreq>weekly</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`;
   })
+
   .join("\n")}
 </urlset>
 `;
