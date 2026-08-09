@@ -81,7 +81,9 @@ export const Route = createFileRoute("/sitemap.xml")({
             urls.push({
               loc: `${SITE_URL}/view/${row.id}`,
               lastmod: best,
+              priority: "0.6",
             });
+
           }
         } catch (e) {
           console.error("sitemap pdfs unexpected error", e);
