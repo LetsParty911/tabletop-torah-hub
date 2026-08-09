@@ -10,20 +10,33 @@ const SIGNED_URL_TTL_SECONDS = 60 * 60; // 1 hour signed URL
 const CACHE_SAFETY_MS = 5 * 60 * 1000; // refresh 5 min before expiry
 const cache = new Map<string, CacheEntry>();
 
+// File-delivery endpoint must never be indexed, redirect or not.
+const NOINDEX_HEADERS = { "X-Robots-Tag": "noindex" } as const;
+
+function redirectNoIndex(url: string): Response {
+  return new Response(null, {
+    status: 302,
+    headers: { Location: url, ...NOINDEX_HEADERS },
+  });
+}
+
+
 export const Route = createFileRoute("/view/$id/download")({
   server: {
     handlers: {
       GET: async ({ params }) => {
         const id = params.id;
         if (!/^[0-9a-f-]{36}$/i.test(id)) {
-          return new Response("Bad request", { status: 400 });
+          return new Response("Bad request", { status: 400, headers: NOINDEX_HEADERS });
         }
+
 
         const now = Date.now();
         const cached = cache.get(id);
         if (cached && cached.expiresAt - CACHE_SAFETY_MS > now) {
-          return Response.redirect(cached.url, 302);
+          return redirectNoIndex(cached.url);
         }
+
 
         const admin = getSupabaseAdmin();
         const { data: row, error } = await admin
@@ -32,8 +45,9 @@ export const Route = createFileRoute("/view/$id/download")({
           .eq("id", id)
           .maybeSingle();
         if (error || !row || !row.published) {
-          return new Response("Not found", { status: 404 });
+          return new Response("Not found", { status: 404, headers: NOINDEX_HEADERS });
         }
+
 
         const safeName = buildDownloadFilename(
           row.parsha_key,
@@ -47,8 +61,9 @@ export const Route = createFileRoute("/view/$id/download")({
           });
 
         if (sErr || !signed?.signedUrl) {
-          return new Response("Download failed", { status: 500 });
+          return new Response("Download failed", { status: 500, headers: NOINDEX_HEADERS });
         }
+
 
         cache.set(id, {
           url: signed.signedUrl,
@@ -56,7 +71,7 @@ export const Route = createFileRoute("/view/$id/download")({
           expiresAt: now + SIGNED_URL_TTL_SECONDS * 1000,
         });
 
-        return Response.redirect(signed.signedUrl, 302);
+        return redirectNoIndex(signed.signedUrl);
       },
     },
   },

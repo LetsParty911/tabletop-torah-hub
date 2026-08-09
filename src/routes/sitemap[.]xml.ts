@@ -25,16 +25,17 @@ export const Route = createFileRoute("/sitemap.xml")({
       GET: async () => {
         // No <lastmod> for static pages: there is no page-specific timestamp
         // to derive it from, and a generation-time date would be misleading.
-        const urls: Array<{ loc: string; lastmod: string | null }> = [
-          { loc: `${SITE_URL}/`, lastmod: null },
-          { loc: `${SITE_URL}/archive`, lastmod: null },
-          { loc: `${SITE_URL}/short-vorts`, lastmod: null },
-          { loc: `${SITE_URL}/about`, lastmod: null },
-          { loc: `${SITE_URL}/mission`, lastmod: null },
-
-          { loc: `${SITE_URL}/contact`, lastmod: null },
-          { loc: `${SITE_URL}/privacy`, lastmod: null },
+        // Admin, offline, api, and /view/<id>/download are intentionally excluded.
+        const urls: Array<{ loc: string; lastmod: string | null; priority: string }> = [
+          { loc: `${SITE_URL}/`, lastmod: null, priority: "1.0" },
+          { loc: `${SITE_URL}/archive`, lastmod: null, priority: "0.8" },
+          { loc: `${SITE_URL}/short-vorts`, lastmod: null, priority: "0.5" },
+          { loc: `${SITE_URL}/about`, lastmod: null, priority: "0.5" },
+          { loc: `${SITE_URL}/mission`, lastmod: null, priority: "0.5" },
+          { loc: `${SITE_URL}/contact`, lastmod: null, priority: "0.5" },
+          { loc: `${SITE_URL}/privacy`, lastmod: null, priority: "0.5" },
         ];
+
 
         try {
           const admin = getSupabaseAdmin();
@@ -80,7 +81,9 @@ export const Route = createFileRoute("/sitemap.xml")({
             urls.push({
               loc: `${SITE_URL}/view/${row.id}`,
               lastmod: best,
+              priority: "0.6",
             });
+
           }
         } catch (e) {
           console.error("sitemap pdfs unexpected error", e);
@@ -93,8 +96,9 @@ ${urls
     const lastmodTag = u.lastmod
       ? `\n    <lastmod>${u.lastmod}</lastmod>`
       : "";
-    return `  <url>\n    <loc>${escapeXml(u.loc)}</loc>${lastmodTag}\n  </url>`;
+    return `  <url>\n    <loc>${escapeXml(u.loc)}</loc>${lastmodTag}\n    <changefreq>weekly</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`;
   })
+
   .join("\n")}
 </urlset>
 `;
@@ -103,7 +107,7 @@ ${urls
           status: 200,
           headers: {
             "Content-Type": "application/xml; charset=utf-8",
-            "Cache-Control": "public, max-age=3600",
+            "Cache-Control": "public, max-age=0, s-maxage=3600",
           },
         });
       },

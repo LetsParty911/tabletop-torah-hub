@@ -509,8 +509,15 @@ function ArchivePage() {
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-start justify-between gap-2">
                                     <h4 className="font-serif text-base sm:text-lg font-bold text-primary line-clamp-2 leading-snug">
-                                      {r.title}
+                                      <Link
+                                        to="/view/$id"
+                                        params={{ id: r.id }}
+                                        className="hover:text-accent hover:underline transition-colors duration-150"
+                                      >
+                                        {r.title}
+                                      </Link>
                                     </h4>
+
                                     {r.badge && (
                                       <span className="shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
                                         {r.badge}
