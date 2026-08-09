@@ -25,16 +25,17 @@ export const Route = createFileRoute("/sitemap.xml")({
       GET: async () => {
         // No <lastmod> for static pages: there is no page-specific timestamp
         // to derive it from, and a generation-time date would be misleading.
-        const urls: Array<{ loc: string; lastmod: string | null }> = [
-          { loc: `${SITE_URL}/`, lastmod: null },
-          { loc: `${SITE_URL}/archive`, lastmod: null },
-          { loc: `${SITE_URL}/short-vorts`, lastmod: null },
-          { loc: `${SITE_URL}/about`, lastmod: null },
-          { loc: `${SITE_URL}/mission`, lastmod: null },
-
-          { loc: `${SITE_URL}/contact`, lastmod: null },
-          { loc: `${SITE_URL}/privacy`, lastmod: null },
+        // Admin, offline, api, and /view/<id>/download are intentionally excluded.
+        const urls: Array<{ loc: string; lastmod: string | null; priority: string }> = [
+          { loc: `${SITE_URL}/`, lastmod: null, priority: "1.0" },
+          { loc: `${SITE_URL}/archive`, lastmod: null, priority: "0.8" },
+          { loc: `${SITE_URL}/short-vorts`, lastmod: null, priority: "0.5" },
+          { loc: `${SITE_URL}/about`, lastmod: null, priority: "0.5" },
+          { loc: `${SITE_URL}/mission`, lastmod: null, priority: "0.5" },
+          { loc: `${SITE_URL}/contact`, lastmod: null, priority: "0.5" },
+          { loc: `${SITE_URL}/privacy`, lastmod: null, priority: "0.5" },
         ];
+
 
         try {
           const admin = getSupabaseAdmin();
