@@ -80,6 +80,26 @@ function getFonts() {
 type Node = { type: string; props: Record<string, unknown> };
 const el = (type: string, props: Record<string, unknown>): Node => ({ type, props });
 
+let watermarkPromise: Promise<string | null> | null = null;
+
+/** Circular brand icon, inlined as a data URI so satori can draw it. */
+function getWatermark(request: Request) {
+  if (!watermarkPromise) {
+    watermarkPromise = (async () => {
+      const res = await fetch(new URL("/og-icon.png", request.url).toString());
+      if (!res.ok) return null;
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      let binary = "";
+      for (const b of bytes) binary += String.fromCharCode(b);
+      return `data:image/png;base64,${btoa(binary)}`;
+    })().catch(() => {
+      watermarkPromise = null;
+      return null;
+    });
+  }
+  return watermarkPromise;
+}
+
 /** Trim to a word boundary so long publication titles never overflow. */
 function clampText(value: string, max: number) {
   if (value.length <= max) return value;
@@ -88,7 +108,12 @@ function clampText(value: string, max: number) {
   return `${(space > max * 0.6 ? cut.slice(0, space) : cut).trimEnd()}…`;
 }
 
-function buildTree(parshaLabel: string, count: number, pubTitle: string | null): Node {
+function buildTree(
+  parshaLabel: string,
+  count: number,
+  pubTitle: string | null,
+  watermark: string | null,
+): Node {
   // Publication cards lead with the title; the weekly card leads with the parsha.
   const headline = pubTitle
     ? clampText(pubTitle, 62)
@@ -103,13 +128,15 @@ function buildTree(parshaLabel: string, count: number, pubTitle: string | null):
   return el("div", {
     style: {
       display: "flex",
+      position: "relative",
       width: "100%",
       height: "100%",
       padding: 56,
       backgroundColor: CREAM,
       fontFamily: "Playfair Display",
     },
-    children: el("div", {
+    children: [
+      el("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -123,6 +150,7 @@ function buildTree(parshaLabel: string, count: number, pubTitle: string | null):
         backgroundColor: CREAM,
       },
       children: [
+
         el("div", {
           style: {
             fontSize: 30,
@@ -168,7 +196,18 @@ function buildTree(parshaLabel: string, count: number, pubTitle: string | null):
           children: "TorahForTheTable.com",
         }),
       ],
-    }),
+      }),
+      ...(watermark
+        ? [
+            el("img", {
+              src: watermark,
+              width: 104,
+              height: 104,
+              style: { position: "absolute", right: 84, bottom: 84 },
+            }),
+          ]
+        : []),
+    ],
   });
 }
 
@@ -215,9 +254,13 @@ export const Route = createFileRoute("/og/image.png")({
         }
 
         try {
-          const [{ satori, Resvg }, fonts] = await Promise.all([getRenderer(), getFonts()]);
+          const [{ satori, Resvg }, fonts, watermark] = await Promise.all([
+            getRenderer(),
+            getFonts(),
+            getWatermark(request),
+          ]);
 
-          const svg = await satori(buildTree(parshaLabel, count, pubTitle) as never, {
+          const svg = await satori(buildTree(parshaLabel, count, pubTitle, watermark) as never, {
             width: WIDTH,
             height: HEIGHT,
             fonts: [
