@@ -2121,16 +2121,26 @@ function AdminPage() {
                   required
                   type="file"
                   accept="application/pdf"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0] ?? null;
-                    setFile(f);
-                    if (f && !title.trim()) {
-                      const cleaned = f.name
+                  onChange={async (e) => {
+                    const picked = e.target.files?.[0] ?? null;
+                    if (!picked) {
+                      setFile(null);
+                      return;
+                    }
+                    if (!title.trim()) {
+                      const cleaned = picked.name
                         .replace(/\.pdf$/i, "")
                         .replace(/_/g, " ")
                         .replace(/\s+/g, " ")
                         .trim();
                       setTitle(cleaned);
+                    }
+                    try {
+                      setFile(await snapshotPickedFile(picked));
+                      setMsg(null);
+                    } catch {
+                      setFile(null);
+                      setMsg({ kind: "error", text: FILE_READ_HINT });
                     }
                   }}
                   className="mt-1 w-full"
