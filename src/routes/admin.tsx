@@ -50,6 +50,19 @@ import {
 import { getCurrentJewishYear } from "@/lib/jewish-year";
 import { CheckCircle2, Circle, MinusCircle, Eye, Download, Loader2, AlertCircle } from "lucide-react";
 
+// Mobile browsers (esp. Android Chrome) invalidate the picked file handle after a
+// short time or when the source app releases it, which makes a later
+// file.arrayBuffer() throw NotReadableError. Copy the bytes into memory as soon as
+// the file is chosen so the upload never depends on the original handle.
+async function snapshotPickedFile(f: File): Promise<File> {
+  const buf = await f.arrayBuffer();
+  return new File([buf], f.name, { type: f.type || "application/pdf" });
+}
+
+const FILE_READ_HINT =
+  "Could not read the selected file. Please tap Choose File and pick the PDF again (saving it to your device first helps on phones).";
+
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
   head: () => ({ meta: [{ title: "Admin — Torah for the Table" }] }),
@@ -955,7 +968,13 @@ function AdminPage() {
       await refresh();
     } catch (err) {
       const detail = err instanceof Error ? err.message : "Unknown error";
-      setMsg({ kind: "error", text: `Upload failed: ${detail}` });
+      const unreadable =
+        err instanceof DOMException ||
+        /could not be read|NotReadable|permission problems/i.test(detail);
+      setMsg({
+        kind: "error",
+        text: unreadable ? FILE_READ_HINT : `Upload failed: ${detail}`,
+      });
     } finally {
       setBusy(false);
     }
@@ -2108,16 +2127,26 @@ function AdminPage() {
                   required
                   type="file"
                   accept="application/pdf"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0] ?? null;
-                    setFile(f);
-                    if (f && !title.trim()) {
-                      const cleaned = f.name
+                  onChange={async (e) => {
+                    const picked = e.target.files?.[0] ?? null;
+                    if (!picked) {
+                      setFile(null);
+                      return;
+                    }
+                    if (!title.trim()) {
+                      const cleaned = picked.name
                         .replace(/\.pdf$/i, "")
                         .replace(/_/g, " ")
                         .replace(/\s+/g, " ")
                         .trim();
                       setTitle(cleaned);
+                    }
+                    try {
+                      setFile(await snapshotPickedFile(picked));
+                      setMsg(null);
+                    } catch {
+                      setFile(null);
+                      setMsg({ kind: "error", text: FILE_READ_HINT });
                     }
                   }}
                   className="mt-1 w-full"
@@ -2327,9 +2356,19 @@ function AdminPage() {
                                     <input
                                       type="file"
                                       accept="application/pdf"
-                                      onChange={(e) =>
-                                        setReplaceFile(e.target.files?.[0] ?? null)
-                                      }
+                                      onChange={async (e) => {
+                                        const picked = e.target.files?.[0] ?? null;
+                                        if (!picked) {
+                                          setReplaceFile(null);
+                                          return;
+                                        }
+                                        try {
+                                          setReplaceFile(await snapshotPickedFile(picked));
+                                        } catch {
+                                          setReplaceFile(null);
+                                          setMsg({ kind: "error", text: FILE_READ_HINT });
+                                        }
+                                      }}
                                       className="mt-2 block w-full text-sm"
                                     />
                                     {replaceFile && (
