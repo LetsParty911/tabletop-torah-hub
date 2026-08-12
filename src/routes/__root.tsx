@@ -7,6 +7,7 @@ import { registerPwa } from "@/pwa-register";
 import { trackPageView } from "@/lib/site-analytics";
 
 import { EmailCapturePopup } from "@/components/EmailCapturePopup";
+import { SiteLogoHorizontal } from "@/components/SiteLogo";
 import { getSafePostLoginRedirect, POST_LOGIN_REDIRECT_KEY } from "@/lib/auth-redirect";
 
 // GTM is now the sole analytics path. GA4 is loaded via GTM (container GTM-WMVV6CJ7).
@@ -174,8 +175,9 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", type: "image/png", href: "/favicon.png" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png" },
+      { rel: "icon", type: "image/png", sizes: "64x64", href: "/favicon.png" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
@@ -252,8 +254,6 @@ function SiteNav() {
     "font-serif whitespace-nowrap text-[11px] sm:text-base text-primary/80 hover:text-primary hover:underline transition-colors duration-150";
   const activeCls = "text-primary font-semibold";
 
-  // Flip to false to render the whole wordmark in navy instead of gilding "Table".
-  const goldTable = true;
 
   return (
     <nav
@@ -261,13 +261,8 @@ function SiteNav() {
       className="sticky top-0 z-40 border-b border-accent/30 bg-background/90 backdrop-blur-sm"
     >
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
-        <Link
-          to="/"
-          aria-label="Torah for the Table — home"
-          className="shrink-0 font-serif text-[0.8rem] xs:text-sm sm:text-lg font-semibold tracking-[-0.015em] text-primary whitespace-nowrap leading-none"
-        >
-          Torah for the{" "}
-          <span className={goldTable ? "text-accent" : undefined}>Table</span>
+        <Link to="/" aria-label="Torah for the Table — home" className="shrink-0">
+          <SiteLogoHorizontal />
         </Link>
         <div className="flex min-w-0 items-center gap-2.5 sm:gap-6 overflow-x-auto">
 
