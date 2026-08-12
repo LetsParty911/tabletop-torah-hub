@@ -2255,7 +2255,32 @@ function AdminPage() {
                         </select>
                       </label>
                     )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleGenerateAllDescriptions}
+                        disabled={descBulk.status === "running"}
+                        className="rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-50"
+                      >
+                        {descBulk.status === "running"
+                          ? `Summarizing ${descBulk.current}/${descBulk.total}…`
+                          : "Summarize & categorize missing"}
+                      </button>
+                      {descBulk.status === "running" && (
+                        <span className="text-xs text-muted-foreground truncate max-w-[16rem]">
+                          {descBulk.currentTitle}
+                        </span>
+                      )}
+                      {descBulk.status === "done" && (
+                        <span className="text-xs text-muted-foreground">
+                          {descBulk.total === 0
+                            ? "Nothing missing — all set."
+                            : `Done: ${descBulk.successes}/${descBulk.total} updated${descBulk.failures.length ? `, ${descBulk.failures.length} failed` : ""}.`}
+                        </span>
+                      )}
+                    </div>
                   </div>
+
 
 
                   <div className="mt-4 overflow-x-auto">
@@ -2314,7 +2339,14 @@ function AdminPage() {
                                 >
                                   {editingPdfId === p.id ? "Close" : "Edit / Replace"}
                                 </button>
-                                {/* Summary generation temporarily discontinued */}
+                                <button
+                                  onClick={() => handleGenerateSummary(p)}
+                                  disabled={generatingSummaryId !== null}
+                                  className="inline-flex items-center gap-1 rounded-full border-2 border-accent px-2.5 py-1 text-xs font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50"
+                                  title="Generate summary, content type, description & page count"
+                                >
+                                  {generatingSummaryId === p.id ? "Working…" : "Summarize"}
+                                </button>
                                 <button
                                   onClick={() => handleDelete(p.id)}
                                   className="inline-flex items-center gap-1 rounded-full border border-destructive/70 px-2.5 py-1 text-xs font-medium text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
