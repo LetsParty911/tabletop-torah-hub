@@ -50,6 +50,19 @@ import {
 import { getCurrentJewishYear } from "@/lib/jewish-year";
 import { CheckCircle2, Circle, MinusCircle, Eye, Download, Loader2, AlertCircle } from "lucide-react";
 
+// Mobile browsers (esp. Android Chrome) invalidate the picked file handle after a
+// short time or when the source app releases it, which makes a later
+// file.arrayBuffer() throw NotReadableError. Copy the bytes into memory as soon as
+// the file is chosen so the upload never depends on the original handle.
+async function snapshotPickedFile(f: File): Promise<File> {
+  const buf = await f.arrayBuffer();
+  return new File([buf], f.name, { type: f.type || "application/pdf" });
+}
+
+const FILE_READ_HINT =
+  "Could not read the selected file. Please tap Choose File and pick the PDF again (saving it to your device first helps on phones).";
+
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
   head: () => ({ meta: [{ title: "Admin — Torah for the Table" }] }),
