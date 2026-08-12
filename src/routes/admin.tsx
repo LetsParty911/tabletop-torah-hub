@@ -2255,7 +2255,32 @@ function AdminPage() {
                         </select>
                       </label>
                     )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleGenerateAllDescriptions}
+                        disabled={descBulk.status === "running"}
+                        className="rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-50"
+                      >
+                        {descBulk.status === "running"
+                          ? `Summarizing ${descBulk.current}/${descBulk.total}…`
+                          : "Summarize & categorize missing"}
+                      </button>
+                      {descBulk.status === "running" && (
+                        <span className="text-xs text-muted-foreground truncate max-w-[16rem]">
+                          {descBulk.currentTitle}
+                        </span>
+                      )}
+                      {descBulk.status === "done" && (
+                        <span className="text-xs text-muted-foreground">
+                          {descBulk.total === 0
+                            ? "Nothing missing — all set."
+                            : `Done: ${descBulk.successes}/${descBulk.total} updated${descBulk.failures.length ? `, ${descBulk.failures.length} failed` : ""}.`}
+                        </span>
+                      )}
+                    </div>
                   </div>
+
 
 
                   <div className="mt-4 overflow-x-auto">
