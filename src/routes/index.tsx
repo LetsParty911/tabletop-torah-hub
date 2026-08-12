@@ -229,18 +229,10 @@ function Index() {
   const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long">("All");
   const [contentTypeFilter, setContentTypeFilter] = useState<string>("All");
 
-  const audienceRank = (r: (typeof resources)[number]) => {
-    const a = normalizeAudience(r.audience, r.title);
-    return a === "Children" ? 0 : a === "Families" ? 1 : a === "Adults" ? 2 : 3;
-  };
+  // Display order comes from the admin checklist sort order (lower number first),
+  // which the server already applies when building `resources`.
+  const sortedResources = resources;
 
-  const sortedResources = [...resources].sort((a, b) => {
-    const rank = audienceRank(a) - audienceRank(b);
-    if (rank !== 0) return rank;
-    const pa = typeof a.page_count === "number" ? a.page_count : Number.POSITIVE_INFINITY;
-    const pb = typeof b.page_count === "number" ? b.page_count : Number.POSITIVE_INFINITY;
-    return pa - pb;
-  });
 
   // Each filter is independent so every row's counts can respect the others.
   const matchesAudience = (r: Resource, value = audienceFilter) =>
