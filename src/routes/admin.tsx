@@ -2350,9 +2350,19 @@ function AdminPage() {
                                     <input
                                       type="file"
                                       accept="application/pdf"
-                                      onChange={(e) =>
-                                        setReplaceFile(e.target.files?.[0] ?? null)
-                                      }
+                                      onChange={async (e) => {
+                                        const picked = e.target.files?.[0] ?? null;
+                                        if (!picked) {
+                                          setReplaceFile(null);
+                                          return;
+                                        }
+                                        try {
+                                          setReplaceFile(await snapshotPickedFile(picked));
+                                        } catch {
+                                          setReplaceFile(null);
+                                          setMsg({ kind: "error", text: FILE_READ_HINT });
+                                        }
+                                      }}
                                       className="mt-2 block w-full text-sm"
                                     />
                                     {replaceFile && (
