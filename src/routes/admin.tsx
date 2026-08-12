@@ -968,7 +968,13 @@ function AdminPage() {
       await refresh();
     } catch (err) {
       const detail = err instanceof Error ? err.message : "Unknown error";
-      setMsg({ kind: "error", text: `Upload failed: ${detail}` });
+      const unreadable =
+        err instanceof DOMException ||
+        /could not be read|NotReadable|permission problems/i.test(detail);
+      setMsg({
+        kind: "error",
+        text: unreadable ? FILE_READ_HINT : `Upload failed: ${detail}`,
+      });
     } finally {
       setBusy(false);
     }
