@@ -28,9 +28,12 @@ export const Route = createFileRoute("/view/$id/download")({
           return new Response("Bad request", { status: 400, headers: NOINDEX });
         }
 
-        const now = Date.now();
+        const t0 = Date.now();
+        const now = t0;
+        let cacheHit = true;
         let entry = rowCache.get(id);
         if (!entry || entry.expiresAt <= now) {
+          cacheHit = false;
           const admin = getSupabaseAdmin();
           const { data: row, error } = await admin
             .from("pdfs")
@@ -75,6 +78,7 @@ export const Route = createFileRoute("/view/$id/download")({
           .map(encodeURIComponent)
           .join("/")}`;
 
+        const tDb = Date.now();
         const upstream = await fetch(objectUrl, {
           headers: { apikey: key, Authorization: `Bearer ${key}` },
         });
@@ -82,7 +86,12 @@ export const Route = createFileRoute("/view/$id/download")({
           return new Response("Download failed", { status: 502, headers: NOINDEX });
         }
 
+        const tUp = Date.now();
         const headers = new Headers(NOINDEX);
+        headers.set(
+          "Server-Timing",
+          `row;desc="${cacheHit ? "cache" : "db"}";dur=${tDb - t0}, storage;dur=${tUp - tDb}, worker;dur=${tUp - t0}`,
+        );
         headers.set("Content-Type", "application/pdf");
         headers.set("Content-Disposition", quoteFilename(entry.filename));
         headers.set("Cache-Control", CACHE_CONTROL);
