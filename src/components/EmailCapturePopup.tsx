@@ -235,8 +235,7 @@ export function EmailCapturePopup() {
                   By subscribing, you agree to receive emails from Torah For The Table. You can
                   unsubscribe at any time.
                 </p>
-                </form>
-                {msg && <p className="mt-3 text-xs text-accent">{msg}</p>}
+                {msg && <p className="mt-3 text-xs text-accent" role="alert">{msg}</p>}
               </>
             )}
           </div>
