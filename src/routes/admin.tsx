@@ -81,6 +81,8 @@ type PdfRow = {
   content_type: string | null;
   primary_category?: string | null;
   publication?: string | null;
+  publication_id?: string | null;
+
   tags?: string[] | null;
   description?: string | null;
   audience?: string | null;
@@ -91,6 +93,8 @@ type PdfRow = {
 };
 
 import { formatTypeLabel } from "@/lib/format-labels";
+import { matchesSource, normalizeTitleKey } from "@/lib/publication-identity";
+
 
 const AUDIENCE_OPTIONS = ["Adults", "Families", "Children"] as const;
 const FORMAT_TYPE_OPTIONS = ["Short Vorts", "Stories", "Halacha", "Essays"] as const;
@@ -203,14 +207,9 @@ const normalizeParshaSelection = (value: string | null | undefined) => {
   );
 };
 
-// Match titles ignoring punctuation/spacing differences, so
-// "Tzedek Tzedek - R' Yehuda Zev Klein" and "Tzedek Tzedek - R'Yehuda Zev Klein"
-// count as the same checklist source.
-const normalizeTitleKey = (value: string) =>
-  value
-    .toLowerCase()
-    .replace(/[\u2018\u2019\u201c\u201d]/g, "'")
-    .replace(/[^a-z0-9]+/g, "");
+// Checklist matching lives in @/lib/publication-identity: it prefers the
+// publication_id foreign key and only falls back to normalized titles.
+
 
 function AdminPage() {
   const { session, loading, signInWithGoogle, signOut } = useAuth();
@@ -265,6 +264,8 @@ function AdminPage() {
     active: boolean;
     sort_order: number;
     created_at: string;
+    publication_id?: string | null;
+
   };
   const [sources, setSources] = useState<ChecklistSource[]>([]);
   const [newSourceTitle, setNewSourceTitle] = useState("");
@@ -580,33 +581,29 @@ function AdminPage() {
         ? toParshaComparableKey(currentParshaLabel)
         : null;
 
-  // Determine which expected titles are uploaded for the current parsha + Jewish year.
-  const uploadedTitlesForCurrent = new Set(
-    pdfs
-      .filter(
-        (p) =>
-          checklistParshaComparableKey &&
-          jewishYear != null &&
-          p.jewish_year === jewishYear &&
-          toParshaComparableKey(p.parsha_key) === checklistParshaComparableKey,
-      )
-      .flatMap((p) =>
-        [p.title, (p as { publication?: string | null }).publication]
-          .filter((t): t is string => !!t)
-          .map(normalizeTitleKey),
-      ),
+  // PDFs uploaded for the current parsha + Jewish year.
+  const pdfsForCurrent = pdfs.filter(
+    (p) =>
+      checklistParshaComparableKey &&
+      jewishYear != null &&
+      p.jewish_year === jewishYear &&
+      toParshaComparableKey(p.parsha_key) === checklistParshaComparableKey,
   );
 
   type ChecklistStatus = "uploaded" | "skipped" | "missing";
-  const activeSourceTitles = sources.filter((s) => s.active).map((s) => s.title);
-  const checklist: Array<{ title: string; status: ChecklistStatus }> = activeSourceTitles.map(
-    (title) => {
-      const key = normalizeTitleKey(title);
-      if (uploadedTitlesForCurrent.has(key)) return { title, status: "uploaded" as const };
-      if (skipped.has(key)) return { title, status: "skipped" as const };
+  const activeSources = sources.filter((s) => s.active);
+  const checklist: Array<{ title: string; status: ChecklistStatus }> = activeSources.map(
+    (source) => {
+      const title = source.title;
+      // Match by publication_id when both sides are linked; normalized title otherwise.
+      if (pdfsForCurrent.some((p) => matchesSource(p, source))) {
+        return { title, status: "uploaded" as const };
+      }
+      if (skipped.has(normalizeTitleKey(title))) return { title, status: "skipped" as const };
       return { title, status: "missing" as const };
     },
   );
+
   const uploadedCount = checklist.filter((c) => c.status === "uploaded").length;
   const countableTotal = checklist.filter((c) => c.status !== "skipped").length;
 
