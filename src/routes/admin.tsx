@@ -91,6 +91,8 @@ type PdfRow = {
 };
 
 import { formatTypeLabel } from "@/lib/format-labels";
+import { matchesSource, normalizeTitleKey } from "@/lib/publication-identity";
+
 
 const AUDIENCE_OPTIONS = ["Adults", "Families", "Children"] as const;
 const FORMAT_TYPE_OPTIONS = ["Short Vorts", "Stories", "Halacha", "Essays"] as const;
