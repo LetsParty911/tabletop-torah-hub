@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 
-export const Route = createFileRoute("/api/public/__debug-order")({
+export const Route = createFileRoute("/api/public/zz-debug-order")({
   server: {
     handlers: {
       GET: async () => {
