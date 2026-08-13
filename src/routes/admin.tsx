@@ -590,7 +590,11 @@ function AdminPage() {
           p.jewish_year === jewishYear &&
           toParshaComparableKey(p.parsha_key) === checklistParshaComparableKey,
       )
-      .map((p) => normalizeTitleKey(p.title)),
+      .flatMap((p) =>
+        [p.title, (p as { publication?: string | null }).publication]
+          .filter((t): t is string => !!t)
+          .map(normalizeTitleKey),
+      ),
   );
 
   type ChecklistStatus = "uploaded" | "skipped" | "missing";
