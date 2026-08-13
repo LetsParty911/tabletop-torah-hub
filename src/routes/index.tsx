@@ -280,47 +280,8 @@ function Index() {
     ),
   })).filter((p) => !!p.resource);
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSignupMsg(null);
 
-    trackEvent("newsletter_signup_submit", {
-      form_name: "weekly_torah_notifications",
-    });
 
-    try {
-      const r = await subscribeEmail({ data: { email } });
-      if (r.ok) {
-        if (r.welcomeEmailSent) {
-          setSignupMsg(
-            "You're all set — welcome email sent. You'll get updates when new Divrei Torah are uploaded.",
-          );
-        } else if (r.alreadySubscribed) {
-          setSignupMsg(
-            "You're already subscribed — you'll get updates when new Divrei Torah are uploaded.",
-          );
-        } else {
-          setSignupMsg(
-            "You're subscribed, but the welcome email could not be sent right now.",
-          );
-        }
-        setEmail("");
-        trackEventOnce(
-          "newsletter_signup",
-          {
-            form_name: "weekly_torah_notifications",
-            already_subscribed: !!r.alreadySubscribed,
-          },
-          "tftt:analytics-sent:newsletter_signup:homepage",
-        );
-      } else {
-        setSignupMsg(r.error ?? "Something went wrong. Please try again.");
-      }
-    } catch (error) {
-      console.error("[newsletter-signup] error", error);
-      setSignupMsg("Something went wrong. Please try again.");
-    }
-  };
 
   const pdfParams = (r: Resource) => ({
     file_id: r.id,
