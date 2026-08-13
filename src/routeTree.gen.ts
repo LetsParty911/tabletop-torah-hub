@@ -29,6 +29,7 @@ import { Route as ApiTrackSearchRouteImport } from './routes/api/track-search'
 import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
 import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
+import { Route as ApiPublic_debugOrderRouteImport } from './routes/api/public/__debug-order'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -130,6 +131,11 @@ const ViewIdDownloadRoute = ViewIdDownloadRouteImport.update({
   path: '/download',
   getParentRoute: () => ViewIdRoute,
 } as any)
+const ApiPublic_debugOrderRoute = ApiPublic_debugOrderRouteImport.update({
+  id: '/api/public/__debug-order',
+  path: '/api/public',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -150,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe/': typeof UnsubscribeIndexRoute
+  '/api/public': typeof ApiPublic_debugOrderRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/pdf': typeof ViewIdPdfRoute
 }
@@ -172,6 +179,7 @@ export interface FileRoutesByTo {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe': typeof UnsubscribeIndexRoute
+  '/api/public': typeof ApiPublic_debugOrderRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/pdf': typeof ViewIdPdfRoute
 }
@@ -195,6 +203,7 @@ export interface FileRoutesById {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe/': typeof UnsubscribeIndexRoute
+  '/api/public/__debug-order': typeof ApiPublic_debugOrderRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/pdf': typeof ViewIdPdfRoute
 }
@@ -219,6 +228,7 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe/'
+    | '/api/public'
     | '/view/$id/download'
     | '/view/$id/pdf'
   fileRoutesByTo: FileRoutesByTo
@@ -241,6 +251,7 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe'
+    | '/api/public'
     | '/view/$id/download'
     | '/view/$id/pdf'
   id:
@@ -263,6 +274,7 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe/'
+    | '/api/public/__debug-order'
     | '/view/$id/download'
     | '/view/$id/pdf'
   fileRoutesById: FileRoutesById
@@ -286,6 +298,7 @@ export interface RootRouteChildren {
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ViewIdRoute: typeof ViewIdRouteWithChildren
   UnsubscribeIndexRoute: typeof UnsubscribeIndexRoute
+  ApiPublic_debugOrderRoute: typeof ApiPublic_debugOrderRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -430,6 +443,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ViewIdDownloadRouteImport
       parentRoute: typeof ViewIdRoute
     }
+    '/api/public/__debug-order': {
+      id: '/api/public/__debug-order'
+      path: '/api/public'
+      fullPath: '/api/public'
+      preLoaderRoute: typeof ApiPublic_debugOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -465,6 +485,7 @@ const rootRouteChildren: RootRouteChildren = {
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ViewIdRoute: ViewIdRouteWithChildren,
   UnsubscribeIndexRoute: UnsubscribeIndexRoute,
+  ApiPublic_debugOrderRoute: ApiPublic_debugOrderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
