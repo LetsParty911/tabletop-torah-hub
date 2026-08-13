@@ -81,6 +81,8 @@ type PdfRow = {
   content_type: string | null;
   primary_category?: string | null;
   publication?: string | null;
+  publication_id?: string | null;
+
   tags?: string[] | null;
   description?: string | null;
   audience?: string | null;
