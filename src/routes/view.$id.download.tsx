@@ -11,6 +11,10 @@ const rowCache = new Map<string, CacheEntry>();
 // File-delivery endpoint must never be indexed.
 const NOINDEX = { "X-Robots-Tag": "noindex" } as const;
 
+// Cacheable, but revalidated with the ETag so a replaced file is picked up
+// quickly. `immutable` is deliberately avoided: admins do replace files.
+const CACHE_CONTROL = "public, max-age=600, s-maxage=86400, stale-while-revalidate=86400";
+
 function quoteFilename(name: string): string {
   return `attachment; filename="${name.replace(/["\\]/g, "")}"; filename*=UTF-8''${encodeURIComponent(name)}`;
 }
@@ -53,7 +57,7 @@ export const Route = createFileRoute("/view/$id/download")({
             status: 304,
             headers: {
               ETag: etag,
-              "Cache-Control": "public, max-age=31536000, immutable",
+              "Cache-Control": CACHE_CONTROL,
               ...NOINDEX,
             },
           });
@@ -81,7 +85,7 @@ export const Route = createFileRoute("/view/$id/download")({
         const headers = new Headers(NOINDEX);
         headers.set("Content-Type", "application/pdf");
         headers.set("Content-Disposition", quoteFilename(entry.filename));
-        headers.set("Cache-Control", "public, max-age=31536000, immutable");
+        headers.set("Cache-Control", CACHE_CONTROL);
         headers.set("ETag", etag);
         const len = upstream.headers.get("content-length");
         if (len) headers.set("Content-Length", len);
