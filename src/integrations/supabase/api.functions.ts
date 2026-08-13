@@ -302,7 +302,7 @@ async function buildResources(
   const canonical = await getCanonicalByPdfId(admin);
   const displayTitle = (r: any): string => canonical.get(r.id as string)?.name ?? r.title;
   const orderFor = (title: string): number => {
-    const v = orderMap.get(title.trim().toLowerCase());
+    const v = orderMap.get(sortTitleKey(title));
     return typeof v === "number" ? v : 999999;
   };
   const sorted = [...rows].sort(
@@ -444,7 +444,7 @@ export const listPublicationsMeta = createServerFn({ method: "GET" }).handler(
     }
     const orderMap = await getTitleSortOrderMap(admin);
     const orderFor = (title: string): number => {
-      const v = orderMap.get(title.trim().toLowerCase());
+      const v = orderMap.get(sortTitleKey(title));
       return typeof v === "number" ? v : 999999;
     };
     const map = new Map<string, PublicationMeta>();
@@ -528,7 +528,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
     const orderMap = await getTitleSortOrderMap(admin);
     const canonical = await getCanonicalByPdfId(admin);
     const orderFor = (title: string): number => {
-      const v = orderMap.get(title.trim().toLowerCase());
+      const v = orderMap.get(sortTitleKey(title));
       return typeof v === "number" ? v : 999999;
     };
     const yearMap = new Map<
@@ -2278,7 +2278,7 @@ async function getWeeklyEmailContentInternal(): Promise<WeeklyEmailContent> {
   );
   const orderMap = await getTitleSortOrderMap(admin);
   const orderFor = (t: string) => {
-    const v = orderMap.get(t.trim().toLowerCase());
+    const v = orderMap.get(sortTitleKey(t));
     return typeof v === "number" ? v : 999999;
   };
   matched.sort((a: any, b: any) => orderFor(a.title) - orderFor(b.title));
