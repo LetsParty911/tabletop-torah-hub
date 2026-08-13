@@ -803,49 +803,8 @@ function Index() {
         <div className="gold-divider" aria-hidden><span className="gold-divider-dot" /></div>
 
         {/* Email signup */}
-        <section id="weekly-email-signup" className="parchment-frame max-w-2xl mx-auto scroll-mt-8">
-          <div className="parchment-panel py-6 px-5 sm:px-6 sm:py-8 text-center">
-            <div className="flex items-center justify-center gap-3 text-accent mb-3">
-              <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
-              <span className="font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em]">
-                Stay Updated
-              </span>
-              <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
-            </div>
-            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
-              Don't Miss a Week
-            </h2>
-            <p className="mt-2 font-serif italic font-medium text-sm sm:text-base text-primary max-w-md mx-auto">
-              One weekly email when the new collection is ready.
-            </p>
-            <form
-              onSubmit={handleSignup}
-              className="mt-5 flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-            >
-              <input
-                type="email"
-                aria-label="Email address for weekly Torah reminders"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email address"
-                className="flex-1 rounded-full border-2 border-accent/50 bg-background px-5 py-3 font-serif text-foreground placeholder:font-serif placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
-              />
-              <button
-                type="submit"
-                className="rounded-full bg-primary px-8 py-3.5 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md"
-              >
-                Remind Me Weekly
-              </button>
-            </form>
-            <p className="mt-3 text-xs sm:text-sm text-muted-foreground">
-              Join the many who get it every week.
-            </p>
-            {signupMsg && (
-              <p className="mt-4 text-sm text-accent font-serif">{signupMsg}</p>
-            )}
-          </div>
-        </section>
+        <WeeklyEmailSignup sourceId="homepage" />
+
 
         <div className="gold-divider" aria-hidden><span className="gold-divider-dot" /></div>
 
