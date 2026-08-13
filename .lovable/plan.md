@@ -1,40 +1,38 @@
-## Goal
+# Faster downloads + real button feedback
 
-One "Overview" dashboard at the top of the admin analytics area that answers "how is the site doing this week?" by combining **GA4 traffic/events** with **in-app download data** — KPI tiles plus one combined timeline. Existing Download Analytics (tables, drilldowns, CSV export) stays exactly as it is, below the new summary.
+## What I measured
 
-## What you'll see
+Timing the live download link from the server (fast network, no phone):
 
-**KPI tiles** (respecting a shared 7/30/90-day range selector):
-- Users / Sessions (GA4)
-- Page views (GA4)
-- `pdf_download` events (GA4)
-- Actual downloads recorded in the database (in-app)
-- Newsletter signups (GA4 `newsletter_signup` + subscriber count)
-- Email popup conversion rate (shown / signup)
+- Click URL `/view/<id>/download` responds in **0.5–1.0s** — every time, not just the first. The in-memory signed-URL cache barely helps because each request can land on a different worker instance.
+- The browser is then redirected to the storage host and pulls the PDF: **another ~0.9s** for a 600KB file (new host, new TLS handshake, no CDN caching).
+- Total ≈1.5s on a datacenter connection. On mobile that easily becomes the 5–8s you feel.
 
-Each tile shows the total for the window plus a percent change vs. the previous equal-length window.
+So the delay is real: two round trips to two different hosts, and the file is never cached at the edge.
 
-**Combined timeline:** one chart with GA4 sessions and in-app downloads plotted on the same day axis, so traffic spikes and download spikes line up visually. Reuses the existing moving-average / spike-detection styling.
+## Fix
 
-**Top events table:** GA4 event names with counts for the window.
+### 1. Serve the PDF from our own domain, cached at the edge
+Change `/view/<id>/download` from "look up row → mint signed URL → 302 to storage" into a route that streams the PDF back directly with:
+- `Content-Disposition: attachment; filename="TorahForTheTable.com_Parshas-X_Publication.pdf"` (same filenames as today)
+- `Cache-Control: public, max-age=31536000, immutable` so Cloudflare caches the file at the edge
 
-If GA4 credentials are missing or the API call fails, GA4 tiles render a clear "GA4 not connected" state and the in-app metrics still work.
+Result: one request instead of two, same origin (no extra DNS/TLS), and after the first download anywhere in a region the file is served from the CDN — effectively instant.
 
-## Setup you'll need to do once
+Because the URL is derived from the row id, published/unpublished is still checked on the origin request; edge-cached responses stay valid because a replaced file gets a new storage path.
 
-To read GA4 numbers back into the site, Google requires a read-only service account:
+### 2. Warm the link before the click
+On the card, preconnect to the storage host and prefetch the download route on hover/touch-start, so the origin lookup is already done by the time the finger lifts.
 
-1. In Google Cloud Console, create a service account and download its JSON key.
-2. In GA4 Admin → Property Access Management, add that service account's email as a **Viewer**.
-3. Note your GA4 **Property ID** (numeric, in GA4 Admin → Property Settings).
+### 3. Real "pressed" feedback (no artificial delay)
+The button is a plain link, so nothing visibly changes on tap. Add:
+- an immediate `active:` pressed style (scale + darker background) that fires on touch-down
+- a brief "Starting download…" label with a small spinner that appears on click and clears on its own after ~1.2s, or as soon as the page regains focus
 
-I'll then request two secrets from you: `GA4_SERVICE_ACCOUNT_JSON` and `GA4_PROPERTY_ID`. Nothing is exposed to the browser.
+This is feedback only — it never delays or gates the actual download.
 
-## Technical details
+## Technical notes
 
-- New `src/lib/ga4.server.ts`: signs a service-account JWT with `jose` (Worker-safe; no `googleapis` package, which is Node-only), exchanges it for an access token, and POSTs to `analyticsdata.googleapis.com/v1beta/properties/{id}:runReport`. Short in-memory token cache keyed by expiry.
-- New server function `adminGetGa4Summary({ startDate, endDate })` in the existing `api.functions.ts` pattern, admin-guarded by the same access-token check the other admin functions use. Returns plain DTOs: `{ totals, previousTotals, daily: [{date, sessions, users, views, pdfDownloads}], topEvents }`. On error returns `{ error: "..." }` rather than throwing, so the dashboard degrades gracefully.
-- New `src/components/UnifiedDashboard.tsx`: range selector (7/30/90 + custom, reusing existing picker), KPI tile grid, combined recharts chart, top-events table. Data via `useQuery` in the component (not a loader — admin is auth-gated client-side).
-- In-app numbers come from the existing `download_events` query path already used by `DownloadAnalytics`, so the two sections never disagree.
-- Mounted in `src/routes/admin.tsx` above the existing `<DownloadAnalytics />`; nothing existing is removed.
-- No database schema changes.
+- `src/routes/view.$id.download.tsx`: replace the 302-to-signed-URL with a streamed `Response` from Supabase storage `download()`, keeping the `X-Robots-Tag: noindex` header and the 404 for unpublished rows; add long-lived `Cache-Control` plus `ETag`.
+- `src/components/DownloadToPrintButton.tsx`: add pressed/active styling and the short transient state; keep the existing anchor + `download` attribute and the `sendBeacon` analytics call untouched.
+- `src/routes/index.tsx` / archive / view cards: no API changes, just the hover-prefetch hook on the button.
