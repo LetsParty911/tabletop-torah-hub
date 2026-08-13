@@ -1061,11 +1061,19 @@ export const adminListPdfs = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
+    // Prefer the canonical FK (publication_id) when the column exists; every
+    // select below is a graceful fallback for older schemas.
+    const withFk = await admin
+      .from("pdfs")
+      .select("id, parsha_key, title, subtitle, file_path, published, jewish_year, created_at, summary_quick, content_type, primary_category, tags, publication, publication_id, description, audience, format_type, page_count, badge, featured_slot")
+      .order("created_at", { ascending: false });
+    if (!withFk.error) return { pdfs: withFk.data ?? [] };
     const withSlot = await admin
       .from("pdfs")
       .select("id, parsha_key, title, subtitle, file_path, published, jewish_year, created_at, summary_quick, content_type, primary_category, tags, publication, description, audience, format_type, page_count, badge, featured_slot")
       .order("created_at", { ascending: false });
     if (!withSlot.error) return { pdfs: withSlot.data ?? [] };
+
     const withMeta = await admin
       .from("pdfs")
       .select("id, parsha_key, title, subtitle, file_path, published, jewish_year, created_at, summary_quick, content_type, primary_category, tags, publication, description, audience, format_type, page_count, badge")
