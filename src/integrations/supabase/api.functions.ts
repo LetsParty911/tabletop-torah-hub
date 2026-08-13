@@ -1650,6 +1650,12 @@ export const adminListChecklistSources = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
+    const withFk = await admin
+      .from("checklist_sources")
+      .select("id, title, active, sort_order, created_at, publication_id")
+      .order("sort_order", { ascending: true })
+      .order("title", { ascending: true });
+    if (!withFk.error) return { sources: withFk.data ?? [] };
     const { data: rows, error } = await admin
       .from("checklist_sources")
       .select("id, title, active, sort_order, created_at")
@@ -1657,6 +1663,7 @@ export const adminListChecklistSources = createServerFn({ method: "POST" })
       .order("title", { ascending: true });
     if (error) throw new Error(error.message);
     return { sources: rows ?? [] };
+
   });
 
 // ---------- Admin: add checklist source ----------
