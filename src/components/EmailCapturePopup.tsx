@@ -178,9 +178,7 @@ export function EmailCapturePopup() {
             {success ? (
               <div role="status" aria-live="polite" className="rounded-2xl border-2 border-accent/60 bg-accent/10 px-4 py-4 pr-6">
                 <p className="font-serif text-lg font-semibold text-primary">
-                  {success === "already"
-                    ? "You're already signed up."
-                    : "You're on the list — we'll email you Thursday when the new collection posts."}
+                  Thank you for subscribing! Please check your inbox for a welcome email.
                 </p>
               </div>
             ) : (
