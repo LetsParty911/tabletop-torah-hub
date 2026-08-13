@@ -222,8 +222,6 @@ function Index() {
   const upcomingParsha = isFallback
     ? (currentParshaKey ?? nextParshaAfter(displayedParshaKey))
     : nextParshaAfter(displayedParshaKey);
-  const [email, setEmail] = useState("");
-  const [signupMsg, setSignupMsg] = useState<string | null>(null);
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
 
   const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long">("All");
