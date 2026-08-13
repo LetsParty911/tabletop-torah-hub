@@ -6,13 +6,33 @@ import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 import { fetchHebcalShabbat } from "@/lib/hebcal";
 import { standardizeCopy } from "@/lib/standardize-copy";
 
-// Build a map of normalized title -> sort_order from checklist_sources.
-// This is the same admin-managed order shown in the admin UI (10/20/30/40…).
-// Nulls / unknown titles should be sorted last by callers.
+// Normalize a publication/source title so small punctuation or spacing
+// differences ("R' Yehuda" vs "R'Yehuda") still match the admin-set order.
+export function sortTitleKey(title: string | null | undefined): string {
+  return (title ?? "")
+    .toLowerCase()
+    .replace(/[\u2018\u2019\u201c\u201d]/g, "'")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+// Build a map of normalized title -> sort_order.
+// checklist_sources is the admin-managed weekly order and wins; publications
+// sort_order is used as a fallback for titles not present in the checklist.
+// Unknown titles should be sorted last by callers.
 async function getTitleSortOrderMap(
   admin: ReturnType<typeof getSupabaseAdmin>,
 ): Promise<Map<string, number>> {
   const map = new Map<string, number>();
+  try {
+    const pubs = await admin.from("publications").select("name, sort_order");
+    for (const row of pubs.data ?? []) {
+      const t = sortTitleKey(row.name as string | null);
+      const v = row.sort_order as number | null;
+      if (t && typeof v === "number") map.set(t, v);
+    }
+  } catch {
+    /* publications table may not exist yet */
+  }
   try {
     const { data, error } = await admin
       .from("checklist_sources")
@@ -22,7 +42,7 @@ async function getTitleSortOrderMap(
       return map;
     }
     for (const row of data ?? []) {
-      const t = (row.title as string | null)?.trim().toLowerCase();
+      const t = sortTitleKey(row.title as string | null);
       const v = row.sort_order as number | null;
       if (t && typeof v === "number") map.set(t, v);
     }
@@ -31,6 +51,7 @@ async function getTitleSortOrderMap(
   }
   return map;
 }
+
 
 // Canonical publications: maps pdfs.id -> { name, publisher } via pdfs.publication_id.
 // Tolerates the table/column not existing yet (pre-migration) by returning an empty map,
