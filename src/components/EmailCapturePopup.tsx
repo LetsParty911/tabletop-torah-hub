@@ -29,8 +29,9 @@ export function EmailCapturePopup() {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [honeypot, setHoneypot] = useState("");
+  const [consent, setConsent] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const [success, setSuccess] = useState<null | "new" | "already">(null);
+  const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const shownAtRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
