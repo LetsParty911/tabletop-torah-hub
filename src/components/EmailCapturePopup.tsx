@@ -109,17 +109,22 @@ export function EmailCapturePopup() {
       return;
     }
 
+    if (!consent) {
+      setMsg("Please agree to receive emails before subscribing.");
+      return;
+    }
+
     setSubmitting(true);
     setMsg(null);
     try {
-      const r = await subscribeEmail({ data: { email, source: "timed_popup" } });
+      const r = await subscribeEmail({ data: { email, consent: true, source: "timed_popup" } });
       if (r.ok) {
         try {
           localStorage.setItem(SIGNED_UP_KEY, "1");
         } catch {
           /* ignore */
         }
-        setSuccess(r.alreadySubscribed ? "already" : "new");
+        setSuccess(true);
         trackEventOnce(
           "newsletter_signup",
           {
@@ -130,18 +135,19 @@ export function EmailCapturePopup() {
           "tftt:analytics-sent:newsletter_signup:popup",
         );
         setEmail("");
-        window.setTimeout(() => setOpen(false), 2600);
+        window.setTimeout(() => setOpen(false), 3200);
       } else {
         trackEvent("email_popup_error", { form_name: "timed_popup", error: r.error ?? "unknown" });
-        setMsg(r.error ?? "Something went wrong. Please try again.");
+        setMsg(r.error ?? "We couldn't complete your subscription right now. Please try again.");
       }
     } catch {
       trackEvent("email_popup_error", { form_name: "timed_popup", error: "exception" });
-      setMsg("Something went wrong. Please try again.");
+      setMsg("We couldn't complete your subscription right now. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
+
 
   if (!open || isAdmin) return null;
 
