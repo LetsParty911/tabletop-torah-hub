@@ -305,9 +305,12 @@ async function buildResources(
     const v = orderMap.get(sortTitleKey(title));
     return typeof v === "number" ? v : 999999;
   };
-  const sorted = [...rows].sort(
-    (a, b) => orderFor(displayTitle(a)) - orderFor(displayTitle(b)),
-  );
+  const sorted = [...rows].sort((a, b) => {
+    const d = orderFor(displayTitle(a)) - orderFor(displayTitle(b));
+    if (d !== 0) return d;
+    return displayTitle(a).localeCompare(displayTitle(b));
+  });
+
   return Promise.all(
     sorted.map(async (r: any) => {
       const { data: signed } = await admin.storage
