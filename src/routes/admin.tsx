@@ -203,7 +203,14 @@ const normalizeParshaSelection = (value: string | null | undefined) => {
   );
 };
 
-const normalizeTitleKey = (value: string) => value.trim().replace(/\s+/g, " ").toLowerCase();
+// Match titles ignoring punctuation/spacing differences, so
+// "Tzedek Tzedek - R' Yehuda Zev Klein" and "Tzedek Tzedek - R'Yehuda Zev Klein"
+// count as the same checklist source.
+const normalizeTitleKey = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[\u2018\u2019\u201c\u201d]/g, "'")
+    .replace(/[^a-z0-9]+/g, "");
 
 function AdminPage() {
   const { session, loading, signInWithGoogle, signOut } = useAuth();
