@@ -29,8 +29,9 @@ export function EmailCapturePopup() {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [honeypot, setHoneypot] = useState("");
+  const [consent, setConsent] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const [success, setSuccess] = useState<null | "new" | "already">(null);
+  const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const shownAtRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -109,17 +110,22 @@ export function EmailCapturePopup() {
       return;
     }
 
+    if (!consent) {
+      setMsg("Please agree to receive emails before subscribing.");
+      return;
+    }
+
     setSubmitting(true);
     setMsg(null);
     try {
-      const r = await subscribeEmail({ data: { email, source: "timed_popup" } });
+      const r = await subscribeEmail({ data: { email, consent: true, source: "timed_popup" } });
       if (r.ok) {
         try {
           localStorage.setItem(SIGNED_UP_KEY, "1");
         } catch {
           /* ignore */
         }
-        setSuccess(r.alreadySubscribed ? "already" : "new");
+        setSuccess(true);
         trackEventOnce(
           "newsletter_signup",
           {
@@ -130,18 +136,19 @@ export function EmailCapturePopup() {
           "tftt:analytics-sent:newsletter_signup:popup",
         );
         setEmail("");
-        window.setTimeout(() => setOpen(false), 2600);
+        window.setTimeout(() => setOpen(false), 3200);
       } else {
         trackEvent("email_popup_error", { form_name: "timed_popup", error: r.error ?? "unknown" });
-        setMsg(r.error ?? "Something went wrong. Please try again.");
+        setMsg(r.error ?? "We couldn't complete your subscription right now. Please try again.");
       }
     } catch {
       trackEvent("email_popup_error", { form_name: "timed_popup", error: "exception" });
-      setMsg("Something went wrong. Please try again.");
+      setMsg("We couldn't complete your subscription right now. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
+
 
   if (!open || isAdmin) return null;
 
@@ -171,9 +178,7 @@ export function EmailCapturePopup() {
             {success ? (
               <div role="status" aria-live="polite" className="rounded-2xl border-2 border-accent/60 bg-accent/10 px-4 py-4 pr-6">
                 <p className="font-serif text-lg font-semibold text-primary">
-                  {success === "already"
-                    ? "You're already signed up."
-                    : "You're on the list — we'll email you Thursday when the new collection posts."}
+                  Thank you for subscribing! Please check your inbox for a welcome email.
                 </p>
               </div>
             ) : (
@@ -186,35 +191,51 @@ export function EmailCapturePopup() {
                 <p className="mt-3 text-sm text-muted-foreground">
                   One email every Thursday when the new sheets are up. Nothing else, ever.
                 </p>
-                <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-2 sm:flex-row">
-                  {/* Honeypot — hidden from humans */}
-                  <input
-                    type="text"
-                    tabIndex={-1}
-                    autoComplete="off"
-                    aria-hidden="true"
-                    value={honeypot}
-                    onChange={(e) => setHoneypot(e.target.value)}
-                    className="absolute left-[-9999px] h-0 w-0 opacity-0"
-                  />
-                  <input
-                    ref={inputRef}
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Your email address"
-                    className="flex-1 rounded-full border-2 border-accent/60 bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
-                  />
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md disabled:opacity-60"
-                  >
-                    {submitting ? "Joining…" : "Notify Me"}
-                  </button>
+                <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    {/* Honeypot — hidden from humans */}
+                    <input
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      aria-hidden="true"
+                      value={honeypot}
+                      onChange={(e) => setHoneypot(e.target.value)}
+                      className="absolute left-[-9999px] h-0 w-0 opacity-0"
+                    />
+                    <input
+                      ref={inputRef}
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Your email address"
+                      className="flex-1 rounded-full border-2 border-accent/60 bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                    />
+                    <button
+                      type="submit"
+                      disabled={submitting || !consent}
+                      className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {submitting ? "Subscribing…" : "Subscribe"}
+                    </button>
+                  </div>
+                  <label className="flex items-start gap-2 text-left text-xs text-foreground">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={consent}
+                      onChange={(e) => setConsent(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0"
+                    />
+                    <span>I agree to receive emails from Torah For The Table.</span>
+                  </label>
                 </form>
-                {msg && <p className="mt-3 text-xs text-accent">{msg}</p>}
+                <p className="mt-3 text-[0.7rem] leading-relaxed text-muted-foreground">
+                  By subscribing, you agree to receive emails from Torah For The Table. You can
+                  unsubscribe at any time.
+                </p>
+                {msg && <p className="mt-3 text-xs text-accent" role="alert">{msg}</p>}
               </>
             )}
           </div>
