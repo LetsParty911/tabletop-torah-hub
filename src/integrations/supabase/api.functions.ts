@@ -802,7 +802,7 @@ export const subscribeEmail = createServerFn({ method: "POST" })
       .object({
         email: z.string().trim().email().max(254),
         source: z.string().max(64).optional(),
-        consent: z.literal(true, { errorMap: () => ({ message: "Consent is required." }) }),
+        consent: z.literal(true, { message: "Consent is required." }),
       })
       .parse(input),
   )
