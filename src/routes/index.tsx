@@ -20,10 +20,10 @@ import { resolveHebcalParsha, nextParshaAfter } from "@/lib/hebcal";
 import {
   listHomepageWeek,
   getParshaOverride,
-  subscribeEmail,
   getActiveSubscriberCount,
 } from "@/integrations/supabase/api.functions";
-import { trackEvent, trackEventOnce } from "@/lib/analytics";
+import { trackEvent } from "@/lib/analytics";
+import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 
 
 
