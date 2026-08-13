@@ -96,66 +96,28 @@ export function DownloadToPrintButton({
         }
       }
 
-      const controller = new AbortController();
-      abortRef.current = controller;
       startFakeProgress();
 
-
       try {
-        const res = await fetch(href, { signal: controller.signal });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        const disposition = res.headers.get("Content-Disposition") || "";
-        const match = /filename="?([^"]+)"?/i.exec(disposition);
-        const filename = preferredFilename || match?.[1] || "document.pdf";
-
-        const totalHeader = res.headers.get("Content-Length");
-        const total = totalHeader ? parseInt(totalHeader, 10) : 0;
-
-        let blob: Blob;
-
-        stopFakeProgress();
-        setPhase("downloading");
-        toast.success("Your download is ready");
-        setProgress(0);
-
-        if (res.body && total > 0) {
-          // Real byte-level progress
-
-          const reader = res.body.getReader();
-          const chunks: Uint8Array[] = [];
-          let received = 0;
-          // eslint-disable-next-line no-constant-condition
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            if (value) {
-              chunks.push(value);
-              received += value.byteLength;
-              setProgress(Math.min(99, (received / total) * 100));
-            }
-          }
-          blob = new Blob(chunks as BlobPart[], { type: res.headers.get("Content-Type") || "application/pdf" });
-        } else {
-          // No length header — fall back to blob() and finish the fake bar
-          blob = await res.blob();
-        }
-
-        setProgress(100);
-
-        const url = URL.createObjectURL(blob);
+        // Let the browser perform the download natively from the same-origin
+        // endpoint. The server redirects to a signed URL whose
+        // Content-Disposition carries the correct, per-file name. (Fetching to
+        // a Blob first caused some browsers — notably iOS Safari and in-app
+        // browsers — to ignore the download name and save every file under the
+        // same generic filename.)
         const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
+        a.href = href;
+        if (preferredFilename) a.download = preferredFilename;
+        a.rel = "nofollow";
         document.body.appendChild(a);
         a.click();
         a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-        // Hold a "waiting" state so the user doesn't think nothing happened
-        // while the browser materializes the file in the downloads tray.
+        stopFakeProgress();
+        setProgress(100);
         setPhase("waiting");
-        const WAIT_TOTAL = 5;
+        toast.success("Your download is starting");
+        const WAIT_TOTAL = 6;
         setWaitSeconds(WAIT_TOTAL);
         await new Promise<void>((resolve) => {
           let remaining = WAIT_TOTAL;
@@ -170,36 +132,6 @@ export function DownloadToPrintButton({
         });
         setPhase("done");
         toast.success("Downloaded — check your Downloads folder or browser tray.");
-      } catch (err) {
-        if ((err as Error).name !== "AbortError") {
-          // Fetch/CORS failed — trigger the browser's native download instead.
-          // Use a hidden iframe so the current page isn't navigated away, and
-          // hold the waiting state so the user knows something is still happening.
-          const iframe = document.createElement("iframe");
-          iframe.style.display = "none";
-          iframe.src = href;
-          document.body.appendChild(iframe);
-          setTimeout(() => iframe.remove(), 60_000);
-
-          stopFakeProgress();
-          setProgress(100);
-          setPhase("waiting");
-          const WAIT_TOTAL = 8;
-          setWaitSeconds(WAIT_TOTAL);
-          await new Promise<void>((resolve) => {
-            let remaining = WAIT_TOTAL;
-            const tick = window.setInterval(() => {
-              remaining -= 1;
-              setWaitSeconds(remaining);
-              if (remaining <= 0) {
-                window.clearInterval(tick);
-                resolve();
-              }
-            }, 1000);
-          });
-          setPhase("done");
-          toast.success("Downloaded — check your Downloads folder or browser tray.");
-        }
       } finally {
         stopFakeProgress();
         // brief pause so users see the final state before it resets
@@ -212,6 +144,7 @@ export function DownloadToPrintButton({
     },
     [href, loading, onClick, preferredFilename, startFakeProgress, stopFakeProgress],
   );
+
 
   const label = loading
     ? phase === "downloading"
