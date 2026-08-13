@@ -264,6 +264,8 @@ function AdminPage() {
     active: boolean;
     sort_order: number;
     created_at: string;
+    publication_id?: string | null;
+
   };
   const [sources, setSources] = useState<ChecklistSource[]>([]);
   const [newSourceTitle, setNewSourceTitle] = useState("");
