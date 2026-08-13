@@ -575,33 +575,29 @@ function AdminPage() {
         ? toParshaComparableKey(currentParshaLabel)
         : null;
 
-  // Determine which expected titles are uploaded for the current parsha + Jewish year.
-  const uploadedTitlesForCurrent = new Set(
-    pdfs
-      .filter(
-        (p) =>
-          checklistParshaComparableKey &&
-          jewishYear != null &&
-          p.jewish_year === jewishYear &&
-          toParshaComparableKey(p.parsha_key) === checklistParshaComparableKey,
-      )
-      .flatMap((p) =>
-        [p.title, (p as { publication?: string | null }).publication]
-          .filter((t): t is string => !!t)
-          .map(normalizeTitleKey),
-      ),
+  // PDFs uploaded for the current parsha + Jewish year.
+  const pdfsForCurrent = pdfs.filter(
+    (p) =>
+      checklistParshaComparableKey &&
+      jewishYear != null &&
+      p.jewish_year === jewishYear &&
+      toParshaComparableKey(p.parsha_key) === checklistParshaComparableKey,
   );
 
   type ChecklistStatus = "uploaded" | "skipped" | "missing";
-  const activeSourceTitles = sources.filter((s) => s.active).map((s) => s.title);
-  const checklist: Array<{ title: string; status: ChecklistStatus }> = activeSourceTitles.map(
-    (title) => {
-      const key = normalizeTitleKey(title);
-      if (uploadedTitlesForCurrent.has(key)) return { title, status: "uploaded" as const };
-      if (skipped.has(key)) return { title, status: "skipped" as const };
+  const activeSources = sources.filter((s) => s.active);
+  const checklist: Array<{ title: string; status: ChecklistStatus }> = activeSources.map(
+    (source) => {
+      const title = source.title;
+      // Match by publication_id when both sides are linked; normalized title otherwise.
+      if (pdfsForCurrent.some((p) => matchesSource(p, source))) {
+        return { title, status: "uploaded" as const };
+      }
+      if (skipped.has(normalizeTitleKey(title))) return { title, status: "skipped" as const };
       return { title, status: "missing" as const };
     },
   );
+
   const uploadedCount = checklist.filter((c) => c.status === "uploaded").length;
   const countableTotal = checklist.filter((c) => c.status !== "skipped").length;
 
