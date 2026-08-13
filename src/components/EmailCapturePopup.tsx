@@ -191,33 +191,50 @@ export function EmailCapturePopup() {
                 <p className="mt-3 text-sm text-muted-foreground">
                   One email every Thursday when the new sheets are up. Nothing else, ever.
                 </p>
-                <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-2 sm:flex-row">
-                  {/* Honeypot — hidden from humans */}
-                  <input
-                    type="text"
-                    tabIndex={-1}
-                    autoComplete="off"
-                    aria-hidden="true"
-                    value={honeypot}
-                    onChange={(e) => setHoneypot(e.target.value)}
-                    className="absolute left-[-9999px] h-0 w-0 opacity-0"
-                  />
-                  <input
-                    ref={inputRef}
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Your email address"
-                    className="flex-1 rounded-full border-2 border-accent/60 bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
-                  />
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md disabled:opacity-60"
-                  >
-                    {submitting ? "Joining…" : "Notify Me"}
-                  </button>
+                <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    {/* Honeypot — hidden from humans */}
+                    <input
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      aria-hidden="true"
+                      value={honeypot}
+                      onChange={(e) => setHoneypot(e.target.value)}
+                      className="absolute left-[-9999px] h-0 w-0 opacity-0"
+                    />
+                    <input
+                      ref={inputRef}
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Your email address"
+                      className="flex-1 rounded-full border-2 border-accent/60 bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                    />
+                    <button
+                      type="submit"
+                      disabled={submitting || !consent}
+                      className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {submitting ? "Subscribing…" : "Subscribe"}
+                    </button>
+                  </div>
+                  <label className="flex items-start gap-2 text-left text-xs text-foreground">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={consent}
+                      onChange={(e) => setConsent(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0"
+                    />
+                    <span>I agree to receive emails from Torah For The Table.</span>
+                  </label>
+                </form>
+                <p className="mt-3 text-[0.7rem] leading-relaxed text-muted-foreground">
+                  By subscribing, you agree to receive emails from Torah For The Table. You can
+                  unsubscribe at any time.
+                </p>
                 </form>
                 {msg && <p className="mt-3 text-xs text-accent">{msg}</p>}
               </>
