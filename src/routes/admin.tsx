@@ -203,14 +203,9 @@ const normalizeParshaSelection = (value: string | null | undefined) => {
   );
 };
 
-// Match titles ignoring punctuation/spacing differences, so
-// "Tzedek Tzedek - R' Yehuda Zev Klein" and "Tzedek Tzedek - R'Yehuda Zev Klein"
-// count as the same checklist source.
-const normalizeTitleKey = (value: string) =>
-  value
-    .toLowerCase()
-    .replace(/[\u2018\u2019\u201c\u201d]/g, "'")
-    .replace(/[^a-z0-9]+/g, "");
+// Checklist matching lives in @/lib/publication-identity: it prefers the
+// publication_id foreign key and only falls back to normalized titles.
+
 
 function AdminPage() {
   const { session, loading, signInWithGoogle, signOut } = useAuth();
