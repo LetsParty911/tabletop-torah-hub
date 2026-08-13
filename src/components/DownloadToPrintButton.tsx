@@ -1,6 +1,5 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { Download, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { useCallback } from "react";
+import { Download } from "lucide-react";
 
 type DownloadToPrintButtonProps = {
   href: string;
@@ -20,141 +19,40 @@ export function DownloadToPrintButton({
   publicationTitle,
   filename: preferredFilename,
 }: DownloadToPrintButtonProps) {
+  const handleClick = useCallback(() => {
+    onClick?.();
 
-  const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0); // 0-100
-  const [phase, setPhase] = useState<"preparing" | "downloading" | "waiting" | "done">(
-    "preparing",
-  );
-  const [waitSeconds, setWaitSeconds] = useState(10);
-  const abortRef = useRef<AbortController | null>(null);
-  const fakeTimerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    return () => {
-      abortRef.current?.abort();
-      if (fakeTimerRef.current) window.clearInterval(fakeTimerRef.current);
-    };
-  }, []);
-
-  const startFakeProgress = useCallback(() => {
-    // Crawl toward 90% while we wait for headers/server work (~30s).
-    // Approaches 90 asymptotically so it always feels like it's moving.
-    if (fakeTimerRef.current) window.clearInterval(fakeTimerRef.current);
-    fakeTimerRef.current = window.setInterval(() => {
-      setProgress((p) => {
-        if (p >= 90) return p;
-        const step = Math.max(0.4, (90 - p) * 0.03);
-        return Math.min(90, p + step);
-      });
-    }, 300);
-  }, []);
-
-  const stopFakeProgress = useCallback(() => {
-    if (fakeTimerRef.current) {
-      window.clearInterval(fakeTimerRef.current);
-      fakeTimerRef.current = null;
-    }
-  }, []);
-
-  const handleClick = useCallback(
-    async (e: React.MouseEvent<HTMLAnchorElement>) => {
-      e.preventDefault();
-      if (loading) return;
-      setLoading(true);
-      setProgress(0);
-      setPhase("preparing");
-      onClick?.();
-
-      // Fire-and-forget anonymous download tracking. Must never block/delay the
-      // download. Admin routes are never measured or recorded.
-      const onAdminRoute =
-        typeof window !== "undefined" &&
-        (window.location.pathname === "/admin" ||
-          window.location.pathname.startsWith("/admin/"));
-      if (!onAdminRoute && (publicationId || publicationTitle)) {
-        try {
-          const payload = JSON.stringify({
-            publication_id: publicationId,
-            publication_title: publicationTitle,
-          });
-          const blob = new Blob([payload], { type: "application/json" });
-          const sent =
-            typeof navigator !== "undefined" &&
-            typeof navigator.sendBeacon === "function" &&
-            navigator.sendBeacon("/api/track-download", blob);
-          if (!sent) {
-            void fetch("/api/track-download", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: payload,
-              keepalive: true,
-            }).catch(() => {});
-          }
-        } catch {
-          // never block the download
-        }
-      }
-
-      startFakeProgress();
-
+    // Fire-and-forget anonymous download tracking. Never blocks the download.
+    const onAdminRoute =
+      typeof window !== "undefined" &&
+      (window.location.pathname === "/admin" ||
+        window.location.pathname.startsWith("/admin/"));
+    if (!onAdminRoute && (publicationId || publicationTitle)) {
       try {
-        // Let the browser perform the download natively from the same-origin
-        // endpoint. The server redirects to a signed URL whose
-        // Content-Disposition carries the correct, per-file name. (Fetching to
-        // a Blob first caused some browsers — notably iOS Safari and in-app
-        // browsers — to ignore the download name and save every file under the
-        // same generic filename.)
-        const a = document.createElement("a");
-        a.href = href;
-        if (preferredFilename) a.download = preferredFilename;
-        a.rel = "nofollow";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-
-        stopFakeProgress();
-        setProgress(100);
-        setPhase("waiting");
-        toast.success("Your download is starting");
-        const WAIT_TOTAL = 6;
-        setWaitSeconds(WAIT_TOTAL);
-        await new Promise<void>((resolve) => {
-          let remaining = WAIT_TOTAL;
-          const tick = window.setInterval(() => {
-            remaining -= 1;
-            setWaitSeconds(remaining);
-            if (remaining <= 0) {
-              window.clearInterval(tick);
-              resolve();
-            }
-          }, 1000);
+        const payload = JSON.stringify({
+          publication_id: publicationId,
+          publication_title: publicationTitle,
         });
-        setPhase("done");
-        toast.success("Downloaded — check your Downloads folder or browser tray.");
-      } finally {
-        stopFakeProgress();
-        // brief pause so users see the final state before it resets
-        window.setTimeout(() => {
-          setLoading(false);
-          setProgress(0);
-          setPhase("preparing");
-        }, 1200);
+        const blob = new Blob([payload], { type: "application/json" });
+        const sent =
+          typeof navigator !== "undefined" &&
+          typeof navigator.sendBeacon === "function" &&
+          navigator.sendBeacon("/api/track-download", blob);
+        if (!sent) {
+          void fetch("/api/track-download", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: payload,
+            keepalive: true,
+          }).catch(() => {});
+        }
+      } catch {
+        // never block the download
       }
-    },
-    [href, loading, onClick, preferredFilename, startFakeProgress, stopFakeProgress],
-  );
-
-
-  const label = loading
-    ? phase === "downloading"
-      ? `Downloading… ${Math.floor(progress)}%`
-      : phase === "waiting"
-        ? `Please wait ${waitSeconds}s for file to appear…`
-        : phase === "done"
-          ? "File ready — check your downloads"
-          : `Preparing file… ${Math.floor(progress)}%`
-    : "Download to Print";
+    }
+    // No preventDefault: the browser handles the navigation/download natively,
+    // which starts immediately.
+  }, [onClick, publicationId, publicationTitle]);
 
   return (
     <a
@@ -162,33 +60,14 @@ export function DownloadToPrintButton({
       rel="nofollow"
       download={preferredFilename ?? ""}
       onClick={handleClick}
-
-      aria-disabled={loading}
-      aria-busy={loading}
-      tabIndex={loading ? -1 : 0}
       className={[
-        "relative overflow-hidden inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors duration-150",
-        loading
-          ? "bg-accent/20 text-accent-foreground pointer-events-none cursor-wait"
-          : "bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground",
+        "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors duration-150",
+        "bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground",
         className,
       ].join(" ")}
     >
-      {loading && (
-        <span
-          aria-hidden="true"
-          className="absolute inset-y-0 left-0 bg-accent transition-[width] duration-300 ease-out"
-          style={{ width: `${progress}%` }}
-        />
-      )}
-      <span className="relative inline-flex items-center gap-2">
-        {loading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Download className="h-4 w-4" />
-        )}
-        {label}
-      </span>
+      <Download className="h-4 w-4" />
+      Download to Print
     </a>
   );
 }
