@@ -1,4 +1,4 @@
-# Faster downloads + real button feedback
+- Faster downloads + real button feedback
 
 ## What I measured
 
@@ -13,7 +13,9 @@ So the delay is real: two round trips to two different hosts, and the file is ne
 ## Fix
 
 ### 1. Serve the PDF from our own domain, cached at the edge
+
 Change `/view/<id>/download` from "look up row → mint signed URL → 302 to storage" into a route that streams the PDF back directly with:
+
 - `Content-Disposition: attachment; filename="TorahForTheTable.com_Parshas-X_Publication.pdf"` (same filenames as today)
 - `Cache-Control: public, max-age=31536000, immutable` so Cloudflare caches the file at the edge
 
@@ -22,10 +24,13 @@ Result: one request instead of two, same origin (no extra DNS/TLS), and after th
 Because the URL is derived from the row id, published/unpublished is still checked on the origin request; edge-cached responses stay valid because a replaced file gets a new storage path.
 
 ### 2. Warm the link before the click
+
 On the card, preconnect to the storage host and prefetch the download route on hover/touch-start, so the origin lookup is already done by the time the finger lifts.
 
 ### 3. Real "pressed" feedback (no artificial delay)
+
 The button is a plain link, so nothing visibly changes on tap. Add:
+
 - an immediate `active:` pressed style (scale + darker background) that fires on touch-down
 - a brief "Starting download…" label with a small spinner that appears on click and clears on its own after ~1.2s, or as soon as the page regains focus
 
