@@ -162,11 +162,12 @@ export const Route = createFileRoute("/view/$id/download")({
         if (cache) {
           // Store a copy for the colo without delaying this reader's stream.
           try {
-            await cache.put(cacheKey, response.clone());
+            void cache.put(cacheKey, response.clone()).catch(() => {});
           } catch {
             /* caching is best-effort */
           }
         }
+
         return response;
       },
 
