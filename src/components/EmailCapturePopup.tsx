@@ -44,37 +44,29 @@ export function EmailCapturePopup() {
     return Math.min(30 * 60 * 1000, Math.max(0, Math.round(raw)));
   };
 
-  // Trigger: 20s on page OR 40% scroll depth, whichever comes first.
+  // Trigger: only after a visitor starts a download. Never on page load.
   useEffect(() => {
     if (isAdmin) return;
     if (typeof window === "undefined") return;
-    if (shouldSkip()) return;
 
     let fired = false;
-    const show = (trigger: "time" | "scroll") => {
+    let timer = 0;
+
+    const onDownload = () => {
       if (fired || shouldSkip()) return;
       fired = true;
-      setOpen(true);
-      shownAtRef.current = performance.now();
-      trackEvent("email_popup_shown", { trigger });
-      cleanup();
+      timer = window.setTimeout(() => {
+        setOpen(true);
+        shownAtRef.current = performance.now();
+        trackEvent("email_popup_shown", { trigger: "download" });
+      }, AFTER_DOWNLOAD_DELAY_MS);
     };
 
-    const onScroll = () => {
-      const doc = document.documentElement;
-      const scrollable = doc.scrollHeight - window.innerHeight;
-      if (scrollable <= 0) return;
-      if (window.scrollY / scrollable >= SCROLL_TRIGGER_RATIO) show("scroll");
-    };
-
-    const timer = window.setTimeout(() => show("time"), TIME_TRIGGER_MS);
-    window.addEventListener("scroll", onScroll, { passive: true });
-
-    function cleanup() {
+    window.addEventListener("tftt:download", onDownload);
+    return () => {
       window.clearTimeout(timer);
-      window.removeEventListener("scroll", onScroll);
-    }
-    return cleanup;
+      window.removeEventListener("tftt:download", onDownload);
+    };
   }, [isAdmin]);
 
   const dismiss = useCallback(() => {
