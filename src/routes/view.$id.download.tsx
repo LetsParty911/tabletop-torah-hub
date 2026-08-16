@@ -13,7 +13,22 @@ const NOINDEX = { "X-Robots-Tag": "noindex" } as const;
 
 // Cacheable, but revalidated often enough that a replaced file (same storage
 // path) reaches readers quickly. `immutable` is deliberately avoided.
-const CACHE_CONTROL = "public, max-age=60, s-maxage=300, stale-while-revalidate=86400";
+const CACHE_CONTROL = "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800";
+
+/**
+ * Worker-level edge cache. The platform CDN in front of us does not retain
+ * these responses (every hit reached the origin, costing a DB lookup plus a
+ * storage round trip before the first byte). Storing the finished PDF in the
+ * Worker's own colo cache turns repeat downloads into a local read.
+ */
+function edgeCache(): Cache | null {
+  try {
+    const c = (globalThis as { caches?: { default?: Cache } }).caches?.default;
+    return c ?? null;
+  } catch {
+    return null;
+  }
+}
 
 function quoteFilename(name: string): string {
   return `attachment; filename="${name.replace(/["\\]/g, "")}"; filename*=UTF-8''${encodeURIComponent(name)}`;
@@ -26,6 +41,7 @@ function serverTiming(dbMs: number, upstreamMs: number, totalMs: number): string
     `app;dur=${totalMs};desc="Application response headers"`,
   ].join(", ");
 }
+
 
 export const Route = createFileRoute("/view/$id/download")({
   server: {
