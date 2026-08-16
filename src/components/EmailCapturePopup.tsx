@@ -35,6 +35,7 @@ export function EmailCapturePopup() {
   const [submitting, setSubmitting] = useState(false);
   const shownAtRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
 
   const engagementMs = (): number | undefined => {
     if (shownAtRef.current == null) return undefined;
@@ -190,6 +191,7 @@ export function EmailCapturePopup() {
       onClick={dismiss}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Weekly Torah email signup"
