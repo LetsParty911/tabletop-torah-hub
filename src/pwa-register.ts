@@ -50,9 +50,47 @@ export function registerPwa() {
     return;
   }
 
+  let reloading = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloading) return;
+    reloading = true;
+    window.location.reload();
+  });
+
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register(SW_REGISTER_URL, { scope: "/" }).catch(() => {
-      /* registration failure is non-fatal */
-    });
+    navigator.serviceWorker
+      .register(SW_REGISTER_URL, { scope: "/" })
+      .then((reg) => {
+        const promote = (worker: ServiceWorker | null) => {
+          if (!worker) return;
+          const act = () => {
+            // Only swap in a new build when the page is already controlled by
+            // an older worker; the very first install must not reload.
+            if (worker.state === "installed" && navigator.serviceWorker.controller) {
+              worker.postMessage("SKIP_WAITING");
+            }
+          };
+          act();
+          worker.addEventListener("statechange", act);
+        };
+
+        promote(reg.waiting);
+        reg.addEventListener("updatefound", () => promote(reg.installing));
+
+        const checkForUpdate = () => {
+          reg.update().catch(() => {
+            /* offline or transient failure */
+          });
+        };
+
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") checkForUpdate();
+        });
+        window.setInterval(checkForUpdate, 30 * 60 * 1000);
+      })
+      .catch(() => {
+        /* registration failure is non-fatal */
+      });
   });
 }
+
