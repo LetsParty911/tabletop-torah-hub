@@ -18,7 +18,7 @@ import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { publicationLabel } from "@/lib/badges";
 
-import { resolveHebcalParsha, nextParshaAfter } from "@/lib/hebcal";
+import { resolveHebcalParsha, nextParshaAfter, isPastReading } from "@/lib/hebcal";
 import {
   listHomepageWeek,
   getParshaOverride,
@@ -57,11 +57,14 @@ type LoaderData = {
   fallbackParshaLabel: string | null;
   fallbackParshaKey: string | null;
   subscriberCount: number | null;
+  /** ISO date of the Shabbos the displayed reading belongs to (Hebcal). */
+  readingDate: string | null;
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
   let label = "Parshas Hashavua";
   let parshaKey: string | null = null;
+  let readingDate: string | null = null;
 
   // 1. Manual override
   try {
@@ -81,6 +84,7 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     const resolved = await resolveHebcalParsha();
     parshaKey = resolved.parshaKey;
     label = resolved.label;
+    readingDate = resolved.readingDate;
   }
 
   // 3. PDFs with fallback to most recent published collection
@@ -110,7 +114,7 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     console.error("Failed to load subscriber count", e);
   }
 
-  return { label, parshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey, subscriberCount };
+  return { label, parshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey, subscriberCount, readingDate };
 }
 
 export const Route = createFileRoute("/")({
@@ -212,7 +216,7 @@ const FEATURED_SLOTS = [
 ] as const;
 
 function Index() {
-  const { label: currentLabel, parshaKey: currentParshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey, subscriberCount } =
+  const { label: currentLabel, parshaKey: currentParshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey, subscriberCount, readingDate } =
     Route.useLoaderData() as LoaderData;
 
   // Everything user-facing (hero copy, counts, share text) derives from the
@@ -227,8 +231,12 @@ function Index() {
   // Post-Shabbos framing: client-only so SSR/hydration stays stable.
   const [postShabbos, setPostShabbos] = useState(false);
   useEffect(() => {
-    setPostShabbos(isFallback && resources.length > 0 && isPostShabbosWindow());
-  }, [isFallback, resources.length]);
+    // Hebcal keeps reporting last Shabbos's parsha until it rolls forward, so
+    // "showing last week" is either an explicit fallback OR a reading whose
+    // Shabbos has already passed in Eastern time.
+    const showingLastShabbos = isFallback || isPastReading(readingDate);
+    setPostShabbos(showingLastShabbos && resources.length > 0 && isPostShabbosWindow());
+  }, [isFallback, resources.length, readingDate]);
 
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
 
@@ -319,7 +327,7 @@ function Index() {
       <WhatsNewBanner />
       <AnnouncementBanner />
       <UpdateCountdown
-        contentLive={!isFallback && resources.length > 0}
+        contentLive={!isFallback && !postShabbos && resources.length > 0}
         liveParshaLabel={displayedLabel}
       />
       <div className="mx-auto max-w-5xl px-3 py-5 sm:px-4 sm:py-8 md:px-8 md:py-14 space-y-5 sm:space-y-8 md:space-y-10">
