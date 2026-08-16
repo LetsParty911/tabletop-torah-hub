@@ -41,10 +41,13 @@ export function DownloadToPrintButton({
 
   useEffect(() => clearTimers, [clearTimers]);
 
-  // The browser handles the download natively, so there is no fetch promise to
-  // await and no way to observe completion without making the URL unique
-  // (which would defeat edge caching). Keep the loading state until the
-  // download navigation takes over, then clear it.
+  // iOS Safari mishandles blob downloads (wrong/duplicate filenames), so there
+  // we keep the native anchor navigation and can only approximate completion.
+  const isIOS =
+    typeof navigator !== "undefined" &&
+    (/iP(hone|ad|od)/.test(navigator.userAgent) ||
+      (/Macintosh/.test(navigator.userAgent) && "ontouchend" in document));
+
   const endLoadingSoon = useCallback(() => {
     clearTimers();
     const stop = () => {
@@ -57,6 +60,8 @@ export function DownloadToPrintButton({
     document.addEventListener("visibilitychange", stop, { once: true });
     timerRef.current = setTimeout(stop, 2500);
   }, [clearTimers]);
+
+
 
   // Warm the origin lookup before the click so the download starts sooner.
   const warm = useCallback(() => {
@@ -73,48 +78,114 @@ export function DownloadToPrintButton({
     }
   }, [href]);
 
-  const handleClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (starting) {
-      e.preventDefault();
-      return;
-    }
-    onClick?.();
-
-    // Paint the loading state before the browser starts the navigation.
-    flushSync(() => setStarting(true));
-    endLoadingSoon();
-
-    // Fire-and-forget anonymous download tracking. Never blocks the download.
+  const trackDownload = useCallback(() => {
     const onAdminRoute =
       typeof window !== "undefined" &&
       (window.location.pathname === "/admin" ||
         window.location.pathname.startsWith("/admin/"));
-    if (!onAdminRoute && (publicationId || publicationTitle)) {
+    if (onAdminRoute || (!publicationId && !publicationTitle)) return;
+    try {
+      const payload = JSON.stringify({
+        publication_id: publicationId,
+        publication_title: publicationTitle,
+      });
+      const blob = new Blob([payload], { type: "application/json" });
+      const sent =
+        typeof navigator !== "undefined" &&
+        typeof navigator.sendBeacon === "function" &&
+        navigator.sendBeacon("/api/track-download", blob);
+      if (!sent) {
+        void fetch("/api/track-download", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch {
+      // never block the download
+    }
+  }, [publicationId, publicationTitle]);
+
+  const filenameFromHeader = (value: string | null): string | undefined => {
+    if (!value) return undefined;
+    const star = /filename\*=UTF-8''([^;]+)/i.exec(value);
+    if (star) {
       try {
-        const payload = JSON.stringify({
-          publication_id: publicationId,
-          publication_title: publicationTitle,
-        });
-        const blob = new Blob([payload], { type: "application/json" });
-        const sent =
-          typeof navigator !== "undefined" &&
-          typeof navigator.sendBeacon === "function" &&
-          navigator.sendBeacon("/api/track-download", blob);
-        if (!sent) {
-          void fetch("/api/track-download", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: payload,
-            keepalive: true,
-          }).catch(() => {});
-        }
+        return decodeURIComponent(star[1]);
       } catch {
-        // never block the download
+        /* fall through */
       }
     }
-    // No preventDefault: the browser handles the navigation/download natively,
-    // which starts immediately.
-  }, [onClick, publicationId, publicationTitle, starting, endLoadingSoon]);
+    const plain = /filename="([^"]+)"/i.exec(value);
+    return plain?.[1];
+  };
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      if (starting) {
+        e.preventDefault();
+        return;
+      }
+      onClick?.();
+      trackDownload();
+
+      // Native anchor path (iOS, or no fetch/blob support): the browser owns
+      // the transfer, so completion can only be approximated.
+      const canBlob =
+        !isIOS &&
+        typeof window !== "undefined" &&
+        typeof window.URL?.createObjectURL === "function" &&
+        typeof fetch === "function";
+      if (!canBlob) {
+        flushSync(() => setStarting(true));
+        endLoadingSoon();
+        return;
+      }
+
+      // Fetch the (edge-cacheable) URL ourselves so the loading state lasts
+      // for the entire transfer, then hand a blob to the download manager.
+      e.preventDefault();
+      flushSync(() => setStarting(true));
+      clearTimers();
+
+      void (async () => {
+        try {
+          const res = await fetch(href, { credentials: "same-origin" });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const blob = await res.blob();
+          const name =
+            preferredFilename ??
+            filenameFromHeader(res.headers.get("content-disposition")) ??
+            "download.pdf";
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = name;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
+        } catch {
+          // Fall back to letting the browser do it natively.
+          window.location.href = href;
+        } finally {
+          setStarting(false);
+        }
+      })();
+    },
+    [
+      onClick,
+      starting,
+      endLoadingSoon,
+      clearTimers,
+      href,
+      preferredFilename,
+      trackDownload,
+      isIOS,
+    ],
+  );
+
 
   return (
     <a
