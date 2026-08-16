@@ -50,12 +50,16 @@ export function registerPwa() {
     return;
   }
 
+  // Only a *replacement* of an existing controller means a new build took
+  // over; the first-ever install claiming the page must not reload it.
+  const hadController = Boolean(navigator.serviceWorker.controller);
   let reloading = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (reloading) return;
+    if (!hadController || reloading) return;
     reloading = true;
     window.location.reload();
   });
+
 
   window.addEventListener("load", () => {
     navigator.serviceWorker
