@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { Download, Loader2 } from "lucide-react";
 
 type DownloadToPrintButtonProps = {
