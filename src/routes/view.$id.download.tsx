@@ -11,166 +11,75 @@ const rowCache = new Map<string, CacheEntry>();
 // File-delivery endpoint must never be indexed.
 const NOINDEX = { "X-Robots-Tag": "noindex" } as const;
 
-// Cacheable, but revalidated often enough that a replaced file (same storage
-// path) reaches readers quickly. `immutable` is deliberately avoided.
-const CACHE_CONTROL = "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800";
-
-/**
- * Worker-level edge cache. The platform CDN in front of us does not retain
- * these responses (every hit reached the origin, costing a DB lookup plus a
- * storage round trip before the first byte). Storing the finished PDF in the
- * Worker's own colo cache turns repeat downloads into a local read.
- */
-function edgeCache(): Cache | null {
-  try {
-    const c = (globalThis as { caches?: { default?: Cache } }).caches?.default;
-    return c ?? null;
-  } catch {
-    return null;
-  }
-}
+// Cacheable at the CDN, but revalidated often enough that a replaced file
+// (same storage path) reaches readers quickly. `immutable` is avoided.
+const CACHE_CONTROL =
+  "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800";
 
 function quoteFilename(name: string): string {
   return `attachment; filename="${name.replace(/["\\]/g, "")}"; filename*=UTF-8''${encodeURIComponent(name)}`;
 }
 
-function serverTiming(dbMs: number, upstreamMs: number, totalMs: number): string {
-  return [
-    `db;dur=${dbMs};desc="Publication lookup"`,
-    `storage;dur=${upstreamMs};desc="Storage response headers"`,
-    `app;dur=${totalMs};desc="Application response headers"`,
-  ].join(", ");
-}
-
-
 export const Route = createFileRoute("/view/$id/download")({
   server: {
     handlers: {
-      GET: async ({ params, request }) => {
+      GET: async ({ params }) => {
         const id = params.id;
         if (!/^[0-9a-f-]{36}$/i.test(id)) {
           return new Response("Bad request", { status: 400, headers: NOINDEX });
         }
 
-        const t0 = Date.now();
-
-        // Fast path: previously downloaded in this colo — no DB, no storage hop.
-        const cache = edgeCache();
-        const cacheKey = new Request(
-          new URL(request.url).origin + `/view/${id}/download`,
-          { method: "GET" },
-        );
-        if (cache) {
-          const hit = await cache.match(cacheKey);
-          if (hit) {
-            const h = new Headers(hit.headers);
-            h.set("Server-Timing", `edge;dur=${Date.now() - t0};desc="Edge cache hit"`);
-            h.set("X-TFTT-Cache", "HIT");
-            return new Response(hit.body, { status: hit.status, headers: h });
-          }
-        }
-
-        const now = t0;
-        let cacheHit = true;
-        let entry = rowCache.get(id);
-        if (!entry || entry.expiresAt <= now) {
-          cacheHit = false;
-
+        try {
           const admin = getSupabaseAdmin();
-          const { data: row, error } = await admin
+          const now = Date.now();
+
+          let entry = rowCache.get(id);
+          if (!entry || entry.expiresAt <= now) {
+            const { data: row, error } = await admin
+              .from("pdfs")
+              .select("title, file_path, published, parsha_key, publication")
+              .eq("id", id)
+              .maybeSingle();
+            if (error || !row || !row.published || !row.file_path) {
+              return new Response("Not found", { status: 404, headers: NOINDEX });
+            }
+            entry = {
+              path: row.file_path as string,
+              filename: buildDownloadFilename(
+                row.parsha_key,
+                row.publication || row.title,
+              ),
+              expiresAt: now + ROW_CACHE_TTL_MS,
+            };
+            rowCache.set(id, entry);
+          }
+
+          // Stream straight from storage through our own origin so the CDN can
+          // cache the file (one request instead of two hosts).
+          const { data: blob, error: dErr } = await admin.storage
             .from("pdfs")
-            .select("title, file_path, published, parsha_key, publication")
-            .eq("id", id)
-            .maybeSingle();
-          if (error || !row || !row.published || !row.file_path) {
-            return new Response("Not found", { status: 404, headers: NOINDEX });
+            .download(entry.path);
+          if (dErr || !blob) {
+            rowCache.delete(id);
+            return new Response("Download failed", {
+              status: 502,
+              headers: NOINDEX,
+            });
           }
-          entry = {
-            path: row.file_path as string,
-            filename: buildDownloadFilename(
-              row.parsha_key,
-              row.publication || row.title,
-            ),
-            expiresAt: now + ROW_CACHE_TTL_MS,
-          };
-          rowCache.set(id, entry);
+
+          const buf = await blob.arrayBuffer();
+          const headers = new Headers(NOINDEX);
+          headers.set("Content-Type", "application/pdf");
+          headers.set("Content-Disposition", quoteFilename(entry.filename));
+          headers.set("Cache-Control", CACHE_CONTROL);
+          headers.set("Content-Length", String(buf.byteLength));
+          headers.set("Timing-Allow-Origin", "*");
+          return new Response(buf, { status: 200, headers });
+        } catch (err) {
+          console.error("[view/download] failed", err);
+          return new Response("Download failed", { status: 500, headers: NOINDEX });
         }
-
-        // Stream straight from storage through our own origin so Cloudflare
-        // can cache the file at the edge (one request instead of two hosts).
-        const base = (process.env.EXT_SUPABASE_URL || process.env.SUPABASE_URL || "").replace(/\/$/, "");
-        const key =
-          process.env.EXT_SUPABASE_SERVICE_ROLE_KEY ||
-          process.env.SUPABASE_SERVICE_ROLE_KEY ||
-          "";
-        const objectUrl = `${base}/storage/v1/object/pdfs/${entry.path
-          .split("/")
-          .map(encodeURIComponent)
-          .join("/")}`;
-
-        const tDb = Date.now();
-        const upstream = await fetch(objectUrl, {
-          headers: { apikey: key, Authorization: `Bearer ${key}` },
-        });
-        if (!upstream.ok || !upstream.body) {
-          return new Response("Download failed", { status: 502, headers: NOINDEX });
-        }
-        const tUp = Date.now();
-
-        // Derive the validator from the stored object itself so replacing the
-        // file in place (same path) invalidates every cached copy.
-        const upstreamTag =
-          upstream.headers.get("etag")?.replace(/^W\//, "").replace(/"/g, "") ||
-          [
-            upstream.headers.get("last-modified"),
-            upstream.headers.get("content-length"),
-          ]
-            .filter(Boolean)
-            .join("-") ||
-          String(Date.now());
-        const etag = `"${id}-${upstreamTag}"`;
-
-        if (request.headers.get("if-none-match") === etag) {
-          void upstream.body.cancel();
-          const tDone = Date.now();
-          return new Response(null, {
-            status: 304,
-            headers: {
-              ETag: etag,
-              "Cache-Control": CACHE_CONTROL,
-              "Server-Timing": serverTiming(tDb - t0, tUp - tDb, tDone - t0),
-              ...NOINDEX,
-            },
-          });
-        }
-
-        const headers = new Headers(NOINDEX);
-        headers.set("Content-Type", "application/pdf");
-        headers.set("Content-Disposition", quoteFilename(entry.filename));
-        headers.set("Cache-Control", CACHE_CONTROL);
-        headers.set("ETag", etag);
-        headers.set(
-          "Server-Timing",
-          serverTiming(tDb - t0, tUp - tDb, Date.now() - t0),
-        );
-        headers.set("Timing-Allow-Origin", "*");
-        headers.set("X-TFTT-Cache", "MISS");
-        const len = upstream.headers.get("content-length");
-        if (len) headers.set("Content-Length", len);
-
-        const response = new Response(upstream.body, { status: 200, headers });
-        if (cache) {
-          // Store a copy for the colo without delaying this reader's stream.
-          try {
-            void cache.put(cacheKey, response.clone()).catch(() => {});
-          } catch {
-            /* caching is best-effort */
-          }
-        }
-
-        return response;
       },
-
     },
   },
 });
