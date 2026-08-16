@@ -539,9 +539,26 @@ function AdminPage() {
         const r = await adminListWeeklySkips({
           data: { accessToken, parshaKey: currentParshaKey, jewishYear },
         });
-        if (!cancelled) setSkipped(new Set(r.titleKeys.map((s: string) => s.toLowerCase())));
+        if (!cancelled) {
+          // Stored keys may be legacy (lowercased raw title) or normalized.
+          // Index by normalized key so lookups always match, and remember the
+          // raw stored key so removal targets the exact stored row.
+          const raw = new Map<string, string>();
+          const norm = new Set<string>();
+          for (const s of r.titleKeys as string[]) {
+            const k = normalizeTitleKey(s);
+            if (!k) continue;
+            norm.add(k);
+            raw.set(k, s);
+          }
+          setSkippedRawKeys(raw);
+          setSkipped(norm);
+        }
       } catch {
-        if (!cancelled) setSkipped(new Set());
+        if (!cancelled) {
+          setSkipped(new Set());
+          setSkippedRawKeys(new Map());
+        }
       }
     })();
     return () => {
@@ -551,25 +568,36 @@ function AdminPage() {
 
   const toggleSkip = async (title: string) => {
     if (!accessToken || !currentParshaKey || jewishYear == null) return;
-    const titleKey = title.toLowerCase();
+    const normKey = normalizeTitleKey(title);
+    if (!normKey) return;
     const prev = new Set(skipped);
+    const prevRaw = new Map(skippedRawKeys);
     const next = new Set(skipped);
-    const wasSkipped = next.has(titleKey);
-    if (wasSkipped) next.delete(titleKey);
-    else next.add(titleKey);
+    const nextRaw = new Map(skippedRawKeys);
+    const wasSkipped = next.has(normKey);
+    const storedKey = skippedRawKeys.get(normKey) ?? normKey;
+    if (wasSkipped) {
+      next.delete(normKey);
+      nextRaw.delete(normKey);
+    } else {
+      next.add(normKey);
+      nextRaw.set(normKey, normKey);
+    }
     setSkipped(next); // optimistic
+    setSkippedRawKeys(nextRaw);
     try {
       if (wasSkipped) {
         await adminRemoveWeeklySkip({
-          data: { accessToken, parshaKey: currentParshaKey, titleKey, jewishYear },
+          data: { accessToken, parshaKey: currentParshaKey, titleKey: storedKey, jewishYear },
         });
       } else {
         await adminAddWeeklySkip({
-          data: { accessToken, parshaKey: currentParshaKey, titleKey, jewishYear },
+          data: { accessToken, parshaKey: currentParshaKey, titleKey: normKey, jewishYear },
         });
       }
     } catch {
       setSkipped(prev); // revert on failure
+      setSkippedRawKeys(prevRaw);
     }
   };
 
