@@ -120,7 +120,10 @@ export function WeeklyEmailSignup({
                   onChange={(e) => setConsent(e.target.checked)}
                   className="mt-1 h-4 w-4 shrink-0 accent-[var(--gold-decorative,currentColor)]"
                 />
-                <span>I agree to receive emails from Torah For The Table.</span>
+                <span>
+                  I agree to receive emails from Torah For The Table. You can unsubscribe at
+                  any time.
+                </span>
               </label>
             </form>
             {signupMsg && (
@@ -128,10 +131,6 @@ export function WeeklyEmailSignup({
                 {signupMsg}
               </p>
             )}
-            <p className="mt-4 text-xs text-muted-foreground max-w-md mx-auto">
-              By subscribing, you agree to receive emails from Torah For The Table. You can
-              unsubscribe at any time.
-            </p>
           </>
         )}
       </div>
