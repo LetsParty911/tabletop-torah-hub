@@ -12,6 +12,7 @@ import { buildDownloadFilename } from "@/lib/download-filename";
 import { normalizeAudience, audienceLabel, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
+import { publicationLabel } from "@/lib/badges";
 
 type ArchiveSearch = {
   year?: string;
@@ -700,6 +701,7 @@ function ArchivePage() {
                                 <DownloadToPrintButton
                                   href={`/view/${r.id}/download`}
                                   publicationId={r.id}
+                                  publicationName={publicationLabel(r.publication || r.title) || r.title}
                                   publicationTitle={r.title}
                                   filename={buildDownloadFilename(
                                     p.parshaKey,

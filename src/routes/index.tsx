@@ -16,6 +16,7 @@ import { buildDownloadFilename } from "@/lib/download-filename";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
+import { publicationLabel } from "@/lib/badges";
 
 import { resolveHebcalParsha, nextParshaAfter } from "@/lib/hebcal";
 import {
@@ -428,6 +429,7 @@ function Index() {
                           <DownloadToPrintButton
                             href={`/view/${r.id}/download`}
                             publicationId={r.id}
+                            publicationName={publicationLabel(r.publication || r.title) || r.title}
                             publicationTitle={r.title}
                             filename={buildDownloadFilename(
                               (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
@@ -713,6 +715,7 @@ function Index() {
                           <DownloadToPrintButton
                             href={`/view/${r.id}/download`}
                             publicationId={r.id}
+                            publicationName={publicationLabel(r.publication || r.title) || r.title}
                             publicationTitle={r.title}
                             filename={buildDownloadFilename(
                               (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,

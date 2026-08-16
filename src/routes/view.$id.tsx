@@ -9,6 +9,7 @@ import { trackEvent } from "@/lib/analytics";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { buildDownloadFilename } from "@/lib/download-filename";
+import { publicationLabel } from "@/lib/badges";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
@@ -191,6 +192,7 @@ function ViewPdf() {
           <DownloadToPrintButton
             href={`/view/${pdf.id}/download`}
             publicationId={pdf.id}
+            publicationName={publicationLabel(pdf.publication || pdf.title) || pdf.title}
             publicationTitle={pdf.title}
             filename={buildDownloadFilename(
               pdf.parsha_key,
