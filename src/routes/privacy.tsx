@@ -204,7 +204,7 @@ function PrivacyPage() {
                   They process data only to provide their service to us:
                 </p>
                 <ul className="list-disc space-y-1 pl-6">
-                  <li>Cloudflare — hosting and content delivery</li>
+                  <li>Lovable — website hosting and content delivery</li>
                   <li>
                     Supabase — database storage for subscriptions and download
                     records
