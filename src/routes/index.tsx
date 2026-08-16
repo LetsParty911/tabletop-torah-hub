@@ -222,6 +222,12 @@ function Index() {
   const upcomingParsha = isFallback
     ? (currentParshaKey ?? nextParshaAfter(displayedParshaKey))
     : nextParshaAfter(displayedParshaKey);
+  // Post-Shabbos framing: client-only so SSR/hydration stays stable.
+  const [postShabbos, setPostShabbos] = useState(false);
+  useEffect(() => {
+    setPostShabbos(isFallback && resources.length > 0 && isPostShabbosWindow());
+  }, [isFallback, resources.length]);
+
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
 
   const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long">("All");
