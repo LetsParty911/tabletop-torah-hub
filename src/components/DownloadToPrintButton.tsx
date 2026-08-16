@@ -87,6 +87,9 @@ export function DownloadToPrintButton({
     <a
       href={href}
       rel="nofollow"
+      aria-label={
+        publicationTitle ? `Download ${publicationTitle} to print` : "Download to print"
+      }
       download={preferredFilename ?? ""}
       onClick={handleClick}
       onMouseEnter={warm}
