@@ -18,19 +18,28 @@ type ArchiveSearch = {
   parsha: string;
   audience: "All" | AudienceKey;
   q: string;
+  /** Optional facets, mirroring the homepage filters. */
+  length?: "All" | "short" | "long";
+  type?: string;
+  pub?: string;
 };
 
 const AUDIENCE_VALUES = ["All", "Children", "Families", "Adults"] as const;
+const LENGTH_VALUES = ["All", "short", "long"] as const;
 
 /** Lenient parsing: any unexpected value falls back to the default. */
 function parseArchiveSearch(input: Record<string, unknown>): ArchiveSearch {
   const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
   const audience = str(input['audience']) as ArchiveSearch["audience"];
+  const length = str(input['length']) as NonNullable<ArchiveSearch["length"]>;
   return {
     year: str(input['year']).slice(0, 10) || "all",
     parsha: str(input['parsha']).slice(0, 60) || "all",
     audience: (AUDIENCE_VALUES as readonly string[]).includes(audience) ? audience : "All",
     q: str(input['q']).slice(0, 100),
+    length: (LENGTH_VALUES as readonly string[]).includes(length) ? length : "All",
+    type: str(input['type']).slice(0, 60) || "All",
+    pub: str(input['pub']).slice(0, 120) || "All",
   };
 }
 
@@ -41,6 +50,9 @@ function stripDefaults(s: ArchiveSearch) {
   if (s.parsha !== "all") out.parsha = s.parsha;
   if (s.audience !== "All") out.audience = s.audience;
   if (s.q) out.q = s.q;
+  if (s.length && s.length !== "All") out.length = s.length;
+  if (s.type && s.type !== "All") out.type = s.type;
+  if (s.pub && s.pub !== "All") out.pub = s.pub;
   return out;
 }
 
