@@ -101,6 +101,10 @@ export const Route = createFileRoute("/view/$id/download")({
 
         const tUp = Date.now();
         const headers = new Headers(NOINDEX);
+        // Completion signal for the UI: the client appends ?dl=<token> and
+        // polls for this cookie, so the button's loading state ends when the
+        // browser actually receives the file rather than on a fixed timer.
+        const dlToken = new URL(request.url).searchParams.get("dl");
         headers.set(
           "Server-Timing",
           `row;desc="${cacheHit ? "cache" : "db"}";dur=${tDb - t0}, storage;dur=${tUp - tDb}, worker;dur=${tUp - t0}`,
