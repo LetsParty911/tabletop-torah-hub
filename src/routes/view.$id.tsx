@@ -179,11 +179,6 @@ function ViewPdf() {
                 {standardizeCopy(pdf.subtitle)}
               </p>
             )}
-            {pdf.description && (
-              <p className="mt-3 text-base text-foreground/85 leading-relaxed">
-                {standardizeCopy(pdf.description)}
-              </p>
-            )}
             {metaLine && (
               <p className="mt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {metaLine}
