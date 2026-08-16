@@ -118,8 +118,10 @@ function NotFoundComponent() {
     }
     tag.setAttribute("content", "noindex");
     return () => {
+      document.title = previousTitle;
       tag?.parentNode?.removeChild(tag);
     };
+
   }, []);
 
   return (

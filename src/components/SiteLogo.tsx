@@ -32,8 +32,11 @@ export function SiteLogoHorizontal({ className = "" }: { className?: string }) {
         src={logoMark.url}
         alt=""
         aria-hidden="true"
+        width={40}
+        height={40}
         className="h-8 w-8 shrink-0 object-contain sm:h-10 sm:w-10"
       />
+
       <span className="hidden h-8 w-px shrink-0 bg-accent/70 sm:block sm:h-10" />
       <span className="hidden sm:block">
         <Wordmark size="md" />
