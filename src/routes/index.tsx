@@ -682,11 +682,6 @@ function Index() {
                                 {standardizeCopy(r.subtitle)}
                               </p>
                             )}
-                            {r.description && (
-                              <p className="mt-2 text-sm text-foreground/85 leading-snug">
-                                {standardizeCopy(r.description)}
-                              </p>
-                            )}
                             {(r.audience || r.format_type || typeof r.page_count === "number") && (
                               <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                 {[
