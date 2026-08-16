@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { isPostShabbosWindow } from "@/lib/post-shabbos";
 import { FileText, Share2 } from "lucide-react";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { WhatsNewBanner } from "@/components/WhatsNewBanner";
@@ -222,6 +223,12 @@ function Index() {
   const upcomingParsha = isFallback
     ? (currentParshaKey ?? nextParshaAfter(displayedParshaKey))
     : nextParshaAfter(displayedParshaKey);
+  // Post-Shabbos framing: client-only so SSR/hydration stays stable.
+  const [postShabbos, setPostShabbos] = useState(false);
+  useEffect(() => {
+    setPostShabbos(isFallback && resources.length > 0 && isPostShabbosWindow());
+  }, [isFallback, resources.length]);
+
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
 
   const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long">("All");
@@ -319,17 +326,20 @@ function Index() {
         <section className="parchment-frame">
           <div className="parchment-panel text-center">
             <h1 className="font-serif text-[2.25rem] leading-[1.05] sm:text-5xl md:text-6xl font-bold tracking-tight text-primary">
-              Free Divrei Torah for Your Shabbos Table
+              {postShabbos ? "Last Shabbos's Divrei Torah" : "Free Divrei Torah for Your Shabbos Table"}
             </h1>
             <p className="mt-4 sm:mt-6 font-serif text-lg sm:text-xl md:text-2xl text-primary max-w-2xl mx-auto leading-[1.35]">
               <span className="inline-block align-baseline text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
                 {resources.length}
               </span>{" "}
-              handpicked, print-ready selections for {displayedLabel} — for children, families, and adults.
+              {postShabbos
+                ? `selections from ${displayedLabel} are still here to download.`
+                : `handpicked, print-ready selections for ${displayedLabel} — for children, families, and adults.`}
             </p>
             {upcomingParsha && upcomingParsha !== displayedParshaKey && (
               <p className="mt-2 font-serif italic text-sm sm:text-base text-accent-readable">
-                {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`} posts Thursday.
+                {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`}{" "}
+                {postShabbos ? "updates Thursday." : "posts Thursday."}
               </p>
             )}
             <div className="mt-6 sm:mt-8 flex flex-col items-center gap-3 sm:gap-4">
