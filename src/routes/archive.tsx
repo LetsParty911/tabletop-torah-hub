@@ -489,6 +489,83 @@ function ArchivePage() {
                 </div>
               </div>
 
+              <div className="mt-4 flex flex-col items-center gap-2">
+                <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Filter by length
+                </span>
+                <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-full border border-accent/40 bg-background/70 p-1 shadow-sm">
+                  {(
+                    [
+                      { value: "All", label: "All lengths" },
+                      { value: "short", label: "Under 5 pages" },
+                      { value: "long", label: "5+ pages" },
+                    ] as const
+                  ).map(({ value, label }) => {
+                    const active = lengthFilter === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setLengthFilter(active ? "All" : value)}
+                        className={`rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
+                          active
+                            ? "bg-accent text-accent-foreground shadow-sm"
+                            : "text-primary hover:bg-accent/12"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {(typeOptions.length > 0 || publicationOptions.length > 0) && (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {typeOptions.length > 0 && (
+                    <label className="block text-left">
+                      <span className="mb-1 block text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Content type
+                      </span>
+                      <select
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value)}
+                        className="w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
+                      >
+                        <option value="All">All content types</option>
+                        {typeOptions.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                  {publicationOptions.length > 0 && (
+                    <label className="block text-left">
+                      <span className="mb-1 block text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Publication
+                      </span>
+                      <select
+                        value={pubFilter}
+                        onChange={(e) => setPubFilter(e.target.value)}
+                        className="w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
+                      >
+                        <option value="All">All publications</option>
+                        {publicationOptions.map((p) => (
+                          <option key={p} value={p}>
+                            {p}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                </div>
+              )}
+
+
+
               {hasActiveFilters && (
                 <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                   <span>
