@@ -106,7 +106,10 @@ function AuthRedirectHandler() {
 function NotFoundComponent() {
   useEffect(() => {
     if (typeof document === "undefined") return;
+    const previousTitle = document.title;
+    document.title = "Page Not Found — Torah for the Table";
     let tag = document.querySelector('meta[name="robots"][data-notfound="1"]') as HTMLMetaElement | null;
+
     if (!tag) {
       tag = document.createElement("meta");
       tag.setAttribute("name", "robots");

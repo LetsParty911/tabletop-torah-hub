@@ -484,7 +484,7 @@ function Index() {
               </p>
             ) : (
               <>
-                <div className="mt-5 sm:mt-6 space-y-4">
+                <div className="mt-5 sm:mt-6 space-y-4 sticky top-14 z-30 -mx-4 px-4 py-3 bg-background/95 backdrop-blur border-b border-accent/20 sm:static sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0">
                   {(audienceFilter !== "All" || lengthFilter !== "All" || contentTypeFilter !== "All") && (
                     <div className="flex justify-end">
                       <button
