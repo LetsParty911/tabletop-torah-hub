@@ -129,7 +129,7 @@ export const Route = createFileRoute("/")({
   },
   notFoundComponent: () => (
     <div className="min-h-screen flex items-center justify-center">
-      <Link to="/archive" search={{ year: "all", parsha: "all", audience: "All", q: "" }} className="text-primary underline">Browse archive</Link>
+      <Link to="/" className="text-primary underline">Back to home</Link>
     </div>
   ),
   head: ({ loaderData }) => {
@@ -746,17 +746,6 @@ function Index() {
                   </p>
                 )}
               </>
-            )}
-            {true && resources.length > 0 && (
-              <div className="mt-6 sm:mt-8 text-center">
-                <Link
-                  to="/archive"
-                  search={{ year: "all", parsha: "all", audience: "All", q: "" }}
-                  className="inline-flex items-center gap-1.5 font-serif italic text-sm sm:text-base text-accent hover:text-primary transition-colors"
-                >
-                  Browse Archive →
-                </Link>
-              </div>
             )}
             {resources.length > 0 && (
               <div className="mt-5 flex justify-center">
