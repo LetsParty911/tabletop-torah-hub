@@ -145,7 +145,7 @@ function ViewPdf() {
   }, [pdf.id, pdf.title]);
 
   const metaLine = [
-    normalizeAudience(pdf.audience, pdf.title) ?? pdf.audience,
+    audienceLabel(normalizeAudience(pdf.audience, pdf.title)) ?? pdf.audience,
     formatTypeLabel(pdf.format_type),
     typeof pdf.page_count === "number"
       ? `${pdf.page_count} ${pdf.page_count === 1 ? "page" : "pages"}`
