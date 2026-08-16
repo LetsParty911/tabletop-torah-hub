@@ -375,7 +375,7 @@ function Index() {
                   See {collectionLabel} {resources.length} Divrei Torah
                 </a>
 
-                <div className="flex w-full flex-col items-center gap-1 md:w-auto">
+                <div className="flex w-full flex-col items-center gap-2 md:w-auto">
                   <a
                     href="#weekly-email-signup"
                     onClick={(e) => {
@@ -384,16 +384,16 @@ function Index() {
                         .getElementById("weekly-email-signup")
                         ?.scrollIntoView({ behavior: "smooth", block: "start" });
                     }}
-                    className="inline-flex w-full items-center justify-center rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground md:w-auto"
+                    className="inline-flex w-full items-center justify-center rounded-full bg-accent px-6 py-3 font-serif font-semibold text-accent-foreground shadow-md transition-colors hover:bg-primary hover:text-primary-foreground md:w-auto"
                   >
                     Remind Me Weekly
                   </a>
-                  <p className="font-serif text-sm italic text-accent-readable sm:text-base md:hidden">
+                  <p className="font-serif text-base italic font-bold text-primary sm:text-lg md:hidden">
                     One email every Thursday when the new collection posts.
                   </p>
                 </div>
               </div>
-              <p className="hidden font-serif text-base italic text-accent-readable text-center md:block">
+              <p className="hidden font-serif text-lg italic font-bold text-primary text-center md:block">
                 One email every Thursday when the new collection posts.
               </p>
             </div>
