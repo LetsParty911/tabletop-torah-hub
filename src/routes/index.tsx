@@ -238,6 +238,10 @@ function Index() {
     setPostShabbos(showingLastShabbos && resources.length > 0 && isPostShabbosWindow());
   }, [isFallback, resources.length, readingDate]);
 
+  const collectionLabel = postShabbos ? "Last Shabbos's" : "This Week's";
+  const collectionLabelLower = postShabbos ? "last Shabbos" : "this week";
+
+
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
 
   const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long">("All");
