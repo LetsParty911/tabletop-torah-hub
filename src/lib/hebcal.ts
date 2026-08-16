@@ -69,6 +69,8 @@ export async function resolveHebcalParsha(): Promise<{
   parshaKey: string;
   label: string;
   isStaticFallback: boolean;
+  /** ISO date (YYYY-MM-DD) of the Shabbos this reading belongs to, when known. */
+  readingDate: string | null;
 }> {
   try {
     const items = await fetchHebcalShabbat();
@@ -84,19 +86,29 @@ export async function resolveHebcalParsha(): Promise<{
 
     if (yomTovOnShabbos) {
       const key = hebcalYomTovToKey(yomTovOnShabbos.title) ?? yomTovOnShabbos.title;
-      return { parshaKey: key, label: key, isStaticFallback: false };
+      return {
+        parshaKey: key,
+        label: key,
+        isStaticFallback: false,
+        readingDate: yomTovOnShabbos.date.slice(0, 10),
+      };
     }
     if (parsha) {
       // Unmapped names pass through unchanged rather than erroring.
       const key = hebcalToParshaKey(parsha.title);
-      return { parshaKey: key, label: `Parshas ${key}`, isStaticFallback: false };
+      return {
+        parshaKey: key,
+        label: `Parshas ${key}`,
+        isStaticFallback: false,
+        readingDate: parsha.date.slice(0, 10),
+      };
     }
   } catch (e) {
     console.error("Hebcal load error", e);
   }
 
   const key = staticFallbackParsha();
-  return { parshaKey: key, label: `Parshas ${key}`, isStaticFallback: true };
+  return { parshaKey: key, label: `Parshas ${key}`, isStaticFallback: true, readingDate: null };
 }
 
 /** The parsha that follows `key` in the ordered list (handles combined names). */
@@ -106,4 +118,23 @@ export function nextParshaAfter(key: string | null): string | null {
   const i = PARSHIYOS_54.findIndex((p) => p.toLowerCase() === last.toLowerCase());
   if (i === -1) return null;
   return PARSHIYOS_54[(i + 1) % PARSHIYOS_54.length]!;
+}
+
+/** Today's date in Eastern time as YYYY-MM-DD. */
+export function easternDateKey(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+/**
+ * True when the reading Hebcal reported is already in the past (its Shabbos
+ * has ended), which means the collection on screen is last Shabbos's.
+ */
+export function isPastReading(readingDate: string | null, now: Date = new Date()): boolean {
+  if (!readingDate) return false;
+  return readingDate < easternDateKey(now);
 }
