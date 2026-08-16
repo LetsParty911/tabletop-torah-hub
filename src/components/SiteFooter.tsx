@@ -19,13 +19,6 @@ export function SiteFooter() {
         <Link to="/short-vorts" className={linkClass}>
           Short Vorts
         </Link>
-        <Link
-          to="/archive"
-          search={{ year: "all", parsha: "all", audience: "All", q: "" }}
-          className={linkClass}
-        >
-          Archive
-        </Link>
         <Link to="/about" className={linkClass}>
           About
         </Link>
