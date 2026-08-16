@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ShortVortsRouteImport } from './routes/short-vorts'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as MissionRouteImport } from './routes/mission'
@@ -43,6 +44,11 @@ const ShortVortsRoute = ShortVortsRouteImport.update({
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   id: '/robots.txt',
   path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResourcesRoute = ResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/mission': typeof MissionRoute
   '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
+  '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -162,6 +169,7 @@ export interface FileRoutesByTo {
   '/mission': typeof MissionRoute
   '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
+  '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/mission': typeof MissionRoute
   '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
+  '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/mission'
     | '/offline'
     | '/privacy'
+    | '/resources'
     | '/robots.txt'
     | '/short-vorts'
     | '/sitemap.xml'
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/mission'
     | '/offline'
     | '/privacy'
+    | '/resources'
     | '/robots.txt'
     | '/short-vorts'
     | '/sitemap.xml'
@@ -253,6 +264,7 @@ export interface FileRouteTypes {
     | '/mission'
     | '/offline'
     | '/privacy'
+    | '/resources'
     | '/robots.txt'
     | '/short-vorts'
     | '/sitemap.xml'
@@ -276,6 +288,7 @@ export interface RootRouteChildren {
   MissionRoute: typeof MissionRoute
   OfflineRoute: typeof OfflineRoute
   PrivacyRoute: typeof PrivacyRoute
+  ResourcesRoute: typeof ResourcesRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   ShortVortsRoute: typeof ShortVortsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -309,6 +322,13 @@ declare module '@tanstack/react-router' {
       path: '/robots.txt'
       fullPath: '/robots.txt'
       preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resources': {
+      id: '/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -455,6 +475,7 @@ const rootRouteChildren: RootRouteChildren = {
   MissionRoute: MissionRoute,
   OfflineRoute: OfflineRoute,
   PrivacyRoute: PrivacyRoute,
+  ResourcesRoute: ResourcesRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   ShortVortsRoute: ShortVortsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
