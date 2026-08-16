@@ -52,8 +52,11 @@ export function SiteLogoStacked({ className = "" }: { className?: string }) {
       <img
         src={logoMark.url}
         alt="Torah for the Table"
+        width={80}
+        height={80}
         className="h-16 w-16 object-contain sm:h-20 sm:w-20"
       />
+
       <Wordmark size="lg" />
     </span>
   );
