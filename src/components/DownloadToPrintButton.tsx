@@ -86,19 +86,6 @@ export function DownloadToPrintButton({
     }
   }, [publicationId, publicationTitle]);
 
-  const filenameFromHeader = (value: string | null): string | undefined => {
-    if (!value) return undefined;
-    const star = /filename\*=UTF-8''([^;]+)/i.exec(value);
-    if (star) {
-      try {
-        return decodeURIComponent(star[1]);
-      } catch {
-        /* fall through */
-      }
-    }
-    const plain = /filename="([^"]+)"/i.exec(value);
-    return plain?.[1];
-  };
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -109,70 +96,20 @@ export function DownloadToPrintButton({
       onClick?.();
       trackDownload();
       if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
-      setPhase("idle");
 
-      // The fetch/blob path is required on every supported browser, including
-      // iOS, because response.blob() resolves only after the final byte arrives.
-      const canBlob =
-        typeof window !== "undefined" &&
-        typeof window.URL?.createObjectURL === "function" &&
-        typeof fetch === "function";
-      if (!canBlob) {
-        flushSync(() => setPhase("preparing"));
-        statusTimerRef.current = setTimeout(() => {
-          setPhase("finishing");
-          statusTimerRef.current = setTimeout(() => setPhase("saved"), 1500);
-        }, 700);
-        return;
-      }
-
-      // Fetch the (edge-cacheable) URL ourselves so the loading state lasts
-      // for the entire transfer, then hand a blob to the download manager.
-      e.preventDefault();
+      // Let the browser stream the file straight to disk (single pass).
+      // Buffering it through fetch()+Blob first made the file land later,
+      // because the bytes were written twice: once to memory, once to disk.
       flushSync(() => setPhase("preparing"));
-      const t0 = Date.now();
-
-      void (async () => {
-        try {
-          const res = await fetch(href, { credentials: "same-origin" });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const blob = await res.blob();
-          const name =
-            preferredFilename ??
-            filenameFromHeader(res.headers.get("content-disposition")) ??
-            "download.pdf";
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = name;
-          document.body.appendChild(a);
-          // The response body is complete, but the browser still needs to
-          // accept and persist the Blob download. Keep the button visibly
-          // non-idle across that handoff instead of implying completion.
-          setPhase("finishing");
-          a.click();
-          a.remove();
-          setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
-          const elapsed = Date.now() - t0;
-          const handoffHold = Math.max(700, 1200 - elapsed);
-          statusTimerRef.current = setTimeout(() => {
-            setPhase("saved");
-          }, handoffHold);
-        } catch {
-          setPhase("error");
-          statusTimerRef.current = setTimeout(() => setPhase("idle"), 5000);
-        }
-      })();
+      statusTimerRef.current = setTimeout(() => {
+        setPhase("finishing");
+        statusTimerRef.current = setTimeout(() => setPhase("saved"), 1400);
+      }, 900);
     },
 
-    [
-      onClick,
-      busy,
-      href,
-      preferredFilename,
-      trackDownload,
-    ],
+    [onClick, busy, trackDownload],
   );
+
 
 
   return (
