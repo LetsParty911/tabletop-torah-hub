@@ -296,12 +296,30 @@ function ViewPdf() {
 
 
         <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 font-serif italic text-accent hover:text-primary transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to this week's collection
-          </Link>
+          {pdf.parsha_key ? (
+            <Link
+              to="/archive"
+              search={{
+                year: "all",
+                parsha: pdf.parsha_key,
+                audience: "All",
+                q: "",
+              }}
+              className="inline-flex items-center gap-2 font-serif italic text-accent hover:text-primary transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />{" "}
+              {/^(parshas|parashat)\s/i.test(pdf.parsha_key)
+                ? `Back to ${pdf.parsha_key}`
+                : `Back to Parshas ${pdf.parsha_key}`}
+            </Link>
+          ) : (
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 font-serif italic text-accent hover:text-primary transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to this week's collection
+            </Link>
+          )}
         </div>
 
         <div className="mt-10">
