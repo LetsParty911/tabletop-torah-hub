@@ -510,6 +510,7 @@ function AdminPage() {
   // Skipped-this-week state, keyed by parsha + jewish_year, persisted in DB.
   const [jewishYear, setJewishYear] = useState<number | null>(null);
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
+  const [skippedRawKeys, setSkippedRawKeys] = useState<Map<string, string>>(new Map());
 
   // Resolve the current Jewish year once.
   useEffect(() => {
