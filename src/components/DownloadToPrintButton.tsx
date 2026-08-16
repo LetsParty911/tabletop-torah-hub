@@ -22,13 +22,40 @@ export function DownloadToPrintButton({
 }: DownloadToPrintButtonProps) {
   const [starting, setStarting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const warmedRef = useRef(false);
 
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
+  const clearTimers = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (pollRef.current) clearInterval(pollRef.current);
+    timerRef.current = null;
+    pollRef.current = null;
   }, []);
+
+  useEffect(() => clearTimers, [clearTimers]);
+
+  // The browser handles the download natively, so there is no fetch promise to
+  // await. The server echoes a per-click token back as a cookie once the file
+  // response is actually delivered; polling for it keeps the loading state up
+  // for the real transfer instead of a fixed timer.
+  const waitForDelivery = useCallback(
+    (token: string) => {
+      clearTimers();
+      pollRef.current = setInterval(() => {
+        if (typeof document !== "undefined" && document.cookie.includes(`tftt_dl=${token}`)) {
+          clearTimers();
+          setStarting(false);
+          document.cookie = `tftt_dl=; Max-Age=0; Path=/; SameSite=Lax`;
+        }
+      }, 150);
+      // Safety cap so the button can never stay stuck.
+      timerRef.current = setTimeout(() => {
+        clearTimers();
+        setStarting(false);
+      }, 60000);
+    },
+    [clearTimers],
+  );
 
   // Warm the origin lookup before the click so the download starts sooner.
   const warm = useCallback(() => {
