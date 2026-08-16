@@ -81,6 +81,7 @@ export const Route = createFileRoute("/view/$id/download")({
         if (!upstream.ok || !upstream.body) {
           return new Response("Download failed", { status: 502, headers: NOINDEX });
         }
+        const tUp = Date.now();
 
         // Derive the validator from the stored object itself so replacing the
         // file in place (same path) invalidates every cached copy.
@@ -109,7 +110,6 @@ export const Route = createFileRoute("/view/$id/download")({
           });
         }
 
-        const tUp = Date.now();
         const headers = new Headers(NOINDEX);
         headers.set("Content-Type", "application/pdf");
         headers.set("Content-Disposition", quoteFilename(entry.filename));
