@@ -320,9 +320,10 @@ function Index() {
       className={`inline-flex items-center justify-center gap-2 rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors ${className ?? ""}`}
     >
       <Share2 className="h-4 w-4" />
-      Share This Week's Divrei Torah
+      Share {collectionLabel} Divrei Torah
     </a>
   );
+
 
 
   return (
