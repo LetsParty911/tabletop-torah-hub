@@ -195,6 +195,8 @@ export function DownloadToPrintButton({
     >
       {starting ? (
         <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+      ) : saved ? (
+        <Check className="h-4 w-4 shrink-0" />
       ) : (
         <Download className="h-4 w-4 shrink-0" />
       )}
@@ -203,8 +205,11 @@ export function DownloadToPrintButton({
           ? displayName
             ? `Preparing ${displayName}…`
             : "Preparing…"
-          : buttonLabel}
+          : saved
+            ? "Saved to your device"
+            : buttonLabel}
       </span>
+
 
     </a>
   );
