@@ -154,11 +154,22 @@ export const Route = createFileRoute("/view/$id/download")({
           serverTiming(tDb - t0, tUp - tDb, Date.now() - t0),
         );
         headers.set("Timing-Allow-Origin", "*");
+        headers.set("X-TFTT-Cache", "MISS");
         const len = upstream.headers.get("content-length");
         if (len) headers.set("Content-Length", len);
 
-        return new Response(upstream.body, { status: 200, headers });
+        const response = new Response(upstream.body, { status: 200, headers });
+        if (cache) {
+          // Store a copy for the colo without delaying this reader's stream.
+          try {
+            await cache.put(cacheKey, response.clone());
+          } catch {
+            /* caching is best-effort */
+          }
+        }
+        return response;
       },
+
     },
   },
 });
