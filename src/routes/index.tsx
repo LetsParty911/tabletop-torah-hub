@@ -328,7 +328,7 @@ function Index() {
               handpicked, print-ready selections for {displayedLabel} — for children, families, and adults.
             </p>
             {upcomingParsha && upcomingParsha !== displayedParshaKey && (
-              <p className="mt-2 font-serif italic text-sm sm:text-base text-accent">
+              <p className="mt-2 font-serif italic text-sm sm:text-base text-accent-readable">
                 {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`} posts Thursday.
               </p>
             )}
@@ -344,7 +344,7 @@ function Index() {
                   }}
                   className="inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-3 font-serif font-semibold text-primary-foreground shadow-md transition-colors hover:bg-accent hover:text-accent-foreground md:w-auto"
                 >
-                  Browse This Week's Collection
+                  See This Week's {resources.length} Divrei Torah
                 </a>
                 <div className="flex w-full flex-col items-center gap-1 md:w-auto">
                   <a
@@ -359,12 +359,12 @@ function Index() {
                   >
                     Remind Me Weekly
                   </a>
-                  <p className="font-serif text-sm italic text-accent sm:text-base md:hidden">
+                  <p className="font-serif text-sm italic text-accent-readable sm:text-base md:hidden">
                     One email every Thursday when the new collection posts.
                   </p>
                 </div>
               </div>
-              <p className="hidden font-serif text-base italic text-accent text-center md:block">
+              <p className="hidden font-serif text-base italic text-accent-readable text-center md:block">
                 One email every Thursday when the new collection posts.
               </p>
             </div>
@@ -464,22 +464,14 @@ function Index() {
               </div>
             )}
             {!isFallback && resources.length > 0 && (
-              <p className="mt-2 text-center font-sans text-[0.65rem] sm:text-xs uppercase tracking-[0.2em] text-accent">
-                {currentLabel} · New collections weekly
+              <p className="mt-2 text-center font-sans text-[0.65rem] sm:text-xs uppercase tracking-[0.2em] text-accent-readable">
+                New collections weekly
               </p>
             )}
             {resources.length > 0 && (
-              <>
-                <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent">
-                  <span className="inline-block align-baseline text-base sm:text-lg md:text-xl font-bold text-primary">
-                    {resources.length}
-                  </span>{" "}
-                  {resources.length === 1 ? "Dvar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : " this week"}
-                </p>
-                <div className="mt-3 flex justify-center">
-                  <ShareButton />
-                </div>
-              </>
+              <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent-readable">
+                {resources.length === 1 ? "Dvar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : " this week"}
+              </p>
             )}
 
             {resources.length === 0 ? (
@@ -498,7 +490,7 @@ function Index() {
                           setLengthFilter("All");
                           setContentTypeFilter("All");
                         }}
-                        className="text-xs font-serif italic text-accent hover:text-primary hover:underline transition-colors"
+                        className="text-xs font-serif italic text-accent-readable hover:text-primary hover:underline transition-colors"
                       >
                         Clear filters
                       </button>
@@ -652,91 +644,98 @@ function Index() {
 
 
                 <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
-                  {filteredResources.map((r) => (
-                    <article
-                      key={r.id}
-                      className="h-full rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent hover:shadow-md transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
-                    >
-                      <div className="flex flex-1 items-start gap-3">
+                  {filteredResources.map((r, i) => (
+                    <>
+                      <article
+                        key={r.id}
+                        className="h-full rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent hover:shadow-md transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
+                      >
+                        <div className="flex flex-1 items-start gap-3">
 
-                        <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-accent/15 text-primary shrink-0">
-                          <FileText className="h-5 w-5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-serif text-base sm:text-xl font-bold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
-                              <Link
-                                to="/view/$id"
-                                params={{ id: r.id }}
-                                className="hover:text-accent hover:underline transition-colors duration-150"
-                              >
-                                {r.title}
-                              </Link>
-                            </h3>
-                            {r.badge && (
-                              <span className="shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
-                                {r.badge}
-                              </span>
+                          <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-accent/15 text-primary shrink-0">
+                            <FileText className="h-5 w-5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <h3 className="font-serif text-base sm:text-xl font-bold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
+                                <Link
+                                  to="/view/$id"
+                                  params={{ id: r.id }}
+                                  className="hover:text-accent hover:underline transition-colors duration-150"
+                                >
+                                  {r.title}
+                                </Link>
+                              </h3>
+                              {r.badge && (
+                                <span className="shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
+                                  {r.badge}
+                                </span>
+                              )}
+                            </div>
+                            {r.publisher && (
+                              <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">
+                                By {r.publisher}
+                              </p>
+                            )}
+                            {r.subtitle && (
+                              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                                {standardizeCopy(r.subtitle)}
+                              </p>
+                            )}
+                            {r.description && (
+                              <p className="mt-2 text-sm text-foreground/85 leading-snug">
+                                {standardizeCopy(r.description)}
+                              </p>
+                            )}
+                            {(r.audience || r.format_type || typeof r.page_count === "number") && (
+                              <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                {[
+                                  normalizeAudience(r.audience, r.title) ?? r.audience,
+                                  formatTypeLabel(r.format_type),
+
+                                  typeof r.page_count === "number"
+                                    ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
+                                    : null,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </p>
                             )}
                           </div>
-                          {r.publisher && (
-                            <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">
-                              By {r.publisher}
-                            </p>
-                          )}
-                          {r.subtitle && (
-                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                              {standardizeCopy(r.subtitle)}
-                            </p>
-                          )}
-                          {r.description && (
-                            <p className="mt-2 text-sm text-foreground/85 leading-snug">
-                              {standardizeCopy(r.description)}
-                            </p>
-                          )}
-                          {(r.audience || r.format_type || typeof r.page_count === "number") && (
-                            <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                              {[
-                                normalizeAudience(r.audience, r.title) ?? r.audience,
-                                formatTypeLabel(r.format_type),
-
-                                typeof r.page_count === "number"
-                                  ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
-                                  : null,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </p>
-                          )}
                         </div>
-                      </div>
 
-                      <div className="mt-auto pt-4">
-                        <DownloadToPrintButton
-                          href={`/view/${r.id}/download`}
-                          publicationId={r.id}
-                          publicationTitle={r.title}
-                          filename={buildDownloadFilename(
-                            (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
-                            r.publication || r.title,
-                          )}
-                          onClick={() => {
-                            trackEvent("pdf_download", pdfParams(r));
-                            if (typeof window !== "undefined") {
-                              window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
-                            }
-                          }}
-                          className="w-full px-3 py-2.5 lg:py-2"
-                        />
-                        <div className="mt-2 flex justify-center">
-                          <SharePublicationButton
-                            pdfId={r.id}
-                            title={r.title}
-                            parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
+                        <div className="mt-auto pt-4">
+                          <DownloadToPrintButton
+                            href={`/view/${r.id}/download`}
+                            publicationId={r.id}
+                            publicationTitle={r.title}
+                            filename={buildDownloadFilename(
+                              (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
+                              r.publication || r.title,
+                            )}
+                            onClick={() => {
+                              trackEvent("pdf_download", pdfParams(r));
+                              if (typeof window !== "undefined") {
+                                window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
+                              }
+                            }}
+                            className="w-full px-3 py-2.5 lg:py-2"
                           />
+                          <div className="mt-2 flex justify-center">
+                            <SharePublicationButton
+                              pdfId={r.id}
+                              title={r.title}
+                              parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    </article>
+                      </article>
+                      {i === (filteredResources.length > 1 ? 1 : 0) && (
+                        <div key="share-prompt" className="col-span-1 sm:col-span-2 flex justify-center py-3">
+                          <ShareButton />
+                        </div>
+                      )}
+                    </>
                   ))}
                 </div>
 
@@ -746,11 +745,6 @@ function Index() {
                   </p>
                 )}
               </>
-            )}
-            {resources.length > 0 && (
-              <div className="mt-5 flex justify-center">
-                <ShareButton />
-              </div>
             )}
             <p className="mt-8 mx-auto max-w-2xl px-2 text-center text-xs sm:text-sm text-muted-foreground/80 leading-relaxed">
               Torah For The Table is a 501(c)(3) nonprofit organization providing free, carefully
