@@ -54,18 +54,6 @@ export const Route = createFileRoute("/view/$id/download")({
           rowCache.set(id, entry);
         }
 
-        const etag = `"${id}-${entry.path.length}-${entry.filename.length}"`;
-        if (request.headers.get("if-none-match") === etag) {
-          return new Response(null, {
-            status: 304,
-            headers: {
-              ETag: etag,
-              "Cache-Control": CACHE_CONTROL,
-              ...NOINDEX,
-            },
-          });
-        }
-
         // Stream straight from storage through our own origin so Cloudflare
         // can cache the file at the edge (one request instead of two hosts).
         const base = (process.env.EXT_SUPABASE_URL || process.env.SUPABASE_URL || "").replace(/\/$/, "");
@@ -84,6 +72,31 @@ export const Route = createFileRoute("/view/$id/download")({
         });
         if (!upstream.ok || !upstream.body) {
           return new Response("Download failed", { status: 502, headers: NOINDEX });
+        }
+
+        // Derive the validator from the stored object itself so replacing the
+        // file in place (same path) invalidates every cached copy.
+        const upstreamTag =
+          upstream.headers.get("etag")?.replace(/^W\//, "").replace(/"/g, "") ||
+          [
+            upstream.headers.get("last-modified"),
+            upstream.headers.get("content-length"),
+          ]
+            .filter(Boolean)
+            .join("-") ||
+          String(Date.now());
+        const etag = `"${id}-${upstreamTag}"`;
+
+        if (request.headers.get("if-none-match") === etag) {
+          void upstream.body.cancel();
+          return new Response(null, {
+            status: 304,
+            headers: {
+              ETag: etag,
+              "Cache-Control": CACHE_CONTROL,
+              ...NOINDEX,
+            },
+          });
         }
 
         const tUp = Date.now();
