@@ -241,6 +241,43 @@ function ArchivePage() {
     return Array.from(set).sort();
   }, [years]);
 
+  const matchesLength = (r: ArchivePdf) =>
+    lengthFilter === "All"
+      ? true
+      : typeof r.page_count === "number"
+        ? lengthFilter === "short"
+          ? r.page_count < 5
+          : r.page_count >= 5
+        : false;
+  const matchesType = (r: ArchivePdf) =>
+    typeFilter === "All" || formatTypeLabel(r.format_type) === typeFilter;
+  const matchesPub = (r: ArchivePdf) =>
+    pubFilter === "All" || (r.publication ?? r.title) === pubFilter;
+
+  // Options are derived from everything in the archive so a facet never empties itself.
+  const allPdfs = useMemo(
+    () => years.flatMap((y) => y.parshiyos.flatMap((p) => p.pdfs)),
+    [years],
+  );
+  const typeOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allPdfs
+            .map((r) => formatTypeLabel(r.format_type))
+            .filter((v): v is string => !!v),
+        ),
+      ).sort((a, b) => a.localeCompare(b)),
+    [allPdfs],
+  );
+  const publicationOptions = useMemo(
+    () =>
+      Array.from(new Set(allPdfs.map((r) => r.publication ?? r.title))).sort(
+        (a, b) => a.localeCompare(b),
+      ),
+    [allPdfs],
+  );
+
   const filteredYears = useMemo(() => {
     const q = query.trim().toLowerCase();
     const out: ArchiveYear[] = [];
@@ -261,12 +298,13 @@ function ArchivePage() {
             (r) => normalizeAudience(r.audience, r.title) === audienceFilter,
           );
         }
+        pdfs = pdfs.filter((r) => matchesLength(r) && matchesType(r) && matchesPub(r));
         if (pdfs.length) parshiyos.push({ ...p, pdfs });
       }
       if (parshiyos.length) out.push({ ...y, parshiyos });
     }
     return out;
-  }, [years, yearFilter, parshaFilter, query, audienceFilter]);
+  }, [years, yearFilter, parshaFilter, query, audienceFilter, lengthFilter, typeFilter, pubFilter]);
 
   // Audience counts reflect the other active filters (year, parsha, search).
   const audienceCounts = useMemo(() => {
@@ -289,6 +327,7 @@ function ArchivePage() {
               .some((v) => (v as string).toLowerCase().includes(q))
           )
             continue;
+          if (!matchesLength(r) || !matchesType(r) || !matchesPub(r)) continue;
           counts.All += 1;
           const a = normalizeAudience(r.audience, r.title);
           if (a) counts[a] += 1;
@@ -296,7 +335,7 @@ function ArchivePage() {
       }
     }
     return counts;
-  }, [years, yearFilter, parshaFilter, query]);
+  }, [years, yearFilter, parshaFilter, query, lengthFilter, typeFilter, pubFilter]);
 
   const totalPdfs = filteredYears.reduce(
     (sum: number, y: ArchiveYear) =>
@@ -320,7 +359,10 @@ function ArchivePage() {
     yearFilter !== "all" ||
     parshaFilter !== "all" ||
     query.trim() !== "" ||
-    audienceFilter !== "All";
+    audienceFilter !== "All" ||
+    lengthFilter !== "All" ||
+    typeFilter !== "All" ||
+    pubFilter !== "All";
 
   return (
     <div className="min-h-screen bg-background">
