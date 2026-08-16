@@ -133,7 +133,7 @@ export function DownloadToPrintButton({
 
     // No preventDefault: the browser handles the navigation/download natively,
     // which starts immediately.
-  }, [onClick, publicationId, publicationTitle, starting]);
+  }, [onClick, publicationId, publicationTitle, starting, waitForDelivery]);
 
   return (
     <a
