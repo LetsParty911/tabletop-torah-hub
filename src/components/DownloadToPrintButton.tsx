@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Download, Loader2 } from "lucide-react";
 
@@ -28,38 +28,7 @@ export function DownloadToPrintButton({
   const buttonLabel = displayName ? `Download ${displayName}` : "Download";
 
   const [starting, setStarting] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const warmedRef = useRef(false);
-
-  const clearTimers = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (pollRef.current) clearInterval(pollRef.current);
-    timerRef.current = null;
-    pollRef.current = null;
-  }, []);
-
-  useEffect(() => clearTimers, [clearTimers]);
-
-  // iOS Safari mishandles blob downloads (wrong/duplicate filenames), so there
-  // we keep the native anchor navigation and can only approximate completion.
-  const isIOS =
-    typeof navigator !== "undefined" &&
-    (/iP(hone|ad|od)/.test(navigator.userAgent) ||
-      (/Macintosh/.test(navigator.userAgent) && "ontouchend" in document));
-
-  const endLoadingSoon = useCallback(() => {
-    clearTimers();
-    const stop = () => {
-      clearTimers();
-      setStarting(false);
-      window.removeEventListener("blur", stop);
-      document.removeEventListener("visibilitychange", stop);
-    };
-    window.addEventListener("blur", stop, { once: true });
-    document.addEventListener("visibilitychange", stop, { once: true });
-    timerRef.current = setTimeout(stop, 2500);
-  }, [clearTimers]);
 
 
 
@@ -130,16 +99,14 @@ export function DownloadToPrintButton({
       onClick?.();
       trackDownload();
 
-      // Native anchor path (iOS, or no fetch/blob support): the browser owns
-      // the transfer, so completion can only be approximated.
+      // The fetch/blob path is required on every supported browser, including
+      // iOS, because response.blob() resolves only after the final byte arrives.
       const canBlob =
-        !isIOS &&
         typeof window !== "undefined" &&
         typeof window.URL?.createObjectURL === "function" &&
         typeof fetch === "function";
       if (!canBlob) {
         flushSync(() => setStarting(true));
-        endLoadingSoon();
         return;
       }
 
@@ -147,7 +114,6 @@ export function DownloadToPrintButton({
       // for the entire transfer, then hand a blob to the download manager.
       e.preventDefault();
       flushSync(() => setStarting(true));
-      clearTimers();
 
       void (async () => {
         try {
@@ -177,12 +143,9 @@ export function DownloadToPrintButton({
     [
       onClick,
       starting,
-      endLoadingSoon,
-      clearTimers,
       href,
       preferredFilename,
       trackDownload,
-      isIOS,
     ],
   );
 
