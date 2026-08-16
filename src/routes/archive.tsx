@@ -187,15 +187,19 @@ export const Route = createFileRoute("/archive")({
 
 function ArchivePage() {
   const { years } = Route.useLoaderData() as { years: ArchiveYear[] };
-  const search = Route.useSearch();
+  const rawSearch = Route.useSearch();
+  const search = parseArchiveSearch(rawSearch as Record<string, unknown>);
   const navigate = useNavigate({ from: Route.fullPath });
 
   const yearFilter = search.year;
   const parshaFilter = search.parsha;
   const audienceFilter = search.audience;
   const query = search.q;
+  const lengthFilter = search.length;
+  const typeFilter = search.type;
+  const pubFilter = search.pub;
 
-  const setSearch = (patch: Partial<ArchiveSearch>, replace = false) => {
+  const setSearch = (patch: ArchiveSearch, replace = false) => {
     void navigate({
       search: (prev: Record<string, unknown>) =>
         stripDefaults(parseArchiveSearch({ ...prev, ...patch })) as never,
@@ -207,6 +211,9 @@ function ArchivePage() {
   const setYearFilter = (year: string) => setSearch({ year });
   const setParshaFilter = (parsha: string) => setSearch({ parsha });
   const setAudienceFilter = (audience: ArchiveSearch["audience"]) => setSearch({ audience });
+  const setLengthFilter = (length: ArchiveSearch["length"]) => setSearch({ length });
+  const setTypeFilter = (type: string) => setSearch({ type });
+  const setPubFilter = (pub: string) => setSearch({ pub });
 
   // The search box stays instant locally; URL writes are debounced and replace
   // history so typing doesn't create a back-button entry per keystroke.
