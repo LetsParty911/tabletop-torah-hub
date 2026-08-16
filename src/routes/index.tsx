@@ -392,7 +392,13 @@ function Index() {
                           {label}
                         </span>
                         <h3 className="mt-3 font-serif text-base sm:text-xl font-bold text-primary leading-snug">
-                          {r.title}
+                          <Link
+                            to="/view/$id"
+                            params={{ id: r.id }}
+                            className="hover:text-accent hover:underline transition-colors duration-150"
+                          >
+                            {r.title}
+                          </Link>
                         </h3>
                         {r.publisher && (
                           <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">
