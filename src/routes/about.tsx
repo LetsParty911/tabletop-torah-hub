@@ -66,6 +66,14 @@ function AboutPage() {
 
             <div className="mt-10 pt-8 border-t-2 border-accent/30 space-y-8 max-w-2xl mx-auto text-left">
               <section>
+                <h2 className="font-serif text-2xl font-bold text-primary">Nonprofit Status</h2>
+                <p className="mt-2 font-serif text-base text-foreground leading-relaxed">
+                  Torah For The Table Inc. is a New Jersey nonprofit corporation recognized by the
+                  IRS as tax-exempt under Section 501(c)(3). EIN: XX-XXXXXXX.
+                </p>
+              </section>
+
+              <section>
                 <h2 className="font-serif text-2xl font-bold text-primary">About the Organization</h2>
                 <p className="mt-2 font-serif text-base text-foreground leading-relaxed">
                   Torah For The Table Inc. is a New Jersey nonprofit corporation recognized by the
