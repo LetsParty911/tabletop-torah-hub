@@ -16,6 +16,7 @@ import { buildDownloadFilename } from "@/lib/download-filename";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
+import { publicationLabel } from "@/lib/badges";
 
 import { resolveHebcalParsha, nextParshaAfter } from "@/lib/hebcal";
 import {
