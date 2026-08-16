@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SiteLogoStacked } from "@/components/SiteLogo";
 
 export const Route = createFileRoute("/about")({
   component: AboutPage,
