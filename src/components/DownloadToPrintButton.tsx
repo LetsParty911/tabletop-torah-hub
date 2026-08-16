@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { Download, Loader2 } from "lucide-react";
 
 type DownloadToPrintButtonProps = {
@@ -44,12 +45,17 @@ export function DownloadToPrintButton({
     }
   }, [href]);
 
-  const handleClick = useCallback(() => {
+  const handleClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (starting) {
+      e.preventDefault();
+      return;
+    }
     onClick?.();
 
-    setStarting(true);
+    // Paint the loading state before the browser starts the navigation.
+    flushSync(() => setStarting(true));
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setStarting(false), 1200);
+    timerRef.current = setTimeout(() => setStarting(false), 2500);
 
     // Fire-and-forget anonymous download tracking. Never blocks the download.
     const onAdminRoute =
@@ -90,7 +96,7 @@ export function DownloadToPrintButton({
 
     // No preventDefault: the browser handles the navigation/download natively,
     // which starts immediately.
-  }, [onClick, publicationId, publicationTitle]);
+  }, [onClick, publicationId, publicationTitle, starting]);
 
   return (
     <a
@@ -105,12 +111,16 @@ export function DownloadToPrintButton({
       onFocus={warm}
       onTouchStart={warm}
       aria-live="polite"
+      aria-busy={starting}
+      aria-disabled={starting}
       className={[
         "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium",
-        "transition-[transform,background-color,color] duration-100 select-none touch-manipulation",
+        "transition-[transform,background-color,color,opacity] duration-100 select-none touch-manipulation",
         "bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground",
         "active:scale-[0.96] active:bg-accent active:text-accent-foreground",
-        starting ? "scale-[0.98] bg-accent text-accent-foreground" : "",
+        starting
+          ? "scale-[0.98] bg-accent text-accent-foreground opacity-90 cursor-wait pointer-events-none"
+          : "",
         className,
       ].join(" ")}
     >
@@ -119,7 +129,7 @@ export function DownloadToPrintButton({
       ) : (
         <Download className="h-4 w-4" />
       )}
-      {starting ? "Starting download…" : "Download to Print"}
+      {starting ? "Preparing…" : "Download to Print"}
     </a>
   );
 }
