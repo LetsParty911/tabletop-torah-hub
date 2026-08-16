@@ -221,6 +221,9 @@ function ViewPdf() {
         <div className="mt-6">
           {canEmbed ? (
             <>
+              <h2 className="font-serif text-lg sm:text-xl font-semibold text-primary mb-3">
+                Preview
+              </h2>
               <iframe
                 src={viewerSrc}
                 title={`Embedded PDF viewer: ${pdf.title}`}
@@ -234,62 +237,33 @@ function ViewPdf() {
                   download
                   className="font-medium text-accent underline hover:text-primary transition-colors duration-150"
                 >
-
                   Download the PDF file for {pdf.title}
                 </a>
               </p>
             </>
           ) : (
             <div className="rounded-lg border border-accent/40 bg-accent/10 p-6 text-center">
-              <h2 className="font-serif text-xl font-bold text-primary">
-                {pdf.publication || pdf.title}
+              <h2 className="font-serif text-lg sm:text-xl font-semibold text-primary mb-3">
+                Preview
               </h2>
               {typeof pdf.page_count === "number" && (
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   {pdf.page_count} {pdf.page_count === 1 ? "page" : "pages"} · PDF
                 </p>
               )}
               {pdf.thumb_url && !thumbFailed ? (
-                <a
-                  href={`/view/${pdf.id}/download`}
-                  rel="nofollow"
-                  download
-
-                  onClick={() =>
-                    trackEvent("pdf_download", {
-                      file_id: pdf.id,
-                      file_title: pdf.title,
-                      source_name: pdf.title,
-                    })
-                  }
-                  className="mt-4 block"
-                  aria-label={`Download ${pdf.title}`}
-                >
-                  <img
-                    src={pdf.thumb_url}
-                    alt={`First page preview of ${pdf.title}`}
-                    loading="lazy"
-                    onError={() => setThumbFailed(true)}
-                    className="mx-auto w-full max-w-sm rounded-md border border-accent/40 bg-background shadow-sm"
-                  />
-                </a>
+                <img
+                  src={pdf.thumb_url}
+                  alt={`First page preview of ${pdf.title}`}
+                  loading="lazy"
+                  onError={() => setThumbFailed(true)}
+                  className="mx-auto mt-3 w-full max-w-sm rounded-md border border-accent/40 bg-background shadow-sm"
+                />
               ) : (
                 <p className="mt-3 text-sm text-foreground/80">
                   Mobile browsers can't preview PDFs. Download it to read or print.
                 </p>
               )}
-              <div className="mt-4 flex justify-center">
-                <DownloadToPrintButton
-                  href={`/view/${pdf.id}/download`}
-                  publicationId={pdf.id}
-                  publicationTitle={pdf.title}
-                  filename={buildDownloadFilename(
-                    pdf.parsha_key,
-                    pdf.publication || pdf.title,
-                  )}
-                  className="px-5 py-2.5"
-                />
-              </div>
             </div>
           )}
         </div>
