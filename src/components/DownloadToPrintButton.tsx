@@ -86,19 +86,6 @@ export function DownloadToPrintButton({
     }
   }, [publicationId, publicationTitle]);
 
-  const filenameFromHeader = (value: string | null): string | undefined => {
-    if (!value) return undefined;
-    const star = /filename\*=UTF-8''([^;]+)/i.exec(value);
-    if (star) {
-      try {
-        return decodeURIComponent(star[1]);
-      } catch {
-        /* fall through */
-      }
-    }
-    const plain = /filename="([^"]+)"/i.exec(value);
-    return plain?.[1];
-  };
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>) => {
