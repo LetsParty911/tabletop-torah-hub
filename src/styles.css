@@ -68,7 +68,8 @@
   --muted: oklch(0.94 0.025 70);
   --muted-foreground: oklch(0.42 0.008 60);     /* #4A4744 stronger slate for AA */
   --accent: oklch(0.40 0.085 80);               /* #614610 darker antique gold — text/links, AA on parchment */
-  --accent-foreground: oklch(1 0 0);
+  --accent-foreground: oklch(1 0 0);           /* #FFFFFF */
+  --accent-readable: oklch(0.30 0.075 80);      /* darker antique gold for body text on parchment */
   --gold-decorative: oklch(0.715 0.13 80);      /* #C9A227 brighter gold — dividers/icons only */
   --destructive: oklch(0.55 0.2 27);
   --destructive-foreground: oklch(0.98 0.02 85);
