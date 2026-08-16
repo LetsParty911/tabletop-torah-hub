@@ -10,22 +10,16 @@ export function SiteLogoHorizontal({ className = "" }: { className?: string }) {
   return (
     <span className={`flex items-center ${className}`}>
       <img
-        src={LOGO_ICON}
-        alt="Torah for the Table"
-        width={40}
-        height={40}
-        className="h-9 w-9 shrink-0 object-contain sm:hidden"
-      />
-      <img
         src={LOGO_HORIZONTAL_LIGHT}
         alt="Torah for the Table"
         width={2400}
         height={800}
-        className="hidden h-11 w-auto object-contain sm:block"
+        className="h-14 w-auto object-contain sm:h-20"
       />
     </span>
   );
 }
+
 
 /** Full horizontal lockup for footer / page headers on light backgrounds. */
 export function SiteLogoStacked({ className = "" }: { className?: string }) {
