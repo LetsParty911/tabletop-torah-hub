@@ -19,6 +19,14 @@ function quoteFilename(name: string): string {
   return `attachment; filename="${name.replace(/["\\]/g, "")}"; filename*=UTF-8''${encodeURIComponent(name)}`;
 }
 
+function serverTiming(dbMs: number, upstreamMs: number, totalMs: number): string {
+  return [
+    `db;dur=${dbMs};desc="Publication lookup"`,
+    `storage;dur=${upstreamMs};desc="Storage response headers"`,
+    `app;dur=${totalMs};desc="Application response headers"`,
+  ].join(", ");
+}
+
 export const Route = createFileRoute("/view/$id/download")({
   server: {
     handlers: {
@@ -73,6 +81,7 @@ export const Route = createFileRoute("/view/$id/download")({
         if (!upstream.ok || !upstream.body) {
           return new Response("Download failed", { status: 502, headers: NOINDEX });
         }
+        const tUp = Date.now();
 
         // Derive the validator from the stored object itself so replacing the
         // file in place (same path) invalidates every cached copy.
@@ -89,22 +98,28 @@ export const Route = createFileRoute("/view/$id/download")({
 
         if (request.headers.get("if-none-match") === etag) {
           void upstream.body.cancel();
+          const tDone = Date.now();
           return new Response(null, {
             status: 304,
             headers: {
               ETag: etag,
               "Cache-Control": CACHE_CONTROL,
+              "Server-Timing": serverTiming(tDb - t0, tUp - tDb, tDone - t0),
               ...NOINDEX,
             },
           });
         }
 
-        const tUp = Date.now();
         const headers = new Headers(NOINDEX);
         headers.set("Content-Type", "application/pdf");
         headers.set("Content-Disposition", quoteFilename(entry.filename));
         headers.set("Cache-Control", CACHE_CONTROL);
         headers.set("ETag", etag);
+        headers.set(
+          "Server-Timing",
+          serverTiming(tDb - t0, tUp - tDb, Date.now() - t0),
+        );
+        headers.set("Timing-Allow-Origin", "*");
         const len = upstream.headers.get("content-length");
         if (len) headers.set("Content-Length", len);
 
