@@ -13,7 +13,7 @@ import { SITE_URL } from "@/lib/site-url";
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
 import { buildDownloadFilename } from "@/lib/download-filename";
-import { normalizeAudience } from "@/lib/audience";
+import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 

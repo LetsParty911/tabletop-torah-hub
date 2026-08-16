@@ -6,7 +6,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ArrowLeft } from "lucide-react";
 import { getPdfById } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
-import { normalizeAudience } from "@/lib/audience";
+import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
