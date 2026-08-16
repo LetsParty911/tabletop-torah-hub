@@ -700,6 +700,7 @@ function ArchivePage() {
                                 <DownloadToPrintButton
                                   href={`/view/${r.id}/download`}
                                   publicationId={r.id}
+                                  publicationName={r.publication || r.title}
                                   publicationTitle={r.title}
                                   filename={buildDownloadFilename(
                                     p.parshaKey,

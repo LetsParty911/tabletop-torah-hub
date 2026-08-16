@@ -191,6 +191,7 @@ function ViewPdf() {
           <DownloadToPrintButton
             href={`/view/${pdf.id}/download`}
             publicationId={pdf.id}
+            publicationName={pdf.publication || pdf.title}
             publicationTitle={pdf.title}
             filename={buildDownloadFilename(
               pdf.parsha_key,

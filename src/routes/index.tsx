@@ -428,6 +428,7 @@ function Index() {
                           <DownloadToPrintButton
                             href={`/view/${r.id}/download`}
                             publicationId={r.id}
+                            publicationName={r.publication || r.title}
                             publicationTitle={r.title}
                             filename={buildDownloadFilename(
                               (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
@@ -713,6 +714,7 @@ function Index() {
                           <DownloadToPrintButton
                             href={`/view/${r.id}/download`}
                             publicationId={r.id}
+                            publicationName={r.publication || r.title}
                             publicationTitle={r.title}
                             filename={buildDownloadFilename(
                               (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
