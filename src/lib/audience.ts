@@ -19,10 +19,6 @@ export function audienceLabel(
   return AUDIENCE_LABELS[key as AudienceKey] ?? key;
 }
 
-// Tolerates casing/synonym differences in the stored audience value.
-// Titles that are unmistakably kid-oriented always resolve to "Children",
-// even if the stored audience field was tagged incorrectly.
-const KIDS_TITLE_HINTS = ["pirchei", "kids corner", "junior", "for kids", "kids "];
 
 export function normalizeAudience(
   value: string | null,
