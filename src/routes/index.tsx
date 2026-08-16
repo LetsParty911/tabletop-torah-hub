@@ -363,7 +363,6 @@ function Index() {
                     One email every Thursday when the new collection posts.
                   </p>
                 </div>
-                {resources.length > 0 && <ShareButton className="w-full md:w-auto" />}
               </div>
               <p className="hidden font-serif text-base italic text-accent text-center md:block">
                 One email every Thursday when the new collection posts.
