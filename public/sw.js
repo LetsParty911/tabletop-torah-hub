@@ -84,10 +84,9 @@ async function cacheFirst(req, cacheName) {
 
 async function handleNavigation(req) {
   try {
-    const res = await fetch(req);
-    const cache = await caches.open(SHELL_CACHE);
-    cache.put(req, res.clone()).catch(() => {});
-    return res;
+    // Always network-first and never store per-URL navigations: a cached HTML
+    // document would otherwise resurface an old build after a deploy.
+    return await fetch(req);
   } catch {
     const cache = await caches.open(SHELL_CACHE);
     const cached = (await cache.match(req)) || (await cache.match("/"));
