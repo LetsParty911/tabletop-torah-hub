@@ -351,11 +351,15 @@ function Index() {
                 : `handpicked, print-ready selections for ${displayedLabel} — for children, families, and adults.`}
             </p>
             {upcomingParsha && upcomingParsha !== displayedParshaKey && (
-              <p className="mt-2 font-serif italic text-sm sm:text-base text-accent-readable">
-                {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`}{" "}
-                {postShabbos ? "updates Thursday." : "posts Thursday."}
-              </p>
+              <div className="mt-3 flex justify-center">
+                <span className="inline-flex items-center gap-2 rounded-full border border-accent bg-accent/15 px-4 py-2 font-serif text-sm sm:text-base md:text-lg font-semibold text-primary shadow-sm">
+                  <span className="inline-block h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
+                  {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`}{" "}
+                  {postShabbos ? "updates Thursday." : "posts Thursday."}
+                </span>
+              </div>
             )}
+
             <div className="mt-6 sm:mt-8 flex flex-col items-center gap-3 sm:gap-4">
               <div className="flex w-full flex-col items-center justify-center gap-3 sm:gap-4 md:flex-row">
                 <a
