@@ -12,10 +12,33 @@ import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
  * HTML <meta http-equiv="Cache-Control"> is unreliable and ignored by most
  * browsers / CDNs, so we set real HTTP response headers here on the Worker.
  */
+/**
+ * Permanent domain consolidation: torahforthetable.org (and www) is not a
+ * separate site — every path 308-redirects to the same path on the .com apex.
+ */
+const dotOrgRedirect = createMiddleware().server(async ({ next, request }) => {
+  try {
+    const url = new URL(request.url);
+    if (/(^|\.)torahforthetable\.org$/i.test(url.hostname)) {
+      const target = `https://torahforthetable.com${url.pathname}${url.search}`;
+      return {
+        response: new Response(null, {
+          status: 308,
+          headers: { Location: target, "Cache-Control": "public, max-age=3600" },
+        }),
+      } as never;
+    }
+  } catch {
+    /* never break the request */
+  }
+  return next();
+});
+
 const cacheControl = createMiddleware().server(async ({ next, request }) => {
   const result = await next();
   const response = (result as { response?: Response }).response;
   if (!response || !(response instanceof Response)) return result;
+
 
   try {
     const url = new URL(request.url);
@@ -50,5 +73,5 @@ const cacheControl = createMiddleware().server(async ({ next, request }) => {
 
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [cacheControl],
+  requestMiddleware: [dotOrgRedirect, cacheControl],
 }));
