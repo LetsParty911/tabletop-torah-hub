@@ -9,7 +9,7 @@ import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
 import { buildDownloadFilename } from "@/lib/download-filename";
-import { normalizeAudience, type AudienceKey } from "@/lib/audience";
+import { normalizeAudience, audienceLabel, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 
@@ -473,7 +473,7 @@ function ArchivePage() {
                           key={audience}
                           type="button"
                           aria-pressed={active}
-                          aria-label={`Filter by audience: ${audience}, ${count} ${count === 1 ? "publication" : "publications"}`}
+                          aria-label={`Filter by audience: ${audienceLabel(audience)}, ${count} ${count === 1 ? "publication" : "publications"}`}
                           onClick={() => setAudienceFilter(active ? "All" : audience)}
                           className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
                             active
@@ -481,7 +481,7 @@ function ArchivePage() {
                               : "text-primary hover:bg-accent/12"
                           }`}
                         >
-                          {audience}
+                          {audienceLabel(audience)}
                           <span
                             className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
                               active
@@ -685,7 +685,7 @@ function ArchivePage() {
                                   {(r.audience || r.format_type || typeof r.page_count === "number") && (
                                     <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                       {[
-                                        r.audience,
+                                        audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience,
                                         formatTypeLabel(r.format_type),
                                         typeof r.page_count === "number"
                                           ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`

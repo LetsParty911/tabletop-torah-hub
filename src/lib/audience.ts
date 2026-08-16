@@ -5,6 +5,21 @@ const KIDS_TITLE_HINTS = ["pirchei", "kids corner", "junior", "for kids", "kids 
 
 export type AudienceKey = "Children" | "Families" | "Adults";
 
+export const AUDIENCE_LABELS: Record<AudienceKey, string> = {
+  Children: "Children",
+  Families: "Families",
+  Adults: "Parents/Adults",
+};
+
+export function audienceLabel(
+  key: "All" | AudienceKey | null | undefined,
+): string | null {
+  if (key === "All") return "All";
+  if (!key) return null;
+  return AUDIENCE_LABELS[key as AudienceKey] ?? key;
+}
+
+
 export function normalizeAudience(
   value: string | null,
   title?: string | null,
@@ -18,3 +33,4 @@ export function normalizeAudience(
   if (v.startsWith("adult") || v.startsWith("teen")) return "Adults";
   return null;
 }
+

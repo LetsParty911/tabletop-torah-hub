@@ -13,7 +13,7 @@ import { SITE_URL } from "@/lib/site-url";
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
 import { buildDownloadFilename } from "@/lib/download-filename";
-import { normalizeAudience } from "@/lib/audience";
+import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 
@@ -529,7 +529,7 @@ function Index() {
                               key={audience}
                               type="button"
                               aria-pressed={active}
-                              aria-label={`Filter by audience: ${audience}, ${count} ${count === 1 ? "publication" : "publications"}`}
+                              aria-label={`Filter by audience: ${audienceLabel(audience)}, ${count} ${count === 1 ? "publication" : "publications"}`}
                               onClick={() => setAudienceFilter(active ? "All" : audience)}
                               className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                 active
@@ -537,7 +537,7 @@ function Index() {
                                   : "border-accent/60 bg-background/70 text-primary hover:border-accent hover:bg-accent/15 hover:shadow-sm active:bg-accent/20 active:border-accent"
                               }`}
                             >
-                              {audience}
+                              {audienceLabel(audience)}
                               <span
                                 className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
                                   active
@@ -695,7 +695,7 @@ function Index() {
                             {(r.audience || r.format_type || typeof r.page_count === "number") && (
                               <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                 {[
-                                  normalizeAudience(r.audience, r.title) ?? r.audience,
+                                  audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience,
                                   formatTypeLabel(r.format_type),
 
                                   typeof r.page_count === "number"
