@@ -101,6 +101,8 @@ export function DownloadToPrintButton({
       }
       onClick?.();
       trackDownload();
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      setSaved(false);
 
       // The fetch/blob path is required on every supported browser, including
       // iOS, because response.blob() resolves only after the final byte arrives.
@@ -117,8 +119,10 @@ export function DownloadToPrintButton({
       // for the entire transfer, then hand a blob to the download manager.
       e.preventDefault();
       flushSync(() => setStarting(true));
+      const t0 = Date.now();
 
       void (async () => {
+        let ok = false;
         try {
           const res = await fetch(href, { credentials: "same-origin" });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -134,15 +138,27 @@ export function DownloadToPrintButton({
           document.body.appendChild(a);
           a.click();
           a.remove();
+          ok = true;
           setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
         } catch {
           // Fall back to letting the browser do it natively.
           window.location.href = href;
         } finally {
-          setStarting(false);
+          // Repeat downloads are served from cache and finish in a few dozen
+          // ms; hold the busy state briefly so the click is always visible.
+          const elapsed = Date.now() - t0;
+          const hold = Math.max(0, 450 - elapsed);
+          setTimeout(() => {
+            setStarting(false);
+            if (ok) {
+              setSaved(true);
+              savedTimerRef.current = setTimeout(() => setSaved(false), 2200);
+            }
+          }, hold);
         }
       })();
     },
+
     [
       onClick,
       starting,
