@@ -70,7 +70,15 @@ export const Route = createFileRoute("/archive")({
   // Default values never appear in the URL, so a clean /archive stays clean.
   search: {
     middlewares: [
-      stripSearchParams({ year: "all", parsha: "all", audience: "All", q: "" }),
+      stripSearchParams({
+        year: "all",
+        parsha: "all",
+        audience: "All" as const,
+        q: "",
+        length: "All" as const,
+        type: "All",
+        pub: "All",
+      }),
     ],
   },
   head: (ctx) => {
