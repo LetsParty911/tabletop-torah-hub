@@ -238,6 +238,10 @@ function Index() {
     setPostShabbos(showingLastShabbos && resources.length > 0 && isPostShabbosWindow());
   }, [isFallback, resources.length, readingDate]);
 
+  const collectionLabel = postShabbos ? "Last Shabbos's" : "This Week's";
+  const collectionLabelLower = postShabbos ? "last Shabbos" : "this week";
+
+
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
 
   const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long">("All");
@@ -316,9 +320,10 @@ function Index() {
       className={`inline-flex items-center justify-center gap-2 rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors ${className ?? ""}`}
     >
       <Share2 className="h-4 w-4" />
-      Share This Week's Divrei Torah
+      Share {collectionLabel} Divrei Torah
     </a>
   );
+
 
 
   return (
@@ -346,11 +351,15 @@ function Index() {
                 : `handpicked, print-ready selections for ${displayedLabel} — for children, families, and adults.`}
             </p>
             {upcomingParsha && upcomingParsha !== displayedParshaKey && (
-              <p className="mt-2 font-serif italic text-sm sm:text-base text-accent-readable">
-                {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`}{" "}
-                {postShabbos ? "updates Thursday." : "posts Thursday."}
-              </p>
+              <div className="mt-3 flex justify-center">
+                <span className="inline-flex items-center gap-2 rounded-full border border-accent bg-accent/15 px-4 py-2 font-serif text-sm sm:text-base md:text-lg font-semibold text-primary shadow-sm">
+                  <span className="inline-block h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
+                  {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`}{" "}
+                  {postShabbos ? "updates Thursday." : "posts Thursday."}
+                </span>
+              </div>
             )}
+
             <div className="mt-6 sm:mt-8 flex flex-col items-center gap-3 sm:gap-4">
               <div className="flex w-full flex-col items-center justify-center gap-3 sm:gap-4 md:flex-row">
                 <a
@@ -363,8 +372,9 @@ function Index() {
                   }}
                   className="inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-3 font-serif font-semibold text-primary-foreground shadow-md transition-colors hover:bg-accent hover:text-accent-foreground md:w-auto"
                 >
-                  See This Week's {resources.length} Divrei Torah
+                  See {collectionLabel} {resources.length} Divrei Torah
                 </a>
+
                 <div className="flex w-full flex-col items-center gap-1 md:w-auto">
                   <a
                     href="#weekly-email-signup"
@@ -474,8 +484,9 @@ function Index() {
         <section id="this-weeks-collection" className="parchment-frame scroll-mt-8">
           <div className="parchment-panel">
             <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold text-primary text-center">
-              This Week's Collection
+              {collectionLabel} Collection
             </h2>
+
             {isFallback && resources.length > 0 && (
               <div className="mt-4 rounded-xl border-2 border-accent/60 bg-accent/10 px-4 py-3 text-center">
                 <p className="font-serif italic text-sm sm:text-base text-primary">
@@ -490,9 +501,10 @@ function Index() {
             )}
             {resources.length > 0 && (
               <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent-readable">
-                {resources.length === 1 ? "Dvar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : " this week"}
+                {resources.length === 1 ? "Dvar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : ` ${collectionLabelLower}`}
               </p>
             )}
+
 
             {resources.length === 0 ? (
               <p className="mt-8 text-center text-muted-foreground max-w-md mx-auto">
