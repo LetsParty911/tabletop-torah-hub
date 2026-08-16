@@ -95,6 +95,7 @@
 
 @theme inline {
   --color-gold-decorative: var(--gold-decorative);
+  --color-accent-readable: var(--accent-readable);
 }
 
 .dark {
@@ -111,7 +112,8 @@
   --muted: oklch(0.279 0.041 260.031);
   --muted-foreground: oklch(0.704 0.04 256.788);
   --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
+--accent-foreground: oklch(0.984 0.003 247.858);
+  --accent-readable: oklch(0.75 0.06 80);       /* lighter gold, readable on dark surfaces */
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(1 0 0 / 10%);
