@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200" fill="none">
+<rect x="160.00" y="520.00" width="880.00" height="46.00" rx="20" fill="#C9A227"/>
+<rect x="196.0" y="566.0" width="88" height="24" rx="10" fill="#C9A227"/>
+    <path d="M 218.0 590.0 C 210.0 606.0, 196.0 618.0, 196.0 644.0 C 196.0 668.0, 210.0 682.0, 220.0 694.0 C 208.0 704.0, 200.0 714.0, 200.0 728.0 L 200.0 716.0 L 280.0 716.0 L 280.0 728.0 C 280.0 714.0, 272.0 704.0, 260.0 694.0 C 270.0 682.0, 284.0 668.0, 284.0 644.0 C 284.0 618.0, 270.0 606.0, 262.0 590.0 Z" fill="#C9A227"/>
+    <rect x="198.0" y="716.0" width="84" height="30" rx="12" fill="#C9A227"/>
+<rect x="916.0" y="566.0" width="88" height="24" rx="10" fill="#C9A227"/>
+    <path d="M 938.0 590.0 C 930.0 606.0, 916.0 618.0, 916.0 644.0 C 916.0 668.0, 930.0 682.0, 940.0 694.0 C 928.0 704.0, 920.0 714.0, 920.0 728.0 L 920.0 716.0 L 1000.0 716.0 L 1000.0 728.0 C 1000.0 714.0, 992.0 704.0, 980.0 694.0 C 990.0 682.0, 1004.0 668.0, 1004.0 644.0 C 1004.0 618.0, 990.0 606.0, 982.0 590.0 Z" fill="#C9A227"/>
+    <rect x="918.0" y="716.0" width="84" height="30" rx="12" fill="#C9A227"/>
+<path d="M 280.00 415.00 L 212.00 507.00 Q 388.00 505.00 568.00 517.00" stroke="#1A365D" stroke-width="22.00" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<path d="M 920.00 415.00 L 988.00 507.00 Q 812.00 505.00 632.00 517.00" stroke="#1A365D" stroke-width="22.00" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<path d="M 410.00 430.00 Q 488.00 406.00 568.00 430.00" stroke="#1A365D" stroke-width="12.00" stroke-linecap="round" fill="none"/>
+<path d="M 790.00 430.00 Q 712.00 406.00 632.00 430.00" stroke="#1A365D" stroke-width="12.00" stroke-linecap="round" fill="none"/>
+<path d="M 410.00 458.00 Q 488.00 432.00 568.00 458.00" stroke="#1A365D" stroke-width="12.00" stroke-linecap="round" fill="none"/>
+<path d="M 790.00 458.00 Q 712.00 432.00 632.00 458.00" stroke="#1A365D" stroke-width="12.00" stroke-linecap="round" fill="none"/>
+<path d="M 410.00 486.00 Q 488.00 458.00 568.00 486.00" stroke="#1A365D" stroke-width="12.00" stroke-linecap="round" fill="none"/>
+<path d="M 790.00 486.00 Q 712.00 458.00 632.00 486.00" stroke="#1A365D" stroke-width="12.00" stroke-linecap="round" fill="none"/>
+<path d="M 410.00 514.00 Q 488.00 484.00 568.00 514.00" stroke="#1A365D" stroke-width="12.00" stroke-linecap="round" fill="none"/>
+<path d="M 790.00 514.00 Q 712.00 484.00 632.00 514.00" stroke="#1A365D" stroke-width="12.00" stroke-linecap="round" fill="none"/>
+<path d="M 600.00 422.00 L 600.00 517.00" stroke="#1A365D" stroke-width="22.00" stroke-linecap="round" fill="none"/></svg>

@@ -1,63 +1,60 @@
-import logoMark from "@/assets/logo-mark.png.asset.json";
+const LOGO_HORIZONTAL_LIGHT = "/assets/logo-horizontal-light.svg";
+const LOGO_ICON = "/assets/logo-icon.svg";
 
-/** Wordmark: TORAH / — FOR THE — / TABLE */
-function Wordmark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
-  const top =
-    size === "lg"
-      ? "text-2xl sm:text-3xl"
-      : size === "md"
-        ? "text-base sm:text-lg"
-        : "text-sm";
-  const mid =
-    size === "lg" ? "text-sm" : size === "md" ? "text-[0.6rem] sm:text-[0.7rem]" : "text-[0.55rem]";
-
-  return (
-    <span className="flex flex-col items-center leading-none text-primary">
-      <span className={`font-serif font-semibold tracking-[0.14em] ${top}`}>TORAH</span>
-      <span className="flex w-full items-center gap-1.5 py-0.5">
-        <span className="h-px flex-1 bg-accent/70" />
-        <span className={`font-serif tracking-[0.22em] text-accent ${mid}`}>FOR THE</span>
-        <span className="h-px flex-1 bg-accent/70" />
-      </span>
-      <span className={`font-serif font-semibold tracking-[0.14em] ${top}`}>TABLE</span>
-    </span>
-  );
-}
-
-/** Horizontal lockup used in the header: mark · gold rule · wordmark. */
+/**
+ * Header lockup. Mobile shows the icon-only mark to save header width;
+ * >= sm shows the full horizontal lockup (light backgrounds — the site
+ * header/footer sit on warm parchment #FDF9F3).
+ */
 export function SiteLogoHorizontal({ className = "" }: { className?: string }) {
   return (
-    <span className={`flex items-center gap-2 sm:gap-3 ${className}`}>
+    <span className={`flex items-center ${className}`}>
       <img
-        src={logoMark.url}
-        alt=""
-        aria-hidden="true"
+        src={LOGO_ICON}
+        alt="Torah for the Table"
         width={40}
         height={40}
-        className="h-8 w-8 shrink-0 object-contain sm:h-10 sm:w-10"
+        className="h-9 w-9 shrink-0 object-contain sm:hidden"
       />
-
-      <span className="hidden h-8 w-px shrink-0 bg-accent/70 sm:block sm:h-10" />
-      <span className="hidden sm:block">
-        <Wordmark size="md" />
-      </span>
+      <img
+        src={LOGO_HORIZONTAL_LIGHT}
+        alt="Torah for the Table"
+        width={2400}
+        height={800}
+        className="hidden h-11 w-auto object-contain sm:block"
+      />
     </span>
   );
 }
 
-/** Stacked primary lockup: mark above the three-line wordmark. */
+/** Full horizontal lockup for footer / page headers on light backgrounds. */
 export function SiteLogoStacked({ className = "" }: { className?: string }) {
   return (
-    <span className={`flex flex-col items-center gap-3 ${className}`}>
-      <img
-        src={logoMark.url}
-        alt="Torah for the Table"
-        width={80}
-        height={80}
-        className="h-16 w-16 object-contain sm:h-20 sm:w-20"
-      />
+    <img
+      src={LOGO_HORIZONTAL_LIGHT}
+      alt="Torah for the Table"
+      width={2400}
+      height={800}
+      className={`h-16 w-auto object-contain sm:h-20 ${className}`}
+    />
+  );
+}
 
-      <Wordmark size="lg" />
-    </span>
+/** Icon-only mark. */
+export function SiteLogoIcon({
+  className = "",
+  size = 48,
+}: {
+  className?: string;
+  size?: number;
+}) {
+  return (
+    <img
+      src={LOGO_ICON}
+      alt="Torah for the Table"
+      width={size}
+      height={size}
+      className={`object-contain ${className}`}
+    />
   );
 }
