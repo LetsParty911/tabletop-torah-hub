@@ -484,8 +484,9 @@ function Index() {
         <section id="this-weeks-collection" className="parchment-frame scroll-mt-8">
           <div className="parchment-panel">
             <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold text-primary text-center">
-              This Week's Collection
+              {collectionLabel} Collection
             </h2>
+
             {isFallback && resources.length > 0 && (
               <div className="mt-4 rounded-xl border-2 border-accent/60 bg-accent/10 px-4 py-3 text-center">
                 <p className="font-serif italic text-sm sm:text-base text-primary">
