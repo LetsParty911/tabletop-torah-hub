@@ -7,8 +7,8 @@ import { trackEvent, trackEventOnce } from "@/lib/analytics";
 const DISMISSED_UNTIL_KEY = "tftt:email-popup-dismissed-until";
 const SIGNED_UP_KEY = "tftt:email-popup-signed-up:v2";
 const DISMISS_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-const TIME_TRIGGER_MS = 20_000;
-const SCROLL_TRIGGER_RATIO = 0.4;
+// Popup appears only after a visitor starts a download (see privacy policy).
+const AFTER_DOWNLOAD_DELAY_MS = 1200;
 
 function shouldSkip(): boolean {
   if (typeof window === "undefined") return true;
