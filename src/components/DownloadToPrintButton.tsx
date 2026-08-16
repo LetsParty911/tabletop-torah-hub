@@ -79,10 +79,20 @@ export function DownloadToPrintButton({
     }
     onClick?.();
 
+    // Tag this click so the server can confirm delivery via cookie.
+    const token = Math.random().toString(36).slice(2, 14);
+    try {
+      const url = new URL(e.currentTarget.href, window.location.origin);
+      url.searchParams.set("dl", token);
+      e.currentTarget.href = url.pathname + url.search;
+      document.cookie = "tftt_dl=; Max-Age=0; Path=/; SameSite=Lax";
+    } catch {
+      /* fall back to the plain href */
+    }
+
     // Paint the loading state before the browser starts the navigation.
     flushSync(() => setStarting(true));
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setStarting(false), 2500);
+    waitForDelivery(token);
 
     // Fire-and-forget anonymous download tracking. Never blocks the download.
     const onAdminRoute =
