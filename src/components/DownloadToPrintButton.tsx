@@ -7,6 +7,9 @@ type DownloadToPrintButtonProps = {
   onClick?: () => void;
   className?: string;
   publicationId?: string;
+  /** Short publication name shown on the button (e.g. "Toras Avigdor"). */
+  publicationName?: string;
+  /** Fallback title used for tracking and accessibility when name is omitted. */
   publicationTitle?: string;
   /** Preferred download filename; falls back to the server Content-Disposition. */
   filename?: string;
@@ -17,9 +20,13 @@ export function DownloadToPrintButton({
   onClick,
   className = "",
   publicationId,
+  publicationName,
   publicationTitle,
   filename: preferredFilename,
 }: DownloadToPrintButtonProps) {
+  const displayName = publicationName ?? publicationTitle;
+  const buttonLabel = displayName ? `Download ${displayName}` : "Download";
+
   const [starting, setStarting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
