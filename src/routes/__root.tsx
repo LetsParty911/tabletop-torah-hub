@@ -276,6 +276,9 @@ function SiteNav() {
           <Link to="/short-vorts" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
             Short Vorts
           </Link>
+          <Link to="/resources" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
+            Resources
+          </Link>
           <Link to="/about" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
             About
           </Link>
