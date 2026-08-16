@@ -44,12 +44,16 @@ export function DownloadToPrintButton({
     }
   }, [href]);
 
-  const handleClick = useCallback(() => {
+  const handleClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (starting) {
+      e.preventDefault();
+      return;
+    }
     onClick?.();
 
     setStarting(true);
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setStarting(false), 1200);
+    timerRef.current = setTimeout(() => setStarting(false), 2500);
 
     // Fire-and-forget anonymous download tracking. Never blocks the download.
     const onAdminRoute =
