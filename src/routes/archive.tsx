@@ -14,15 +14,17 @@ import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 
 type ArchiveSearch = {
-  year: string;
-  parsha: string;
-  audience: "All" | AudienceKey;
-  q: string;
-  /** Optional facets, mirroring the homepage filters. */
+  year?: string;
+  parsha?: string;
+  audience?: "All" | AudienceKey;
+  q?: string;
+  /** Facets mirroring the homepage filters. */
   length?: "All" | "short" | "long";
   type?: string;
   pub?: string;
 };
+
+type ResolvedArchiveSearch = Required<ArchiveSearch>;
 
 const AUDIENCE_VALUES = ["All", "Children", "Families", "Adults"] as const;
 const LENGTH_VALUES = ["All", "short", "long"] as const;
