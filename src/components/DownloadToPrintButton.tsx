@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { AlertCircle, Check, Download, Loader2 } from "lucide-react";
 
@@ -33,6 +33,12 @@ export function DownloadToPrintButton({
   const warmedRef = useRef(false);
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(
+    () => () => {
+      if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+    },
+    [],
+  );
 
 
 
@@ -113,6 +119,10 @@ export function DownloadToPrintButton({
         typeof fetch === "function";
       if (!canBlob) {
         flushSync(() => setPhase("preparing"));
+        statusTimerRef.current = setTimeout(() => {
+          setPhase("finishing");
+          statusTimerRef.current = setTimeout(() => setPhase("saved"), 1500);
+        }, 700);
         return;
       }
 
