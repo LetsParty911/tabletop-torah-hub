@@ -61,11 +61,25 @@ export const Route = createFileRoute("/view/$id/download")({
             .download(entry.path);
           if (dErr || !blob) {
             rowCache.delete(id);
+            // Last-resort fallback: hand the reader a short-lived signed URL
+            // straight from storage so a proxy hiccup never blocks a download.
+            const { data: signed } = await admin.storage
+              .from("pdfs")
+              .createSignedUrl(entry.path, 300, {
+                download: entry.filename,
+              });
+            if (signed?.signedUrl) {
+              return new Response(null, {
+                status: 302,
+                headers: { ...NOINDEX, Location: signed.signedUrl },
+              });
+            }
             return new Response("Download failed", {
               status: 502,
               headers: NOINDEX,
             });
           }
+
 
           const buf = await blob.arrayBuffer();
           const headers = new Headers(NOINDEX);
