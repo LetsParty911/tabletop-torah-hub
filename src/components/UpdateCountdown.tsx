@@ -39,7 +39,7 @@ export function UpdateCountdown({
         />
         <span className="text-xs sm:text-sm font-bold text-primary tracking-wide leading-snug">
           <span className="block">The website has been updated for {label}.</span>
-          <span className="block">Enjoy your visit and good Shabbos!</span>
+          <span className="block">Enjoy your visit!</span>
         </span>
       </a>
     </div>
