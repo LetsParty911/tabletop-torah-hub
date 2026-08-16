@@ -51,7 +51,8 @@ export function DownloadToPrintButton({
     }
     onClick?.();
 
-    setStarting(true);
+    // Paint the loading state before the browser starts the navigation.
+    flushSync(() => setStarting(true));
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => setStarting(false), 2500);
 
