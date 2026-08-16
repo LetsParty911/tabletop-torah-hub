@@ -661,7 +661,13 @@ function Index() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
                             <h3 className="font-serif text-base sm:text-xl font-bold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
-                              {r.title}
+                              <Link
+                                to="/view/$id"
+                                params={{ id: r.id }}
+                                className="hover:text-accent hover:underline transition-colors duration-150"
+                              >
+                                {r.title}
+                              </Link>
                             </h3>
                             {r.badge && (
                               <span className="shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
