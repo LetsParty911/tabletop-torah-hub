@@ -558,6 +558,9 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
         id: r.id,
         title: canonical.get(r.id as string)?.name ?? r.title,
         publisher: canonical.get(r.id as string)?.publisher ?? null,
+        publication:
+          canonical.get(r.id as string)?.name ??
+          ((r.publication as string | null) ?? null),
         subtitle: standardizeCopy(r.subtitle),
         summary_quick: r.summary_quick,
         description: standardizeCopy((r.description as string | null) ?? null),
