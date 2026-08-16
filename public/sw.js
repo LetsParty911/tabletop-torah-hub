@@ -37,6 +37,10 @@ self.addEventListener("activate", (event) => {
 function isBypassed(url) {
   const p = url.pathname.toLowerCase();
   if (p.endsWith(".pdf") || p.endsWith(".mp3") || p.endsWith(".m4a") || p.endsWith(".wav") || p.endsWith(".ogg")) return true;
+  // File delivery endpoints: must stream straight to the browser. Handling
+  // them here would buffer the whole PDF through the worker (and cache it as
+  // an app-shell "navigation"), delaying the browser's download by seconds.
+  if (/\/view\/[^/]+\/(download|pdf)$/.test(p)) return true;
   // Supabase storage PDFs/audio
   if (url.hostname.includes("supabase.co") && p.includes("/storage/")) return true;
   return false;
