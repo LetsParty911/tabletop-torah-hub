@@ -133,7 +133,7 @@ export function DownloadToPrintButton({
       onClick={handleClick}
       onMouseEnter={warm}
       onFocus={warm}
-      onTouchStart={warm}
+      
       aria-live="polite"
       aria-busy={busy}
       aria-disabled={busy}
