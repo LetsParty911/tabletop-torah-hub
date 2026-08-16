@@ -111,7 +111,15 @@ export const Route = createFileRoute("/view/$id/download")({
         );
         headers.set("Content-Type", "application/pdf");
         headers.set("Content-Disposition", quoteFilename(entry.filename));
-        headers.set("Cache-Control", CACHE_CONTROL);
+        if (dlToken && /^[A-Za-z0-9_-]{1,64}$/.test(dlToken)) {
+          headers.set("Cache-Control", "no-store");
+          headers.append(
+            "Set-Cookie",
+            `tftt_dl=${dlToken}; Max-Age=60; Path=/; SameSite=Lax`,
+          );
+        } else {
+          headers.set("Cache-Control", CACHE_CONTROL);
+        }
         headers.set("ETag", etag);
         const len = upstream.headers.get("content-length");
         if (len) headers.set("Content-Length", len);
