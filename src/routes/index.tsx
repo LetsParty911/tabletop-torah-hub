@@ -372,8 +372,9 @@ function Index() {
                   }}
                   className="inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-3 font-serif font-semibold text-primary-foreground shadow-md transition-colors hover:bg-accent hover:text-accent-foreground md:w-auto"
                 >
-                  See This Week's {resources.length} Divrei Torah
+                  See {collectionLabel} {resources.length} Divrei Torah
                 </a>
+
                 <div className="flex w-full flex-col items-center gap-1 md:w-auto">
                   <a
                     href="#weekly-email-signup"
