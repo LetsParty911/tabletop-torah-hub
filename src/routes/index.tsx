@@ -328,7 +328,7 @@ function Index() {
               handpicked, print-ready selections for {displayedLabel} — for children, families, and adults.
             </p>
             {upcomingParsha && upcomingParsha !== displayedParshaKey && (
-              <p className="mt-2 font-serif italic text-sm sm:text-base text-accent">
+              <p className="mt-2 font-serif italic text-sm sm:text-base text-accent-readable">
                 {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`} posts Thursday.
               </p>
             )}
@@ -344,7 +344,7 @@ function Index() {
                   }}
                   className="inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-3 font-serif font-semibold text-primary-foreground shadow-md transition-colors hover:bg-accent hover:text-accent-foreground md:w-auto"
                 >
-                  Browse This Week's Collection
+                  See This Week's {resources.length} Divrei Torah
                 </a>
                 <div className="flex w-full flex-col items-center gap-1 md:w-auto">
                   <a
@@ -359,12 +359,12 @@ function Index() {
                   >
                     Remind Me Weekly
                   </a>
-                  <p className="font-serif text-sm italic text-accent sm:text-base md:hidden">
+                  <p className="font-serif text-sm italic text-accent-readable sm:text-base md:hidden">
                     One email every Thursday when the new collection posts.
                   </p>
                 </div>
               </div>
-              <p className="hidden font-serif text-base italic text-accent text-center md:block">
+              <p className="hidden font-serif text-base italic text-accent-readable text-center md:block">
                 One email every Thursday when the new collection posts.
               </p>
             </div>
@@ -464,22 +464,14 @@ function Index() {
               </div>
             )}
             {!isFallback && resources.length > 0 && (
-              <p className="mt-2 text-center font-sans text-[0.65rem] sm:text-xs uppercase tracking-[0.2em] text-accent">
-                {currentLabel} · New collections weekly
+              <p className="mt-2 text-center font-sans text-[0.65rem] sm:text-xs uppercase tracking-[0.2em] text-accent-readable">
+                New collections weekly
               </p>
             )}
             {resources.length > 0 && (
-              <>
-                <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent">
-                  <span className="inline-block align-baseline text-base sm:text-lg md:text-xl font-bold text-primary">
-                    {resources.length}
-                  </span>{" "}
-                  {resources.length === 1 ? "Dvar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : " this week"}
-                </p>
-                <div className="mt-3 flex justify-center">
-                  <ShareButton />
-                </div>
-              </>
+              <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent-readable">
+                {resources.length === 1 ? "Dvar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : " this week"}
+              </p>
             )}
 
             {resources.length === 0 ? (
@@ -498,7 +490,7 @@ function Index() {
                           setLengthFilter("All");
                           setContentTypeFilter("All");
                         }}
-                        className="text-xs font-serif italic text-accent hover:text-primary hover:underline transition-colors"
+                        className="text-xs font-serif italic text-accent-readable hover:text-primary hover:underline transition-colors"
                       >
                         Clear filters
                       </button>
