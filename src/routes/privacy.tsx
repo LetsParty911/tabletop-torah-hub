@@ -21,6 +21,7 @@ export const Route = createFileRoute("/privacy")({
     const description =
       "What Torah for the Table collects, why, and how to unsubscribe or request deletion. No advertising, no selling of your information.";
     const url = "https://torahforthetable.com/privacy";
+    const image = "https://torahforthetable.com/og-image.png";
     return {
       meta: [
         { title },
@@ -30,9 +31,11 @@ export const Route = createFileRoute("/privacy")({
         { property: "og:type", content: "website" },
         { property: "og:url", content: url },
         { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:image", content: image },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: description },
+        { name: "twitter:image", content: image },
       ],
       links: [{ rel: "canonical", href: url }],
     };
@@ -204,7 +207,7 @@ function PrivacyPage() {
                   They process data only to provide their service to us:
                 </p>
                 <ul className="list-disc space-y-1 pl-6">
-                  <li>Cloudflare — hosting and content delivery</li>
+                  <li>Lovable — website hosting and content delivery</li>
                   <li>
                     Supabase — database storage for subscriptions and download
                     records

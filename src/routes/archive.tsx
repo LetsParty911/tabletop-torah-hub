@@ -14,33 +14,47 @@ import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 
 type ArchiveSearch = {
-  year: string;
-  parsha: string;
-  audience: "All" | AudienceKey;
-  q: string;
+  year?: string;
+  parsha?: string;
+  audience?: "All" | AudienceKey;
+  q?: string;
+  /** Facets mirroring the homepage filters. */
+  length?: "All" | "short" | "long";
+  type?: string;
+  pub?: string;
 };
 
+type ResolvedArchiveSearch = Required<ArchiveSearch>;
+
 const AUDIENCE_VALUES = ["All", "Children", "Families", "Adults"] as const;
+const LENGTH_VALUES = ["All", "short", "long"] as const;
 
 /** Lenient parsing: any unexpected value falls back to the default. */
-function parseArchiveSearch(input: Record<string, unknown>): ArchiveSearch {
+function parseArchiveSearch(input: Record<string, unknown>): ResolvedArchiveSearch {
   const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
-  const audience = str(input['audience']) as ArchiveSearch["audience"];
+  const audience = str(input['audience']) as NonNullable<ArchiveSearch["audience"]>;
+  const length = str(input['length']) as NonNullable<ArchiveSearch["length"]>;
   return {
     year: str(input['year']).slice(0, 10) || "all",
     parsha: str(input['parsha']).slice(0, 60) || "all",
     audience: (AUDIENCE_VALUES as readonly string[]).includes(audience) ? audience : "All",
     q: str(input['q']).slice(0, 100),
+    length: (LENGTH_VALUES as readonly string[]).includes(length) ? length : "All",
+    type: str(input['type']).slice(0, 60) || "All",
+    pub: str(input['pub']).slice(0, 120) || "All",
   };
 }
 
 /** Keep default-valued params out of the URL so a clean /archive stays clean. */
-function stripDefaults(s: ArchiveSearch) {
-  const out: Partial<ArchiveSearch> = {};
+function stripDefaults(s: ResolvedArchiveSearch) {
+  const out: ArchiveSearch = {};
   if (s.year !== "all") out.year = s.year;
   if (s.parsha !== "all") out.parsha = s.parsha;
   if (s.audience !== "All") out.audience = s.audience;
   if (s.q) out.q = s.q;
+  if (s.length !== "All") out.length = s.length;
+  if (s.type !== "All") out.type = s.type;
+  if (s.pub !== "All") out.pub = s.pub;
   return out;
 }
 
@@ -56,7 +70,15 @@ export const Route = createFileRoute("/archive")({
   // Default values never appear in the URL, so a clean /archive stays clean.
   search: {
     middlewares: [
-      stripSearchParams({ year: "all", parsha: "all", audience: "All", q: "" }),
+      stripSearchParams({
+        year: "all",
+        parsha: "all",
+        audience: "All" as const,
+        q: "",
+        length: "All" as const,
+        type: "All",
+        pub: "All",
+      }),
     ],
   },
   head: (ctx) => {
@@ -173,15 +195,19 @@ export const Route = createFileRoute("/archive")({
 
 function ArchivePage() {
   const { years } = Route.useLoaderData() as { years: ArchiveYear[] };
-  const search = Route.useSearch();
+  const rawSearch = Route.useSearch();
+  const search = parseArchiveSearch(rawSearch as Record<string, unknown>);
   const navigate = useNavigate({ from: Route.fullPath });
 
   const yearFilter = search.year;
   const parshaFilter = search.parsha;
   const audienceFilter = search.audience;
   const query = search.q;
+  const lengthFilter = search.length;
+  const typeFilter = search.type;
+  const pubFilter = search.pub;
 
-  const setSearch = (patch: Partial<ArchiveSearch>, replace = false) => {
+  const setSearch = (patch: ArchiveSearch, replace = false) => {
     void navigate({
       search: (prev: Record<string, unknown>) =>
         stripDefaults(parseArchiveSearch({ ...prev, ...patch })) as never,
@@ -193,6 +219,9 @@ function ArchivePage() {
   const setYearFilter = (year: string) => setSearch({ year });
   const setParshaFilter = (parsha: string) => setSearch({ parsha });
   const setAudienceFilter = (audience: ArchiveSearch["audience"]) => setSearch({ audience });
+  const setLengthFilter = (length: ArchiveSearch["length"]) => setSearch({ length });
+  const setTypeFilter = (type: string) => setSearch({ type });
+  const setPubFilter = (pub: string) => setSearch({ pub });
 
   // The search box stays instant locally; URL writes are debounced and replace
   // history so typing doesn't create a back-button entry per keystroke.
@@ -220,6 +249,43 @@ function ArchivePage() {
     return Array.from(set).sort();
   }, [years]);
 
+  const matchesLength = (r: ArchivePdf) =>
+    lengthFilter === "All"
+      ? true
+      : typeof r.page_count === "number"
+        ? lengthFilter === "short"
+          ? r.page_count < 5
+          : r.page_count >= 5
+        : false;
+  const matchesType = (r: ArchivePdf) =>
+    typeFilter === "All" || formatTypeLabel(r.format_type) === typeFilter;
+  const matchesPub = (r: ArchivePdf) =>
+    pubFilter === "All" || (r.publication ?? r.title) === pubFilter;
+
+  // Options are derived from everything in the archive so a facet never empties itself.
+  const allPdfs = useMemo(
+    () => years.flatMap((y) => y.parshiyos.flatMap((p) => p.pdfs)),
+    [years],
+  );
+  const typeOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allPdfs
+            .map((r) => formatTypeLabel(r.format_type))
+            .filter((v): v is string => !!v),
+        ),
+      ).sort((a, b) => a.localeCompare(b)),
+    [allPdfs],
+  );
+  const publicationOptions = useMemo(
+    () =>
+      Array.from(new Set(allPdfs.map((r) => r.publication ?? r.title))).sort(
+        (a, b) => a.localeCompare(b),
+      ),
+    [allPdfs],
+  );
+
   const filteredYears = useMemo(() => {
     const q = query.trim().toLowerCase();
     const out: ArchiveYear[] = [];
@@ -240,12 +306,13 @@ function ArchivePage() {
             (r) => normalizeAudience(r.audience, r.title) === audienceFilter,
           );
         }
+        pdfs = pdfs.filter((r) => matchesLength(r) && matchesType(r) && matchesPub(r));
         if (pdfs.length) parshiyos.push({ ...p, pdfs });
       }
       if (parshiyos.length) out.push({ ...y, parshiyos });
     }
     return out;
-  }, [years, yearFilter, parshaFilter, query, audienceFilter]);
+  }, [years, yearFilter, parshaFilter, query, audienceFilter, lengthFilter, typeFilter, pubFilter]);
 
   // Audience counts reflect the other active filters (year, parsha, search).
   const audienceCounts = useMemo(() => {
@@ -268,6 +335,7 @@ function ArchivePage() {
               .some((v) => (v as string).toLowerCase().includes(q))
           )
             continue;
+          if (!matchesLength(r) || !matchesType(r) || !matchesPub(r)) continue;
           counts.All += 1;
           const a = normalizeAudience(r.audience, r.title);
           if (a) counts[a] += 1;
@@ -275,7 +343,7 @@ function ArchivePage() {
       }
     }
     return counts;
-  }, [years, yearFilter, parshaFilter, query]);
+  }, [years, yearFilter, parshaFilter, query, lengthFilter, typeFilter, pubFilter]);
 
   const totalPdfs = filteredYears.reduce(
     (sum: number, y: ArchiveYear) =>
@@ -299,7 +367,10 @@ function ArchivePage() {
     yearFilter !== "all" ||
     parshaFilter !== "all" ||
     query.trim() !== "" ||
-    audienceFilter !== "All";
+    audienceFilter !== "All" ||
+    lengthFilter !== "All" ||
+    typeFilter !== "All" ||
+    pubFilter !== "All";
 
   return (
     <div className="min-h-screen bg-background">
@@ -425,6 +496,83 @@ function ArchivePage() {
                     })}
                 </div>
               </div>
+
+              <div className="mt-4 flex flex-col items-center gap-2">
+                <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Filter by length
+                </span>
+                <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-full border border-accent/40 bg-background/70 p-1 shadow-sm">
+                  {(
+                    [
+                      { value: "All", label: "All lengths" },
+                      { value: "short", label: "Under 5 pages" },
+                      { value: "long", label: "5+ pages" },
+                    ] as const
+                  ).map(({ value, label }) => {
+                    const active = lengthFilter === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setLengthFilter(active ? "All" : value)}
+                        className={`rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
+                          active
+                            ? "bg-accent text-accent-foreground shadow-sm"
+                            : "text-primary hover:bg-accent/12"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {(typeOptions.length > 0 || publicationOptions.length > 0) && (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {typeOptions.length > 0 && (
+                    <label className="block text-left">
+                      <span className="mb-1 block text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Content type
+                      </span>
+                      <select
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value)}
+                        className="w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
+                      >
+                        <option value="All">All content types</option>
+                        {typeOptions.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                  {publicationOptions.length > 0 && (
+                    <label className="block text-left">
+                      <span className="mb-1 block text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Publication
+                      </span>
+                      <select
+                        value={pubFilter}
+                        onChange={(e) => setPubFilter(e.target.value)}
+                        className="w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
+                      >
+                        <option value="All">All publications</option>
+                        {publicationOptions.map((p) => (
+                          <option key={p} value={p}>
+                            {p}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                </div>
+              )}
+
+
 
               {hasActiveFilters && (
                 <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
