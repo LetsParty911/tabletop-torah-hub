@@ -487,6 +487,7 @@ export type ArchivePdf = {
   id: string;
   title: string;
   publisher: string | null;
+  publication: string | null;
   subtitle: string | null;
   summary_quick: string | null;
   description: string | null;
@@ -502,7 +503,7 @@ export type ArchiveResult = { years: ArchiveYear[] };
 export const listArchive = createServerFn({ method: "GET" }).handler(
   async (): Promise<ArchiveResult> => {
     const admin = getSupabaseAdmin();
-    const selectWith = "id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at, description, audience, format_type, page_count, badge";
+    const selectWith = "id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at, description, audience, format_type, page_count, badge, publication";
     const selectBase = "id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at";
     let rows: any[] | null = null;
     const withMeta = await admin
