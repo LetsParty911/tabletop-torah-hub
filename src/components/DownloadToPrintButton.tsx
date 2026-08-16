@@ -42,27 +42,21 @@ export function DownloadToPrintButton({
   useEffect(() => clearTimers, [clearTimers]);
 
   // The browser handles the download natively, so there is no fetch promise to
-  // await. The server echoes a per-click token back as a cookie once the file
-  // response is actually delivered; polling for it keeps the loading state up
-  // for the real transfer instead of a fixed timer.
-  const waitForDelivery = useCallback(
-    (token: string) => {
+  // await and no way to observe completion without making the URL unique
+  // (which would defeat edge caching). Keep the loading state until the
+  // download navigation takes over, then clear it.
+  const endLoadingSoon = useCallback(() => {
+    clearTimers();
+    const stop = () => {
       clearTimers();
-      pollRef.current = setInterval(() => {
-        if (typeof document !== "undefined" && document.cookie.includes(`tftt_dl=${token}`)) {
-          clearTimers();
-          setStarting(false);
-          document.cookie = `tftt_dl=; Max-Age=0; Path=/; SameSite=Lax`;
-        }
-      }, 150);
-      // Safety cap so the button can never stay stuck.
-      timerRef.current = setTimeout(() => {
-        clearTimers();
-        setStarting(false);
-      }, 60000);
-    },
-    [clearTimers],
-  );
+      setStarting(false);
+      window.removeEventListener("blur", stop);
+      document.removeEventListener("visibilitychange", stop);
+    };
+    window.addEventListener("blur", stop, { once: true });
+    document.addEventListener("visibilitychange", stop, { once: true });
+    timerRef.current = setTimeout(stop, 2500);
+  }, [clearTimers]);
 
   // Warm the origin lookup before the click so the download starts sooner.
   const warm = useCallback(() => {
@@ -86,20 +80,9 @@ export function DownloadToPrintButton({
     }
     onClick?.();
 
-    // Tag this click so the server can confirm delivery via cookie.
-    const token = Math.random().toString(36).slice(2, 14);
-    try {
-      const url = new URL(e.currentTarget.href, window.location.origin);
-      url.searchParams.set("dl", token);
-      e.currentTarget.href = url.pathname + url.search;
-      document.cookie = "tftt_dl=; Max-Age=0; Path=/; SameSite=Lax";
-    } catch {
-      /* fall back to the plain href */
-    }
-
     // Paint the loading state before the browser starts the navigation.
     flushSync(() => setStarting(true));
-    waitForDelivery(token);
+    endLoadingSoon();
 
     // Fire-and-forget anonymous download tracking. Never blocks the download.
     const onAdminRoute =
@@ -140,7 +123,7 @@ export function DownloadToPrintButton({
 
     // No preventDefault: the browser handles the navigation/download natively,
     // which starts immediately.
-  }, [onClick, publicationId, publicationTitle, starting, waitForDelivery]);
+  }, [onClick, publicationId, publicationTitle, starting, endLoadingSoon]);
 
   return (
     <a
