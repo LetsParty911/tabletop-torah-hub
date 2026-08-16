@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { Check, Download, Loader2 } from "lucide-react";
+import { AlertCircle, Check, Download, Loader2 } from "lucide-react";
 
 type DownloadToPrintButtonProps = {
   href: string;
@@ -27,10 +27,11 @@ export function DownloadToPrintButton({
   const displayName = publicationName ?? publicationTitle;
   const buttonLabel = displayName ? `Download ${displayName}` : "Download";
 
-  const [starting, setStarting] = useState(false);
-  const [saved, setSaved] = useState(false);
+  type DownloadPhase = "idle" | "preparing" | "finishing" | "saved" | "error";
+  const [phase, setPhase] = useState<DownloadPhase>("idle");
+  const busy = phase === "preparing" || phase === "finishing";
   const warmedRef = useRef(false);
-  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 
 
@@ -95,14 +96,14 @@ export function DownloadToPrintButton({
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>) => {
-      if (starting) {
+      if (busy) {
         e.preventDefault();
         return;
       }
       onClick?.();
       trackDownload();
-      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-      setSaved(false);
+      if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+      setPhase("idle");
 
       // The fetch/blob path is required on every supported browser, including
       // iOS, because response.blob() resolves only after the final byte arrives.
@@ -111,18 +112,17 @@ export function DownloadToPrintButton({
         typeof window.URL?.createObjectURL === "function" &&
         typeof fetch === "function";
       if (!canBlob) {
-        flushSync(() => setStarting(true));
+        flushSync(() => setPhase("preparing"));
         return;
       }
 
       // Fetch the (edge-cacheable) URL ourselves so the loading state lasts
       // for the entire transfer, then hand a blob to the download manager.
       e.preventDefault();
-      flushSync(() => setStarting(true));
+      flushSync(() => setPhase("preparing"));
       const t0 = Date.now();
 
       void (async () => {
-        let ok = false;
         try {
           const res = await fetch(href, { credentials: "same-origin" });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -136,32 +136,28 @@ export function DownloadToPrintButton({
           a.href = url;
           a.download = name;
           document.body.appendChild(a);
+          // The response body is complete, but the browser still needs to
+          // accept and persist the Blob download. Keep the button visibly
+          // non-idle across that handoff instead of implying completion.
+          setPhase("finishing");
           a.click();
           a.remove();
-          ok = true;
           setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
-        } catch {
-          // Fall back to letting the browser do it natively.
-          window.location.href = href;
-        } finally {
-          // Repeat downloads are served from cache and finish in a few dozen
-          // ms; hold the busy state briefly so the click is always visible.
           const elapsed = Date.now() - t0;
-          const hold = Math.max(0, 450 - elapsed);
-          setTimeout(() => {
-            setStarting(false);
-            if (ok) {
-              setSaved(true);
-              savedTimerRef.current = setTimeout(() => setSaved(false), 2200);
-            }
-          }, hold);
+          const handoffHold = Math.max(700, 1200 - elapsed);
+          statusTimerRef.current = setTimeout(() => {
+            setPhase("saved");
+          }, handoffHold);
+        } catch {
+          setPhase("error");
+          statusTimerRef.current = setTimeout(() => setPhase("idle"), 5000);
         }
       })();
     },
 
     [
       onClick,
-      starting,
+      busy,
       href,
       preferredFilename,
       trackDownload,
@@ -180,34 +176,40 @@ export function DownloadToPrintButton({
       onFocus={warm}
       onTouchStart={warm}
       aria-live="polite"
-      aria-busy={starting}
-      aria-disabled={starting}
+      aria-busy={busy}
+      aria-disabled={busy}
       className={[
         "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium",
         "transition-[transform,background-color,color,opacity] duration-100 select-none touch-manipulation",
         "bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground",
         "active:scale-[0.96] active:bg-accent active:text-accent-foreground",
-        starting
+        busy
           ? "scale-[0.98] bg-accent text-accent-foreground opacity-90 cursor-wait pointer-events-none"
           : "",
         className,
       ].join(" ")}
     >
-      {starting ? (
+      {busy ? (
         <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-      ) : saved ? (
+      ) : phase === "saved" ? (
         <Check className="h-4 w-4 shrink-0" />
+      ) : phase === "error" ? (
+        <AlertCircle className="h-4 w-4 shrink-0" />
       ) : (
         <Download className="h-4 w-4 shrink-0" />
       )}
       <span className="min-w-0 truncate">
-        {starting
+        {phase === "preparing"
           ? displayName
             ? `Preparing ${displayName}…`
             : "Preparing…"
-          : saved
-            ? "Saved to your device"
-            : buttonLabel}
+          : phase === "finishing"
+            ? "Finishing download…"
+            : phase === "saved"
+              ? "Downloaded — check Downloads"
+              : phase === "error"
+                ? "Download failed — try again"
+                : buttonLabel}
       </span>
 
 
