@@ -172,8 +172,13 @@ export function DownloadToPrintButton({
         <Download className="h-4 w-4 shrink-0" />
       )}
       <span className="min-w-0 truncate">
-        {starting ? "Preparing…" : buttonLabel}
+        {starting
+          ? displayName
+            ? `Preparing ${displayName}…`
+            : "Preparing…"
+          : buttonLabel}
       </span>
+
     </a>
   );
 }
