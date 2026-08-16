@@ -30,9 +30,9 @@ const AUDIENCE_VALUES = ["All", "Children", "Families", "Adults"] as const;
 const LENGTH_VALUES = ["All", "short", "long"] as const;
 
 /** Lenient parsing: any unexpected value falls back to the default. */
-function parseArchiveSearch(input: Record<string, unknown>): ArchiveSearch {
+function parseArchiveSearch(input: Record<string, unknown>): ResolvedArchiveSearch {
   const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
-  const audience = str(input['audience']) as ArchiveSearch["audience"];
+  const audience = str(input['audience']) as NonNullable<ArchiveSearch["audience"]>;
   const length = str(input['length']) as NonNullable<ArchiveSearch["length"]>;
   return {
     year: str(input['year']).slice(0, 10) || "all",
@@ -46,15 +46,15 @@ function parseArchiveSearch(input: Record<string, unknown>): ArchiveSearch {
 }
 
 /** Keep default-valued params out of the URL so a clean /archive stays clean. */
-function stripDefaults(s: ArchiveSearch) {
-  const out: Partial<ArchiveSearch> = {};
+function stripDefaults(s: ResolvedArchiveSearch) {
+  const out: ArchiveSearch = {};
   if (s.year !== "all") out.year = s.year;
   if (s.parsha !== "all") out.parsha = s.parsha;
   if (s.audience !== "All") out.audience = s.audience;
   if (s.q) out.q = s.q;
-  if (s.length && s.length !== "All") out.length = s.length;
-  if (s.type && s.type !== "All") out.type = s.type;
-  if (s.pub && s.pub !== "All") out.pub = s.pub;
+  if (s.length !== "All") out.length = s.length;
+  if (s.type !== "All") out.type = s.type;
+  if (s.pub !== "All") out.pub = s.pub;
   return out;
 }
 
