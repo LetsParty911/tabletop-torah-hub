@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { Download, Loader2 } from "lucide-react";
+import { Check, Download, Loader2 } from "lucide-react";
 
 type DownloadToPrintButtonProps = {
   href: string;
