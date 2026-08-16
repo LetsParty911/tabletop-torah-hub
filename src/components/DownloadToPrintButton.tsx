@@ -146,9 +146,7 @@ export function DownloadToPrintButton({
     <a
       href={href}
       rel="nofollow"
-      aria-label={
-        publicationTitle ? `Download ${publicationTitle} to print` : "Download to print"
-      }
+      aria-label={displayName ? `Download ${displayName}` : "Download"}
       download={preferredFilename ?? ""}
       onClick={handleClick}
       onMouseEnter={warm}
@@ -169,11 +167,14 @@ export function DownloadToPrintButton({
       ].join(" ")}
     >
       {starting ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <Loader2 className="h-4 w-4 animate-spin shrink-0" />
       ) : (
-        <Download className="h-4 w-4" />
+        <Download className="h-4 w-4 shrink-0" />
       )}
-      {starting ? "Preparing…" : "Download to Print"}
+      <span className="min-w-0 truncate">
+        {starting ? "Preparing…" : buttonLabel}
+      </span>
     </a>
   );
 }
+
