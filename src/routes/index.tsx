@@ -469,12 +469,17 @@ function Index() {
               </p>
             )}
             {resources.length > 0 && (
-              <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent">
-                <span className="inline-block align-baseline text-base sm:text-lg md:text-xl font-bold text-primary">
-                  {resources.length}
-                </span>{" "}
-                {resources.length === 1 ? "Dvar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : " this week"}
-              </p>
+              <>
+                <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent">
+                  <span className="inline-block align-baseline text-base sm:text-lg md:text-xl font-bold text-primary">
+                    {resources.length}
+                  </span>{" "}
+                  {resources.length === 1 ? "Dvar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : " this week"}
+                </p>
+                <div className="mt-3 flex justify-center">
+                  <ShareButton />
+                </div>
+              </>
             )}
 
             {resources.length === 0 ? (
