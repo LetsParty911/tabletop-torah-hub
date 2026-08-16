@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { registerPwa } from "@/pwa-register";
 import { trackPageView } from "@/lib/site-analytics";
 
-import { EmailCapturePopup } from "@/components/EmailCapturePopup";
 import { SiteLogoHorizontal } from "@/components/SiteLogo";
 import { getSafePostLoginRedirect, POST_LOGIN_REDIRECT_KEY } from "@/lib/auth-redirect";
 
@@ -303,7 +302,6 @@ function RootComponent() {
       <PwaRegistrar />
       <SiteNav />
       <Outlet />
-      <EmailCapturePopup />
     </>
   );
 }

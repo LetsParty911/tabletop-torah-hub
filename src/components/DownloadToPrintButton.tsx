@@ -112,15 +112,6 @@ export function DownloadToPrintButton({
         // never block the download
       }
     }
-    // Signal that a download started, so the email popup can appear afterwards.
-    if (!onAdminRoute && typeof window !== "undefined") {
-      try {
-        window.dispatchEvent(new CustomEvent("tftt:download"));
-      } catch {
-        /* ignore */
-      }
-    }
-
     // No preventDefault: the browser handles the navigation/download natively,
     // which starts immediately.
   }, [onClick, publicationId, publicationTitle, starting, endLoadingSoon]);
