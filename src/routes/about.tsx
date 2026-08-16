@@ -43,7 +43,9 @@ function AboutPage() {
               >
                 ← Back to Home
               </Link>
+              <SiteLogoStacked className="mx-auto mt-6" />
               <h1 className="mt-4 font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-primary">
+
                 About
               </h1>
               <p className="mt-3 font-serif italic text-base sm:text-lg text-accent">
