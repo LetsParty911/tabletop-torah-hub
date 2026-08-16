@@ -43,8 +43,19 @@ export function DownloadToPrintButton({
 
 
   // Warm the origin lookup before the click so the download starts sooner.
+  //
+  // This must NEVER run on touch devices: `rel=prefetch` pulls the entire PDF,
+  // and on a phone `touchstart` fires ~100ms before the tap completes, so the
+  // prefetch and the real download transfer the same megabyte side by side and
+  // split the cellular bandwidth in half. On desktop, hover precedes the click
+  // by seconds on a connection where the extra copy is free.
   const warm = useCallback(() => {
     if (warmedRef.current || typeof document === "undefined") return;
+    const coarsePointer =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(pointer: coarse)").matches;
+    if (coarsePointer) return;
     warmedRef.current = true;
     try {
       const link = document.createElement("link");
@@ -56,6 +67,7 @@ export function DownloadToPrintButton({
       // best effort only
     }
   }, [href]);
+
 
   const trackDownload = useCallback(() => {
     const onAdminRoute =
@@ -121,7 +133,7 @@ export function DownloadToPrintButton({
       onClick={handleClick}
       onMouseEnter={warm}
       onFocus={warm}
-      onTouchStart={warm}
+      
       aria-live="polite"
       aria-busy={busy}
       aria-disabled={busy}
