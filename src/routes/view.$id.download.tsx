@@ -53,11 +53,29 @@ export const Route = createFileRoute("/view/$id/download")({
         }
 
         const t0 = Date.now();
+
+        // Fast path: previously downloaded in this colo — no DB, no storage hop.
+        const cache = edgeCache();
+        const cacheKey = new Request(
+          new URL(request.url).origin + `/view/${id}/download`,
+          { method: "GET" },
+        );
+        if (cache) {
+          const hit = await cache.match(cacheKey);
+          if (hit) {
+            const h = new Headers(hit.headers);
+            h.set("Server-Timing", `edge;dur=${Date.now() - t0};desc="Edge cache hit"`);
+            h.set("X-TFTT-Cache", "HIT");
+            return new Response(hit.body, { status: hit.status, headers: h });
+          }
+        }
+
         const now = t0;
         let cacheHit = true;
         let entry = rowCache.get(id);
         if (!entry || entry.expiresAt <= now) {
           cacheHit = false;
+
           const admin = getSupabaseAdmin();
           const { data: row, error } = await admin
             .from("pdfs")
