@@ -94,7 +94,7 @@ export function DownloadToPrintButton({
 
     // No preventDefault: the browser handles the navigation/download natively,
     // which starts immediately.
-  }, [onClick, publicationId, publicationTitle]);
+  }, [onClick, publicationId, publicationTitle, starting]);
 
   return (
     <a
