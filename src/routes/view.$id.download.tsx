@@ -13,7 +13,22 @@ const NOINDEX = { "X-Robots-Tag": "noindex" } as const;
 
 // Cacheable, but revalidated often enough that a replaced file (same storage
 // path) reaches readers quickly. `immutable` is deliberately avoided.
-const CACHE_CONTROL = "public, max-age=60, s-maxage=300, stale-while-revalidate=86400";
+const CACHE_CONTROL = "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800";
+
+/**
+ * Worker-level edge cache. The platform CDN in front of us does not retain
+ * these responses (every hit reached the origin, costing a DB lookup plus a
+ * storage round trip before the first byte). Storing the finished PDF in the
+ * Worker's own colo cache turns repeat downloads into a local read.
+ */
+function edgeCache(): Cache | null {
+  try {
+    const c = (globalThis as { caches?: { default?: Cache } }).caches?.default;
+    return c ?? null;
+  } catch {
+    return null;
+  }
+}
 
 function quoteFilename(name: string): string {
   return `attachment; filename="${name.replace(/["\\]/g, "")}"; filename*=UTF-8''${encodeURIComponent(name)}`;
@@ -27,6 +42,7 @@ function serverTiming(dbMs: number, upstreamMs: number, totalMs: number): string
   ].join(", ");
 }
 
+
 export const Route = createFileRoute("/view/$id/download")({
   server: {
     handlers: {
@@ -37,11 +53,29 @@ export const Route = createFileRoute("/view/$id/download")({
         }
 
         const t0 = Date.now();
+
+        // Fast path: previously downloaded in this colo — no DB, no storage hop.
+        const cache = edgeCache();
+        const cacheKey = new Request(
+          new URL(request.url).origin + `/view/${id}/download`,
+          { method: "GET" },
+        );
+        if (cache) {
+          const hit = await cache.match(cacheKey);
+          if (hit) {
+            const h = new Headers(hit.headers);
+            h.set("Server-Timing", `edge;dur=${Date.now() - t0};desc="Edge cache hit"`);
+            h.set("X-TFTT-Cache", "HIT");
+            return new Response(hit.body, { status: hit.status, headers: h });
+          }
+        }
+
         const now = t0;
         let cacheHit = true;
         let entry = rowCache.get(id);
         if (!entry || entry.expiresAt <= now) {
           cacheHit = false;
+
           const admin = getSupabaseAdmin();
           const { data: row, error } = await admin
             .from("pdfs")
@@ -120,11 +154,23 @@ export const Route = createFileRoute("/view/$id/download")({
           serverTiming(tDb - t0, tUp - tDb, Date.now() - t0),
         );
         headers.set("Timing-Allow-Origin", "*");
+        headers.set("X-TFTT-Cache", "MISS");
         const len = upstream.headers.get("content-length");
         if (len) headers.set("Content-Length", len);
 
-        return new Response(upstream.body, { status: 200, headers });
+        const response = new Response(upstream.body, { status: 200, headers });
+        if (cache) {
+          // Store a copy for the colo without delaying this reader's stream.
+          try {
+            void cache.put(cacheKey, response.clone()).catch(() => {});
+          } catch {
+            /* caching is best-effort */
+          }
+        }
+
+        return response;
       },
+
     },
   },
 });
