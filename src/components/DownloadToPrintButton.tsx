@@ -41,10 +41,13 @@ export function DownloadToPrintButton({
 
   useEffect(() => clearTimers, [clearTimers]);
 
-  // The browser handles the download natively, so there is no fetch promise to
-  // await and no way to observe completion without making the URL unique
-  // (which would defeat edge caching). Keep the loading state until the
-  // download navigation takes over, then clear it.
+  // iOS Safari mishandles blob downloads (wrong/duplicate filenames), so there
+  // we keep the native anchor navigation and can only approximate completion.
+  const isIOS =
+    typeof navigator !== "undefined" &&
+    (/iP(hone|ad|od)/.test(navigator.userAgent) ||
+      (/Macintosh/.test(navigator.userAgent) && "ontouchend" in document));
+
   const endLoadingSoon = useCallback(() => {
     clearTimers();
     const stop = () => {
@@ -57,6 +60,8 @@ export function DownloadToPrintButton({
     document.addEventListener("visibilitychange", stop, { once: true });
     timerRef.current = setTimeout(stop, 2500);
   }, [clearTimers]);
+
+
 
   // Warm the origin lookup before the click so the download starts sooner.
   const warm = useCallback(() => {
