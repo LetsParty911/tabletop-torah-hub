@@ -11,9 +11,9 @@ const rowCache = new Map<string, CacheEntry>();
 // File-delivery endpoint must never be indexed.
 const NOINDEX = { "X-Robots-Tag": "noindex" } as const;
 
-// Cacheable, but revalidated with the ETag so a replaced file is picked up
-// quickly. `immutable` is deliberately avoided: admins do replace files.
-const CACHE_CONTROL = "public, max-age=600, s-maxage=86400, stale-while-revalidate=86400";
+// Cacheable, but revalidated often enough that a replaced file (same storage
+// path) reaches readers quickly. `immutable` is deliberately avoided.
+const CACHE_CONTROL = "public, max-age=60, s-maxage=300, stale-while-revalidate=86400";
 
 function quoteFilename(name: string): string {
   return `attachment; filename="${name.replace(/["\\]/g, "")}"; filename*=UTF-8''${encodeURIComponent(name)}`;
