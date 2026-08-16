@@ -28,7 +28,10 @@ export function DownloadToPrintButton({
   const buttonLabel = displayName ? `Download ${displayName}` : "Download";
 
   const [starting, setStarting] = useState(false);
+  const [saved, setSaved] = useState(false);
   const warmedRef = useRef(false);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 
 
 
