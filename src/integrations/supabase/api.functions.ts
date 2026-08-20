@@ -3258,17 +3258,8 @@ export const adminDownloadFeed = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(fetchLimit);
     if (data.days) q = q.gte("created_at", iso(data.days * DAY));
-    if (search && !search.match(/^\s*$/)) {
-      // Cheap server-side narrowing on title/location; parsha handled below.
-      q = q.or(
-        [
-          `publication_title.ilike.%${search.replace(/[%,]/g, "")}%`,
-          `city.ilike.%${search.replace(/[%,]/g, "")}%`,
-          `region.ilike.%${search.replace(/[%,]/g, "")}%`,
-          `country.ilike.%${search.replace(/[%,]/g, "")}%`,
-        ].join(","),
-      );
-    }
+    // Search matches title, parsha, or location, so filtering happens in
+    // memory after each row is joined to its PDF.
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
 
