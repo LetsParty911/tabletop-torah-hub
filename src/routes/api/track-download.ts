@@ -24,11 +24,13 @@ export const Route = createFileRoute("/api/track-download")({
           };
 
 
-          const cf = (request as unknown as { cf?: Record<string, unknown> }).cf ?? {};
-          const city = (cf.city as string | undefined) ?? null;
-          const region = (cf.region as string | undefined) ?? null;
-          const country = (cf.country as string | undefined) ?? null;
-          const timezone = (cf.timezone as string | undefined) ?? null;
+          // Cloudflare geo can be on `request.cf` or in the CF-* headers,
+          // depending on how the runtime exposes the incoming request.
+          const cfObj = (request as unknown as { cf?: Record<string, unknown> }).cf ?? {};
+          const city = (cfObj.city as string | undefined) ?? request.headers.get("cf-ipcity") ?? null;
+          const region = (cfObj.region as string | undefined) ?? request.headers.get("cf-ipregion") ?? null;
+          const country = (cfObj.country as string | undefined) ?? request.headers.get("cf-ipcountry") ?? null;
+          const timezone = (cfObj.timezone as string | undefined) ?? request.headers.get("cf-timezone") ?? null;
 
           const { getSupabaseAdmin } = await import("@/integrations/supabase/ext.server");
           const supabase = getSupabaseAdmin();
