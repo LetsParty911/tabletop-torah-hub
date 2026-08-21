@@ -1,0 +1,42 @@
+-- Removes the legacy auto-admin-grant trigger for a hardcoded email address.
+-- Safe to run on ANY Supabase project - every statement uses IF EXISTS, so
+-- this is a harmless no-op on a project that never had this trigger. Run it
+-- in both the "Lovable Cloud" project's SQL editor and the external
+-- "torah-by-the-table" project's SQL editor to be sure it's gone from
+-- wherever it may have been applied.
+--
+-- CONTEXT: an early migration (supabase_migration.sql) set up a trigger
+-- that automatically granted the 'admin' role (in a user_roles table) to
+-- any signup matching one specific hardcoded email address. The app's
+-- CURRENT admin-authorization check (requireAdmin() in api.functions.ts)
+-- does not use this table or trigger at all - it checks the ADMIN_EMAILS
+-- environment variable instead. This script removes the now-unused,
+-- silent auto-grant so a future signup matching that email can't quietly
+-- gain a role that - while not read by the app today - could matter again
+-- if RLS or has_role() checks are ever relied on in the future.
+--
+-- This does NOT touch has_role(), the user_roles table, or any RLS
+-- policies that reference has_role() - those may still be attached to
+-- live tables and removing them is a separate, more involved decision.
+-- This script only removes the automatic, hardcoded-email admin grant.
+
+drop trigger if exists on_auth_user_created_admin_seed on auth.users;
+drop function if exists public.handle_new_user_admin_seed();
+
+-- ---------------------------------------------------------------------
+-- NOTE: dropping the trigger above does NOT retroactively revoke admin
+-- from anyone who was already auto-granted the role in the past (e.g. if
+-- mekubal@gmail.com already signed up before this script ran).
+--
+-- To see who currently holds the 'admin' role via this table, run:
+--
+--   select u.email, ur.role, ur.created_at
+--   from public.user_roles ur
+--   join auth.users u on u.id = ur.user_id
+--   where ur.role = 'admin';
+--
+-- If that turns up a grant you want to remove, run (with the actual
+-- user_id from the query above):
+--
+--   delete from public.user_roles where user_id = '<uuid>' and role = 'admin';
+-- ---------------------------------------------------------------------

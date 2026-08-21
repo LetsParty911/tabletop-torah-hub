@@ -3,6 +3,20 @@
 -- Run this in your Supabase SQL editor (https://supabase.com/dashboard → SQL).
 -- Safe to re-run; uses IF NOT EXISTS / CREATE OR REPLACE where possible.
 -- =====================================================================
+--
+-- NOTE (added after a repo security audit): the app's CURRENT admin
+-- authorization check does NOT use the has_role()/user_roles system below,
+-- and does NOT rely on RLS as its enforcement layer. requireAdmin() in
+-- src/integrations/supabase/api.functions.ts checks the ADMIN_EMAILS
+-- environment variable against a session validated on the "Lovable Cloud"
+-- Supabase project instead - every server function uses the service-role
+-- client, which bypasses RLS entirely. The has_role()/user_roles/RLS-policy
+-- system below is left in place for reference and because dropping it
+-- outright is a separate, more involved decision, but it should not be
+-- assumed to be what's actually gating admin access. The hardcoded
+-- auto-admin-grant trigger for one specific email address (below) has been
+-- removed - see supabase_remove_legacy_admin_grant.sql.
+-- =====================================================================
 
 -- ---------- Extensions ----------
 create extension if not exists "pgcrypto";

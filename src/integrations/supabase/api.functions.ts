@@ -1029,6 +1029,13 @@ export const submitContactMessage = createServerFn({ method: "POST" })
   });
 
 // ---------- Helper: verify user is admin from access token ----------
+// This is the ONLY authorization boundary for every admin-only action in
+// this file - every server function uses the service-role Supabase client,
+// which bypasses Row-Level Security entirely, so RLS is never a live
+// enforcement layer here. (There is a separate, unused has_role()/
+// user_roles/RLS-policy system defined in supabase_migration.sql from an
+// earlier design - it is not read by this function or by anything else in
+// the app. Do not assume it is what's gating admin access.)
 async function requireAdmin(accessToken: string | null) {
   if (!accessToken) throw new Error("Not authenticated");
   // The user signs in against the Lovable Cloud Supabase project, so validate
