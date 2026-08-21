@@ -138,6 +138,90 @@ export default function DownloadsDashboard({ accessToken }: { accessToken: strin
         ))}
       </div>
 
+      <div className="rounded-xl border border-border bg-card p-4">
+        <h3 className="mb-3 font-serif text-lg font-semibold">Downloads over time</h3>
+        {series.length === 0 ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">No download data for this range.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={260}>
+            <AreaChart data={series} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+              <defs>
+                <linearGradient id="dlFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis
+                dataKey="date"
+                tickFormatter={(d: string) => d.slice(5).replace("-", "/")}
+                tick={{ fontSize: 12 }}
+                stroke="hsl(var(--muted-foreground))"
+              />
+              <YAxis allowDecimals={false} tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+              <Tooltip
+                contentStyle={{
+                  background: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+                labelFormatter={(d) => String(d)}
+                formatter={(v) => [String(v), "Downloads"]}
+              />
+              <Area
+                type="monotone"
+                dataKey="count"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
+                fill="url(#dlFill)"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {([
+          { title: "Top countries", rows: byCountry },
+          { title: "Top regions", rows: byRegion },
+        ] as const).map((panel) => (
+          <div key={panel.title} className="rounded-xl border border-border bg-card p-4">
+            <h3 className="mb-3 font-serif text-lg font-semibold">{panel.title}</h3>
+            {panel.rows.length === 0 ? (
+              <p className="py-10 text-center text-sm text-muted-foreground">No location data yet.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={Math.max(160, panel.rows.length * 34)}>
+                <BarChart data={panel.rows} layout="vertical" margin={{ top: 4, right: 16, bottom: 4, left: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={120}
+                    tick={{ fontSize: 12 }}
+                    stroke="hsl(var(--muted-foreground))"
+                  />
+                  <Tooltip
+                    cursor={{ fill: "hsl(var(--muted))" }}
+                    contentStyle={{
+                      background: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                    formatter={(v) => [String(v), "Downloads"]}
+                  />
+                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        ))}
+      </div>
+
+
+
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[240px]">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
