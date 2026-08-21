@@ -3205,3 +3205,110 @@ export const adminSiteTraffic = createServerFn({ method: "POST" })
       rawRows: curViews.slice(0, 5000),
     };
   });
+
+// ---------- Admin: downloads feed (totals + searchable recent list) ----------
+export const adminDownloadFeed = createServerFn({ method: "POST" })
+  .inputValidator(
+    (input: { accessToken: string; days?: number | null; search?: string; limit?: number; offset?: number }) =>
+      z
+        .object({
+          accessToken: z.string().min(10),
+          days: z.number().int().min(1).max(3650).nullable().optional(),
+          search: z.string().max(200).optional(),
+          limit: z.number().int().min(1).max(200).optional(),
+          offset: z.number().int().min(0).max(100000).optional(),
+        })
+        .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+
+    const iso = (msAgo: number) => new Date(Date.now() - msAgo).toISOString();
+    const DAY = 24 * 60 * 60 * 1000;
+    const startOfToday = new Date();
+    startOfToday.setUTCHours(0, 0, 0, 0);
+
+    const countSince = async (sinceIso: string | null) => {
+      let q = admin.from("download_events").select("id", { count: "exact", head: true });
+      if (sinceIso) q = q.gte("created_at", sinceIso);
+      const { count, error } = await q;
+      if (error) throw new Error(error.message);
+      return count ?? 0;
+    };
+
+    const [totalAll, total7, total30, totalToday] = await Promise.all([
+      countSince(null),
+      countSince(iso(7 * DAY)),
+      countSince(iso(30 * DAY)),
+      countSince(startOfToday.toISOString()),
+    ]);
+
+    const limit = data.limit ?? 50;
+    const offset = data.offset ?? 0;
+    const search = (data.search ?? "").trim();
+
+    // Over-fetch a little when searching, since parsha matching happens after
+    // the rows are joined to their PDF in memory.
+    const fetchLimit = search ? Math.min(5000, (offset + limit) * 10 + 200) : limit;
+
+    let q = admin
+      .from("download_events")
+      .select("id, created_at, publication_id, publication_title, city, region, country")
+      .order("created_at", { ascending: false })
+      .limit(fetchLimit);
+    if (data.days) q = q.gte("created_at", iso(data.days * DAY));
+    // Search matches title, parsha, or location, so filtering happens in
+    // memory after each row is joined to its PDF.
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+
+    const pdfRows = await admin.from("pdfs").select("id, title, parsha_key, jewish_year");
+    const pdfInfo = new Map<string, { title: string; parsha: string | null; jewishYear: number | null }>();
+    for (const r of (pdfRows.data ?? []) as Array<Record<string, unknown>>) {
+      pdfInfo.set(r["id"] as string, {
+        title: ((r["title"] as string | null) ?? "(untitled)"),
+        parsha: (r["parsha_key"] as string | null) ?? null,
+        jewishYear: (r["jewish_year"] as number | null) ?? null,
+      });
+    }
+
+    const all = ((rows ?? []) as Array<{
+      id: string;
+      created_at: string;
+      publication_id: string | null;
+      publication_title: string | null;
+      city: string | null;
+      region: string | null;
+      country: string | null;
+    }>).map((r) => {
+      const info = r.publication_id ? pdfInfo.get(r.publication_id) : undefined;
+      return {
+        id: r.id,
+        at: r.created_at,
+        title: r.publication_title ?? info?.title ?? "(unknown)",
+        parsha: info?.parsha ?? null,
+        jewishYear: info?.jewishYear ?? null,
+        city: r.city,
+        region: r.region,
+        country: r.country,
+      };
+    });
+
+    const needle = search.toLowerCase();
+    const filtered = needle
+      ? all.filter((e) =>
+          [e.title, e.parsha, e.city, e.region, e.country]
+            .filter(Boolean)
+            .some((v) => String(v).toLowerCase().includes(needle)),
+        )
+      : all;
+
+    const page = filtered.slice(offset, offset + limit);
+
+    return {
+      totals: { all: totalAll, last7: total7, last30: total30, today: totalToday },
+      events: page,
+      hasMore: filtered.length > offset + limit,
+    };
+  });
