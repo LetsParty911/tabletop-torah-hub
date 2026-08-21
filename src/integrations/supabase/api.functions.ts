@@ -2426,20 +2426,33 @@ export const adminSendWeeklyEmail = createServerFn({ method: "POST" })
     let firstMessageId: string | null = null;
     const failures: string[] = [];
 
-    for (const r of recipients) {
+    const buildEmailPayload = (r: { email: string; unsubscribe_token: string }) => {
       const unsubscribeUrl = `${SITE_URL}/unsubscribe/${r.unsubscribe_token}`;
-      const html = emailHtml({
-        parshaLabel: content.parshaLabel!,
-        intro: content.intro,
-        resources: content.resources,
-        unsubscribeUrl,
-      });
-      const text = emailText({
-        parshaLabel: content.parshaLabel!,
-        intro: content.intro,
-        resources: content.resources,
-        unsubscribeUrl,
-      });
+      return {
+        from: fromAddress,
+        to: r.email,
+        subject: content.subject,
+        html: emailHtml({
+          parshaLabel: content.parshaLabel!,
+          intro: content.intro,
+          resources: content.resources,
+          unsubscribeUrl,
+        }),
+        text: emailText({
+          parshaLabel: content.parshaLabel!,
+          intro: content.intro,
+          resources: content.resources,
+          unsubscribeUrl,
+        }),
+        headers: { "List-Unsubscribe": `<${unsubscribeUrl}>` },
+      };
+    };
+
+    // One request per recipient, used as the fallback path for any chunk
+    // whose batch call fails (Resend's batch endpoint appears all-or-nothing
+    // per call, so one malformed/rejected address could otherwise cost the
+    // other ~99 recipients in that chunk their send).
+    const sendOne = async (r: { email: string; unsubscribe_token: string }) => {
       try {
         const res = await fetch("https://api.resend.com/emails", {
           method: "POST",
@@ -2447,29 +2460,66 @@ export const adminSendWeeklyEmail = createServerFn({ method: "POST" })
             "Content-Type": "application/json",
             Authorization: `Bearer ${apiKey}`,
           },
-          body: JSON.stringify({
-            from: fromAddress,
-            to: r.email,
-            subject: content.subject,
-            html,
-            text,
-            headers: { "List-Unsubscribe": `<${unsubscribeUrl}>` },
-          }),
+          body: JSON.stringify(buildEmailPayload(r)),
         });
         if (!res.ok) {
           const errText = await res.text().catch(() => "");
           failures.push(`${r.email}: ${res.status} ${errText.slice(0, 120)}`);
-        } else {
-          sentCount++;
-          if (!firstMessageId) {
-            try {
-              const j = (await res.json()) as { id?: string };
-              if (j?.id) firstMessageId = j.id;
-            } catch { /* ignore */ }
-          }
+          return;
+        }
+        sentCount++;
+        if (!firstMessageId) {
+          try {
+            const j = (await res.json()) as { id?: string };
+            if (j?.id) firstMessageId = j.id;
+          } catch { /* ignore */ }
         }
       } catch (e) {
         failures.push(`${r.email}: ${e instanceof Error ? e.message : "send failed"}`);
+      }
+    };
+
+    // Resend's batch endpoint accepts up to 100 distinct emails per call.
+    // Chunking cuts a list of N sequential HTTP round trips down to ~N/100,
+    // which matters as the subscriber list grows toward the platform's
+    // execution-time limit for a single request.
+    const BATCH_SIZE = 100;
+    for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+      const chunk = recipients.slice(i, i + BATCH_SIZE);
+      try {
+        const res = await fetch("https://api.resend.com/emails/batch", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(chunk.map(buildEmailPayload)),
+        });
+        if (!res.ok) {
+          // Whole-chunk failure - fall back to sending this chunk one at a
+          // time so a single bad address doesn't cost the rest of it.
+          await Promise.all(chunk.map(sendOne));
+          continue;
+        }
+        const json = (await res.json().catch(() => null)) as { data?: Array<{ id?: string }> } | null;
+        const results = json?.data ?? [];
+        if (results.length !== chunk.length) {
+          // Unexpected shape - don't guess which succeeded, fall back per-recipient.
+          await Promise.all(chunk.map(sendOne));
+          continue;
+        }
+        for (let j = 0; j < chunk.length; j++) {
+          const id = results[j]?.id;
+          if (id) {
+            sentCount++;
+            if (!firstMessageId) firstMessageId = id;
+          } else {
+            failures.push(`${chunk[j].email}: batch item failed`);
+          }
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "batch send failed";
+        for (const r of chunk) failures.push(`${r.email}: ${msg}`);
       }
     }
 
