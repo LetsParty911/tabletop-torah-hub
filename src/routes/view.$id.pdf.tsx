@@ -18,16 +18,16 @@ export const Route = createFileRoute("/view/$id/pdf")({
         if (error || !row || !row.published) {
           return new Response("Not found", { status: 404 });
         }
-        const { data: blob, error: dErr } = await admin.storage
+        const { data: stream, error: dErr } = await admin.storage
           .from("pdfs")
-          .download(row.file_path);
-        if (dErr || !blob) {
+          .download(row.file_path)
+          .asStream();
+        if (dErr || !stream) {
           return new Response("Load failed", { status: 500 });
         }
         const safeName =
           (row.title || "document").replace(/[^a-zA-Z0-9._ -]/g, "_").trim() + ".pdf";
-        const buf = await blob.arrayBuffer();
-        return new Response(buf, {
+        return new Response(stream, {
           status: 200,
           headers: {
             "Content-Type": "application/pdf",

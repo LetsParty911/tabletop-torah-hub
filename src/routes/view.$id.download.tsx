@@ -55,11 +55,17 @@ export const Route = createFileRoute("/view/$id/download")({
           }
 
           // Stream straight from storage through our own origin so the CDN can
-          // cache the file (one request instead of two hosts).
-          const { data: blob, error: dErr } = await admin.storage
+          // cache the file (one request instead of two hosts). Using
+          // .asStream() (instead of the default .download(), which fully
+          // buffers the file into memory as a Blob before returning) lets
+          // bytes start reaching the browser as soon as storage starts
+          // sending them, rather than waiting for the whole file to land on
+          // the Worker first.
+          const { data: stream, error: dErr } = await admin.storage
             .from("pdfs")
-            .download(entry.path);
-          if (dErr || !blob) {
+            .download(entry.path)
+            .asStream();
+          if (dErr || !stream) {
             rowCache.delete(id);
             // Last-resort fallback: hand the reader a short-lived signed URL
             // straight from storage so a proxy hiccup never blocks a download.
@@ -81,14 +87,12 @@ export const Route = createFileRoute("/view/$id/download")({
           }
 
 
-          const buf = await blob.arrayBuffer();
           const headers = new Headers(NOINDEX);
           headers.set("Content-Type", "application/pdf");
           headers.set("Content-Disposition", quoteFilename(entry.filename));
           headers.set("Cache-Control", CACHE_CONTROL);
-          headers.set("Content-Length", String(buf.byteLength));
           headers.set("Timing-Allow-Origin", "*");
-          return new Response(buf, { status: 200, headers });
+          return new Response(stream, { status: 200, headers });
         } catch (err) {
           console.error("[view/download] failed", err);
           return new Response("Download failed", { status: 500, headers: NOINDEX });
