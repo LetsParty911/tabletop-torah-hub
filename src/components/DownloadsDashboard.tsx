@@ -57,6 +57,9 @@ function formatPlace(e: Ev): string {
 export default function DownloadsDashboard({ accessToken }: { accessToken: string }) {
   const [totals, setTotals] = useState<Totals | null>(null);
   const [events, setEvents] = useState<Ev[]>([]);
+  const [series, setSeries] = useState<Point[]>([]);
+  const [byCountry, setByCountry] = useState<Slice[]>([]);
+  const [byRegion, setByRegion] = useState<Slice[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -84,6 +87,9 @@ export default function DownloadsDashboard({ accessToken }: { accessToken: strin
       if (my !== reqId.current) return;
       setTotals(res.totals as Totals);
       setEvents(res.events as Ev[]);
+      setSeries((res.series ?? []) as Point[]);
+      setByCountry((res.byCountry ?? []) as Slice[]);
+      setByRegion((res.byRegion ?? []) as Slice[]);
       setHasMore(Boolean(res.hasMore));
     } catch (e) {
       if (my !== reqId.current) return;
