@@ -4,7 +4,12 @@
 //   supabase login
 //   supabase link --project-ref <torah-by-the-table-ref>
 //   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
-//   supabase functions deploy generate-summary --no-verify-jwt
+//   supabase functions deploy generate-summary
+//
+// NOTE: do NOT pass --no-verify-jwt. This function also independently
+// checks the caller below, but Supabase's platform-level JWT check is a
+// second layer worth keeping - remove --no-verify-jwt on redeploy if an
+// older deployment still has it set.
 //
 // Invoke:
 //   POST https://<ref>.supabase.co/functions/v1/generate-summary
@@ -25,8 +30,32 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Constant-time string comparison so a mismatched Authorization header
+// can't be distinguished by timing (defense against timing attacks on the
+// secret comparison below).
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // This function performs privileged, costly work (a paid Claude API call
+  // plus a database write) and must never be reachable by an unauthenticated
+  // caller, or by anyone holding only the public/anon key. Verify the caller
+  // presented the exact service-role key as a Bearer token - independent of
+  // whatever platform-level JWT setting this function is deployed with, so
+  // this can't be silently reopened by a future redeploy flag.
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const providedAuth = req.headers.get("authorization") ?? "";
+  if (!serviceRoleKey || !timingSafeEqual(providedAuth, `Bearer ${serviceRoleKey}`)) {
+    return json({ error: "Unauthorized" }, 401);
+  }
 
   try {
     const { id } = await req.json();

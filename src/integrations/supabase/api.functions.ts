@@ -2378,18 +2378,47 @@ export const adminSendWeeklyEmail = createServerFn({ method: "POST" })
       return { ok: false, error: "Email is not configured (missing RESEND_API_KEY / EMAIL_FROM_ADDRESS)." };
     }
 
+    // Claim this week's send atomically BEFORE emailing anyone. The unique
+    // constraint on (parsha_key, jewish_year) means a genuine concurrent
+    // second attempt (e.g. a double-tap on a slow connection, or two tabs)
+    // fails right here and never reaches the send loop below - closing the
+    // race where two invocations could otherwise both read "not yet sent"
+    // above and both email every subscriber.
+    const { data: claimRow, error: claimErr } = await admin
+      .from("weekly_email_sends")
+      .insert({
+        parsha_key: content.parshaKey,
+        jewish_year: content.jewishYear,
+        subject: content.subject,
+        sent_count: 0,
+        created_by: userId,
+        provider: "resend",
+      })
+      .select("id")
+      .single();
+    if (claimErr) {
+      if (/duplicate key|unique constraint/i.test(claimErr.message)) {
+        return { ok: false, error: "This week's email has already been sent." };
+      }
+      return { ok: false, error: `Could not start send: ${claimErr.message}` };
+    }
+    const claimId = claimRow.id as string;
+
     // Pull active subscribers (email + token) for personalized unsubscribe links.
     const { data: subs, error: subsErr } = await admin
       .from("subscribers")
       .select("email, unsubscribe_token")
       .eq("active", true);
     if (subsErr) {
+      // Nothing was sent - release the claim so a retry is possible.
+      await admin.from("weekly_email_sends").delete().eq("id", claimId);
       return { ok: false, error: `Could not load subscribers: ${subsErr.message}` };
     }
     const recipients = (subs ?? []).filter(
       (s: any) => typeof s.email === "string" && typeof s.unsubscribe_token === "string",
     );
     if (recipients.length === 0) {
+      await admin.from("weekly_email_sends").delete().eq("id", claimId);
       return { ok: false, error: "No active subscribers." };
     }
 
@@ -2445,31 +2474,33 @@ export const adminSendWeeklyEmail = createServerFn({ method: "POST" })
     }
 
     if (sentCount === 0) {
+      // Nothing actually went out - release the claim so a retry is possible
+      // (e.g. once Resend/the network issue is resolved) instead of
+      // permanently marking this week as sent.
+      await admin.from("weekly_email_sends").delete().eq("id", claimId);
       return {
         ok: false,
         error: `All sends failed. First error: ${failures[0] ?? "unknown"}`,
       };
     }
 
-    // Record the send. Unique constraint protects against duplicates if
-    // somehow invoked twice in parallel.
-    const { error: insErr } = await admin.from("weekly_email_sends").insert({
-      parsha_key: content.parshaKey,
-      jewish_year: content.jewishYear,
-      subject: content.subject,
-      sent_count: sentCount,
-      created_by: userId,
-      provider: "resend",
-      provider_message_id: firstMessageId,
-      notes: failures.length > 0 ? `Partial: ${failures.length} failed` : null,
-    });
-    if (insErr) {
+    // Update the claim row (inserted before sending, above) with the final
+    // results now that the send has actually completed.
+    const { error: updErr } = await admin
+      .from("weekly_email_sends")
+      .update({
+        sent_count: sentCount,
+        provider_message_id: firstMessageId,
+        notes: failures.length > 0 ? `Partial: ${failures.length} failed` : null,
+      })
+      .eq("id", claimId);
+    if (updErr) {
       // Send happened but logging failed — surface as warning, do not fail UI.
       return {
         ok: true,
         sentCount,
         failedCount: failures.length,
-        warning: `Sent ${sentCount} but could not record history: ${insErr.message}`,
+        warning: `Sent ${sentCount} but could not record history: ${updErr.message}`,
       };
     }
 
