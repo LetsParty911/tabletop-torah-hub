@@ -3399,7 +3399,7 @@ export const adminTrafficSources = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let attrQ = supabaseAdmin
       .from("download_attribution")
-      .select("referrer_host, utm_source, utm_medium, utm_campaign, landing_path, source_path, created_at")
+      .select("referrer_host, utm_source, utm_medium, utm_campaign, landing_path, source_path, session_id, created_at")
       .order("created_at", { ascending: false })
       .limit(20000);
     if (sinceIso) attrQ = attrQ.gte("created_at", sinceIso);
@@ -3417,7 +3417,48 @@ export const adminTrafficSources = createServerFn({ method: "POST" })
       return `${src.trim()}${med}${camp}`;
     };
 
+    // Visit -> download funnel: for each session we know its first-touch
+    // dimensions (from page_views); a session "converted" if it produced at
+    // least one attributed download.
+    const convertedSessions = new Set<string>();
+    for (const d of downloads) {
+      const sid = d["session_id"];
+      if (typeof sid === "string" && sid) convertedSessions.add(sid);
+    }
+    const funnelBy = (pick: (r: Record<string, unknown>) => string | null) => {
+      const m = new Map<string, { sessions: number; downloads: number }>();
+      for (const [sid, row] of firstBySession.entries()) {
+        const key = pick(row);
+        if (key === null) continue;
+        const cur = m.get(key) ?? { sessions: 0, downloads: 0 };
+        cur.sessions += 1;
+        if (convertedSessions.has(sid)) cur.downloads += 1;
+        m.set(key, cur);
+      }
+      return [...m.entries()]
+        .map(([name, v]) => ({
+          name,
+          sessions: v.sessions,
+          downloads: v.downloads,
+          rate: v.sessions ? v.downloads / v.sessions : 0,
+        }))
+        .sort((a, b) => b.sessions - a.sessions)
+        .slice(0, 10);
+    };
+    const totalSessions = firstBySession.size;
+    let convertedTotal = 0;
+    for (const sid of firstBySession.keys()) if (convertedSessions.has(sid)) convertedTotal += 1;
+
     return {
+      funnel: {
+        sessions: totalSessions,
+        converted: convertedTotal,
+        rate: totalSessions ? convertedTotal / totalSessions : 0,
+        matchedDownloads: convertedSessions.size,
+        byReferrer: funnelBy((r) => direct(r["referrer_host"])),
+        byLandingPage: funnelBy((r) => unknownPath(r["path"])),
+        byCampaign: funnelBy((r) => campaign(r)),
+      },
       visits: {
         total: views.length,
         referrers: tally(views, (r) => direct(r["referrer_host"])),
