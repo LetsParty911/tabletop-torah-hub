@@ -3295,7 +3295,16 @@ export const adminDownloadFeed = createServerFn({ method: "POST" })
       };
     });
 
-    const page = all.slice(offset, offset + limit);
+    const needle = search.toLowerCase();
+    const filtered = needle
+      ? all.filter((e) =>
+          [e.title, e.parsha, e.city, e.region, e.country]
+            .filter(Boolean)
+            .some((v) => String(v).toLowerCase().includes(needle)),
+        )
+      : all;
+
+    const page = filtered.slice(offset, offset + limit);
 
     return {
       totals: { all: totalAll, last7: total7, last30: total30, today: totalToday },
