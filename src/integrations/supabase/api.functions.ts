@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { getSupabaseAdmin, getSupabaseForUser } from "@/integrations/supabase/ext.server";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
@@ -6,6 +7,7 @@ import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 import { fetchHebcalShabbat } from "@/lib/hebcal";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { purgePdfEdgeCache } from "@/lib/pdf-edge-cache";
+import { checkRateLimit } from "@/lib/rate-limit.server";
 
 // Normalize a publication/source title so small punctuation or spacing
 // differences ("R' Yehuda" vs "R'Yehuda") still match the admin-set order.
@@ -812,6 +814,9 @@ export const subscribeEmail = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    if (!(await checkRateLimit(getRequest(), "subscribe"))) {
+      return { ok: false as const, error: "Too many requests. Please try again in a minute." };
+    }
     const admin = getSupabaseAdmin();
     const email = data.email.toLowerCase();
     const tag = `[subscribe:${email.slice(0, 2)}***@${email.split("@")[1] ?? "?"}]`;
@@ -1007,6 +1012,9 @@ export const submitContactMessage = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    if (!(await checkRateLimit(getRequest(), "contact"))) {
+      return { ok: false, error: "Too many requests. Please try again in a minute." };
+    }
     const admin = getSupabaseAdmin();
     const { error } = await admin.from("contact_messages").insert({
       name: data.name && data.name.length > 0 ? data.name : null,

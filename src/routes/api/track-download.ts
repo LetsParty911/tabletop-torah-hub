@@ -1,10 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { checkRateLimit } from "@/lib/rate-limit.server";
 
 export const Route = createFileRoute("/api/track-download")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         try {
+          if (!(await checkRateLimit(request, "track-download", "TRACKING_RATE_LIMITER"))) {
+            return new Response(null, { status: 204 });
+          }
+
           // Never record admin activity.
           const referer = request.headers.get("referer") ?? "";
           if (referer) {

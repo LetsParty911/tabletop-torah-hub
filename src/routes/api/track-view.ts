@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { checkRateLimit } from "@/lib/rate-limit.server";
 
 // Coarse device bucket derived from the user agent. The raw UA string is
 // never stored — only "mobile" | "tablet" | "desktop".
@@ -14,6 +15,10 @@ export const Route = createFileRoute("/api/track-view")({
     handlers: {
       POST: async ({ request }) => {
         try {
+          if (!(await checkRateLimit(request, "track-view", "TRACKING_RATE_LIMITER"))) {
+            return new Response(null, { status: 204 });
+          }
+
           const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
 
           const rawPath = typeof body["path"] === "string" ? (body["path"] as string) : "";
