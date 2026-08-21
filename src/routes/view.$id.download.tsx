@@ -23,10 +23,20 @@ function quoteFilename(name: string): string {
 export const Route = createFileRoute("/view/$id/download")({
   server: {
     handlers: {
-      GET: async ({ params }) => {
+      GET: async ({ request, params }) => {
         const id = params.id;
         if (!/^[0-9a-f-]{36}$/i.test(id)) {
           return new Response("Bad request", { status: 400, headers: NOINDEX });
+        }
+
+        // Cloudflare's per-zone edge cache. Cache-Control headers alone don't
+        // get a Worker's dynamic responses cached at the edge - only an
+        // explicit caches.default check/put does. Undefined outside the
+        // Cloudflare runtime (e.g. local dev), so every use below is guarded.
+        const edgeCache = (globalThis as any).caches?.default;
+        if (edgeCache) {
+          const hit = await edgeCache.match(request);
+          if (hit) return hit;
         }
 
         try {
@@ -92,7 +102,21 @@ export const Route = createFileRoute("/view/$id/download")({
           headers.set("Content-Disposition", quoteFilename(entry.filename));
           headers.set("Cache-Control", CACHE_CONTROL);
           headers.set("Timing-Allow-Origin", "*");
-          return new Response(stream, { status: 200, headers });
+          const response = new Response(stream, { status: 200, headers });
+
+          if (edgeCache) {
+            // .clone() tees the stream so caching never delays or consumes
+            // the copy the reader is actually downloading. waitUntil lets
+            // the cache write finish after the response has already gone
+            // out, so it never adds latency to this download.
+            const toCache = response.clone();
+            const waitUntil = (request as any).waitUntil;
+            const putPromise = edgeCache.put(request, toCache);
+            if (waitUntil) waitUntil(putPromise);
+            else putPromise.catch(() => {});
+          }
+
+          return response;
         } catch (err) {
           console.error("[view/download] failed", err);
           return new Response("Download failed", { status: 500, headers: NOINDEX });

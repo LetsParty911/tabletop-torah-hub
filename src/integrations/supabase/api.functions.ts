@@ -5,6 +5,7 @@ import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
 import { fetchHebcalShabbat } from "@/lib/hebcal";
 import { standardizeCopy } from "@/lib/standardize-copy";
+import { purgePdfEdgeCache } from "@/lib/pdf-edge-cache";
 
 // Normalize a publication/source title so small punctuation or spacing
 // differences ("R' Yehuda" vs "R'Yehuda") still match the admin-set order.
@@ -1455,6 +1456,7 @@ export const adminReplacePdfFile = createServerFn({ method: "POST" })
     if (row.file_path && row.file_path !== path) {
       await admin.storage.from("pdfs").remove([row.file_path]);
     }
+    await purgePdfEdgeCache(data.id);
     return { ok: true, file_path: path };
   });
 
@@ -1474,6 +1476,11 @@ export const adminTogglePublished = createServerFn({ method: "POST" })
     const admin = getSupabaseAdmin();
     const { error } = await admin.from("pdfs").update({ published: data.published }).eq("id", data.id);
     if (error) throw new Error(error.message);
+    if (!data.published) {
+      // A cached "published" response must not keep being served after
+      // an admin deliberately pulls a PDF.
+      await purgePdfEdgeCache(data.id);
+    }
     return { ok: true };
   });
 
@@ -1512,6 +1519,7 @@ export const adminDeletePdf = createServerFn({ method: "POST" })
     }
     const { error } = await admin.from("pdfs").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await purgePdfEdgeCache(data.id);
     return { ok: true };
   });
 
