@@ -245,6 +245,7 @@ function PwaRegistrar() {
 function PageViewTracker() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   useEffect(() => {
+    captureAttribution(pathname);
     trackPageView(pathname);
   }, [pathname]);
   return null;
