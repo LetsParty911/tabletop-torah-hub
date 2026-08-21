@@ -1,4 +1,4 @@
-import { getAttribution } from "@/lib/site-analytics";
+import { getAttribution, getSessionId } from "@/lib/site-analytics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { AlertCircle, Check, Download, Loader2 } from "lucide-react";
@@ -82,6 +82,7 @@ export function DownloadToPrintButton({
         publication_id: publicationId,
         publication_title: publicationTitle,
         source_path: window.location.pathname,
+        session_id: getSessionId(),
         ...(attribution ?? {}),
       });
       const blob = new Blob([payload], { type: "application/json" });
