@@ -116,3 +116,67 @@ export function trackSearch(query: string, resultCount: number): void {
     /* silent */
   }
 }
+
+// ---------------------------------------------------------------------------
+// First-touch attribution
+// ---------------------------------------------------------------------------
+
+const ATTRIBUTION_KEY = "tftt:attribution";
+
+export type Attribution = {
+  referrer_host: string | null;
+  referrer_url: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  landing_path: string | null;
+};
+
+/**
+ * Records the first external referrer / campaign / landing page of the session
+ * and returns it. Later pageviews never overwrite the first touch.
+ */
+export function captureAttribution(path: string): Attribution | null {
+  try {
+    if (typeof window === "undefined") return null;
+    if (isAdminPath(path)) return null;
+
+    const stored = sessionStorage.getItem(ATTRIBUTION_KEY);
+    if (stored) return JSON.parse(stored) as Attribution;
+
+    const params = new URLSearchParams(window.location.search);
+    let referrerHost: string | null = null;
+    const referrer = document.referrer || null;
+    if (referrer) {
+      try {
+        const host = new URL(referrer).hostname;
+        referrerHost = host && host !== window.location.hostname ? host : null;
+      } catch {
+        referrerHost = null;
+      }
+    }
+
+    const attribution: Attribution = {
+      referrer_host: referrerHost,
+      referrer_url: referrerHost ? referrer : null,
+      utm_source: params.get("utm_source"),
+      utm_medium: params.get("utm_medium"),
+      utm_campaign: params.get("utm_campaign"),
+      landing_path: path,
+    };
+    sessionStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution));
+    return attribution;
+  } catch {
+    return null;
+  }
+}
+
+/** Reads the session's first-touch attribution, if any. */
+export function getAttribution(): Attribution | null {
+  try {
+    const stored = sessionStorage.getItem(ATTRIBUTION_KEY);
+    return stored ? (JSON.parse(stored) as Attribution) : null;
+  } catch {
+    return null;
+  }
+}
