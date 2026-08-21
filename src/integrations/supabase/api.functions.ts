@@ -3306,9 +3306,41 @@ export const adminDownloadFeed = createServerFn({ method: "POST" })
 
     const page = filtered.slice(offset, offset + limit);
 
+    // Chart aggregates cover the whole selected range, independent of paging.
+    let aggQ = admin
+      .from("download_events")
+      .select("created_at, country, region")
+      .order("created_at", { ascending: false })
+      .limit(20000);
+    if (data.days) aggQ = aggQ.gte("created_at", iso(data.days * DAY));
+    const { data: aggRows } = await aggQ;
+
+    const byDay = new Map<string, number>();
+    const byCountry = new Map<string, number>();
+    const byRegion = new Map<string, number>();
+    for (const r of (aggRows ?? []) as Array<{ created_at: string; country: string | null; region: string | null }>) {
+      const day = r.created_at.slice(0, 10);
+      byDay.set(day, (byDay.get(day) ?? 0) + 1);
+      const c = r.country ?? "Unknown";
+      byCountry.set(c, (byCountry.get(c) ?? 0) + 1);
+      const reg = r.region ? `${r.region}${r.country ? `, ${r.country}` : ""}` : "Unknown";
+      byRegion.set(reg, (byRegion.get(reg) ?? 0) + 1);
+    }
+
+    const topList = (m: Map<string, number>, n: number) =>
+      [...m.entries()]
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, n);
+
     return {
       totals: { all: totalAll, last7: total7, last30: total30, today: totalToday },
       events: page,
       hasMore: filtered.length > offset + limit,
+      series: [...byDay.entries()]
+        .map(([date, count]) => ({ date, count }))
+        .sort((a, b) => (a.date < b.date ? -1 : 1)),
+      byCountry: topList(byCountry, 8),
+      byRegion: topList(byRegion, 8),
     };
   });
