@@ -8,6 +8,7 @@ import SimpleBannerForm from "@/components/admin/SimpleBannerForm";
 import WhatsNewPopupForm from "@/components/admin/WhatsNewPopupForm";
 import WeeklyEmailSection from "@/components/admin/WeeklyEmailSection";
 import ParshaOverrideForm from "@/components/admin/ParshaOverrideForm";
+import WeeklyChecklistSection from "@/components/admin/WeeklyChecklistSection";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -54,7 +55,7 @@ import {
 } from "@/lib/badges";
 
 import { getCurrentJewishYear } from "@/lib/jewish-year";
-import { CheckCircle2, Circle, MinusCircle, Eye, Download, Loader2, AlertCircle } from "lucide-react";
+import { Eye, Download } from "lucide-react";
 
 // Mobile browsers (esp. Android Chrome) invalidate the picked file handle after a
 // short time or when the source app releases it, which makes a later
@@ -688,66 +689,6 @@ function AdminPage() {
     setPublishingWeek(false);
   };
 
-  const PublishProgress = () => {
-    if (!publishResults) return null;
-    const total = publishResults.length;
-    const done = publishResults.filter((r) => r.status !== "pending").length;
-    const okCount = publishResults.filter((r) => r.status === "ok").length;
-    const errCount = publishResults.filter((r) => r.status === "error").length;
-    const pct = total === 0 ? 0 : Math.round((done / total) * 100);
-    return (
-      <div className="mt-4 w-full rounded-lg border border-accent/40 bg-background/60 p-4">
-        <div className="flex items-center justify-between gap-3 text-sm font-medium">
-          <span>
-            {publishingWeek ? "Publishing…" : "Publish complete"} — {done}/{total}
-          </span>
-          <span className="text-muted-foreground font-normal">
-            {okCount} published{errCount > 0 ? ` · ${errCount} failed` : ""}
-          </span>
-        </div>
-        <div
-          className="mt-2 h-2 w-full overflow-hidden rounded-full bg-accent/20"
-          role="progressbar"
-          aria-valuenow={pct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
-          <div
-            className="h-full bg-primary transition-all duration-300"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-        <ul className="mt-3 space-y-1.5">
-          {publishResults.map((r) => (
-            <li key={r.id} className="flex items-start gap-2 text-sm">
-              {r.status === "pending" && (
-                <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
-              )}
-              {r.status === "ok" && <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />}
-              {r.status === "error" && (
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-              )}
-              <span className="min-w-0 flex-1">
-                <span className={r.status === "error" ? "text-destructive" : ""}>{r.title}</span>
-                {r.status === "error" && r.error && (
-                  <span className="block text-xs text-destructive/80">{r.error}</span>
-                )}
-              </span>
-            </li>
-          ))}
-        </ul>
-        {!publishingWeek && (
-          <button
-            type="button"
-            onClick={() => setPublishResults(null)}
-            className="mt-3 text-xs font-semibold text-muted-foreground underline hover:text-foreground"
-          >
-            Dismiss
-          </button>
-        )}
-      </div>
-    );
-  };
 
 
   // Select a canonical publication by id: fills the title and the canonical defaults.
@@ -1510,97 +1451,20 @@ function AdminPage() {
 
         <section className="parchment-frame">
           <div className="parchment-panel">
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div>
-                <h2 className="font-serif text-2xl font-semibold text-primary">
-                  Weekly Upload Checklist
-                </h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Tracking <span className="font-medium text-foreground">{currentParshaLabel}</span>
-                  {currentParshaKey ? ` (${currentParshaKey})` : ""}
-                </p>
-              </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="text-sm font-medium text-primary">
-                  {uploadedCount} uploaded
-                  <span className="text-muted-foreground font-normal">
-                    {" "}· {checklist.length - countableTotal} skipped ·{" "}
-                    {countableTotal - uploadedCount} remaining
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={publishAllForWeek}
-                  disabled={publishingWeek || unpublishedForCurrent.length === 0}
-                  className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={unpublishedForCurrent.length === 0 ? "No draft PDFs for this parsha" : `Publish ${unpublishedForCurrent.length} draft PDF${unpublishedForCurrent.length === 1 ? "" : "s"} for this week`}
-                >
-                  {publishingWeek
-                    ? "Publishing…"
-                    : `Publish All for This Week${unpublishedForCurrent.length > 0 ? ` (${unpublishedForCurrent.length})` : ""}`}
-                </button>
-              </div>
-            </div>
-
-            <PublishProgress />
-
-
-            <ul className="mt-4 divide-y divide-accent/30">
-              {checklist.map((item) => (
-                <li
-                  key={item.title}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3"
-                >
-                  <div className="flex items-center gap-3 min-w-0 flex-1 basis-full sm:basis-auto">
-                    {item.status === "uploaded" && (
-                      <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
-                    )}
-                    {item.status === "missing" && (
-                      <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
-                    )}
-                    {item.status === "skipped" && (
-                      <MinusCircle className="h-5 w-5 text-muted-foreground shrink-0" />
-                    )}
-                    <span className="font-medium break-words min-w-0 flex-1">{item.title}</span>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
-                        item.status === "uploaded"
-                          ? "bg-primary/10 text-primary"
-                          : item.status === "skipped"
-                            ? "bg-muted text-muted-foreground"
-                            : "bg-accent/20 text-foreground"
-                      }`}
-                    >
-                      {item.status === "uploaded"
-                        ? "Uploaded"
-                        : item.status === "skipped"
-                          ? "Skipped"
-                          : "Missing"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-8 sm:ml-0">
-                    {item.status === "missing" && (
-                      <button
-                        type="button"
-                        onClick={() => useExpectedTitle(item.title)}
-                        className="text-xs underline text-primary"
-                      >
-                        Use this title
-                      </button>
-                    )}
-                    {item.status !== "uploaded" && (
-                      <button
-                        type="button"
-                        onClick={() => toggleSkip(item.title)}
-                        className="text-xs rounded border border-accent/60 px-2 py-1 hover:bg-accent/10"
-                      >
-                        {item.status === "skipped" ? "Unskip" : "Skip this week"}
-                      </button>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <WeeklyChecklistSection
+              currentParshaLabel={currentParshaLabel}
+              currentParshaKey={currentParshaKey}
+              uploadedCount={uploadedCount}
+              countableTotal={countableTotal}
+              checklist={checklist}
+              publishingWeek={publishingWeek}
+              unpublishedCount={unpublishedForCurrent.length}
+              onPublishAllForWeek={publishAllForWeek}
+              publishResults={publishResults}
+              onDismissPublishResults={() => setPublishResults(null)}
+              onUseExpectedTitle={useExpectedTitle}
+              onToggleSkip={toggleSkip}
+            />
           </div>
         </section>
 
