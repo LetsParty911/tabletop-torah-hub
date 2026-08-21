@@ -11,6 +11,7 @@ import ParshaOverrideForm from "@/components/admin/ParshaOverrideForm";
 import WeeklyChecklistSection from "@/components/admin/WeeklyChecklistSection";
 import ManageChecklistSourcesSection from "@/components/admin/ManageChecklistSourcesSection";
 import PdfListSection from "@/components/admin/PdfListSection";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -1331,106 +1332,14 @@ function AdminPage() {
           }}
         />
 
-        {/* Weekly Email */}
-        <section className="parchment-frame">
-          <div className="parchment-panel">
-            <WeeklyEmailSection
-              weekly={weekly}
-              weeklyLoading={weeklyLoading}
-              weeklySending={weeklySending}
-              weeklyHistory={weeklyHistory}
-              onSend={handleSendWeeklyEmail}
-            />
-          </div>
-        </section>
-
-        {/* Parsha override */}
-        <section className="parchment-frame">
-          <div className="parchment-panel">
-            <ParshaOverrideForm
-              onSubmit={handleOverride}
-              override={override}
-              onOverrideChange={setOverride}
-              busy={busy}
-            />
-          </div>
-        </section>
-
-        {/* Announcement Banner */}
-        <section className="parchment-frame">
-          <div className="parchment-panel">
-            <SimpleBannerForm
-              title="Announcement Banner"
-              description="A slim banner at the top of the homepage. When disabled, nothing renders."
-              onSubmit={handleSaveAnnouncement}
-              enabled={annEnabled}
-              onEnabledChange={setAnnEnabled}
-              enableLabel="Enable banner"
-              text={annText}
-              onTextChange={setAnnText}
-              textLabel="Banner Text"
-              textPlaceholder="e.g., Wishing all our readers a Gut Shabbos."
-              linkUrl={annLinkUrl}
-              onLinkUrlChange={setAnnLinkUrl}
-              linkLabel={annLinkLabel}
-              onLinkLabelChange={setAnnLinkLabel}
-              linkLabelPlaceholder="Read more"
-              linkHint="Link only appears on the homepage when both URL and Label are filled in."
-              busy={busy}
-              saveButtonLabel="Save banner"
-            />
-          </div>
-        </section>
-
-        {/* What's New Banner */}
-        <section className="parchment-frame">
-          <div className="parchment-panel">
-            <SimpleBannerForm
-              title="What’s New Banner"
-              description="A compact pill badge that sits above the announcement bar on the homepage. Independent of the Announcement Banner."
-              onSubmit={handleSaveWhatsNew}
-              enabled={wnEnabled}
-              onEnabledChange={setWnEnabled}
-              enableLabel="Enable What’s New badge"
-              text={wnText}
-              onTextChange={setWnText}
-              textLabel="Badge Text"
-              textPlaceholder="e.g., New publication added: Peninei Mechkerei Eretz"
-              linkUrl={wnLinkUrl}
-              onLinkUrlChange={setWnLinkUrl}
-              linkLabel={wnLinkLabel}
-              onLinkLabelChange={setWnLinkLabel}
-              linkLabelPlaceholder="See it"
-              linkHint="Link only appears when both URL and Label are filled in."
-              busy={busy}
-              saveButtonLabel="Save What’s New"
-            />
-          </div>
-        </section>
-
-        {/* What's New Popup */}
-        <section className="parchment-frame">
-          <div className="parchment-panel">
-            <WhatsNewPopupForm
-              wnpVersion={wnpVersion}
-              onSubmit={handleSaveWhatsNewPopup}
-              wnpEnabled={wnpEnabled}
-              onWnpEnabledChange={setWnpEnabled}
-              wnpHeading={wnpHeading}
-              onWnpHeadingChange={setWnpHeading}
-              wnpItems={wnpItems}
-              onUpdateItem={updateWnpItem}
-              onAddItem={addWnpItem}
-              onRemoveItem={removeWnpItem}
-              busy={busy}
-            />
-          </div>
-        </section>
-
-
-
-
-
+        <Tabs defaultValue="this-week" className="w-full">
+          <TabsList className="flex flex-wrap h-auto gap-1">
+            <TabsTrigger value="this-week">This Week</TabsTrigger>
+            <TabsTrigger value="site-content">Site Content</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="subscribers-analytics">Subscribers &amp; Analytics</TabsTrigger>
+          </TabsList>
+          <TabsContent value="this-week" className="space-y-8 mt-8">
         <section className="parchment-frame">
           <div className="parchment-panel">
             <WeeklyChecklistSection
@@ -1449,24 +1358,6 @@ function AdminPage() {
             />
           </div>
         </section>
-
-        {/* Manage Weekly Checklist Sources */}
-        <section className="parchment-frame">
-          <div className="parchment-panel">
-            <ManageChecklistSourcesSection
-              sources={sources}
-              newSourceTitle={newSourceTitle}
-              onNewSourceTitleChange={setNewSourceTitle}
-              onAddSource={handleAddSource}
-              busy={busy}
-              onSourceSortChange={handleSourceSortChange}
-              onSourceTitleChange={handleSourceTitleChange}
-              onToggleSourceActive={handleToggleSourceActive}
-              onDeleteSource={handleDeleteSource}
-            />
-          </div>
-        </section>
-
         <section id="upload-section" className="parchment-frame">
           <div className="parchment-panel">
             <h2 className="font-serif text-2xl font-semibold text-primary">Upload PDF</h2>
@@ -1555,9 +1446,6 @@ function AdminPage() {
             </div>
           </div>
         </section>
-
-
-        {/* PDFs list */}
         <section className="parchment-frame">
           <div className="parchment-panel">
             <PdfListSection
@@ -1605,8 +1493,113 @@ function AdminPage() {
             />
           </div>
         </section>
-
-        {/* Download analytics */}
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <WeeklyEmailSection
+              weekly={weekly}
+              weeklyLoading={weeklyLoading}
+              weeklySending={weeklySending}
+              weeklyHistory={weeklyHistory}
+              onSend={handleSendWeeklyEmail}
+            />
+          </div>
+        </section>
+          </TabsContent>
+          <TabsContent value="site-content" className="space-y-8 mt-8">
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <SimpleBannerForm
+              title="Announcement Banner"
+              description="A slim banner at the top of the homepage. When disabled, nothing renders."
+              onSubmit={handleSaveAnnouncement}
+              enabled={annEnabled}
+              onEnabledChange={setAnnEnabled}
+              enableLabel="Enable banner"
+              text={annText}
+              onTextChange={setAnnText}
+              textLabel="Banner Text"
+              textPlaceholder="e.g., Wishing all our readers a Gut Shabbos."
+              linkUrl={annLinkUrl}
+              onLinkUrlChange={setAnnLinkUrl}
+              linkLabel={annLinkLabel}
+              onLinkLabelChange={setAnnLinkLabel}
+              linkLabelPlaceholder="Read more"
+              linkHint="Link only appears on the homepage when both URL and Label are filled in."
+              busy={busy}
+              saveButtonLabel="Save banner"
+            />
+          </div>
+        </section>
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <SimpleBannerForm
+              title="What’s New Banner"
+              description="A compact pill badge that sits above the announcement bar on the homepage. Independent of the Announcement Banner."
+              onSubmit={handleSaveWhatsNew}
+              enabled={wnEnabled}
+              onEnabledChange={setWnEnabled}
+              enableLabel="Enable What’s New badge"
+              text={wnText}
+              onTextChange={setWnText}
+              textLabel="Badge Text"
+              textPlaceholder="e.g., New publication added: Peninei Mechkerei Eretz"
+              linkUrl={wnLinkUrl}
+              onLinkUrlChange={setWnLinkUrl}
+              linkLabel={wnLinkLabel}
+              onLinkLabelChange={setWnLinkLabel}
+              linkLabelPlaceholder="See it"
+              linkHint="Link only appears when both URL and Label are filled in."
+              busy={busy}
+              saveButtonLabel="Save What’s New"
+            />
+          </div>
+        </section>
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <WhatsNewPopupForm
+              wnpVersion={wnpVersion}
+              onSubmit={handleSaveWhatsNewPopup}
+              wnpEnabled={wnpEnabled}
+              onWnpEnabledChange={setWnpEnabled}
+              wnpHeading={wnpHeading}
+              onWnpHeadingChange={setWnpHeading}
+              wnpItems={wnpItems}
+              onUpdateItem={updateWnpItem}
+              onAddItem={addWnpItem}
+              onRemoveItem={removeWnpItem}
+              busy={busy}
+            />
+          </div>
+        </section>
+          </TabsContent>
+          <TabsContent value="settings" className="space-y-8 mt-8">
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <ParshaOverrideForm
+              onSubmit={handleOverride}
+              override={override}
+              onOverrideChange={setOverride}
+              busy={busy}
+            />
+          </div>
+        </section>
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <ManageChecklistSourcesSection
+              sources={sources}
+              newSourceTitle={newSourceTitle}
+              onNewSourceTitleChange={setNewSourceTitle}
+              onAddSource={handleAddSource}
+              busy={busy}
+              onSourceSortChange={handleSourceSortChange}
+              onSourceTitleChange={handleSourceTitleChange}
+              onToggleSourceActive={handleToggleSourceActive}
+              onDeleteSource={handleDeleteSource}
+            />
+          </div>
+        </section>
+          </TabsContent>
+          <TabsContent value="subscribers-analytics" className="space-y-8 mt-8">
         <section className="parchment-frame">
           <div className="parchment-panel">
             <div className="mb-4 flex justify-end">
@@ -1620,16 +1613,11 @@ function AdminPage() {
             <DownloadAnalytics accessToken={accessToken ?? ""} />
           </div>
         </section>
-
-        {/* Site traffic */}
         <section className="parchment-frame">
           <div className="parchment-panel">
             <TrafficAnalytics accessToken={accessToken ?? ""} />
           </div>
         </section>
-
-
-        {/* Subscribers */}
         <section className="parchment-frame">
           <div className="parchment-panel">
             <SubscribersManager
@@ -1639,9 +1627,6 @@ function AdminPage() {
             />
           </div>
         </section>
-
-
-        {/* Contact Messages */}
         <section className="parchment-frame">
           <div className="parchment-panel">
             <h2 className="font-serif text-2xl font-semibold text-primary">
@@ -1694,6 +1679,8 @@ function AdminPage() {
             )}
           </div>
         </section>
+          </TabsContent>
+        </Tabs>
       </div>
       {summaryModal && (
         <div
