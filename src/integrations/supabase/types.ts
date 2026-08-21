@@ -14,7 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      download_attribution: {
+        Row: {
+          country: string | null
+          created_at: string
+          id: string
+          landing_path: string | null
+          publication_id: string | null
+          publication_title: string | null
+          referrer_host: string | null
+          referrer_url: string | null
+          source_path: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          id?: string
+          landing_path?: string | null
+          publication_id?: string | null
+          publication_title?: string | null
+          referrer_host?: string | null
+          referrer_url?: string | null
+          source_path?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          id?: string
+          landing_path?: string | null
+          publication_id?: string | null
+          publication_title?: string | null
+          referrer_host?: string | null
+          referrer_url?: string | null
+          source_path?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
