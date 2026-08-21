@@ -18,10 +18,13 @@ export const Route = createFileRoute("/api/track-download")({
             }
           }
 
-          const body = (await request.json().catch(() => ({}))) as {
-            publication_id?: string;
-            publication_title?: string;
+          const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+          const str = (k: string, max = 300): string | null => {
+            const v = body[k];
+            return typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null;
           };
+          const publicationId = str("publication_id", 100);
+          const publicationTitle = str("publication_title", 300);
 
 
           // Cloudflare geo can be on `request.cf` or in the CF-* headers,
@@ -36,13 +39,33 @@ export const Route = createFileRoute("/api/track-download")({
           const supabase = getSupabaseAdmin();
 
           await supabase.from("download_events").insert({
-            publication_id: body.publication_id ?? null,
-            publication_title: body.publication_title ?? null,
+            publication_id: publicationId,
+            publication_title: publicationTitle,
             city,
             region,
             country,
             timezone,
           });
+
+          // Traffic-source attribution lives in the Cloud project, since the
+          // external download_events table has no referrer columns.
+          try {
+            const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+            await supabaseAdmin.from("download_attribution").insert({
+              publication_id: publicationId,
+              publication_title: publicationTitle,
+              referrer_host: str("referrer_host", 200),
+              referrer_url: str("referrer_url", 800),
+              utm_source: str("utm_source", 120),
+              utm_medium: str("utm_medium", 120),
+              utm_campaign: str("utm_campaign", 200),
+              landing_path: str("landing_path", 300),
+              source_path: str("source_path", 300),
+              country,
+            } as never);
+          } catch (attrErr) {
+            console.error("[track-download] attribution insert failed", attrErr);
+          }
 
           return new Response(null, { status: 204 });
         } catch (err) {

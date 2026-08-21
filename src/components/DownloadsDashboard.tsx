@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { adminDownloadFeed } from "@/integrations/supabase/api.functions";
+import TrafficSources from "@/components/TrafficSources";
 
 type Ev = {
   id: string;
@@ -220,6 +221,7 @@ export default function DownloadsDashboard({ accessToken }: { accessToken: strin
         ))}
       </div>
 
+      <TrafficSources accessToken={accessToken} days={days} />
 
 
       <div className="flex flex-wrap items-center gap-3">

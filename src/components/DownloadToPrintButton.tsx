@@ -1,3 +1,4 @@
+import { getAttribution } from "@/lib/site-analytics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { AlertCircle, Check, Download, Loader2 } from "lucide-react";
@@ -76,9 +77,12 @@ export function DownloadToPrintButton({
         window.location.pathname.startsWith("/admin/"));
     if (onAdminRoute || (!publicationId && !publicationTitle)) return;
     try {
+      const attribution = getAttribution();
       const payload = JSON.stringify({
         publication_id: publicationId,
         publication_title: publicationTitle,
+        source_path: window.location.pathname,
+        ...(attribution ?? {}),
       });
       const blob = new Blob([payload], { type: "application/json" });
       const sent =

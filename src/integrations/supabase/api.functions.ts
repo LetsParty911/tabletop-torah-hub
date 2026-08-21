@@ -3344,3 +3344,98 @@ export const adminDownloadFeed = createServerFn({ method: "POST" })
       byRegion: topList(byRegion, 8),
     };
   });
+
+// Top traffic sources: which referrers/campaigns/landing pages drive site
+// visits (page_views) and which ones drive actual PDF downloads
+// (download_attribution).
+export const adminTrafficSources = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; days?: number | null }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        days: z.number().int().min(1).max(3650).nullable().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const DAY = 24 * 60 * 60 * 1000;
+    const sinceIso = data.days ? new Date(Date.now() - data.days * DAY).toISOString() : null;
+
+    const tally = (rows: Array<Record<string, unknown>>, pick: (r: Record<string, unknown>) => string) => {
+      const m = new Map<string, number>();
+      for (const r of rows) {
+        const k = pick(r);
+        m.set(k, (m.get(k) ?? 0) + 1);
+      }
+      return [...m.entries()]
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+    };
+
+    // Visits (external analytics project).
+    const ext = getSupabaseAdmin();
+    let viewsQ = ext
+      .from("page_views")
+      .select("path, referrer_host, utm_source, utm_medium, utm_campaign, session_id, created_at")
+      .order("created_at", { ascending: false })
+      .limit(20000);
+    if (sinceIso) viewsQ = viewsQ.gte("created_at", sinceIso);
+    const { data: viewRows } = await viewsQ;
+    const views = (viewRows ?? []) as Array<Record<string, unknown>>;
+
+    // Landing page = the earliest pageview of each session in range.
+    const firstBySession = new Map<string, Record<string, unknown>>();
+    for (const v of views) {
+      const sid = (v["session_id"] as string | null) ?? "";
+      if (!sid) continue;
+      // Rows arrive newest-first, so the last write per session is the oldest.
+      firstBySession.set(sid, v);
+    }
+    const landings = [...firstBySession.values()];
+
+    // Downloads (Cloud project attribution table).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let attrQ = supabaseAdmin
+      .from("download_attribution")
+      .select("referrer_host, utm_source, utm_medium, utm_campaign, landing_path, source_path, created_at")
+      .order("created_at", { ascending: false })
+      .limit(20000);
+    if (sinceIso) attrQ = attrQ.gte("created_at", sinceIso);
+    const { data: attrRows } = await attrQ;
+    const downloads = (attrRows ?? []) as unknown as Array<Record<string, unknown>>;
+
+    const direct = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : "Direct / none");
+    const unknownPath = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : "(unknown)");
+    const campaign = (r: Record<string, unknown>) => {
+      const src = r["utm_source"];
+      if (typeof src !== "string" || !src.trim()) return null;
+      const med = typeof r["utm_medium"] === "string" && r["utm_medium"] ? ` / ${r["utm_medium"] as string}` : "";
+      const camp =
+        typeof r["utm_campaign"] === "string" && r["utm_campaign"] ? ` — ${r["utm_campaign"] as string}` : "";
+      return `${src.trim()}${med}${camp}`;
+    };
+
+    return {
+      visits: {
+        total: views.length,
+        referrers: tally(views, (r) => direct(r["referrer_host"])),
+        landingPages: tally(landings, (r) => unknownPath(r["path"])),
+        campaigns: tally(
+          views.filter((r) => campaign(r) !== null),
+          (r) => campaign(r) as string,
+        ),
+      },
+      downloads: {
+        total: downloads.length,
+        referrers: tally(downloads, (r) => direct(r["referrer_host"])),
+        landingPages: tally(downloads, (r) => unknownPath(r["landing_path"])),
+        downloadPages: tally(downloads, (r) => unknownPath(r["source_path"])),
+        campaigns: tally(
+          downloads.filter((r) => campaign(r) !== null),
+          (r) => campaign(r) as string,
+        ),
+      },
+    };
+  });

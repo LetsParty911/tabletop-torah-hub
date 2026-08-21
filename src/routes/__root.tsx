@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPwa } from "@/pwa-register";
-import { trackPageView } from "@/lib/site-analytics";
+import { captureAttribution, trackPageView } from "@/lib/site-analytics";
 
 import { SiteLogoHorizontal } from "@/components/SiteLogo";
 import { getSafePostLoginRedirect, POST_LOGIN_REDIRECT_KEY } from "@/lib/auth-redirect";
@@ -245,6 +245,7 @@ function PwaRegistrar() {
 function PageViewTracker() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   useEffect(() => {
+    captureAttribution(pathname);
     trackPageView(pathname);
   }, [pathname]);
   return null;
