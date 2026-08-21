@@ -220,6 +220,7 @@ export default function DownloadsDashboard({ accessToken }: { accessToken: strin
         ))}
       </div>
 
+      <TrafficSources accessToken={accessToken} days={days} />
 
 
       <div className="flex flex-wrap items-center gap-3">
