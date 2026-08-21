@@ -62,6 +62,14 @@ type LoaderData = {
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
+  // Has no dependency on anything below - start it now so it runs
+  // concurrently with the parsha/PDF chain instead of adding its own
+  // sequential round trip after everything else finishes.
+  const subscriberCountPromise = getActiveSubscriberCount().catch((e) => {
+    console.error("Failed to load subscriber count", e);
+    return { count: 0 };
+  });
+
   let label = "Parshas Hashavua";
   let parshaKey: string | null = null;
   let readingDate: string | null = null;
@@ -107,12 +115,8 @@ async function loadCurrentWeek(): Promise<LoaderData> {
   }
 
   let subscriberCount: number | null = null;
-  try {
-    const { count } = await getActiveSubscriberCount();
-    if (count >= 25) subscriberCount = count;
-  } catch (e) {
-    console.error("Failed to load subscriber count", e);
-  }
+  const { count } = await subscriberCountPromise;
+  if (count >= 25) subscriberCount = count;
 
   return { label, parshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey, subscriberCount, readingDate };
 }

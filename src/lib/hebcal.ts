@@ -24,15 +24,30 @@ const CACHE_MS = 24 * 60 * 60 * 1000;
 let cache: { at: number; items: HebcalItem[] } | null = null;
 let inFlight: Promise<HebcalItem[]> | null = null;
 
+// Cloudflare Workers' fetch() accepts this extra `cf` option to cache a
+// subrequest at the edge, independent of any in-memory state. Ignored
+// harmlessly outside the Cloudflare runtime (e.g. local dev).
+type CfFetchInit = RequestInit & {
+  cf?: { cacheTtl?: number; cacheEverything?: boolean };
+};
+
 /** Fetch this week's Shabbos items, cached for 24 hours. Throws on failure. */
 export async function fetchHebcalShabbat(): Promise<HebcalItem[]> {
+  // First layer: this Worker instance's own memory - zero network cost, but
+  // only helps while the same isolate keeps handling requests.
   if (cache && Date.now() - cache.at < CACHE_MS) return cache.items;
   if (inFlight) return inFlight;
 
   inFlight = (async () => {
+    // Second layer: Cloudflare's edge cache for this exact request URL.
+    // Isolates are short-lived and reset the in-memory cache constantly, but
+    // this survives across isolates (and across edge locations that already
+    // populated it), so a cold isolate still avoids a live round trip to
+    // Hebcal on most requests.
     const res = await fetch(HEBCAL_SHABBAT_URL, {
       headers: { Accept: "application/json" },
-    });
+      cf: { cacheTtl: CACHE_MS / 1000, cacheEverything: true },
+    } as CfFetchInit);
     if (!res.ok) throw new Error(`Hebcal responded ${res.status}`);
     const data = await res.json();
     const items: HebcalItem[] = data?.items ?? [];
