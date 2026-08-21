@@ -22,7 +22,7 @@ export function isAdminPath(path: string): boolean {
   return path === "/admin" || path.startsWith("/admin/");
 }
 
-function getSessionId(): string {
+export function getSessionId(): string {
   try {
     const existing = sessionStorage.getItem(SESSION_KEY);
     if (existing) return existing;

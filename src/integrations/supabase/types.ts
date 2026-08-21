@@ -24,6 +24,7 @@ export type Database = {
           publication_title: string | null
           referrer_host: string | null
           referrer_url: string | null
+          session_id: string | null
           source_path: string | null
           utm_campaign: string | null
           utm_medium: string | null
@@ -38,6 +39,7 @@ export type Database = {
           publication_title?: string | null
           referrer_host?: string | null
           referrer_url?: string | null
+          session_id?: string | null
           source_path?: string | null
           utm_campaign?: string | null
           utm_medium?: string | null
@@ -52,6 +54,7 @@ export type Database = {
           publication_title?: string | null
           referrer_host?: string | null
           referrer_url?: string | null
+          session_id?: string | null
           source_path?: string | null
           utm_campaign?: string | null
           utm_medium?: string | null

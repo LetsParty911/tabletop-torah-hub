@@ -61,6 +61,7 @@ export const Route = createFileRoute("/api/track-download")({
               utm_campaign: str("utm_campaign", 200),
               landing_path: str("landing_path", 300),
               source_path: str("source_path", 300),
+              session_id: str("session_id", 100),
               country,
             } as never);
           } catch (attrErr) {
