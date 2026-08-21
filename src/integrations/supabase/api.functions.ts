@@ -3345,7 +3345,51 @@ export const adminDownloadFeed = createServerFn({ method: "POST" })
     };
   });
 
+// Minute-by-minute download counts for a short recent window, so spikes
+// inside the last hour are visible instead of being flattened into a day.
+export const adminDownloadMinutes = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; minutes?: number }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        minutes: z.number().int().min(5).max(1440).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+
+    const minutes = data.minutes ?? 60;
+    const now = Date.now();
+    const startMs = Math.floor((now - minutes * 60_000) / 60_000) * 60_000;
+
+    const { data: rows, error } = await admin
+      .from("download_events")
+      .select("created_at")
+      .gte("created_at", new Date(startMs).toISOString())
+      .order("created_at", { ascending: false })
+      .limit(20000);
+    if (error) throw new Error(error.message);
+
+    const counts = new Map<number, number>();
+    for (const r of (rows ?? []) as Array<{ created_at: string }>) {
+      const bucket = Math.floor(new Date(r.created_at).getTime() / 60_000) * 60_000;
+      counts.set(bucket, (counts.get(bucket) ?? 0) + 1);
+    }
+
+    const series: Array<{ minute: string; count: number }> = [];
+    for (let t = startMs; t <= now; t += 60_000) {
+      series.push({ minute: new Date(t).toISOString(), count: counts.get(t) ?? 0 });
+    }
+
+    const total = series.reduce((s, p) => s + p.count, 0);
+    const peak = series.reduce((m, p) => Math.max(m, p.count), 0);
+    return { minutes, series, total, peak };
+  });
+
 // Top traffic sources: which referrers/campaigns/landing pages drive site
+
 // visits (page_views) and which ones drive actual PDF downloads
 // (download_attribution).
 export const adminTrafficSources = createServerFn({ method: "POST" })

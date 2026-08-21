@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { adminDownloadFeed } from "@/integrations/supabase/api.functions";
 import TrafficSources from "@/components/TrafficSources";
+import DownloadsByMinute from "@/components/DownloadsByMinute";
 
 type Ev = {
   id: string;
@@ -138,6 +139,8 @@ export default function DownloadsDashboard({ accessToken }: { accessToken: strin
           </div>
         ))}
       </div>
+
+      <DownloadsByMinute accessToken={accessToken} />
 
       <div className="rounded-xl border border-border bg-card p-4">
         <h3 className="mb-3 font-serif text-lg font-semibold">Downloads over time</h3>
