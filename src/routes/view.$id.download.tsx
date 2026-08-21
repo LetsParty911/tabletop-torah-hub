@@ -32,11 +32,17 @@ export const Route = createFileRoute("/view/$id/download")({
         // Cloudflare's per-zone edge cache. Cache-Control headers alone don't
         // get a Worker's dynamic responses cached at the edge - only an
         // explicit caches.default check/put does. Undefined outside the
-        // Cloudflare runtime (e.g. local dev), so every use below is guarded.
+        // Cloudflare runtime (e.g. local dev). Wrapped in try/catch so any
+        // Cache API failure just skips caching instead of breaking the
+        // download.
         const edgeCache = (globalThis as any).caches?.default;
         if (edgeCache) {
-          const hit = await edgeCache.match(request);
-          if (hit) return hit;
+          try {
+            const hit = await edgeCache.match(request);
+            if (hit) return hit;
+          } catch (cacheErr) {
+            console.error("[view/download] edge cache match failed", cacheErr);
+          }
         }
 
         try {
@@ -105,15 +111,20 @@ export const Route = createFileRoute("/view/$id/download")({
           const response = new Response(stream, { status: 200, headers });
 
           if (edgeCache) {
-            // .clone() tees the stream so caching never delays or consumes
-            // the copy the reader is actually downloading. waitUntil lets
-            // the cache write finish after the response has already gone
-            // out, so it never adds latency to this download.
-            const toCache = response.clone();
-            const waitUntil = (request as any).waitUntil;
-            const putPromise = edgeCache.put(request, toCache);
-            if (waitUntil) waitUntil(putPromise);
-            else putPromise.catch(() => {});
+            try {
+              // .clone() tees the stream so caching never delays or consumes
+              // the copy the reader is actually downloading. waitUntil lets
+              // the cache write finish after the response has already gone
+              // out, so it never adds latency to this download.
+              const toCache = response.clone();
+              const waitUntil = (request as any).waitUntil;
+              const putPromise = Promise.resolve(edgeCache.put(request, toCache)).catch(
+                (e: unknown) => console.error("[view/download] edge cache put failed", e),
+              );
+              if (waitUntil) waitUntil(putPromise);
+            } catch (cacheErr) {
+              console.error("[view/download] edge cache put failed", cacheErr);
+            }
           }
 
           return response;
