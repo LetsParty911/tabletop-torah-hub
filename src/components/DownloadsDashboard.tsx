@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, RefreshCw, Search, X } from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { adminDownloadFeed } from "@/integrations/supabase/api.functions";
 
 type Ev = {
@@ -14,6 +25,8 @@ type Ev = {
 };
 
 type Totals = { all: number; last7: number; last30: number; today: number };
+type Point = { date: string; count: number };
+type Slice = { name: string; count: number };
 
 const RANGES: Array<{ label: string; days: number | null }> = [
   { label: "7 days", days: 7 },
