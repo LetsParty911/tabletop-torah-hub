@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { adminDownloadFeed } from "@/integrations/supabase/api.functions";
+import TrafficSources from "@/components/TrafficSources";
 
 type Ev = {
   id: string;
