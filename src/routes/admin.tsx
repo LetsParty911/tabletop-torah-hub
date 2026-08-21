@@ -3,6 +3,7 @@ import { DownloadAnalytics } from "@/components/DownloadAnalytics";
 import TrafficAnalytics from "@/components/TrafficAnalytics";
 import AdminMiniDashboard from "@/components/AdminMiniDashboard";
 import SubscribersManager, { type Subscriber } from "@/components/admin/SubscribersManager";
+import UploadPdfForm from "@/components/admin/UploadPdfForm";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -97,8 +98,8 @@ import { formatTypeLabel } from "@/lib/format-labels";
 import { matchesSource, normalizeTitleKey } from "@/lib/publication-identity";
 
 
-const AUDIENCE_OPTIONS = ["Adults", "Families", "Children"] as const;
-const FORMAT_TYPE_OPTIONS = ["Short Vorts", "Stories", "Halacha", "Essays"] as const;
+export const AUDIENCE_OPTIONS = ["Adults", "Families", "Children"] as const;
+export const FORMAT_TYPE_OPTIONS = ["Short Vorts", "Stories", "Halacha", "Essays"] as const;
 const CONTENT_TYPE_OPTIONS = [
   "Questions & Answers",
   "Brief Insights",
@@ -2013,206 +2014,66 @@ function AdminPage() {
         <section id="upload-section" className="parchment-frame">
           <div className="parchment-panel">
             <h2 className="font-serif text-2xl font-semibold text-primary">Upload PDF</h2>
-            <form onSubmit={handleUpload} className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="block">
-                <span className="text-sm font-medium">Parshas</span>
-                {!uploadParshaReady ? (
-                  <div className="mt-1 rounded-md border-2 border-accent/60 bg-background px-3 py-2 text-sm text-muted-foreground">
-                    Loading current parsha…
-                  </div>
-                ) : (
-                  <select
-                    required
-                    value={parshaKey}
-                    onChange={(e) => {
-                      setParshaKey(e.target.value);
-                      setParshaUserTouched(true);
-                    }}
-                    className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                  >
-                    {!parshaKey && (
-                      <option value="" disabled>
-                        Select a parsha
-                      </option>
-                    )}
-                    {PARSHIYOS.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </label>
-              <div className="block">
-                <label className="block">
-                  <span className="text-sm font-medium">Publication</span>
-                  {canonicalPubs.length > 0 && !titleFreeText ? (
-                    <select
-                      required
-                      value={publicationId}
-                      onChange={(e) => {
-                        if (e.target.value === "__other__") {
-                          setPublicationId("");
-                          setTitle("");
-                          setTitleFreeText(true);
-                          return;
-                        }
-                        selectPublicationId(e.target.value);
-                      }}
-                      className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                    >
-                      <option value="" disabled>
-                        Select a publication
-                      </option>
-                      {canonicalPubs
-                        .filter((p) => p.active)
-                        .slice()
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      <option value="__other__">Other (type a title)…</option>
-                    </select>
-
-                  ) : (
-                    <>
-                      <input
-                        required
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                      />
-                      {canonicalPubs.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setTitleFreeText(false);
-                            setTitle("");
-                          }}
-                          className="mt-1 text-xs font-semibold text-accent underline"
-                        >
-                          Choose from publications instead
-                        </button>
-                      )}
-                    </>
-                  )}
-                </label>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span>
-                    {[formatTypeLabel(uploadAudience), formatTypeLabel(uploadFormatType)]
-                      .filter(Boolean)
-                      .join(" · ") || "No defaults set"}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setShowUploadDetails((v) => !v)}
-                    className="font-semibold text-accent underline"
-                  >
-                    {showUploadDetails ? "Hide details" : "Edit details"}
-                  </button>
-                </div>
-              </div>
-              {showUploadDetails && (
-                <>
-                  <label className="block md:col-span-2">
-                    <span className="text-sm font-medium">Description</span>
-                    <input
-                      value={uploadDescription}
-                      onChange={(e) => setUploadDescription(e.target.value)}
-                      maxLength={500}
-                      placeholder="e.g. Short vorts drawn from the classic meforshim."
-                      className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                    />
-                    <WordCountHint text={uploadDescription} />
-                  </label>
-                  <label className="block">
-                    <span className="text-sm font-medium">Audience</span>
-                    <select
-                      value={uploadAudience}
-                      onChange={(e) => setUploadAudience(e.target.value)}
-                      className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                    >
-                      <option value="">— none —</option>
-                      {AUDIENCE_OPTIONS.map((o) => (
-                        <option key={o} value={o}>{formatTypeLabel(o)}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block">
-                    <span className="text-sm font-medium">Format</span>
-                    <select
-                      value={uploadFormatType}
-                      onChange={(e) => setUploadFormatType(e.target.value)}
-                      className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
-                    >
-                      <option value="">— none —</option>
-                      {FORMAT_TYPE_OPTIONS.map((o) => (
-                        <option key={o} value={o}>{formatTypeLabel(o)}</option>
-                      ))}
-                    </select>
-                  </label>
-                </>
-              )}
-
-              <label className="block md:col-span-2">
-                <span className="text-sm font-medium">PDF file</span>
-                <input
-                  id="pdf-file-input"
-                  required
-                  type="file"
-                  accept="application/pdf"
-                  onChange={async (e) => {
-                    const picked = e.target.files?.[0] ?? null;
-                    if (!picked) {
-                      setFile(null);
-                      return;
-                    }
-                    if (!title.trim()) {
-                      const cleaned = picked.name
-                        .replace(/\.pdf$/i, "")
-                        .replace(/_/g, " ")
-                        .replace(/\s+/g, " ")
-                        .trim();
-                      setTitle(cleaned);
-                    }
-                    try {
-                      setFile(await snapshotPickedFile(picked));
-                      setMsg(null);
-                    } catch {
-                      setFile(null);
-                      setMsg({ kind: "error", text: FILE_READ_HINT });
-                    }
-                  }}
-                  className="mt-1 w-full"
-                />
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} />
-                <span className="text-sm">Published</span>
-              </label>
-              <div className="md:col-span-2 flex flex-wrap items-center gap-3">
-                <button
-                  disabled={busy}
-                  className="rounded-full bg-primary px-6 py-2 text-primary-foreground disabled:opacity-50"
-                >
-                  {busy ? "Uploading…" : "Upload"}
-                </button>
-                {msg && (
-                  <span
-                    className={
-                      msg.kind === "error"
-                        ? "text-sm text-destructive"
-                        : "text-sm text-muted-foreground"
-                    }
-                    role={msg.kind === "error" ? "alert" : "status"}
-                  >
-                    {msg.text}
-                  </span>
-                )}
-              </div>
-            </form>
+            <UploadPdfForm
+              onSubmit={handleUpload}
+              uploadParshaReady={uploadParshaReady}
+              parshaKey={parshaKey}
+              onParshaChange={(value) => {
+                setParshaKey(value);
+                setParshaUserTouched(true);
+              }}
+              canonicalPubs={canonicalPubs}
+              titleFreeText={titleFreeText}
+              publicationId={publicationId}
+              onPublicationSelectValue={(value) => {
+                if (value === "__other__") {
+                  setPublicationId("");
+                  setTitle("");
+                  setTitleFreeText(true);
+                  return;
+                }
+                selectPublicationId(value);
+              }}
+              onChooseFromPublications={() => {
+                setTitleFreeText(false);
+                setTitle("");
+              }}
+              title={title}
+              onTitleChange={setTitle}
+              uploadAudience={uploadAudience}
+              onUploadAudienceChange={setUploadAudience}
+              uploadFormatType={uploadFormatType}
+              onUploadFormatTypeChange={setUploadFormatType}
+              showUploadDetails={showUploadDetails}
+              onToggleDetails={() => setShowUploadDetails((v) => !v)}
+              uploadDescription={uploadDescription}
+              onUploadDescriptionChange={setUploadDescription}
+              onFileInputChange={async (picked) => {
+                if (!picked) {
+                  setFile(null);
+                  return;
+                }
+                if (!title.trim()) {
+                  const cleaned = picked.name
+                    .replace(/\.pdf$/i, "")
+                    .replace(/_/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+                  setTitle(cleaned);
+                }
+                try {
+                  setFile(await snapshotPickedFile(picked));
+                  setMsg(null);
+                } catch {
+                  setFile(null);
+                  setMsg({ kind: "error", text: FILE_READ_HINT });
+                }
+              }}
+              published={published}
+              onPublishedChange={setPublished}
+              busy={busy}
+              msg={msg}
+            />
 
             <div className="mt-6 border-t border-accent/30 pt-4 flex flex-wrap items-center gap-3">
               <button
