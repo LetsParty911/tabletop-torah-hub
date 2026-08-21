@@ -3309,6 +3309,6 @@ export const adminDownloadFeed = createServerFn({ method: "POST" })
     return {
       totals: { all: totalAll, last7: total7, last30: total30, today: totalToday },
       events: page,
-      hasMore: all.length > offset + limit,
+      hasMore: filtered.length > offset + limit,
     };
   });
