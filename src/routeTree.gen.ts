@@ -18,6 +18,7 @@ import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as MissionRouteImport } from './routes/mission'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ArchiveRouteImport } from './routes/archive'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin-analytics'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -74,6 +75,11 @@ const ContactRoute = ContactRouteImport.update({
 const ArchiveRoute = ArchiveRouteImport.update({
   id: '/archive',
   path: '/archive',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/admin-analytics',
+  path: '/admin-analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -141,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
+  '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
   '/mission': typeof MissionRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
+  '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
   '/mission': typeof MissionRoute
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
+  '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
   '/mission': typeof MissionRoute
@@ -213,6 +222,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/admin-analytics'
     | '/archive'
     | '/contact'
     | '/mission'
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/admin-analytics'
     | '/archive'
     | '/contact'
     | '/mission'
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/admin-analytics'
     | '/archive'
     | '/contact'
     | '/mission'
@@ -283,6 +295,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRoute
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   ArchiveRoute: typeof ArchiveRoute
   ContactRoute: typeof ContactRoute
   MissionRoute: typeof MissionRoute
@@ -364,6 +377,13 @@ declare module '@tanstack/react-router' {
       path: '/archive'
       fullPath: '/archive'
       preLoaderRoute: typeof ArchiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-analytics': {
+      id: '/admin-analytics'
+      path: '/admin-analytics'
+      fullPath: '/admin-analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -470,6 +490,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRoute,
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
   ArchiveRoute: ArchiveRoute,
   ContactRoute: ContactRoute,
   MissionRoute: MissionRoute,

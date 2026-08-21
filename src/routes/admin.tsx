@@ -2616,6 +2616,14 @@ function AdminPage() {
         {/* Download analytics */}
         <section className="parchment-frame">
           <div className="parchment-panel">
+            <div className="mb-4 flex justify-end">
+              <Link
+                to="/admin-analytics"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Open full download dashboard →
+              </Link>
+            </div>
             <DownloadAnalytics accessToken={accessToken ?? ""} />
           </div>
         </section>
