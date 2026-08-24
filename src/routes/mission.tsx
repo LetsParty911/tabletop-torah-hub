@@ -7,7 +7,7 @@ export const Route = createFileRoute("/mission")({
   head: () => {
     const title = "Mission & Programs — Torah for the Table";
     const description =
-      "Torah For The Table Inc. is a 501(c)(3) nonprofit making Torah learning easier to access, print, and share — free resources for children, families, and adults.";
+      "Torah For The Table is a 501(c)(3) nonprofit making Torah learning easier to access, print, and share — free resources for children, families, and adults.";
     const url = "https://torahforthetable.com/mission";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -57,7 +57,7 @@ function MissionPage() {
               <section>
                 <h2 className="font-serif text-2xl font-bold text-primary">Our Mission</h2>
                 <p className="mt-2">
-                  Torah For The Table Inc. is a recognized 501(c)(3) nonprofit organization
+                  Torah For The Table is a recognized 501(c)(3) nonprofit organization
                   dedicated to making meaningful Torah learning easier to access, print, share,
                   and bring to the Shabbos table.
                 </p>

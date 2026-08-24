@@ -1,9 +1,46 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/SiteFooter";
-import { VORTS } from "@/data/vorts";
+import { VORTS, getVortsForParsha } from "@/data/vorts";
+import { resolveHebcalParsha } from "@/lib/hebcal";
+import { getParshaOverride } from "@/integrations/supabase/api.functions";
+import { toParshaComparableKey } from "@/lib/parsha-normalize";
 
-const SAMPLE_VORTS = (VORTS[VORTS.length - 1]?.vorts ?? []).slice(0, 2);
-const SAMPLE_VORTS_PARSHA = VORTS[VORTS.length - 1]?.parshaKey ?? "";
+// Resolves the live parsha the same way the homepage and Short Vorts page do,
+// so this preview never shows a future week's content ahead of its release.
+async function loadSampleVort(): Promise<{ vorts: typeof VORTS[number]["vorts"]; parshaKey: string }> {
+  let parshaKey: string | null = null;
+
+  try {
+    const o = await getParshaOverride();
+    if (o.override && o.isActive) parshaKey = o.override;
+  } catch {
+    // ignore
+  }
+
+  if (!parshaKey) {
+    const resolved = await resolveHebcalParsha();
+    parshaKey = resolved.parshaKey;
+  }
+
+  const vorts = getVortsForParsha(parshaKey);
+  if (vorts.length > 0) return { vorts: vorts.slice(0, 2), parshaKey: parshaKey ?? "" };
+
+  // Live week has no vorts written yet — search backward from the live
+  // week's position in the cycle for the most recent one that does. Never
+  // fall through to the end of the array, since later entries can be future
+  // weeks already authored ahead of their release.
+  const liveComparable = parshaKey ? toParshaComparableKey(parshaKey) : null;
+  const liveIndex = liveComparable
+    ? VORTS.findIndex((p) => toParshaComparableKey(p.parshaKey) === liveComparable)
+    : -1;
+  const searchFrom = liveIndex >= 0 ? liveIndex - 1 : VORTS.length - 1;
+  for (let i = searchFrom; i >= 0; i--) {
+    if (VORTS[i].vorts.length > 0) {
+      return { vorts: VORTS[i].vorts.slice(0, 2), parshaKey: VORTS[i].parshaKey };
+    }
+  }
+  return { vorts: [], parshaKey: "" };
+}
 
 const QA_SAMPLES: Array<{ q: string; a: string; source: string }> = [
   {
@@ -30,6 +67,7 @@ const QA_SAMPLES: Array<{ q: string; a: string; source: string }> = [
 
 export const Route = createFileRoute("/resources")({
   component: ResourcesPage,
+  loader: () => loadSampleVort(),
   head: () => {
     const title = "Original Torah Learning Resources — Torah for the Table";
     const description =
@@ -65,6 +103,7 @@ function Divider() {
 }
 
 function ResourcesPage() {
+  const { vorts: SAMPLE_VORTS, parshaKey: SAMPLE_VORTS_PARSHA } = Route.useLoaderData();
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-3xl px-3 py-5 sm:px-4 sm:py-8 md:px-8 md:py-14 space-y-6 sm:space-y-8">
@@ -196,9 +235,6 @@ function ResourcesPage() {
                   outcome — a blessing, a rebuke, a report — and draws out a practical point about
                   how we speak to family, friends, and neighbors.
                 </p>
-                <p className="mt-3 text-sm italic text-muted-foreground">
-                  Daniel: please confirm this description is accurate before we treat it as final.
-                </p>
               </section>
 
               <Divider />
@@ -208,7 +244,7 @@ function ResourcesPage() {
                   Parsha Questions &amp; Answers
                 </h2>
                 <p className="mt-2">
-                  Twenty Rashi-sourced questions and answers on the parsha each week, written for
+                  Twenty source-based questions and answers on the parsha each week, written for
                   learning together at the table. Every set is accompanied by a Kids’ Corner page
                   with riddles and picture puzzles so younger children have their own way in.
                 </p>

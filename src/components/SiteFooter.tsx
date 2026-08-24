@@ -40,7 +40,7 @@ export function SiteFooter() {
           to="/mission"
           className="hover:text-primary hover:underline transition-colors duration-150"
         >
-          Torah For The Table Inc. is a registered 501(c)(3) nonprofit organization.
+          Torah For The Table is a registered 501(c)(3) nonprofit organization.
         </Link>
       </p>
     </footer>

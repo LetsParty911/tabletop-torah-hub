@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/SiteFooter";
 
 const PRIVACY_EMAIL = "hello@torahforthetable.com";
-const ENTITY_NAME = "Torah For The Table Inc.";
+const ENTITY_NAME = "Torah For The Table";
 const LAST_UPDATED = "August 4, 2026";
 
 const mailLink = (

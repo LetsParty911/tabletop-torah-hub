@@ -8,7 +8,7 @@ export type AudienceKey = "Children" | "Families" | "Adults";
 export const AUDIENCE_LABELS: Record<AudienceKey, string> = {
   Children: "Children",
   Families: "Families",
-  Adults: "Parents/Adults",
+  Adults: "Adults",
 };
 
 export function audienceLabel(

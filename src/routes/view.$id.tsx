@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import { ArrowLeft } from "lucide-react";
-import { getPdfById } from "@/integrations/supabase/api.functions";
+import { getPdfById, getParshaOverride } from "@/integrations/supabase/api.functions";
+import { resolveHebcalParsha } from "@/lib/hebcal";
+import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { trackEvent } from "@/lib/analytics";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
@@ -20,7 +22,28 @@ export const Route = createFileRoute("/view/$id")({
   loader: async ({ params }) => {
     const r = await getPdfById({ data: { id: params.id } });
     if (!r.pdf) throw notFound();
-    return { pdf: r.pdf };
+
+    // Determine whether this publication belongs to the live week, so the
+    // "back" link never claims an archived piece is part of "this week's
+    // collection" (see homepage/short-vorts for the same live-parsha logic).
+    let isCurrentWeek = false;
+    try {
+      let liveKey: string | null = null;
+      const o = await getParshaOverride();
+      if (o.override && o.isActive) liveKey = o.override;
+      if (!liveKey) {
+        const resolved = await resolveHebcalParsha();
+        liveKey = resolved.parshaKey;
+      }
+      const pdfKey = (r.pdf.parsha_key ?? "").trim();
+      if (liveKey && pdfKey) {
+        isCurrentWeek = toParshaComparableKey(liveKey) === toParshaComparableKey(pdfKey);
+      }
+    } catch {
+      // ignore — default to archived-style link, which is always accurate
+    }
+
+    return { pdf: r.pdf, isCurrentWeek };
   },
   head: ({ loaderData, params }) => {
     const title = loaderData?.pdf?.title ?? "View PDF";
@@ -126,7 +149,7 @@ export const Route = createFileRoute("/view/$id")({
 });
 
 function ViewPdf() {
-  const { pdf } = Route.useLoaderData();
+  const { pdf, isCurrentWeek } = Route.useLoaderData();
   const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=FitH`;
   const isMobile = useIsMobile();
   const [mounted, setMounted] = useState(false);
@@ -268,10 +291,11 @@ function ViewPdf() {
 
         <div className="mt-6">
           <Link
-            to="/"
+            to={isCurrentWeek ? "/" : "/archive"}
             className="inline-flex items-center gap-2 font-serif italic text-accent hover:text-primary transition-colors"
           >
-            <ArrowLeft className="h-4 w-4" /> Back to this week's collection
+            <ArrowLeft className="h-4 w-4" />{" "}
+            {isCurrentWeek ? "Back to this week's collection" : "Back to Archive"}
           </Link>
         </div>
 
