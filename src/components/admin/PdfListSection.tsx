@@ -16,6 +16,8 @@ const getCurrentPdfFileName = (filePath: string | null | undefined): string => {
   return last.replace(/^\d{10,}_/, "");
 };
 
+const formatKB = (bytes: number): string => `${(bytes / 1024).toFixed(0)} KB`;
+
 export type DescBulkState =
   | { status: "idle" }
   | { status: "running"; current: number; total: number; currentTitle: string }
@@ -50,6 +52,14 @@ type PdfListSectionProps = {
   onReplaceFileInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   replacing: boolean;
   onReplacePdf: (id: string) => void;
+
+  recompressingId: string | null;
+  recompressResult:
+    | { id: string; changed: true; originalBytes: number; newBytes: number }
+    | { id: string; changed: false; originalBytes: number; newBytes: number }
+    | { id: string; error: string }
+    | null;
+  onRecompressPdf: (id: string) => void;
 
   editMetaTitle: string;
   onEditMetaTitleChange: (value: string) => void;
@@ -95,6 +105,9 @@ export default function PdfListSection({
   onReplaceFileInputChange,
   replacing,
   onReplacePdf,
+  recompressingId,
+  recompressResult,
+  onRecompressPdf,
   editMetaTitle,
   onEditMetaTitleChange,
   editMetaSubtitle,
@@ -279,7 +292,7 @@ export default function PdfListSection({
                         >
                           {getCurrentPdfFileName(p.file_path)}
                         </div>
-                        <div className="mt-2">
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
                           <a
                             href={`/view/${p.id}/pdf`}
                             target="_blank"
@@ -288,7 +301,34 @@ export default function PdfListSection({
                           >
                             <Eye className="h-3 w-3" /> View Current PDF
                           </a>
+                          <button
+                            type="button"
+                            onClick={() => onRecompressPdf(p.id)}
+                            disabled={recompressingId !== null}
+                            className="inline-flex items-center gap-1 rounded-md border border-accent/60 px-3 py-1.5 text-xs font-medium text-primary hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50"
+                            title="Re-run image compression on the file already in storage (safe: only replaces it if genuinely smaller)"
+                          >
+                            {recompressingId === p.id ? "Compressing…" : "Recompress"}
+                          </button>
                         </div>
+                        {recompressResult && recompressResult.id === p.id && (
+                          <div className="mt-2 text-xs">
+                            {"error" in recompressResult ? (
+                              <span className="text-destructive">
+                                Recompress failed: {recompressResult.error}
+                              </span>
+                            ) : recompressResult.changed ? (
+                              <span className="text-primary">
+                                Shrunk {formatKB(recompressResult.originalBytes)} → {formatKB(recompressResult.newBytes)} (
+                                {Math.round((1 - recompressResult.newBytes / recompressResult.originalBytes) * 100)}% smaller)
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">
+                                No change ({formatKB(recompressResult.originalBytes)}) — likely CMYK images or already optimized
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="rounded-md border border-accent/60 bg-background p-3">
                         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">

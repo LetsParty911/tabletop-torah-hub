@@ -20,6 +20,7 @@ import {
   adminUploadPdfThumb,
   listCanonicalPublications,
   adminReplacePdfFile,
+  adminRecompressExistingPdf,
   adminTogglePublished,
   adminBulkPublish,
   adminDeletePdf,
@@ -275,6 +276,35 @@ function AdminPage() {
 
   // Summary generation state (per row)
   const [generatingSummaryId, setGeneratingSummaryId] = useState<string | null>(null);
+
+  // Backfill-compression state (per row) - see adminRecompressExistingPdf.
+  const [recompressingId, setRecompressingId] = useState<string | null>(null);
+  const [recompressResult, setRecompressResult] = useState<
+    | { id: string; changed: true; originalBytes: number; newBytes: number }
+    | { id: string; changed: false; originalBytes: number; newBytes: number }
+    | { id: string; error: string }
+    | null
+  >(null);
+
+  const handleRecompressPdf = async (id: string) => {
+    if (!accessToken || recompressingId) return;
+    setRecompressingId(id);
+    setRecompressResult(null);
+    try {
+      const r = await adminRecompressExistingPdf({ data: { accessToken, id } });
+      if (r.changed) {
+        setRecompressResult({ id, changed: true, originalBytes: r.originalBytes, newBytes: r.newBytes });
+        await refresh();
+      } else {
+        setRecompressResult({ id, changed: false, originalBytes: r.originalBytes, newBytes: r.newBytes });
+      }
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : "Unknown error";
+      setRecompressResult({ id, error: detail });
+    } finally {
+      setRecompressingId(null);
+    }
+  };
   const [summaryModal, setSummaryModal] = useState<
     | { kind: "success"; title: string; summary: string; contentType: string | null }
     | { kind: "error"; title: string; error: string }
@@ -1441,6 +1471,9 @@ function AdminPage() {
               onReplaceFileInputChange={onReplaceFileInputChange}
               replacing={replacing}
               onReplacePdf={handleReplacePdf}
+              recompressingId={recompressingId}
+              recompressResult={recompressResult}
+              onRecompressPdf={handleRecompressPdf}
               editMetaTitle={editMetaTitle}
               onEditMetaTitleChange={setEditMetaTitle}
               editMetaSubtitle={editMetaSubtitle}

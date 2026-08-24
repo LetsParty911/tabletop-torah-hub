@@ -1492,6 +1492,77 @@ export const adminReplacePdfFile = createServerFn({ method: "POST" })
     return { ok: true, file_path: path };
   });
 
+// ---------- Admin: backfill compression on an already-uploaded PDF ----------
+// For files uploaded before the JPEG recompression pipeline existed (or
+// uploaded/replaced while it was briefly reverted). Downloads the current
+// stored file, runs it through the exact same optimizePdfForStorage used at
+// upload time, and only replaces the stored copy if the result is
+// genuinely smaller. Deliberately a single-file, manually-triggered action
+// (not a bulk "recompress everything" job) so each result can be reviewed
+// before trusting it more broadly - see optimizePdfForStorage / the
+// underlying optimizePdfImages for the full safety rules (CMYK/SMask
+// skipped, minimum size/savings thresholds, per-image failure isolation).
+export const adminRecompressExistingPdf = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; id: string }) =>
+    z.object({ accessToken: z.string().min(10), id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { data: row, error: rowErr } = await admin
+      .from("pdfs")
+      .select("id, parsha_key, file_path, published, title")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (rowErr) throw new Error(rowErr.message);
+    if (!row) throw new Error("PDF row not found");
+    if (!row.file_path) throw new Error("Row has no file_path");
+
+    const { data: blob, error: dlErr } = await admin.storage.from("pdfs").download(row.file_path);
+    if (dlErr || !blob) {
+      throw new Error(`Download failed: ${dlErr?.message ?? "unknown"}`);
+    }
+    const originalBuf = Buffer.from(await blob.arrayBuffer());
+    const optimizedBuf = await optimizePdfForStorage(originalBuf);
+
+    // optimizePdfForStorage already returns the original bytes unchanged
+    // whenever recompression didn't help (not smaller, or nothing eligible
+    // - e.g. CMYK-only images, or a file under the size/savings thresholds).
+    // A same-length result means nothing to do here.
+    if (optimizedBuf.length >= originalBuf.length) {
+      return {
+        ok: true as const,
+        changed: false as const,
+        originalBytes: originalBuf.length,
+        newBytes: originalBuf.length,
+      };
+    }
+
+    const safeName = (row.file_path.split("/").pop() || "file.pdf").replace(
+      /^\d{10,}_/,
+      "",
+    );
+    const path = `${row.parsha_key.replace(/[^a-zA-Z0-9._-]/g, "_")}/${Date.now()}_${safeName}`;
+    const { error: upErr } = await admin.storage
+      .from("pdfs")
+      .upload(path, optimizedBuf, { contentType: "application/pdf", upsert: false });
+    if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
+    const { error: updErr } = await admin.from("pdfs").update({ file_path: path }).eq("id", data.id);
+    if (updErr) {
+      await admin.storage.from("pdfs").remove([path]);
+      throw new Error(`DB update failed: ${updErr.message}`);
+    }
+    await admin.storage.from("pdfs").remove([row.file_path]);
+    await purgePdfEdgeCache(data.id);
+    if (row.published) warmPdfEdgeCache(data.id);
+    return {
+      ok: true as const,
+      changed: true as const,
+      originalBytes: originalBuf.length,
+      newBytes: optimizedBuf.length,
+    };
+  });
+
 // ---------- Admin: toggle published ----------
 export const adminTogglePublished = createServerFn({ method: "POST" })
   .inputValidator((input: { accessToken: string; id: string; published: boolean }) =>
