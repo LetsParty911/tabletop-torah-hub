@@ -255,6 +255,32 @@ function Index() {
   // which the server already applies when building `resources`.
   const sortedResources = resources;
 
+  // Quick Picks: three low-friction starting points drawn from this week's
+  // actual collection (never hardcoded), so a first-time visitor isn't
+  // immediately faced with the full list of 20+ options.
+  const quickPickForKids = sortedResources.find(
+    (r) => normalizeAudience(r.audience, r.title) === "Children",
+  );
+  const quickPickForFamily = sortedResources.find(
+    (r) => normalizeAudience(r.audience, r.title) === "Families",
+  );
+  const quickPickQuickRead = sortedResources
+    .filter((r) => typeof r.page_count === "number")
+    .sort((a, b) => (a.page_count as number) - (b.page_count as number))[0];
+  const quickPicks = [
+    quickPickForKids && { label: "For Kids", resource: quickPickForKids },
+    quickPickForFamily &&
+      quickPickForFamily.id !== quickPickForKids?.id && {
+        label: "For the Family",
+        resource: quickPickForFamily,
+      },
+    quickPickQuickRead &&
+      quickPickQuickRead.id !== quickPickForKids?.id &&
+      quickPickQuickRead.id !== quickPickForFamily?.id && {
+        label: "Quick 1–2 Page Read",
+        resource: quickPickQuickRead,
+      },
+  ].filter(Boolean) as { label: string; resource: Resource }[];
 
   // Each filter is independent so every row's counts can respect the others.
   const matchesAudience = (r: Resource, value = audienceFilter) =>
@@ -507,6 +533,34 @@ function Index() {
               <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent-readable">
                 {resources.length === 1 ? "Dvar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : ` ${collectionLabelLower}`}
               </p>
+            )}
+
+            {!isFallback && quickPicks.length > 0 && (
+              <div className="mt-6 max-w-2xl mx-auto">
+                <p className="text-center font-sans text-[0.65rem] sm:text-xs uppercase tracking-[0.2em] text-accent-readable">
+                  Not sure where to start?
+                </p>
+                <div className={`mt-3 grid gap-3 ${quickPicks.length === 1 ? "grid-cols-1" : quickPicks.length === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-3"}`}>
+                  {quickPicks.map(({ label, resource }) => (
+                    <Link
+                      key={label}
+                      to="/view/$id"
+                      params={{ id: resource.id }}
+                      className="rounded-xl border border-accent/30 bg-card/40 p-4 text-center transition-colors hover:border-accent/60 hover:bg-card/60"
+                    >
+                      <p className="font-sans text-[0.65rem] uppercase tracking-[0.15em] text-accent-readable">
+                        {label}
+                      </p>
+                      <p className="mt-1 font-serif text-base font-bold text-primary leading-snug">
+                        {resource.title}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+                <p className="mt-3 text-center text-xs sm:text-sm text-muted-foreground">
+                  or browse all {resources.length} below ↓
+                </p>
+              </div>
             )}
 
 
@@ -783,7 +837,7 @@ function Index() {
               selected Torah resources for children, families, and adults. Each week, we make
               meaningful Divrei Torah, Parsha questions, and original educational content easy to
               find, print, and share at the Shabbos table.{" "}
-              <Link to="/mission" className="text-accent hover:text-primary underline">
+              <Link to="/about" className="text-accent hover:text-primary underline">
                 Our mission and programs
               </Link>
             </p>

@@ -32,7 +32,6 @@ export const Route = createFileRoute("/sitemap.xml")({
           { loc: `${SITE_URL}/short-vorts`, lastmod: null, priority: "0.5" },
           { loc: `${SITE_URL}/resources`, lastmod: null, priority: "0.7" },
           { loc: `${SITE_URL}/about`, lastmod: null, priority: "0.5" },
-          { loc: `${SITE_URL}/mission`, lastmod: null, priority: "0.5" },
           { loc: `${SITE_URL}/contact`, lastmod: null, priority: "0.5" },
           { loc: `${SITE_URL}/privacy`, lastmod: null, priority: "0.5" },
         ];

@@ -25,9 +25,6 @@ export function SiteFooter() {
         <Link to="/contact" className={linkClass}>
           Contact
         </Link>
-        <Link to="/mission" className={linkClass}>
-          Mission
-        </Link>
         <Link to="/privacy" className={linkClass}>
           Privacy
         </Link>
@@ -37,7 +34,7 @@ export function SiteFooter() {
       </p>
       <p className="text-center text-xs text-muted-foreground">
         <Link
-          to="/mission"
+          to="/about"
           className="hover:text-primary hover:underline transition-colors duration-150"
         >
           Torah For The Table is a registered 501(c)(3) nonprofit organization.
