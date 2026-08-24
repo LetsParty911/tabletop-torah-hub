@@ -1140,7 +1140,11 @@ export const adminGenerateSummary = createServerFn({ method: "POST" })
     if (!serviceKey) {
       return { ok: false as const, error: "Missing EXT_SUPABASE_SERVICE_ROLE_KEY" };
     }
-    const url = "https://kwdeyzumetmjcvtbqnzl.supabase.co/functions/v1/generate-summary";
+    const extBase = process.env.EXT_SUPABASE_URL || process.env.SUPABASE_URL;
+    if (!extBase) {
+      return { ok: false as const, error: "Missing EXT_SUPABASE_URL" };
+    }
+    const url = `${extBase.replace(/\/$/, "")}/functions/v1/generate-summary`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 120_000);
     try {
