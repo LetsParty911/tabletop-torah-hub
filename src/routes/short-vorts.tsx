@@ -6,6 +6,8 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { resolveHebcalParsha } from "@/lib/hebcal";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { VORTS, getVortsForParsha, type Vort } from "@/data/vorts";
+import { PARSHIYOS } from "@/lib/parshiyos";
+import { toParshaComparableKey } from "@/lib/parsha-normalize";
 
 type LoaderData = {
   label: string;
@@ -185,7 +187,22 @@ function ShortVortsPage() {
     .replace(/^parshas\s+/i, "")
     .trim()
     .toLowerCase();
-  const others = VORTS.filter((p) => p.parshaKey.toLowerCase() !== normalizedCurrent);
+
+  // Only show weeks that have already been read, never a future week that
+  // happens to be authored ahead of time (same protection as the homepage
+  // and Resources page: content should never leak before its release).
+  const liveComparable = parshaKey ? toParshaComparableKey(parshaKey) : null;
+  const liveIndex = liveComparable
+    ? PARSHIYOS.findIndex((p) => toParshaComparableKey(p) === liveComparable)
+    : -1;
+  const others = VORTS.filter((p) => {
+    if (p.parshaKey.toLowerCase() === normalizedCurrent) return false;
+    if (liveIndex < 0) return false; // can't confirm this is a past week — omit rather than risk a leak
+    const idx = PARSHIYOS.findIndex(
+      (pp) => toParshaComparableKey(pp) === toParshaComparableKey(p.parshaKey),
+    );
+    return idx >= 0 && idx <= liveIndex;
+  });
 
   const sections = [
     { key: "current", heading: `This Week — ${label}`, vorts: current, defaultOpen: true },

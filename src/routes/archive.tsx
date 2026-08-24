@@ -634,7 +634,7 @@ function ArchivePage() {
                       const pdfCount = y.parshiyos.reduce((s: number, p: ArchiveParsha) => s + p.pdfs.length, 0);
                       return (
                         <span className="font-sans text-xs sm:text-sm uppercase tracking-[0.2em] text-accent">
-                          {y.parshiyos.length} {y.parshiyos.length === 1 ? "Parshas" : "Parshas"} · {pdfCount} {pdfCount === 1 ? "Dvar" : "Divrei"} Torah
+                          {y.parshiyos.length} {y.parshiyos.length === 1 ? "Parsha" : "Parshiyos"} · {pdfCount} {pdfCount === 1 ? "Dvar" : "Divrei"} Torah
                         </span>
                       );
                     })()}
