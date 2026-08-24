@@ -324,7 +324,7 @@ export default function PdfListSection({
                               </span>
                             ) : (
                               <span className="text-muted-foreground">
-                                No change ({formatKB(recompressResult.originalBytes)}) — likely CMYK images or already optimized
+                                No change ({formatKB(recompressResult.originalBytes)}) — likely CMYK images, already optimized, or the reduction was too small to be worth swapping the file
                               </span>
                             )}
                           </div>

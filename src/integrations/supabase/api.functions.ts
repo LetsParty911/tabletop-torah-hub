@@ -1525,11 +1525,18 @@ export const adminRecompressExistingPdf = createServerFn({ method: "POST" })
     const originalBuf = Buffer.from(await blob.arrayBuffer());
     const optimizedBuf = await optimizePdfForStorage(originalBuf);
 
-    // optimizePdfForStorage already returns the original bytes unchanged
-    // whenever recompression didn't help (not smaller, or nothing eligible
-    // - e.g. CMYK-only images, or a file under the size/savings thresholds).
-    // A same-length result means nothing to do here.
-    if (optimizedBuf.length >= originalBuf.length) {
+    // A trivial byte-level reduction (e.g. a few hundred bytes purely from
+    // the incidental lossless structural repack, with no real image
+    // recompression happening underneath) isn't worth a full storage
+    // swap + cache purge/warm cycle, and reporting it as "Shrunk" would be
+    // misleading when it rounds to 0% smaller. Only proceed if the file is
+    // meaningfully smaller - this is what actually tells us whether real
+    // JPEG recompression found anything eligible (vs. e.g. all-CMYK images,
+    // which this pipeline deliberately never touches).
+    const MIN_WHOLE_FILE_SAVINGS_RATIO = 0.03;
+    const meaningfullySmaller =
+      optimizedBuf.length <= originalBuf.length * (1 - MIN_WHOLE_FILE_SAVINGS_RATIO);
+    if (!meaningfullySmaller) {
       return {
         ok: true as const,
         changed: false as const,
