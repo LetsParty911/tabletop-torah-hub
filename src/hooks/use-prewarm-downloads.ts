@@ -53,7 +53,7 @@ export function usePrewarmDownloads(ids: readonly string[]) {
                 ...({ priority: "low" } as Record<string, unknown>),
                 mode: "no-cors",
                 credentials: "omit",
-tab:            }).catch(() => {});
+}).catch(() => {});
             } catch {
               // best effort only
             }
