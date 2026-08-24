@@ -1,7 +1,7 @@
 import { getAttribution, getSessionId } from "@/lib/site-analytics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { AlertCircle, Check, Download, Loader2 } from "lucide-react";
+import { AlertCircle, Download, Loader2 } from "lucide-react";
 
 type DownloadToPrintButtonProps = {
   href: string;
@@ -28,9 +28,9 @@ export function DownloadToPrintButton({
   const displayName = publicationName ?? publicationTitle;
   const buttonLabel = displayName ? `Download ${displayName}` : "Download";
 
-  type DownloadPhase = "idle" | "preparing" | "finishing" | "saved" | "error";
+  type DownloadPhase = "idle" | "starting" | "error";
   const [phase, setPhase] = useState<DownloadPhase>("idle");
-  const busy = phase === "preparing" || phase === "finishing";
+  const busy = phase === "starting";
   const warmedRef = useRef(false);
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -119,16 +119,15 @@ export function DownloadToPrintButton({
       // because the bytes were written twice: once to memory, once to disk.
       //
       // A plain <a download> link gives JS no real "it's done" signal, so
-      // this timed sequence is a deliberate approximation, not a measurement.
-      // Timings were shortened to track today's real cold/warm download
-      // times (~0.1-0.9s per live measurement) now that page-load
-      // prewarming, warm-on-publish, and a week-long edge cache have made
-      // the actual transfer much faster than when these were first tuned.
-      flushSync(() => setPhase("preparing"));
-      statusTimerRef.current = setTimeout(() => {
-        setPhase("finishing");
-        statusTimerRef.current = setTimeout(() => setPhase("saved"), 400);
-      }, 200);
+      // this button deliberately never claims a verified completion (e.g.
+      // "Downloaded") - a fixed timer saying that would eventually be wrong
+      // for some file size or connection speed (confirmed: a 1.85MB file
+      // was still transferring for ~9s after the old timer had already
+      // declared it done). "Starting download..." is the one thing we can
+      // actually confirm - we did tell the browser to begin - so that's all
+      // this shows, fading back to idle without asserting anything further.
+      flushSync(() => setPhase("starting"));
+      statusTimerRef.current = setTimeout(() => setPhase("idle"), 1200);
     },
 
     [onClick, busy, trackDownload],
@@ -162,25 +161,17 @@ export function DownloadToPrintButton({
     >
       {busy ? (
         <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-      ) : phase === "saved" ? (
-        <Check className="h-4 w-4 shrink-0" />
       ) : phase === "error" ? (
         <AlertCircle className="h-4 w-4 shrink-0" />
       ) : (
         <Download className="h-4 w-4 shrink-0" />
       )}
       <span className="min-w-0 truncate">
-        {phase === "preparing"
-          ? displayName
-            ? `Preparing ${displayName}…`
-            : "Preparing…"
-          : phase === "finishing"
-            ? "Finishing download…"
-            : phase === "saved"
-              ? "Downloaded — check Downloads"
-              : phase === "error"
-                ? "Download failed — try again"
-                : buttonLabel}
+        {phase === "starting"
+          ? "Starting download…"
+          : phase === "error"
+            ? "Download failed — try again"
+            : buttonLabel}
       </span>
 
 
