@@ -13,6 +13,7 @@ import { normalizeAudience, audienceLabel, type AudienceKey } from "@/lib/audien
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { publicationLabel } from "@/lib/badges";
+import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 
 type ArchiveSearch = {
   year?: string;
@@ -314,6 +315,17 @@ function ArchivePage() {
     }
     return out;
   }, [years, yearFilter, parshaFilter, query, audienceFilter, lengthFilter, typeFilter, pubFilter]);
+
+  // Warm the edge cache for the first few visible results.
+  usePrewarmDownloads(
+    useMemo(
+      () =>
+        filteredYears
+          .flatMap((y) => y.parshiyos.flatMap((p) => p.pdfs.map((r) => r.id)))
+          .slice(0, 6),
+      [filteredYears],
+    ),
+  );
 
   // Audience counts reflect the other active filters (year, parsha, search).
   const audienceCounts = useMemo(() => {

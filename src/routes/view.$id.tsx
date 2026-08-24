@@ -16,6 +16,7 @@ import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
+import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 
 
 export const Route = createFileRoute("/view/$id")({
@@ -160,6 +161,9 @@ function ViewPdf() {
   const canEmbed = mounted && !isMobile;
 
 
+  // Warm the edge cache for this PDF so the Download click is instant.
+  usePrewarmDownloads([pdf.id]);
+
   useEffect(() => {
     trackEvent("pdf_view", {
       file_id: pdf.id,
@@ -167,6 +171,7 @@ function ViewPdf() {
       source_name: pdf.title,
     });
   }, [pdf.id, pdf.title]);
+
 
   const metaLine = [
     audienceLabel(normalizeAudience(pdf.audience, pdf.title)) ?? pdf.audience,

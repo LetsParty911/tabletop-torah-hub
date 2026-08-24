@@ -26,6 +26,7 @@ import {
 } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
+import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 
 
 
@@ -254,6 +255,9 @@ function Index() {
   // Display order comes from the admin checklist sort order (lower number first),
   // which the server already applies when building `resources`.
   const sortedResources = resources;
+
+  // Warm the edge cache for this week's PDFs so the Download click is instant.
+  usePrewarmDownloads(sortedResources.map((r) => r.id));
 
   // Quick Picks: three low-friction starting points drawn from this week's
   // actual collection (never hardcoded), so a first-time visitor isn't
