@@ -117,11 +117,18 @@ export function DownloadToPrintButton({
       // Let the browser stream the file straight to disk (single pass).
       // Buffering it through fetch()+Blob first made the file land later,
       // because the bytes were written twice: once to memory, once to disk.
+      //
+      // A plain <a download> link gives JS no real "it's done" signal, so
+      // this timed sequence is a deliberate approximation, not a measurement.
+      // Timings were shortened to track today's real cold/warm download
+      // times (~0.1-0.9s per live measurement) now that page-load
+      // prewarming, warm-on-publish, and a week-long edge cache have made
+      // the actual transfer much faster than when these were first tuned.
       flushSync(() => setPhase("preparing"));
       statusTimerRef.current = setTimeout(() => {
         setPhase("finishing");
-        statusTimerRef.current = setTimeout(() => setPhase("saved"), 1400);
-      }, 900);
+        statusTimerRef.current = setTimeout(() => setPhase("saved"), 400);
+      }, 200);
     },
 
     [onClick, busy, trackDownload],
