@@ -35,3 +35,26 @@ export async function purgePdfEdgeCache(id: string): Promise<void> {
     // normal max-age/stale-while-revalidate expiry instead of an instant one.
   }
 }
+
+/**
+ * Warms the edge cache for a just-published/replaced PDF by requesting its
+ * own download URL once, server-side, right after publishing. Cloudflare's
+ * cache is shared per-datacenter (not per-visitor), so this one request
+ * means the *first real reader* in each region gets a warm hit instead of
+ * paying the cold lookup+storage-read cost themselves. Call after
+ * purgePdfEdgeCache (so any old cached entry for this URL is cleared first)
+ * whenever a row's published state or file changes.
+ *
+ * Fire-and-forget: never blocks or fails the publish/replace action itself.
+ * A failed warm just means the first reader pays the normal cold-path cost,
+ * exactly like before this existed.
+ */
+export function warmPdfEdgeCache(id: string): void {
+  try {
+    fetch(pdfDownloadUrl(id)).catch(() => {
+      // Best-effort - see comment above.
+    });
+  } catch {
+    // Synchronous throw (e.g. fetch unavailable in this runtime) - ignore.
+  }
+}
