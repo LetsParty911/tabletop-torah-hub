@@ -3555,7 +3555,7 @@ export const adminDownloadFeed = createServerFn({ method: "POST" })
     return {
       totals: { all: totalAll, last7: total7, last30: total30, today: totalToday },
       events: page,
-      hasMore: filtered.length > offset + limit,
+      hasMore,
       series: [...byDay.entries()]
         .map(([date, count]) => ({ date, count }))
         .sort((a, b) => (a.date < b.date ? -1 : 1)),
