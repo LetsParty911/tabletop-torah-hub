@@ -3518,7 +3518,12 @@ export const adminDownloadFeed = createServerFn({ method: "POST" })
         )
       : all;
 
-    const page = filtered.slice(offset, offset + limit);
+    // Searching filters in memory from row 0, so it still slices by offset.
+    // Without a search the database already returned exactly this page (plus
+    // one lookahead row).
+    const page = search ? filtered.slice(offset, offset + limit) : filtered.slice(0, limit);
+    const hasMore = search ? filtered.length > offset + limit : filtered.length > limit;
+
 
     // Chart aggregates cover the whole selected range, independent of paging.
     let aggQ = admin
