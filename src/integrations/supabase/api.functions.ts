@@ -3454,19 +3454,28 @@ export const adminDownloadFeed = createServerFn({ method: "POST" })
     const search = (data.search ?? "").trim();
 
     // Over-fetch a little when searching, since parsha matching happens after
-    // the rows are joined to their PDF in memory.
-    const fetchLimit = search ? Math.min(5000, (offset + limit) * 10 + 200) : limit;
+    // the rows are joined to their PDF in memory. Without a search the
+    // database can page directly, so ask for one extra row to learn whether
+    // another page exists.
+    const fetchLimit = search ? Math.min(5000, (offset + limit) * 10 + 200) : limit + 1;
 
     let q = admin
       .from("download_events")
       .select("id, created_at, publication_id, publication_title, city, region, country")
-      .order("created_at", { ascending: false })
-      .limit(fetchLimit);
+      .order("created_at", { ascending: false });
+    if (search) {
+      q = q.limit(fetchLimit);
+    } else {
+      // Real offset paging: previously every page re-fetched the newest rows,
+      // so "Load more" had nothing left to show past the first page.
+      q = q.range(offset, offset + limit);
+    }
     if (data.days) q = q.gte("created_at", iso(data.days * DAY));
     // Search matches title, parsha, or location, so filtering happens in
     // memory after each row is joined to its PDF.
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
+
 
     const pdfRows = await admin.from("pdfs").select("id, title, parsha_key, jewish_year");
     const pdfInfo = new Map<string, { title: string; parsha: string | null; jewishYear: number | null }>();
