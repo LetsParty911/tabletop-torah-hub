@@ -11,12 +11,16 @@ const rowCache = new Map<string, CacheEntry>();
 // File-delivery endpoint must never be indexed.
 const NOINDEX = { "X-Robots-Tag": "noindex" } as const;
 
-// Cacheable at the CDN for a full week - purge-on-replace/unpublish (see
-// pdf-edge-cache.ts) already invalidates immediately on any real change, so
-// there's no reason to let a file go cold mid-week on its own. `immutable`
-// is still avoided since a replaced file reuses the same URL.
+// Cacheable at the CDN for a day. The purge-on-replace/unpublish helper in
+// pdf-edge-cache.ts only clears the Cache API instance of the datacenter that
+// handled the admin request - Cloudflare's cache is per-datacenter, and there
+// is no global purge available here - so every other region keeps whatever it
+// stored until this lifetime expires. A day bounds how long a replaced or
+// unpublished file can still be handed out; a week did not. `immutable` is
+// still avoided since a replaced file reuses the same URL.
 const CACHE_CONTROL =
-  "public, max-age=300, s-maxage=604800, stale-while-revalidate=604800";
+  "public, max-age=300, s-maxage=86400, stale-while-revalidate=3600";
+
 
 function quoteFilename(name: string): string {
   return `attachment; filename="${name.replace(/["\\]/g, "")}"; filename*=UTF-8''${encodeURIComponent(name)}`;
