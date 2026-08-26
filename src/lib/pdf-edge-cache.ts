@@ -16,12 +16,19 @@ export function pdfViewUrl(id: string): string {
 }
 
 /**
- * Purge the edge-cached download/view responses for a PDF so a reader
- * never sees stale bytes (or a stale "published" response) after the
- * admin replaces the file, unpublishes it, or deletes it. Cheap and
- * safe to call even when nothing was ever cached, and a no-op outside
- * the Cloudflare Worker runtime (local dev).
+ * Purge the edge-cached download/view responses for a PDF after the admin
+ * replaces the file, unpublishes it, or deletes it. Cheap and safe to call
+ * even when nothing was ever cached, and a no-op outside the Cloudflare
+ * Worker runtime (local dev).
+ *
+ * IMPORTANT: this only clears the Cache API instance of the datacenter that
+ * handled this admin request. Cloudflare's cache is per-datacenter and there
+ * is no global purge available from inside the Worker, so other regions keep
+ * their copy until its `s-maxage` expires. That lifetime (see
+ * view.$id.download.tsx) is therefore what actually bounds staleness - keep
+ * it short enough that a wrong or pulled file cannot circulate for long.
  */
+
 export async function purgePdfEdgeCache(id: string): Promise<void> {
   const cache = getEdgeCache();
   if (!cache) return;
