@@ -29,7 +29,6 @@ import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 
 
-
 type Resource = {
   id: string;
   title: string;
@@ -244,11 +243,8 @@ function Index() {
   }, [isFallback, resources.length, readingDate]);
 
   const collectionLabel = postShabbos ? "Last Shabbos's" : "This Week's";
-  const collectionLabelLower = postShabbos ? "last Shabbos" : "this week";
-
 
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
-
   const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long">("All");
   const [contentTypeFilter, setContentTypeFilter] = useState<string>("All");
 
@@ -286,7 +282,7 @@ function Index() {
       },
   ].filter(Boolean) as { label: string; resource: Resource }[];
 
-  // Each filter is independent so every row's counts can respect the others.
+  // Each filter is independent so every row's options can respect the others.
   const matchesAudience = (r: Resource, value = audienceFilter) =>
     value === "All" || normalizeAudience(r.audience, r.title) === value;
   const matchesLength = (r: Resource, value = lengthFilter) =>
@@ -324,16 +320,12 @@ function Index() {
     (r) => matchesAudience(r) && matchesLength(r) && matchesContentType(r),
   );
 
-
   const featuredPicks = FEATURED_SLOTS.map((slot) => ({
     ...slot,
     resource: resources.find(
       (r) => (r.featured_slot ?? "").trim().toLowerCase() === slot.key,
     ),
   })).filter((p) => !!p.resource);
-
-
-
 
   const pdfParams = (r: Resource) => ({
     file_id: r.id,
@@ -351,14 +343,12 @@ function Index() {
       target="_blank"
       rel="noopener noreferrer"
       onClick={() => trackEvent("share_whatsapp", { parsha: displayedParshaKey ?? displayedLabel, count: resources.length })}
-      className={`inline-flex items-center justify-center gap-2 rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors ${className ?? ""}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-full border border-accent bg-transparent px-5 py-2.5 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors ${className ?? ""}`}
     >
       <Share2 className="h-4 w-4" />
       Share {collectionLabel} Divrei Torah
     </a>
   );
-
-
 
   return (
     <div className="min-h-screen bg-background">
@@ -369,71 +359,60 @@ function Index() {
         contentLive={!isFallback && !postShabbos && resources.length > 0}
         liveParshaLabel={displayedLabel}
       />
-      <div className="mx-auto max-w-5xl px-3 py-5 sm:px-4 sm:py-8 md:px-8 md:py-14 space-y-5 sm:space-y-8 md:space-y-10">
+      <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
         {/* Hero */}
         <section className="parchment-frame">
           <div className="parchment-panel text-center">
-            <h1 className="font-serif text-[2.25rem] leading-[1.05] sm:text-5xl md:text-6xl font-bold tracking-tight text-primary">
+            <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-accent-readable sm:text-xs">
+              Weekly Divrei Torah
+            </p>
+            <h1 className="mt-2 font-serif text-[2rem] leading-[1.08] sm:text-4xl md:text-5xl font-bold tracking-tight text-primary">
               {postShabbos ? "Last Shabbos's Divrei Torah" : "Free Divrei Torah for Your Shabbos Table"}
             </h1>
-            <p className="mt-4 sm:mt-6 font-serif text-lg sm:text-xl md:text-2xl text-primary max-w-2xl mx-auto leading-[1.35]">
-              <span className="inline-block align-baseline text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
-                {resources.length}
-              </span>{" "}
-              {postShabbos
-                ? `selections from ${displayedLabel} are still here to download.`
-                : `handpicked, print-ready selections for ${displayedLabel} — for children, families, and adults.`}
+            <p className="mx-auto mt-3 max-w-2xl font-serif text-base leading-relaxed text-primary sm:text-lg md:text-xl">
+              <span className="font-semibold">{resources.length} {resources.length === 1 ? "selection" : "selections"}</span>{" "}
+              {postShabbos ? `from ${displayedLabel}` : `for ${displayedLabel}`}
             </p>
-            {upcomingParsha && upcomingParsha !== displayedParshaKey && (
-              <div className="mt-3 flex justify-center">
-                <span className="inline-flex items-center gap-2 rounded-full border border-accent bg-accent/15 px-4 py-2 font-serif text-sm sm:text-base md:text-lg font-semibold text-primary shadow-sm">
-                  <span className="inline-block h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
-                  {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`}{" "}
-                  {postShabbos ? "updates Thursday." : "posts Thursday."}
+
+            <div className="mt-5 flex justify-center">
+              <a
+                href="#this-weeks-collection"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document
+                    .getElementById("this-weeks-collection")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
+              >
+                Browse {displayedLabel}
+              </a>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+              {upcomingParsha && upcomingParsha !== displayedParshaKey && (
+                <span>
+                  Next: {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`} {postShabbos ? "updates" : "posts"} Thursday
                 </span>
-              </div>
-            )}
-
-            <div className="mt-6 sm:mt-8 flex flex-col items-center gap-3 sm:gap-4">
-              <div className="flex w-full flex-col items-center justify-center gap-3 sm:gap-4 md:flex-row">
-                <a
-                  href="#this-weeks-collection"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    document
-                      .getElementById("this-weeks-collection")
-                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }}
-                  className="inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-3 font-serif font-semibold text-primary-foreground shadow-md transition-colors hover:bg-accent hover:text-accent-foreground md:w-auto"
-                >
-                  See {collectionLabel} {resources.length} Divrei Torah
-                </a>
-
-                <div className="flex w-full flex-col items-center gap-2 md:w-auto">
-                  <a
-                    href="#weekly-email-signup"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      document
-                        .getElementById("weekly-email-signup")
-                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }}
-                    className="inline-flex w-full items-center justify-center rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground md:w-auto"
-                  >
-                    Remind Me Weekly
-                  </a>
-                  <p className="font-serif text-base italic font-bold text-primary sm:text-lg md:hidden">
-                    One email every Thursday when the new collection posts.
-                  </p>
-                </div>
-              </div>
-              <p className="hidden font-serif text-lg italic font-bold text-primary text-center md:block">
-                One email every Thursday when the new collection posts.
-              </p>
+              )}
+              {upcomingParsha && upcomingParsha !== displayedParshaKey && (
+                <span aria-hidden className="text-accent/60">•</span>
+              )}
+              <a
+                href="#weekly-email-signup"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document
+                    .getElementById("weekly-email-signup")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="font-medium text-primary underline decoration-accent/50 underline-offset-4 transition-colors hover:text-accent"
+              >
+                Get the Thursday reminder
+              </a>
             </div>
           </div>
         </section>
-
 
         {featuredPicks.length > 0 && (
           <>
@@ -442,13 +421,13 @@ function Index() {
                 <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
                   This Week's Recommended Picks
                 </h2>
-                <div className="mt-6 grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
+                <div className="mt-5 grid gap-4 grid-cols-1 sm:grid-cols-2">
                   {featuredPicks.map(({ key, label, resource }) => {
                     const r = resource!;
                     return (
                       <article
                         key={key}
-                        className="h-full rounded-2xl border-2 border-accent bg-background/70 p-4 sm:p-5 flex flex-col"
+                        className="h-full rounded-xl border border-accent/50 bg-background/70 p-4 sm:p-5 flex flex-col"
                       >
                         <span className="self-start rounded-full bg-accent px-3 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-accent-foreground">
                           {label}
@@ -515,44 +494,39 @@ function Index() {
         )}
 
         {/* Resource collection */}
-        <section id="this-weeks-collection" className="parchment-frame scroll-mt-8">
-          <div className="parchment-panel">
-            <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold text-primary text-center">
+        <section id="this-weeks-collection" className="scroll-mt-8">
+          <div className="px-1 sm:px-2">
+            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
               {postShabbos ? "Still Available to Download" : "This Week's Collection"}
             </h2>
 
             {isFallback && resources.length > 0 && (
-              <div className="mt-4 rounded-xl border-2 border-accent/60 bg-accent/10 px-4 py-3 text-center">
-                <p className="font-serif italic text-sm sm:text-base text-primary">
+              <div className="mx-auto mt-3 max-w-2xl rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-center">
+                <p className="font-serif text-sm sm:text-base text-primary">
                   This week's collection for {currentLabel} is coming soon — enjoy last week's selections below.
                 </p>
               </div>
             )}
-            {!isFallback && resources.length > 0 && (
-              <p className="mt-2 text-center font-sans text-[0.65rem] sm:text-xs uppercase tracking-[0.2em] text-accent-readable">
-                New collections weekly
-              </p>
-            )}
             {resources.length > 0 && (
-              <p className="mt-2 text-center font-serif italic text-sm sm:text-base text-accent-readable">
-                {resources.length === 1 ? "Dvar" : "Divrei"} Torah{isFallback && fallbackParshaLabel ? ` · ${fallbackParshaLabel}` : ` ${collectionLabelLower}`}
+              <p className="mt-2 text-center text-sm text-muted-foreground sm:text-base">
+                {resources.length} {resources.length === 1 ? "selection" : "selections"} · {displayedLabel}
               </p>
             )}
 
             {!isFallback && quickPicks.length > 0 && (
-              <div className="mt-6 max-w-2xl mx-auto">
-                <p className="text-center font-sans text-[0.65rem] sm:text-xs uppercase tracking-[0.2em] text-accent-readable">
-                  Not sure where to start?
+              <div className="mt-4 max-w-2xl mx-auto">
+                <p className="text-center font-sans text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
+                  Start here
                 </p>
-                <div className={`mt-3 grid gap-3 ${quickPicks.length === 1 ? "grid-cols-1" : quickPicks.length === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-3"}`}>
+                <div className={`mt-2 grid gap-2.5 ${quickPicks.length === 1 ? "grid-cols-1" : quickPicks.length === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-3"}`}>
                   {quickPicks.map(({ label, resource }) => (
                     <Link
                       key={label}
                       to="/view/$id"
                       params={{ id: resource.id }}
-                      className="rounded-xl border border-accent/30 bg-card/40 p-4 text-center transition-colors hover:border-accent/60 hover:bg-card/60"
+                      className="rounded-xl border border-accent/25 bg-card/30 p-3 text-center transition-colors hover:border-accent/60 hover:bg-card/50"
                     >
-                      <p className="font-sans text-[0.65rem] uppercase tracking-[0.15em] text-accent-readable">
+                      <p className="font-sans text-[0.62rem] uppercase tracking-[0.14em] text-accent-readable">
                         {label}
                       </p>
                       <p className="mt-1 font-serif text-base font-bold text-primary leading-snug">
@@ -561,20 +535,16 @@ function Index() {
                     </Link>
                   ))}
                 </div>
-                <p className="mt-3 text-center text-xs sm:text-sm text-muted-foreground">
-                  or browse all {resources.length} below ↓
-                </p>
               </div>
             )}
 
-
             {resources.length === 0 ? (
-              <p className="mt-8 text-center text-muted-foreground max-w-md mx-auto">
+              <p className="mt-6 text-center text-muted-foreground max-w-md mx-auto">
                 New Divrei Torah for {currentLabel} go up Thursday. Check back soon!
               </p>
             ) : (
               <>
-                <div className="mt-5 sm:mt-6 space-y-4 sticky top-14 z-30 -mx-4 px-4 py-3 bg-background/95 backdrop-blur border-b border-accent/20 sm:static sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0">
+                <div className="mt-5 space-y-3 sticky top-14 z-30 -mx-3 px-3 py-3 bg-background/95 backdrop-blur border-b border-accent/20 sm:static sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0">
                   {(audienceFilter !== "All" || lengthFilter !== "All" || contentTypeFilter !== "All") && (
                     <div className="flex justify-end">
                       <button
@@ -584,7 +554,7 @@ function Index() {
                           setLengthFilter("All");
                           setContentTypeFilter("All");
                         }}
-                        className="text-xs font-serif italic text-accent-readable hover:text-primary hover:underline transition-colors"
+                        className="text-xs font-serif text-accent-readable hover:text-primary hover:underline transition-colors"
                       >
                         Clear filters
                       </button>
@@ -594,7 +564,7 @@ function Index() {
                     <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       By audience
                     </span>
-                    <div className="mt-2 flex flex-wrap justify-start gap-2">
+                    <div className="mt-1.5 flex flex-wrap justify-start gap-2">
                       {(["All", "Children", "Families", "Adults"] as const)
                         .map((audience) => ({
                           audience,
@@ -606,31 +576,22 @@ function Index() {
                                 ).length,
                         }))
                         .filter(({ audience, count }) => audience === "All" || count > 0)
-                        .map(({ audience, count }) => {
+                        .map(({ audience }) => {
                           const active = audienceFilter === audience;
                           return (
                             <button
                               key={audience}
                               type="button"
                               aria-pressed={active}
-                              aria-label={`Filter by audience: ${audienceLabel(audience)}, ${count} ${count === 1 ? "publication" : "publications"}`}
+                              aria-label={`Filter by audience: ${audienceLabel(audience)}`}
                               onClick={() => setAudienceFilter(active ? "All" : audience)}
-                              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
+                              className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                 active
                                   ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                                  : "border-accent/60 bg-background/70 text-primary hover:border-accent hover:bg-accent/15 hover:shadow-sm active:bg-accent/20 active:border-accent"
+                                  : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
                               }`}
                             >
                               {audienceLabel(audience)}
-                              <span
-                                className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
-                                  active
-                                    ? "bg-accent-foreground/20 text-accent-foreground"
-                                    : "bg-accent/15 text-accent"
-                                }`}
-                              >
-                                {count}
-                              </span>
                             </button>
                           );
                         })}
@@ -641,7 +602,7 @@ function Index() {
                     <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       By length
                     </span>
-                    <div className="mt-2 flex flex-wrap justify-start gap-2">
+                    <div className="mt-1.5 flex flex-wrap justify-start gap-2">
                       {(() => {
                         const shortCount = lengthScoped.filter(
                           (r) => typeof r.page_count === "number" && r.page_count < 5,
@@ -661,24 +622,15 @@ function Index() {
                               key={o.key}
                               type="button"
                               aria-pressed={active}
-                              aria-label={`Filter by length: ${o.label}, ${o.count} ${o.count === 1 ? "publication" : "publications"}`}
+                              aria-label={`Filter by length: ${o.label}`}
                               onClick={() => setLengthFilter(active ? "All" : o.key)}
-                              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
+                              className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                 active
                                   ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                                  : "border-accent/60 bg-background/70 text-primary hover:border-accent hover:bg-accent/15 hover:shadow-sm active:bg-accent/20 active:border-accent"
+                                  : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
                               }`}
                             >
                               {o.label}
-                              <span
-                                className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
-                                  active
-                                    ? "bg-accent-foreground/20 text-accent-foreground"
-                                    : "bg-accent/15 text-accent"
-                                }`}
-                              >
-                                {o.count}
-                              </span>
                             </button>
                           );
                         });
@@ -691,7 +643,7 @@ function Index() {
                       <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         By content type
                       </span>
-                      <div className="mt-2 flex flex-wrap justify-start gap-2">
+                      <div className="mt-1.5 flex flex-wrap justify-start gap-2">
                         {[
                           { key: "All", label: "All", count: contentTypeScoped.length },
                           ...contentTypeOptions.map((t) => ({
@@ -708,24 +660,15 @@ function Index() {
                                 key={o.key}
                                 type="button"
                                 aria-pressed={active}
-                                aria-label={`Filter by content type: ${o.label}, ${o.count} ${o.count === 1 ? "publication" : "publications"}`}
+                                aria-label={`Filter by content type: ${o.label}`}
                                 onClick={() => setContentTypeFilter(active ? "All" : o.key)}
-                                className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
+                                className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                   active
                                     ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                                    : "border-accent/60 bg-background/70 text-primary hover:border-accent hover:bg-accent/15 hover:shadow-sm active:bg-accent/20 active:border-accent"
+                                    : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
                                 }`}
                               >
                                 {o.label}
-                                <span
-                                  className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
-                                    active
-                                      ? "bg-accent-foreground/20 text-accent-foreground"
-                                      : "bg-accent/15 text-accent"
-                                  }`}
-                                >
-                                  {o.count}
-                                </span>
                               </button>
                             );
                           })}
@@ -734,19 +677,15 @@ function Index() {
                   )}
                 </div>
 
-
-
-
-                <div className="mt-6 sm:mt-8 grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2">
+                <div className="mt-5 sm:mt-6 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                   {filteredResources.map((r, i) => (
                     <>
                       <article
                         key={r.id}
-                        className="h-full rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent hover:shadow-md transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
+                        className="h-full rounded-xl border border-accent/35 bg-background/55 p-4 sm:p-5 hover:border-accent/70 hover:shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
                       >
                         <div className="flex flex-1 items-start gap-3">
-
-                          <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-accent/15 text-primary shrink-0">
+                          <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-accent/12 text-primary shrink-0">
                             <FileText className="h-5 w-5" />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -786,7 +725,6 @@ function Index() {
                                 {[
                                   audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience,
                                   formatTypeLabel(r.format_type),
-
                                   typeof r.page_count === "number"
                                     ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
                                     : null,
@@ -826,7 +764,7 @@ function Index() {
                         </div>
                       </article>
                       {i === (filteredResources.length > 1 ? 1 : 0) && (
-                        <div key="share-prompt" className="col-span-1 sm:col-span-2 flex justify-center py-3">
+                        <div key="share-prompt" className="col-span-1 sm:col-span-2 flex justify-center py-2">
                           <ShareButton />
                         </div>
                       )}
@@ -841,7 +779,7 @@ function Index() {
                 )}
               </>
             )}
-            <p className="mt-8 mx-auto max-w-2xl px-2 text-center text-xs sm:text-sm text-muted-foreground/80 leading-relaxed">
+            <p className="mt-7 mx-auto max-w-2xl px-2 text-center text-xs sm:text-sm text-muted-foreground/80 leading-relaxed">
               Torah For The Table is a 501(c)(3) nonprofit organization providing free, carefully
               selected Torah resources for children, families, and adults. Each week, we make
               meaningful Divrei Torah, Parsha questions, and original educational content easy to
@@ -858,9 +796,7 @@ function Index() {
         {/* Email signup */}
         <WeeklyEmailSignup sourceId="homepage" />
 
-
         <div className="gold-divider" aria-hidden><span className="gold-divider-dot" /></div>
-
 
         {/* Memorial */}
         <section className="parchment-frame max-w-2xl mx-auto">
