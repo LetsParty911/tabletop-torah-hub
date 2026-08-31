@@ -367,11 +367,11 @@ function Index() {
               Weekly Divrei Torah
             </p>
             <h1 className="mt-2 font-serif text-[2rem] leading-[1.08] sm:text-4xl md:text-5xl font-bold tracking-tight text-primary">
-              {postShabbos ? "Last Shabbos's Divrei Torah" : "Free Divrei Torah for Your Shabbos Table"}
+              {postShabbos ? `Divrei Torah for ${displayedLabel}` : "Free Divrei Torah for Your Shabbos Table"}
             </h1>
             <p className="mx-auto mt-3 max-w-2xl font-serif text-base leading-relaxed text-primary sm:text-lg md:text-xl">
               <span className="font-semibold">{resources.length} {resources.length === 1 ? "selection" : "selections"}</span>{" "}
-              {postShabbos ? `from ${displayedLabel}` : `for ${displayedLabel}`}
+              {postShabbos ? "still available to download" : `for ${displayedLabel}`}
             </p>
 
             <div className="mt-5 flex justify-center">
@@ -394,9 +394,6 @@ function Index() {
                 <span>
                   Next: {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`} {postShabbos ? "updates" : "posts"} Thursday
                 </span>
-              )}
-              {upcomingParsha && upcomingParsha !== displayedParshaKey && (
-                <span aria-hidden className="text-accent/60">•</span>
               )}
               <a
                 href="#weekly-email-signup"
