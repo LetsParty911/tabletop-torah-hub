@@ -418,7 +418,7 @@ function Index() {
                         .getElementById("weekly-email-signup")
                         ?.scrollIntoView({ behavior: "smooth", block: "start" });
                     }}
-                    className="inline-flex w-full items-center justify-center rounded-full bg-accent px-6 py-3 font-serif font-semibold text-accent-foreground shadow-md transition-colors hover:bg-primary hover:text-primary-foreground md:w-auto"
+                    className="inline-flex w-full items-center justify-center rounded-full border-2 border-accent bg-transparent px-6 py-3 font-serif font-semibold text-primary shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground md:w-auto"
                   >
                     Remind Me Weekly
                   </a>
@@ -518,7 +518,7 @@ function Index() {
         <section id="this-weeks-collection" className="parchment-frame scroll-mt-8">
           <div className="parchment-panel">
             <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold text-primary text-center">
-              {collectionLabel} Collection
+              {postShabbos ? "Still Available to Download" : "This Week's Collection"}
             </h2>
 
             {isFallback && resources.length > 0 && (
@@ -774,6 +774,11 @@ function Index() {
                             {r.subtitle && (
                               <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                                 {standardizeCopy(r.subtitle)}
+                              </p>
+                            )}
+                            {!r.subtitle && r.description && (
+                              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                                {standardizeCopy(r.description)}
                               </p>
                             )}
                             {(r.audience || r.format_type || typeof r.page_count === "number") && (
