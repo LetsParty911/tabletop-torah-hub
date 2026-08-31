@@ -1,5 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Menu, X } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
@@ -149,12 +150,6 @@ function NotFoundComponent() {
           >
             Contact
           </Link>
-          <Link
-            to="/contact"
-            className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-          >
-            Contact
-          </Link>
         </div>
       </div>
     </div>
@@ -254,40 +249,82 @@ function PageViewTracker() {
 function SiteNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   if (isAdmin) return null;
 
   const linkCls =
-    "font-serif whitespace-nowrap text-[11px] sm:text-base text-primary/80 hover:text-primary hover:underline transition-colors duration-150";
+    "font-serif whitespace-nowrap text-base text-primary/80 hover:text-primary hover:underline transition-colors duration-150";
   const activeCls = "text-primary font-semibold";
-
+  const mobileLinkCls =
+    "block rounded-lg px-3 py-2.5 font-serif text-base text-primary/90 transition-colors hover:bg-accent/10 hover:text-primary";
 
   return (
     <nav
       aria-label="Primary"
-      className="sticky top-0 z-40 border-b border-accent/30 bg-background/90 backdrop-blur-sm"
+      className="sticky top-0 z-40 border-b border-accent/20 bg-background/95 backdrop-blur-sm"
     >
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
-        <Link to="/" aria-label="Torah for the Table — home" className="shrink-0">
-          <SiteLogoHorizontal />
-        </Link>
-        <div className="flex min-w-0 items-center gap-2.5 sm:gap-6 overflow-x-auto">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+        <div className="flex items-center justify-between gap-3 py-1.5 md:py-2.5">
+          <Link to="/" aria-label="Torah for the Table — home" className="shrink-0">
+            <SiteLogoHorizontal className="[&_img]:h-12 md:[&_img]:h-16" />
+          </Link>
 
-          <Link to="/" activeOptions={{ exact: true }} className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
-            Home
-          </Link>
-          <Link to="/archive" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
-            Archive
-          </Link>
-          <Link to="/short-vorts" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
-            Short Vorts
-          </Link>
-          <Link to="/resources" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
-            Originals
-          </Link>
-          <Link to="/about" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
-            About
-          </Link>
+          <div className="hidden items-center gap-6 md:flex">
+            <Link to="/" activeOptions={{ exact: true }} className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
+              Home
+            </Link>
+            <Link to="/archive" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
+              Archive
+            </Link>
+            <Link to="/short-vorts" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
+              Short Vorts
+            </Link>
+            <Link to="/resources" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
+              Originals
+            </Link>
+            <Link to="/about" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
+              About
+            </Link>
+          </div>
+
+          <button
+            type="button"
+            aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-navigation"
+            onClick={() => setMobileOpen((open) => !open)}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-accent/35 bg-background text-primary transition-colors hover:bg-accent/10 md:hidden"
+          >
+            {mobileOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
+          </button>
         </div>
+
+        {mobileOpen && (
+          <div id="mobile-navigation" className="border-t border-accent/20 pb-3 pt-2 md:hidden">
+            <div className="grid gap-1">
+              <Link to="/" activeOptions={{ exact: true }} className={mobileLinkCls} activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}>
+                Home
+              </Link>
+              <Link to="/archive" className={mobileLinkCls} activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}>
+                Archive
+              </Link>
+              <Link to="/short-vorts" className={mobileLinkCls} activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}>
+                Short Vorts
+              </Link>
+              <Link to="/resources" className={mobileLinkCls} activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}>
+                Originals
+              </Link>
+              <Link to="/about" className={mobileLinkCls} activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}>
+                About
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );

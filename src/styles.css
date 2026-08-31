@@ -53,7 +53,7 @@
 }
 
 :root {
-  --radius: 1.25rem;
+  --radius: 1rem;
   /* Refined palette — warm parchment, deep navy, antique gold */
   --background: oklch(0.974 0.018 85);          /* #FDF9F3 warm parchment */
   --foreground: oklch(0.255 0.012 60);          /* #2D2A26 warm charcoal */
@@ -113,7 +113,7 @@
   --muted: oklch(0.279 0.041 260.031);
   --muted-foreground: oklch(0.704 0.04 256.788);
   --accent: oklch(0.279 0.041 260.031);
---accent-foreground: oklch(0.984 0.003 247.858);
+  --accent-foreground: oklch(0.984 0.003 247.858);
   --accent-readable: oklch(0.75 0.06 80);       /* lighter gold, readable on dark surfaces */
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.984 0.003 247.858);
@@ -128,7 +128,7 @@
   --sidebar: oklch(0.208 0.042 265.755);
   --sidebar-foreground: oklch(0.984 0.003 247.858);
   --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.279 0.041 260.031);
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
@@ -159,20 +159,20 @@
   .parchment-frame {
     background-color: transparent;
     padding: 0;
-    border-radius: calc(var(--radius) + 0.5rem);
+    border-radius: calc(var(--radius) + 0.35rem);
   }
   .parchment-panel {
     background-color: var(--panel);
-    border: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
+    border: 1px solid color-mix(in oklab, var(--accent) 25%, transparent);
     border-radius: var(--radius);
-    padding: 1.5rem;
-    box-shadow: 0 4px 20px -8px oklch(0.31 0.08 255 / 0.12);
+    padding: 1.25rem;
+    box-shadow: 0 3px 14px -9px oklch(0.31 0.08 255 / 0.12);
   }
   @media (min-width: 640px) {
-    .parchment-panel { padding: 2rem; }
+    .parchment-panel { padding: 1.75rem; }
   }
   @media (min-width: 768px) {
-    .parchment-panel { padding: 3rem; }
+    .parchment-panel { padding: 2.5rem; }
   }
 
   /* Antique-gold decorative divider between sections */
@@ -181,7 +181,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    margin: 0.5rem auto;
+    margin: 0.25rem auto;
     max-width: 12rem;
   }
   .gold-divider::before,
