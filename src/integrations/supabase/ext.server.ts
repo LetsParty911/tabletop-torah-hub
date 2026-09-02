@@ -3,11 +3,13 @@
 // Falls back to Cloud env vars when EXT_* vars are absent.
 import { createClient } from "@supabase/supabase-js";
 
-const EXT_URL = process.env.EXT_SUPABASE_URL || process.env.SUPABASE_URL;
-const EXT_SERVICE_KEY =
-  process.env.EXT_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-const EXT_PUBLISHABLE_KEY =
-  process.env.EXT_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+// Read env lazily: in the Worker/dev runtime process.env is populated at
+// request time, so module-scope reads can capture undefined.
+const extUrl = () => process.env["EXT_SUPABASE_URL"] || process.env["SUPABASE_URL"];
+const extServiceKey = () =>
+  process.env["EXT_SUPABASE_SERVICE_ROLE_KEY"] || process.env["SUPABASE_SERVICE_ROLE_KEY"];
+const extPublishableKey = () =>
+  process.env["EXT_SUPABASE_PUBLISHABLE_KEY"] || process.env["SUPABASE_PUBLISHABLE_KEY"];
 
 function assertEnv(name: string, value: string | undefined): string {
   if (!value) throw new Error(`Missing env var: ${name}`);
@@ -26,8 +28,8 @@ const noStoreFetch: typeof fetch = (input, init) => {
 // Typed as `any` intentionally so callers work without generated types
 // for the external project's schema.
 export function getSupabaseAdmin(): any {
-  const url = assertEnv("EXT_SUPABASE_URL", EXT_URL);
-  const key = assertEnv("EXT_SUPABASE_SERVICE_ROLE_KEY", EXT_SERVICE_KEY);
+  const url = assertEnv("EXT_SUPABASE_URL", extUrl());
+  const key = assertEnv("EXT_SUPABASE_SERVICE_ROLE_KEY", extServiceKey());
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
     global: { fetch: noStoreFetch },
@@ -36,8 +38,8 @@ export function getSupabaseAdmin(): any {
 
 // Per-user client using the request's access token — RLS enforced as that user.
 export function getSupabaseForUser(accessToken: string): any {
-  const url = assertEnv("EXT_SUPABASE_URL", EXT_URL);
-  const key = assertEnv("EXT_SUPABASE_PUBLISHABLE_KEY", EXT_PUBLISHABLE_KEY);
+  const url = assertEnv("EXT_SUPABASE_URL", extUrl());
+  const key = assertEnv("EXT_SUPABASE_PUBLISHABLE_KEY", extPublishableKey());
   return createClient(url, key, {
     global: { headers: { Authorization: `Bearer ${accessToken}` }, fetch: noStoreFetch },
     auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
