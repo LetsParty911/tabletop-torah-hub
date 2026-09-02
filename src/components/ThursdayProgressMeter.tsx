@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { getThursdayProgress } from "@/integrations/supabase/api.functions";
 
-const STEPS = [25, 50, 75, 95, 100] as const;
+const STEPS = [0, 25, 50, 75, 95, 100] as const;
 type FillStep = (typeof STEPS)[number];
+// The bar always shows 5 segments (one per non-zero threshold); 0% just
+// means none of them are lit yet.
+const SEGMENT_THRESHOLDS = [25, 50, 75, 95, 100] as const;
 
 function formatEta(iso: string): string {
   const d = new Date(iso);
@@ -41,7 +44,7 @@ export function ThursdayProgressMeter() {
 
   if (fillStep === null) return null;
 
-  const activeIndex = STEPS.indexOf(fillStep);
+  const activeCount = SEGMENT_THRESHOLDS.filter((t) => t <= fillStep).length;
 
   return (
     <div
@@ -57,12 +60,12 @@ export function ThursdayProgressMeter() {
       </div>
 
       <div className="mt-2 flex gap-1">
-        {STEPS.map((step, i) => (
+        {SEGMENT_THRESHOLDS.map((threshold, i) => (
           <div
-            key={step}
+            key={threshold}
             className={
               "h-2.5 flex-1 rounded-sm transition-colors duration-300 " +
-              (i <= activeIndex ? "bg-primary" : "bg-accent/15")
+              (i < activeCount ? "bg-primary" : "bg-accent/15")
             }
           />
         ))}

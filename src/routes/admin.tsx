@@ -189,7 +189,7 @@ function AdminPage() {
   const [annText, setAnnText] = useState("");
   const [annLinkUrl, setAnnLinkUrl] = useState("");
   const [annLinkLabel, setAnnLinkLabel] = useState("");
-  const [progressFillStep, setProgressFillStep] = useState<25 | 50 | 75 | 95 | 100>(25);
+  const [progressFillStep, setProgressFillStep] = useState<0 | 25 | 50 | 75 | 95 | 100>(25);
   const [progressEtaLocal, setProgressEtaLocal] = useState("");
   const [wnEnabled, setWnEnabled] = useState(false);
   const [wnText, setWnText] = useState("");

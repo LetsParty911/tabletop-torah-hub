@@ -1,4 +1,4 @@
-const STEPS = [25, 50, 75, 95, 100] as const;
+const STEPS = [0, 25, 50, 75, 95, 100] as const;
 type FillStep = (typeof STEPS)[number];
 
 type ThursdayProgressFormProps = {

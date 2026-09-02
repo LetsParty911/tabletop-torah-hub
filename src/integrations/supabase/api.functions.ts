@@ -1959,7 +1959,7 @@ export const adminSetAnnouncementBanner = createServerFn({ method: "POST" })
 
 // ---------- Public: read Thursday progress meter ----------
 export type ThursdayProgress = {
-  fillStep: 25 | 50 | 75 | 95 | 100;
+  fillStep: 0 | 25 | 50 | 75 | 95 | 100;
   eta: string | null;
 };
 
@@ -1975,8 +1975,8 @@ export const getThursdayProgress = createServerFn({ method: "GET" }).handler(
       return { fillStep: 25, eta: null };
     }
     const rawStep = Number(data.progress_fill_step);
-    const fillStep = ([25, 50, 75, 95, 100] as const).includes(rawStep as any)
-      ? (rawStep as 25 | 50 | 75 | 95 | 100)
+    const fillStep = ([0, 25, 50, 75, 95, 100] as const).includes(rawStep as any)
+      ? (rawStep as 0 | 25 | 50 | 75 | 95 | 100)
       : 25;
     return {
       fillStep,
@@ -1989,13 +1989,14 @@ export const getThursdayProgress = createServerFn({ method: "GET" }).handler(
 export const adminSetThursdayProgress = createServerFn({ method: "POST" })
   .inputValidator((input: {
     accessToken: string;
-    fillStep: 25 | 50 | 75 | 95 | 100;
+    fillStep: 0 | 25 | 50 | 75 | 95 | 100;
     eta: string | null;
   }) =>
     z
       .object({
         accessToken: z.string().min(10),
         fillStep: z.union([
+          z.literal(0),
           z.literal(25),
           z.literal(50),
           z.literal(75),
