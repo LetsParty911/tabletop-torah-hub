@@ -6,6 +6,7 @@ import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { WhatsNewBanner } from "@/components/WhatsNewBanner";
 import { WhatsNewPopup } from "@/components/WhatsNewPopup";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
+import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { SITE_URL } from "@/lib/site-url";
@@ -410,6 +411,8 @@ function Index() {
             </div>
           </div>
         </section>
+
+        <ThursdayProgressMeter />
 
         {featuredPicks.length > 0 && (
           <>

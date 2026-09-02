@@ -1957,6 +1957,71 @@ export const adminSetAnnouncementBanner = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- Public: read Thursday progress meter ----------
+export type ThursdayProgress = {
+  fillStep: 25 | 50 | 75 | 95 | 100;
+  eta: string | null;
+};
+
+export const getThursdayProgress = createServerFn({ method: "GET" }).handler(
+  async (): Promise<ThursdayProgress> => {
+    const admin = getSupabaseAdmin();
+    const { data, error } = await admin
+      .from("settings")
+      .select("progress_fill_step, progress_eta")
+      .eq("id", 1)
+      .maybeSingle();
+    if (error || !data) {
+      return { fillStep: 25, eta: null };
+    }
+    const rawStep = Number(data.progress_fill_step);
+    const fillStep = ([25, 50, 75, 95, 100] as const).includes(rawStep as any)
+      ? (rawStep as 25 | 50 | 75 | 95 | 100)
+      : 25;
+    return {
+      fillStep,
+      eta: (data.progress_eta ?? null) as string | null,
+    };
+  },
+);
+
+// ---------- Admin: update Thursday progress meter ----------
+export const adminSetThursdayProgress = createServerFn({ method: "POST" })
+  .inputValidator((input: {
+    accessToken: string;
+    fillStep: 25 | 50 | 75 | 95 | 100;
+    eta: string | null;
+  }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        fillStep: z.union([
+          z.literal(25),
+          z.literal(50),
+          z.literal(75),
+          z.literal(95),
+          z.literal(100),
+        ]),
+        eta: z.string().trim().datetime({ offset: true }).nullable()
+          .or(z.literal("").transform(() => null)),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const { error } = await admin
+      .from("settings")
+      .update({
+        progress_fill_step: data.fillStep,
+        progress_eta: data.eta,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", 1);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ---------- Public: read "What's New" banner ----------
 export type WhatsNewBanner = {
   enabled: boolean;

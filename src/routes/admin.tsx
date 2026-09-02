@@ -8,6 +8,7 @@ import SimpleBannerForm from "@/components/admin/SimpleBannerForm";
 import WhatsNewPopupForm from "@/components/admin/WhatsNewPopupForm";
 import WeeklyEmailSection from "@/components/admin/WeeklyEmailSection";
 import ParshaOverrideForm from "@/components/admin/ParshaOverrideForm";
+import ThursdayProgressForm from "@/components/admin/ThursdayProgressForm";
 import WeeklyChecklistSection from "@/components/admin/WeeklyChecklistSection";
 import ManageChecklistSourcesSection from "@/components/admin/ManageChecklistSourcesSection";
 import PdfListSection from "@/components/admin/PdfListSection";
@@ -39,6 +40,8 @@ import {
   adminDeleteContactMessage,
   getAnnouncementBanner,
   adminSetAnnouncementBanner,
+  getThursdayProgress,
+  adminSetThursdayProgress,
   getWhatsNewBanner,
   adminSetWhatsNewBanner,
   getWhatsNewPopup,
@@ -163,6 +166,16 @@ const normalizeParshaSelection = (value: string | null | undefined) => {
 // Checklist matching lives in @/lib/publication-identity: it prefers the
 // publication_id foreign key and only falls back to normalized titles.
 
+// Converts a stored ISO timestamp into the "YYYY-MM-DDTHH:mm" shape a
+// <input type="datetime-local"> expects, in the browser's local time.
+function isoToDatetimeLocal(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours(),
+  )}:${pad(d.getMinutes())}`;
+}
 
 function AdminPage() {
   const { session, loading, signInWithGoogle, signOut } = useAuth();
@@ -176,6 +189,8 @@ function AdminPage() {
   const [annText, setAnnText] = useState("");
   const [annLinkUrl, setAnnLinkUrl] = useState("");
   const [annLinkLabel, setAnnLinkLabel] = useState("");
+  const [progressFillStep, setProgressFillStep] = useState<25 | 50 | 75 | 95 | 100>(25);
+  const [progressEtaLocal, setProgressEtaLocal] = useState("");
   const [wnEnabled, setWnEnabled] = useState(false);
   const [wnText, setWnText] = useState("");
   const [wnLinkUrl, setWnLinkUrl] = useState("");
@@ -724,7 +739,7 @@ function AdminPage() {
 
   const refresh = async () => {
     if (!accessToken || !isAdmin) return;
-    const [p, s, o, cs, cm, ann, wn, wnp] = await Promise.all([
+    const [p, s, o, cs, cm, ann, wn, wnp, tp] = await Promise.all([
       adminListPdfs({ data: { accessToken } }),
       adminListSubscribers({ data: { accessToken } }),
       getParshaOverride(),
@@ -736,6 +751,7 @@ function AdminPage() {
       getAnnouncementBanner(),
       getWhatsNewBanner(),
       getWhatsNewPopup(),
+      getThursdayProgress(),
     ]);
     setPdfs(p.pdfs as PdfRow[]);
     setSubscribers(s.subscribers as Subscriber[]);
@@ -745,6 +761,8 @@ function AdminPage() {
     setAnnText(ann.text ?? "");
     setAnnLinkUrl(ann.linkUrl ?? "");
     setAnnLinkLabel(ann.linkLabel ?? "");
+    setProgressFillStep(tp.fillStep);
+    setProgressEtaLocal(tp.eta ? isoToDatetimeLocal(tp.eta) : "");
     setWnEnabled(wn.enabled);
     setWnText(wn.text ?? "");
     setWnLinkUrl(wn.linkUrl ?? "");
@@ -1155,6 +1173,30 @@ function AdminPage() {
     }
   };
 
+  const handleSaveThursdayProgress = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accessToken) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      await adminSetThursdayProgress({
+        data: {
+          accessToken,
+          fillStep: progressFillStep,
+          eta: progressEtaLocal ? new Date(progressEtaLocal).toISOString() : null,
+        },
+      });
+      setMsg({ kind: "success", text: "Thursday progress saved." });
+    } catch (err) {
+      setMsg({
+        kind: "error",
+        text: `Save failed: ${err instanceof Error ? err.message : "unknown error"}`,
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleSaveWhatsNew = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!accessToken) return;
@@ -1341,6 +1383,18 @@ function AdminPage() {
             <TabsTrigger value="subscribers-analytics">Subscribers &amp; Analytics</TabsTrigger>
           </TabsList>
           <TabsContent value="this-week" className="space-y-8 mt-8">
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <ThursdayProgressForm
+              fillStep={progressFillStep}
+              onFillStepChange={setProgressFillStep}
+              etaLocal={progressEtaLocal}
+              onEtaLocalChange={setProgressEtaLocal}
+              onSubmit={handleSaveThursdayProgress}
+              busy={busy}
+            />
+          </div>
+        </section>
         <section className="parchment-frame">
           <div className="parchment-panel">
             <WeeklyChecklistSection
