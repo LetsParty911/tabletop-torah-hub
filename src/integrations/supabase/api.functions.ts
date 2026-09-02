@@ -1265,7 +1265,14 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
 
     const safeName = data.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
     const path = `${data.parshaKey.replace(/[^a-zA-Z0-9._-]/g, "_")}/${Date.now()}_${safeName}`;
-    const buf = await optimizePdfForStorage(Buffer.from(data.fileBase64, "base64"));
+    // Store the raw upload immediately — recompression is CPU-heavy (MozJPEG)
+    // and running it inline here risked exceeding the Worker's per-request
+    // CPU time limit on larger/image-heavy PDFs, which killed the connection
+    // outright ("Failed to fetch") rather than failing gracefully. The client
+    // triggers adminRecompressExistingPdf as a best-effort follow-up call
+    // right after upload succeeds, so compression still happens automatically
+    // but no longer blocks (or risks) the upload response.
+    const buf = Buffer.from(data.fileBase64, "base64");
     const { error: upErr } = await admin.storage
       .from("pdfs")
       .upload(path, buf, { contentType: "application/pdf", upsert: false });
@@ -1471,7 +1478,9 @@ export const adminReplacePdfFile = createServerFn({ method: "POST" })
     if (!row) throw new Error("PDF row not found");
     const safeName = data.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
     const path = `${row.parsha_key.replace(/[^a-zA-Z0-9._-]/g, "_")}/${Date.now()}_${safeName}`;
-    const buf = await optimizePdfForStorage(Buffer.from(data.fileBase64, "base64"));
+    // See adminUploadPdf: recompression is deferred to a follow-up
+    // adminRecompressExistingPdf call rather than run inline here.
+    const buf = Buffer.from(data.fileBase64, "base64");
     const { error: upErr } = await admin.storage
       .from("pdfs")
       .upload(path, buf, { contentType: "application/pdf", upsert: false });

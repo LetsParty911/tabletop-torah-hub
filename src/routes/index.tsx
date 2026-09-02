@@ -5,7 +5,6 @@ import { FileText, Share2 } from "lucide-react";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { WhatsNewBanner } from "@/components/WhatsNewBanner";
 import { WhatsNewPopup } from "@/components/WhatsNewPopup";
-import { UpdateCountdown } from "@/components/UpdateCountdown";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
@@ -356,10 +355,6 @@ function Index() {
       <WhatsNewPopup />
       <WhatsNewBanner />
       <AnnouncementBanner />
-      <UpdateCountdown
-        contentLive={!isFallback && !postShabbos && resources.length > 0}
-        liveParshaLabel={displayedLabel}
-      />
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
         {/* Hero */}
         <section className="parchment-frame">

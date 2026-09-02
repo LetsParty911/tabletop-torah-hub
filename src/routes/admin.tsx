@@ -924,6 +924,13 @@ function AdminPage() {
         } catch (e) {
           console.error("thumbnail generation failed", e);
         }
+        // Best-effort, fire-and-forget: image recompression is CPU-heavy and
+        // deliberately not run inline during upload (see adminUploadPdf). Not
+        // awaited, so a slow or failed pass never blocks or fails the upload
+        // itself — it just leaves the original file in place.
+        adminRecompressExistingPdf({ data: { accessToken, id: uploaded.id } }).catch((e) => {
+          console.error("post-upload recompression failed", e);
+        });
       }
       setTitle("");
       setPublicationId("");
@@ -1053,6 +1060,10 @@ function AdminPage() {
       const fileBase64 = btoa(bin);
       await adminReplacePdfFile({
         data: { accessToken, id, fileName: replaceFile.name, fileBase64 },
+      });
+      // Best-effort, fire-and-forget — see handleUpload for why this isn't inline.
+      adminRecompressExistingPdf({ data: { accessToken, id } }).catch((e) => {
+        console.error("post-replace recompression failed", e);
       });
       // Regenerate the preview so the card never shows the previous sheet.
       try {
