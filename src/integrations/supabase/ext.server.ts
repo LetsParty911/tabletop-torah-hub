@@ -28,8 +28,8 @@ const noStoreFetch: typeof fetch = (input, init) => {
 // Typed as `any` intentionally so callers work without generated types
 // for the external project's schema.
 export function getSupabaseAdmin(): any {
-  const url = assertEnv("EXT_SUPABASE_URL", EXT_URL);
-  const key = assertEnv("EXT_SUPABASE_SERVICE_ROLE_KEY", EXT_SERVICE_KEY);
+  const url = assertEnv("EXT_SUPABASE_URL", extUrl());
+  const key = assertEnv("EXT_SUPABASE_SERVICE_ROLE_KEY", extServiceKey());
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
     global: { fetch: noStoreFetch },
@@ -38,8 +38,8 @@ export function getSupabaseAdmin(): any {
 
 // Per-user client using the request's access token — RLS enforced as that user.
 export function getSupabaseForUser(accessToken: string): any {
-  const url = assertEnv("EXT_SUPABASE_URL", EXT_URL);
-  const key = assertEnv("EXT_SUPABASE_PUBLISHABLE_KEY", EXT_PUBLISHABLE_KEY);
+  const url = assertEnv("EXT_SUPABASE_URL", extUrl());
+  const key = assertEnv("EXT_SUPABASE_PUBLISHABLE_KEY", extPublishableKey());
   return createClient(url, key, {
     global: { headers: { Authorization: `Bearer ${accessToken}` }, fetch: noStoreFetch },
     auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
