@@ -14,7 +14,18 @@ function formatEta(iso: string): string {
   return `${dayLabel}, ${timeLabel}`;
 }
 
-export function ThursdayProgressMeter() {
+type HeadingValue = string | ((fillStep: FillStep) => string);
+type AriaValue = string | ((fillStep: FillStep) => string);
+
+type ThursdayProgressMeterProps = {
+  heading?: HeadingValue;
+  ariaLabel?: AriaValue;
+};
+
+export function ThursdayProgressMeter({
+  heading = "This Week's Upload Progress",
+  ariaLabel = (fillStep) => `This week's Divrei Torah upload progress: ${fillStep}% complete`,
+}: ThursdayProgressMeterProps) {
   const [fillStep, setFillStep] = useState<FillStep | null>(null);
   const [eta, setEta] = useState<string | null>(null);
 
@@ -46,15 +57,18 @@ export function ThursdayProgressMeter() {
 
   const activeCount = SEGMENT_THRESHOLDS.filter((t) => t <= fillStep).length;
 
+  const headingText = typeof heading === "function" ? heading(fillStep) : heading;
+  const ariaText = typeof ariaLabel === "function" ? ariaLabel(fillStep) : ariaLabel;
+
   return (
     <div
       className="mx-auto max-w-md rounded-lg border-2 border-accent/40 bg-card px-4 py-3"
       role="group"
-      aria-label={`This week's Divrei Torah upload progress: ${fillStep}% complete`}
+      aria-label={ariaText}
     >
       <div className="flex items-baseline justify-between">
         <span className="text-xs font-semibold uppercase tracking-wide text-primary">
-          This Week&apos;s Upload Progress
+          {headingText}
         </span>
         <span className="text-sm font-bold text-accent-readable">{fillStep}%</span>
       </div>
@@ -72,9 +86,7 @@ export function ThursdayProgressMeter() {
       </div>
 
       {showEta && eta && (
-        <p className="mt-2 text-xs text-muted-foreground">
-          Expected complete by {formatEta(eta)}
-        </p>
+        <p className="mt-2 text-xs text-muted-foreground">Expected complete by {formatEta(eta)}</p>
       )}
     </div>
   );
