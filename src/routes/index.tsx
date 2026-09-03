@@ -28,7 +28,6 @@ import { trackEvent } from "@/lib/analytics";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 
-
 type Resource = {
   id: string;
   title: string;
@@ -80,7 +79,15 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     if (o.override && o.isActive) {
       parshaKey = o.override;
       label = o.override.startsWith("Parshas") ? o.override : `Parshas ${o.override}`;
-      const knownYomTov = ["Rosh Hashanah", "Yom Kippur", "Sukkos", "Shemini Atzeres", "Simchas Torah", "Pesach", "Shavuos"];
+      const knownYomTov = [
+        "Rosh Hashanah",
+        "Yom Kippur",
+        "Sukkos",
+        "Shemini Atzeres",
+        "Simchas Torah",
+        "Pesach",
+        "Shavuos",
+      ];
       if (knownYomTov.includes(o.override)) label = o.override;
     }
   } catch {
@@ -118,7 +125,16 @@ async function loadCurrentWeek(): Promise<LoaderData> {
   const { count } = await subscriberCountPromise;
   if (count >= 25) subscriberCount = count;
 
-  return { label, parshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey, subscriberCount, readingDate };
+  return {
+    label,
+    parshaKey,
+    resources,
+    isFallback,
+    fallbackParshaLabel,
+    fallbackParshaKey,
+    subscriberCount,
+    readingDate,
+  };
 }
 
 export const Route = createFileRoute("/")({
@@ -139,7 +155,9 @@ export const Route = createFileRoute("/")({
   },
   notFoundComponent: () => (
     <div className="min-h-screen flex items-center justify-center">
-      <Link to="/" className="text-primary underline">Back to home</Link>
+      <Link to="/" className="text-primary underline">
+        Back to home
+      </Link>
     </div>
   ),
   head: ({ loaderData }) => {
@@ -151,16 +169,19 @@ export const Route = createFileRoute("/")({
         : (data?.label ?? "Parshas Hashavua");
     const count = data?.resources.length ?? 0;
 
-    const title = count > 0
-      ? `Print Divrei Torah for ${displayedLabel} — Torah for the Table`
-      : "Torah for the Table — Weekly Divrei Torah";
-    const description = count > 0
-      ? `${count} handpicked, print-ready ${count === 1 ? "Dvar" : "Divrei"} Torah for ${displayedLabel} — free downloads for children, families, and adults.`
-      : "A weekly collection of Divrei Torah for Shabbos and Yom Tov — thoughtfully gathered in one quiet, uncluttered place for the Shabbos table.";
+    const title =
+      count > 0
+        ? `Print Divrei Torah for ${displayedLabel} — Torah for the Table`
+        : "Torah for the Table — Weekly Divrei Torah";
+    const description =
+      count > 0
+        ? `${count} handpicked, print-ready ${count === 1 ? "Dvar" : "Divrei"} Torah for ${displayedLabel} — free downloads for children, families, and adults.`
+        : "A weekly collection of Divrei Torah for Shabbos and Yom Tov — thoughtfully gathered in one quiet, uncluttered place for the Shabbos table.";
     const url = "https://torahforthetable.com/";
-    const image = count > 0
-      ? `https://torahforthetable.com/og/image.png?parsha=${encodeURIComponent(displayedLabel)}&count=${count}`
-      : "https://torahforthetable.com/og-image.png";
+    const image =
+      count > 0
+        ? `https://torahforthetable.com/og/image.png?parsha=${encodeURIComponent(displayedLabel)}&count=${count}`
+        : "https://torahforthetable.com/og-image.png";
     return {
       meta: [
         { title },
@@ -220,8 +241,16 @@ const FEATURED_SLOTS = [
 ] as const;
 
 function Index() {
-  const { label: currentLabel, parshaKey: currentParshaKey, resources, isFallback, fallbackParshaLabel, fallbackParshaKey, subscriberCount, readingDate } =
-    Route.useLoaderData() as LoaderData;
+  const {
+    label: currentLabel,
+    parshaKey: currentParshaKey,
+    resources,
+    isFallback,
+    fallbackParshaLabel,
+    fallbackParshaKey,
+    subscriberCount,
+    readingDate,
+  } = Route.useLoaderData() as LoaderData;
 
   // Everything user-facing (hero copy, counts, share text) derives from the
   // collection actually displayed on the page, not the upcoming parsha.
@@ -244,7 +273,9 @@ function Index() {
 
   const collectionLabel = postShabbos ? "Last Shabbos's" : "This Week's";
 
-  const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
+  const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">(
+    "All",
+  );
   const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long">("All");
   const [contentTypeFilter, setContentTypeFilter] = useState<string>("All");
 
@@ -298,22 +329,12 @@ function Index() {
   const matchesContentType = (r: Resource, value = contentTypeFilter) =>
     value === "All" || resourceContentType(r) === value;
 
-  const audienceFiltered = sortedResources.filter(
-    (r) => matchesLength(r) && matchesContentType(r),
-  );
-  const lengthScoped = sortedResources.filter(
-    (r) => matchesAudience(r) && matchesContentType(r),
-  );
-  const contentTypeScoped = sortedResources.filter(
-    (r) => matchesAudience(r) && matchesLength(r),
-  );
+  const audienceFiltered = sortedResources.filter((r) => matchesLength(r) && matchesContentType(r));
+  const lengthScoped = sortedResources.filter((r) => matchesAudience(r) && matchesContentType(r));
+  const contentTypeScoped = sortedResources.filter((r) => matchesAudience(r) && matchesLength(r));
 
   const contentTypeOptions = Array.from(
-    new Set(
-      sortedResources
-        .map((r) => resourceContentType(r))
-        .filter((v): v is string => !!v),
-    ),
+    new Set(sortedResources.map((r) => resourceContentType(r)).filter((v): v is string => !!v)),
   ).sort((a, b) => a.localeCompare(b));
 
   const filteredResources = sortedResources.filter(
@@ -322,9 +343,7 @@ function Index() {
 
   const featuredPicks = FEATURED_SLOTS.map((slot) => ({
     ...slot,
-    resource: resources.find(
-      (r) => (r.featured_slot ?? "").trim().toLowerCase() === slot.key,
-    ),
+    resource: resources.find((r) => (r.featured_slot ?? "").trim().toLowerCase() === slot.key),
   })).filter((p) => !!p.resource);
 
   const pdfParams = (r: Resource) => ({
@@ -342,7 +361,12 @@ function Index() {
       href={whatsappHref}
       target="_blank"
       rel="noopener noreferrer"
-      onClick={() => trackEvent("share_whatsapp", { parsha: displayedParshaKey ?? displayedLabel, count: resources.length })}
+      onClick={() =>
+        trackEvent("share_whatsapp", {
+          parsha: displayedParshaKey ?? displayedLabel,
+          count: resources.length,
+        })
+      }
       className={`inline-flex items-center justify-center gap-2 rounded-full border border-accent bg-transparent px-5 py-2.5 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors ${className ?? ""}`}
     >
       <Share2 className="h-4 w-4" />
@@ -363,10 +387,14 @@ function Index() {
               Weekly Divrei Torah
             </p>
             <h1 className="mt-2 font-serif text-[2rem] leading-[1.08] sm:text-4xl md:text-5xl font-bold tracking-tight text-primary">
-              {postShabbos ? `Divrei Torah for ${displayedLabel}` : "Free Divrei Torah for Your Shabbos Table"}
+              {postShabbos
+                ? `Divrei Torah for ${displayedLabel}`
+                : "Free Divrei Torah for Your Shabbos Table"}
             </h1>
             <p className="mx-auto mt-3 max-w-2xl font-serif text-base leading-relaxed text-primary sm:text-lg md:text-xl">
-              <span className="font-semibold">{resources.length} {resources.length === 1 ? "selection" : "selections"}</span>{" "}
+              <span className="font-semibold">
+                {resources.length} {resources.length === 1 ? "selection" : "selections"}
+              </span>{" "}
               {postShabbos ? "still available to download" : `for ${displayedLabel}`}
             </p>
 
@@ -384,47 +412,12 @@ function Index() {
                 Browse {displayedLabel}
               </a>
             </div>
-
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-              {upcomingParsha && upcomingParsha !== displayedParshaKey && (
-                <span>
-                  Next: {upcomingParsha.startsWith("Parshas") ? upcomingParsha : `Parshas ${upcomingParsha}`} {postShabbos ? "updates" : "posts"} Thursday
-                </span>
-              )}
-              <a
-                href="#weekly-email-signup"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document
-                    .getElementById("weekly-email-signup")
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-                className="font-medium text-primary underline decoration-accent/50 underline-offset-4 transition-colors hover:text-accent"
-              >
-                Get the Thursday reminder
-              </a>
-            </div>
           </div>
         </section>
 
-        <p className="text-center font-serif text-sm sm:text-base text-primary/80">
-          Welcome! Enjoy your downloads — and don't forget to{" "}
-          <a
-            href="#weekly-email-signup"
-            onClick={(e) => {
-              e.preventDefault();
-              document
-                .getElementById("weekly-email-signup")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
-            className="font-medium text-accent underline decoration-accent/50 underline-offset-4 transition-colors hover:text-primary"
-          >
-            sign up for your weekly download reminder
-          </a>
-          .
+        <p className="text-center font-serif text-sm sm:text-base text-primary/90">
+          Welcome! Enjoy your downloads.
         </p>
-
-        <ThursdayProgressMeter />
 
         {featuredPicks.length > 0 && (
           <>
@@ -475,7 +468,8 @@ function Index() {
                             publicationName={publicationLabel(r.publication || r.title) || r.title}
                             publicationTitle={r.title}
                             filename={buildDownloadFilename(
-                              (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
+                              (r as { parsha_key?: string | null }).parsha_key ??
+                                displayedParshaKey,
                               r.publication || r.title,
                             )}
                             onClick={() => {
@@ -490,7 +484,10 @@ function Index() {
                             <SharePublicationButton
                               pdfId={r.id}
                               title={r.title}
-                              parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
+                              parsha={
+                                (r as { parsha_key?: string | null }).parsha_key ??
+                                displayedParshaKey
+                              }
                             />
                           </div>
                         </div>
@@ -501,7 +498,9 @@ function Index() {
               </div>
             </section>
 
-            <div className="gold-divider" aria-hidden><span className="gold-divider-dot" /></div>
+            <div className="gold-divider" aria-hidden>
+              <span className="gold-divider-dot" />
+            </div>
           </>
         )}
 
@@ -515,22 +514,19 @@ function Index() {
             {isFallback && resources.length > 0 && (
               <div className="mx-auto mt-3 max-w-2xl rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-center">
                 <p className="font-serif text-sm sm:text-base text-primary">
-                  This week's collection for {currentLabel} is coming soon — enjoy last week's selections below.
+                  This week's collection for {currentLabel} is coming soon — enjoy last week's
+                  selections below.
                 </p>
               </div>
             )}
-            {resources.length > 0 && (
-              <p className="mt-2 text-center text-sm text-muted-foreground sm:text-base">
-                {resources.length} {resources.length === 1 ? "selection" : "selections"} · {displayedLabel}
-              </p>
-            )}
-
             {!isFallback && quickPicks.length > 0 && (
               <div className="mt-4 max-w-2xl mx-auto">
                 <p className="text-center font-sans text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
                   Start here
                 </p>
-                <div className={`mt-2 grid gap-2.5 ${quickPicks.length === 1 ? "grid-cols-1" : quickPicks.length === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-3"}`}>
+                <div
+                  className={`mt-2 grid gap-2.5 ${quickPicks.length === 1 ? "grid-cols-1" : quickPicks.length === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-3"}`}
+                >
                   {quickPicks.map(({ label, resource }) => (
                     <Link
                       key={label}
@@ -557,7 +553,9 @@ function Index() {
             ) : (
               <>
                 <div className="mt-5 space-y-3 sticky top-14 z-30 -mx-3 px-3 py-3 bg-background/95 backdrop-blur border-b border-accent/20 sm:static sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0">
-                  {(audienceFilter !== "All" || lengthFilter !== "All" || contentTypeFilter !== "All") && (
+                  {(audienceFilter !== "All" ||
+                    lengthFilter !== "All" ||
+                    contentTypeFilter !== "All") && (
                     <div className="flex justify-end">
                       <button
                         type="button"
@@ -661,7 +659,8 @@ function Index() {
                           ...contentTypeOptions.map((t) => ({
                             key: t,
                             label: t,
-                            count: contentTypeScoped.filter((r) => resourceContentType(r) === t).length,
+                            count: contentTypeScoped.filter((r) => resourceContentType(r) === t)
+                              .length,
                           })),
                         ]
                           .filter((o) => o.key === "All" || o.count > 0)
@@ -735,7 +734,8 @@ function Index() {
                             {(r.audience || r.format_type || typeof r.page_count === "number") && (
                               <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                 {[
-                                  audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience,
+                                  audienceLabel(normalizeAudience(r.audience, r.title)) ??
+                                    r.audience,
                                   formatTypeLabel(r.format_type),
                                   typeof r.page_count === "number"
                                     ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
@@ -755,7 +755,8 @@ function Index() {
                             publicationName={publicationLabel(r.publication || r.title) || r.title}
                             publicationTitle={r.title}
                             filename={buildDownloadFilename(
-                              (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
+                              (r as { parsha_key?: string | null }).parsha_key ??
+                                displayedParshaKey,
                               r.publication || r.title,
                             )}
                             onClick={() => {
@@ -770,13 +771,19 @@ function Index() {
                             <SharePublicationButton
                               pdfId={r.id}
                               title={r.title}
-                              parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
+                              parsha={
+                                (r as { parsha_key?: string | null }).parsha_key ??
+                                displayedParshaKey
+                              }
                             />
                           </div>
                         </div>
                       </article>
                       {i === (filteredResources.length > 1 ? 1 : 0) && (
-                        <div key="share-prompt" className="col-span-1 sm:col-span-2 flex justify-center py-2">
+                        <div
+                          key="share-prompt"
+                          className="col-span-1 sm:col-span-2 flex justify-center py-2"
+                        >
                           <ShareButton />
                         </div>
                       )}
@@ -803,12 +810,38 @@ function Index() {
           </div>
         </section>
 
-        <div className="gold-divider" aria-hidden><span className="gold-divider-dot" /></div>
+        <div className="gold-divider" aria-hidden>
+          <span className="gold-divider-dot" />
+        </div>
 
-        {/* Email signup */}
-        <WeeklyEmailSignup sourceId="homepage" />
+        {/* Next week preview */}
+        {upcomingParsha && upcomingParsha !== displayedParshaKey && (
+          <div className="max-w-2xl mx-auto space-y-4">
+            <section className="parchment-frame">
+              <div className="parchment-panel text-center">
+                <h2 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-primary">
+                  Next Week:{" "}
+                  {upcomingParsha.startsWith("Parshas")
+                    ? upcomingParsha
+                    : `Parshas ${upcomingParsha}`}
+                </h2>
+                <div className="mt-4">
+                  <ThursdayProgressMeter
+                    heading={(fillStep) => `${fillStep}% uploaded`}
+                    ariaLabel={(fillStep) =>
+                      `Next week's Divrei Torah upload progress: ${fillStep}% complete`
+                    }
+                  />
+                </div>
+              </div>
+            </section>
+            <WeeklyEmailSignup sourceId="homepage" />
+          </div>
+        )}
 
-        <div className="gold-divider" aria-hidden><span className="gold-divider-dot" /></div>
+        <div className="gold-divider" aria-hidden>
+          <span className="gold-divider-dot" />
+        </div>
 
         {/* Memorial */}
         <section className="parchment-frame max-w-2xl mx-auto">
@@ -819,7 +852,10 @@ function Index() {
           >
             <div className="flex items-center justify-center gap-3 text-accent">
               <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
-              <span className="font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.3em]" dir="ltr">
+              <span
+                className="font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.3em]"
+                dir="ltr"
+              >
                 Dedication
               </span>
               <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
