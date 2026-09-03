@@ -23,7 +23,26 @@ export function SiteLogoHorizontal({ className = "" }: { className?: string }) {
   );
 }
 
-/** Full horizontal lockup for footer / page headers on light backgrounds. */
+/** Responsive centered footer lockup using the new Shabbos-table identity. */
+export function SiteLogoFooter({ className = "" }: { className?: string }) {
+  return (
+    <span className={`flex items-center ${className}`}>
+      <picture>
+        <source media="(min-width: 1024px)" srcSet={LOGO_HEADER_DESKTOP} />
+        <source media="(min-width: 640px)" srcSet={LOGO_HEADER_TABLET} />
+        <img
+          src={LOGO_HEADER_MOBILE}
+          alt="Torah for the Table"
+          width={600}
+          height={189}
+          className="h-20 w-auto object-contain sm:h-24"
+        />
+      </picture>
+    </span>
+  );
+}
+
+/** Full horizontal lockup for page headers on light backgrounds. */
 export function SiteLogoStacked({ className = "" }: { className?: string }) {
   return (
     <img
