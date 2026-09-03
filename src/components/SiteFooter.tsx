@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
-import { SiteLogoStacked } from "@/components/SiteLogo";
+import { SiteLogoFooter } from "@/components/SiteLogo";
 
 export function SiteFooter() {
   const linkClass =
@@ -9,10 +9,9 @@ export function SiteFooter() {
   return (
     <footer id="site-footer" className="space-y-2 px-4 pb-24 pt-4 md:pb-20">
       <Link to="/" aria-label="Torah for the Table — home" className="mx-auto mb-6 flex w-fit">
-        <SiteLogoStacked />
+        <SiteLogoFooter />
       </Link>
       <div className="flex flex-wrap items-center justify-center gap-y-2 text-center text-sm text-muted-foreground">
-
         <Link to="/" className={linkClass}>
           Home
         </Link>
