@@ -73,9 +73,7 @@ export function ThursdayProgressMeter({
         <span className="text-xs font-semibold uppercase tracking-wide text-primary">
           {headingText}
         </span>
-        {showPercent && (
-          <span className="text-sm font-bold text-accent-readable">{fillStep}%</span>
-        )}
+        {showPercent && <span className="text-sm font-bold text-accent-readable">{fillStep}%</span>}
       </div>
 
       <div className="mt-2 flex gap-1">

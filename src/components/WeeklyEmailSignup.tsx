@@ -156,10 +156,7 @@ export function WeeklyEmailSignup({
           </div>
         ) : (
           <>
-            <form
-              onSubmit={handleSignup}
-              className="mt-5 flex flex-col gap-3 max-w-md mx-auto"
-            >
+            <form onSubmit={handleSignup} className="mt-5 flex flex-col gap-3 max-w-md mx-auto">
               <div className="flex flex-col sm:flex-row gap-3">
                 <input
                   type="email"
@@ -187,8 +184,8 @@ export function WeeklyEmailSignup({
                   className="mt-1 h-4 w-4 shrink-0 accent-[var(--gold-decorative,currentColor)]"
                 />
                 <span>
-                  I agree to receive emails from Torah For The Table. You can unsubscribe at
-                  any time.
+                  I agree to receive emails from Torah For The Table. You can unsubscribe at any
+                  time.
                 </span>
               </label>
             </form>
