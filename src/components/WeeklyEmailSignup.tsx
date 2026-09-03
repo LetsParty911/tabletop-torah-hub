@@ -6,11 +6,17 @@ type WeeklyEmailSignupProps = {
   /** Distinguishes the once-per-page analytics key across routes. */
   sourceId?: string;
   className?: string;
+  /** "compact" renders a small inline strip instead of the full parchment card. */
+  variant?: "full" | "compact";
+  /** Label above the compact form. */
+  ctaLabel?: string;
 };
 
 export function WeeklyEmailSignup({
   sourceId = "page",
   className = "",
+  variant = "full",
+  ctaLabel = "Get the weekly download reminder",
 }: WeeklyEmailSignupProps) {
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
@@ -59,6 +65,66 @@ export function WeeklyEmailSignup({
     }
   };
 
+  if (variant === "compact") {
+    return (
+      <div id="weekly-email-signup" className={`scroll-mt-8 ${className}`}>
+        {done ? (
+          <p
+            role="status"
+            aria-live="polite"
+            className="rounded-lg border border-accent/50 bg-accent/10 px-3 py-2 text-center font-serif text-sm text-primary"
+          >
+            Thank you for subscribing! Please check your inbox for a welcome email.
+          </p>
+        ) : (
+          <>
+            <p className="text-center font-sans text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-accent-readable">
+              {ctaLabel}
+            </p>
+            <form onSubmit={handleSignup} className="mt-2 flex flex-col gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  type="email"
+                  aria-label="Email address for weekly Torah reminders"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email address"
+                  className="flex-1 rounded-full border border-accent/50 bg-background px-4 py-2 font-serif text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={submitting || !consent}
+                  className="rounded-full bg-primary px-5 py-2 font-serif text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {submitting ? "Subscribing…" : "Subscribe"}
+                </button>
+              </div>
+              <label className="flex items-start gap-2 text-left text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  required
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-[var(--gold-decorative,currentColor)]"
+                />
+                <span>
+                  I agree to receive emails from Torah For The Table. You can unsubscribe at any
+                  time.
+                </span>
+              </label>
+            </form>
+            {signupMsg && (
+              <p className="mt-2 text-xs text-accent font-serif" role="alert">
+                {signupMsg}
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
     <section
       id="weekly-email-signup"
@@ -90,10 +156,7 @@ export function WeeklyEmailSignup({
           </div>
         ) : (
           <>
-            <form
-              onSubmit={handleSignup}
-              className="mt-5 flex flex-col gap-3 max-w-md mx-auto"
-            >
+            <form onSubmit={handleSignup} className="mt-5 flex flex-col gap-3 max-w-md mx-auto">
               <div className="flex flex-col sm:flex-row gap-3">
                 <input
                   type="email"
@@ -121,8 +184,8 @@ export function WeeklyEmailSignup({
                   className="mt-1 h-4 w-4 shrink-0 accent-[var(--gold-decorative,currentColor)]"
                 />
                 <span>
-                  I agree to receive emails from Torah For The Table. You can unsubscribe at
-                  any time.
+                  I agree to receive emails from Torah For The Table. You can unsubscribe at any
+                  time.
                 </span>
               </label>
             </form>

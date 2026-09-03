@@ -419,91 +419,6 @@ function Index() {
           Welcome! Enjoy your downloads.
         </p>
 
-        {featuredPicks.length > 0 && (
-          <>
-            <section className="parchment-frame">
-              <div className="parchment-panel">
-                <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
-                  This Week's Recommended Picks
-                </h2>
-                <div className="mt-5 grid gap-4 grid-cols-1 sm:grid-cols-2">
-                  {featuredPicks.map(({ key, label, resource }) => {
-                    const r = resource!;
-                    return (
-                      <article
-                        key={key}
-                        className="h-full rounded-xl border border-accent/50 bg-background/70 p-4 sm:p-5 flex flex-col"
-                      >
-                        <span className="self-start rounded-full bg-accent px-3 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-accent-foreground">
-                          {label}
-                        </span>
-                        <h3 className="mt-3 font-serif text-base sm:text-xl font-bold text-primary leading-snug">
-                          <Link
-                            to="/view/$id"
-                            params={{ id: r.id }}
-                            className="hover:text-accent hover:underline transition-colors duration-150"
-                          >
-                            {r.title}
-                          </Link>
-                        </h3>
-                        {r.publisher && (
-                          <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">
-                            By {r.publisher}
-                          </p>
-                        )}
-                        {r.subtitle && (
-                          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                            {standardizeCopy(r.subtitle)}
-                          </p>
-                        )}
-                        {typeof r.page_count === "number" && (
-                          <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                            {r.page_count} {r.page_count === 1 ? "page" : "pages"}
-                          </p>
-                        )}
-                        <div className="mt-auto pt-4">
-                          <DownloadToPrintButton
-                            href={`/view/${r.id}/download`}
-                            publicationId={r.id}
-                            publicationName={publicationLabel(r.publication || r.title) || r.title}
-                            publicationTitle={r.title}
-                            filename={buildDownloadFilename(
-                              (r as { parsha_key?: string | null }).parsha_key ??
-                                displayedParshaKey,
-                              r.publication || r.title,
-                            )}
-                            onClick={() => {
-                              trackEvent("pdf_download", pdfParams(r));
-                              if (typeof window !== "undefined") {
-                                window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
-                              }
-                            }}
-                            className="w-full px-3 py-2.5 lg:py-2"
-                          />
-                          <div className="mt-2 flex justify-center">
-                            <SharePublicationButton
-                              pdfId={r.id}
-                              title={r.title}
-                              parsha={
-                                (r as { parsha_key?: string | null }).parsha_key ??
-                                displayedParshaKey
-                              }
-                            />
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              </div>
-            </section>
-
-            <div className="gold-divider" aria-hidden>
-              <span className="gold-divider-dot" />
-            </div>
-          </>
-        )}
-
         {/* Resource collection */}
         <section id="this-weeks-collection" className="scroll-mt-8">
           <div className="px-1 sm:px-2">
@@ -542,6 +457,118 @@ function Index() {
                       </p>
                     </Link>
                   ))}
+                </div>
+              </div>
+            )}
+            {featuredPicks.length > 0 && (
+              <>
+                <section className="parchment-frame">
+                  <div className="parchment-panel">
+                    <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
+                      This Week's Recommended Picks
+                    </h2>
+                    <div className="mt-5 grid gap-4 grid-cols-1 sm:grid-cols-2">
+                      {featuredPicks.map(({ key, label, resource }) => {
+                        const r = resource!;
+                        return (
+                          <article
+                            key={key}
+                            className="h-full rounded-xl border border-accent/50 bg-background/70 p-4 sm:p-5 flex flex-col"
+                          >
+                            <span className="self-start rounded-full bg-accent px-3 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-accent-foreground">
+                              {label}
+                            </span>
+                            <h3 className="mt-3 font-serif text-base sm:text-xl font-bold text-primary leading-snug">
+                              <Link
+                                to="/view/$id"
+                                params={{ id: r.id }}
+                                className="hover:text-accent hover:underline transition-colors duration-150"
+                              >
+                                {r.title}
+                              </Link>
+                            </h3>
+                            {r.publisher && (
+                              <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">
+                                By {r.publisher}
+                              </p>
+                            )}
+                            {r.subtitle && (
+                              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                                {standardizeCopy(r.subtitle)}
+                              </p>
+                            )}
+                            {typeof r.page_count === "number" && (
+                              <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                {r.page_count} {r.page_count === 1 ? "page" : "pages"}
+                              </p>
+                            )}
+                            <div className="mt-auto pt-4">
+                              <DownloadToPrintButton
+                                href={`/view/${r.id}/download`}
+                                publicationId={r.id}
+                                publicationName={
+                                  publicationLabel(r.publication || r.title) || r.title
+                                }
+                                publicationTitle={r.title}
+                                filename={buildDownloadFilename(
+                                  (r as { parsha_key?: string | null }).parsha_key ??
+                                    displayedParshaKey,
+                                  r.publication || r.title,
+                                )}
+                                onClick={() => {
+                                  trackEvent("pdf_download", pdfParams(r));
+                                  if (typeof window !== "undefined") {
+                                    window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
+                                  }
+                                }}
+                                className="w-full px-3 py-2.5 lg:py-2"
+                              />
+                              <div className="mt-2 flex justify-center">
+                                <SharePublicationButton
+                                  pdfId={r.id}
+                                  title={r.title}
+                                  parsha={
+                                    (r as { parsha_key?: string | null }).parsha_key ??
+                                    displayedParshaKey
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </section>
+
+                <div className="gold-divider" aria-hidden>
+                  <span className="gold-divider-dot" />
+                </div>
+              </>
+            )}
+            {upcomingParsha && upcomingParsha !== displayedParshaKey && (
+              <div className="mx-auto mt-6 max-w-2xl rounded-xl border border-accent/40 bg-card/40 px-4 py-4 sm:px-5">
+                <h3 className="text-center font-serif text-base sm:text-lg font-bold text-primary">
+                  Next Week:{" "}
+                  {upcomingParsha.startsWith("Parshas")
+                    ? upcomingParsha
+                    : `Parshas ${upcomingParsha}`}
+                </h3>
+                <div className="mt-3">
+                  <ThursdayProgressMeter
+                    heading={(fillStep) => `${fillStep}% uploaded`}
+                    showPercent={false}
+                    ariaLabel={(fillStep) =>
+                      `Next week's Divrei Torah upload progress: ${fillStep}% complete`
+                    }
+                  />
+                </div>
+                <div className="mt-3">
+                  <WeeklyEmailSignup
+                    sourceId="homepage"
+                    variant="compact"
+                    ctaLabel="Get the weekly download reminder"
+                  />
                 </div>
               </div>
             )}
@@ -809,35 +836,6 @@ function Index() {
             </p>
           </div>
         </section>
-
-        <div className="gold-divider" aria-hidden>
-          <span className="gold-divider-dot" />
-        </div>
-
-        {/* Next week preview */}
-        {upcomingParsha && upcomingParsha !== displayedParshaKey && (
-          <div className="max-w-2xl mx-auto space-y-4">
-            <section className="parchment-frame">
-              <div className="parchment-panel text-center">
-                <h2 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-primary">
-                  Next Week:{" "}
-                  {upcomingParsha.startsWith("Parshas")
-                    ? upcomingParsha
-                    : `Parshas ${upcomingParsha}`}
-                </h2>
-                <div className="mt-4">
-                  <ThursdayProgressMeter
-                    heading={(fillStep) => `${fillStep}% uploaded`}
-                    ariaLabel={(fillStep) =>
-                      `Next week's Divrei Torah upload progress: ${fillStep}% complete`
-                    }
-                  />
-                </div>
-              </div>
-            </section>
-            <WeeklyEmailSignup sourceId="homepage" />
-          </div>
-        )}
 
         <div className="gold-divider" aria-hidden>
           <span className="gold-divider-dot" />
