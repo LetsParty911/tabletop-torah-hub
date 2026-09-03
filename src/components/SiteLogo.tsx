@@ -1,22 +1,24 @@
 const LOGO_HORIZONTAL_LIGHT = "/assets/logo-horizontal-light.svg";
-const LOGO_HEADER_SHABBOS = "/assets/logo-header-shabbos.svg";
+const LOGO_HEADER_DESKTOP = "/assets/logo-header-desktop.webp";
+const LOGO_HEADER_TABLET = "/assets/logo-header-tablet.webp";
+const LOGO_HEADER_MOBILE = "/assets/logo-header-mobile.webp";
 const LOGO_ICON = "/assets/logo-icon.svg";
 
-/**
- * Responsive header lockup using the Shabbos-table artwork and wordmark.
- * The same asset scales across mobile, tablet, and desktop so the visual
- * relationship between the artwork and name stays consistent.
- */
+/** Responsive Shabbos-table header lockup. */
 export function SiteLogoHorizontal({ className = "" }: { className?: string }) {
   return (
     <span className={`flex items-center ${className}`}>
-      <img
-        src={LOGO_HEADER_SHABBOS}
-        alt="Torah for the Table"
-        width={640}
-        height={201}
-        className="h-11 w-auto object-contain sm:h-14 lg:h-16"
-      />
+      <picture>
+        <source media="(min-width: 1024px)" srcSet={LOGO_HEADER_DESKTOP} />
+        <source media="(min-width: 768px)" srcSet={LOGO_HEADER_TABLET} />
+        <img
+          src={LOGO_HEADER_MOBILE}
+          alt="Torah for the Table"
+          width={600}
+          height={189}
+          className="h-12 w-auto object-contain sm:h-14 md:h-16 lg:h-16"
+        />
+      </picture>
     </span>
   );
 }
