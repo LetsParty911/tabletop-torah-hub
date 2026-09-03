@@ -20,11 +20,14 @@ type AriaValue = string | ((fillStep: FillStep) => string);
 type ThursdayProgressMeterProps = {
   heading?: HeadingValue;
   ariaLabel?: AriaValue;
+  /** Hide the separate right-side percentage label (use when the heading already shows it). */
+  showPercent?: boolean;
 };
 
 export function ThursdayProgressMeter({
   heading = "This Week's Upload Progress",
   ariaLabel = (fillStep) => `This week's Divrei Torah upload progress: ${fillStep}% complete`,
+  showPercent = true,
 }: ThursdayProgressMeterProps) {
   const [fillStep, setFillStep] = useState<FillStep | null>(null);
   const [eta, setEta] = useState<string | null>(null);
@@ -62,7 +65,7 @@ export function ThursdayProgressMeter({
 
   return (
     <div
-      className="mx-auto max-w-md rounded-lg border-2 border-accent/40 bg-card px-4 py-3"
+      className="mx-auto max-w-md rounded-lg border border-accent/40 bg-background/60 px-4 py-3"
       role="group"
       aria-label={ariaText}
     >
@@ -70,7 +73,9 @@ export function ThursdayProgressMeter({
         <span className="text-xs font-semibold uppercase tracking-wide text-primary">
           {headingText}
         </span>
-        <span className="text-sm font-bold text-accent-readable">{fillStep}%</span>
+        {showPercent && (
+          <span className="text-sm font-bold text-accent-readable">{fillStep}%</span>
+        )}
       </div>
 
       <div className="mt-2 flex gap-1">
