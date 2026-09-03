@@ -407,6 +407,23 @@ function Index() {
           </div>
         </section>
 
+        <p className="text-center font-serif text-sm sm:text-base text-primary/80">
+          Welcome! Enjoy your downloads — and don't forget to{" "}
+          <a
+            href="#weekly-email-signup"
+            onClick={(e) => {
+              e.preventDefault();
+              document
+                .getElementById("weekly-email-signup")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+            className="font-medium text-accent underline decoration-accent/50 underline-offset-4 transition-colors hover:text-primary"
+          >
+            sign up for your weekly download reminder
+          </a>
+          .
+        </p>
+
         <ThursdayProgressMeter />
 
         {featuredPicks.length > 0 && (
