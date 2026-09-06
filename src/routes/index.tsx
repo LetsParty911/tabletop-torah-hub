@@ -7,6 +7,8 @@ import { WhatsNewBanner } from "@/components/WhatsNewBanner";
 import { WhatsNewPopup } from "@/components/WhatsNewPopup";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { PublicationCardTracker } from "@/components/PublicationCardTracker";
+import { trackFp } from "@/lib/first-party-analytics";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { SITE_URL } from "@/lib/site-url";
 
@@ -542,7 +544,7 @@ function Index() {
                                 />
                               </div>
                             </div>
-                          </article>
+                          </PublicationCardTracker>
                         );
                       })}
                     </div>
