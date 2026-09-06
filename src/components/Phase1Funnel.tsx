@@ -82,7 +82,7 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
   const [sessionFunnel, setSessionFunnel] = useState<SessionFunnelData["funnel"] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [publicationScope, setPublicationScope] = useState("current");
+  const [publicationScope, setPublicationScope] = useState("Rosh Hashanah");
 
   const load = useCallback(async () => {
     if (!accessToken) return;
@@ -124,15 +124,7 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
         ),
       )
     : [];
-  // The backend returns publication activity newest-first, so the first parsha
-  // represented is the current collection for this reporting window.
-  const currentPublicationParsha = publicationParshas[0] ?? null;
-  const selectedPublicationParsha =
-    publicationScope === "current"
-      ? currentPublicationParsha
-      : publicationScope === "all"
-        ? null
-        : publicationScope;
+  const selectedPublicationParsha = publicationScope === "all" ? null : publicationScope;
   const visiblePublications = data
     ? selectedPublicationParsha
       ? data.publications.filter((publication) => publication.parsha === selectedPublicationParsha)
@@ -255,33 +247,30 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
           </div>
 
           <div className="mt-6">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-serif text-lg font-bold text-primary">Publication performance</h3>
-              {publicationParshas.length > 0 && (
-                <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>Collection</span>
-                  <select
-                    value={publicationScope}
-                    onChange={(event) => setPublicationScope(event.target.value)}
-                    className="rounded-lg border border-accent/40 bg-background px-2 py-1 text-sm text-primary"
-                  >
-                    <option value="current">
-                      Current{currentPublicationParsha ? ` — ${currentPublicationParsha}` : ""}
+            <h3 className="font-serif text-lg font-bold text-primary">Publication performance</h3>
+            {publicationParshas.length > 0 && (
+              <label className="mt-3 flex w-full flex-col gap-1 text-sm font-medium text-primary sm:max-w-xs">
+                <span>Show collection</span>
+                <select
+                  value={publicationScope}
+                  onChange={(event) => setPublicationScope(event.target.value)}
+                  className="w-full rounded-lg border border-accent/40 bg-background px-3 py-2 text-base text-primary"
+                >
+                  <option value="all">All collections</option>
+                  {publicationParshas.map((parsha) => (
+                    <option key={parsha} value={parsha}>
+                      {parsha}
                     </option>
-                    <option value="all">All collections</option>
-                    {publicationParshas.slice(1).map((parsha) => (
-                      <option key={parsha} value={parsha}>
-                        {parsha}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-            </div>
+                  ))}
+                </select>
+              </label>
+            )}
             {visiblePublications.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">No publication data yet.</p>
+              <p className="mt-3 text-sm text-muted-foreground">
+                No publication data yet for {selectedPublicationParsha ?? "this range"}.
+              </p>
             ) : (
-              <div className="mt-2 overflow-x-auto">
+              <div className="mt-3 overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
