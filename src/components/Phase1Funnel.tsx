@@ -82,6 +82,7 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
   const [sessionFunnel, setSessionFunnel] = useState<SessionFunnelData["funnel"] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [publicationScope, setPublicationScope] = useState("current");
 
   const load = useCallback(async () => {
     if (!accessToken) return;
@@ -114,6 +115,29 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
   }, [load]);
 
   const f = sessionFunnel;
+  const publicationParshas = data
+    ? Array.from(
+        new Set(
+          data.publications
+            .map((publication) => publication.parsha)
+            .filter((parsha): parsha is string => Boolean(parsha)),
+        ),
+      )
+    : [];
+  // The backend returns publication activity newest-first, so the first parsha
+  // represented is the current collection for this reporting window.
+  const currentPublicationParsha = publicationParshas[0] ?? null;
+  const selectedPublicationParsha =
+    publicationScope === "current"
+      ? currentPublicationParsha
+      : publicationScope === "all"
+        ? null
+        : publicationScope;
+  const visiblePublications = data
+    ? selectedPublicationParsha
+      ? data.publications.filter((publication) => publication.parsha === selectedPublicationParsha)
+      : data.publications
+    : [];
 
   return (
     <div>
@@ -231,8 +255,30 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
           </div>
 
           <div className="mt-6">
-            <h3 className="font-serif text-lg font-bold text-primary">Publication performance</h3>
-            {data.publications.length === 0 ? (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-serif text-lg font-bold text-primary">Publication performance</h3>
+              {publicationParshas.length > 0 && (
+                <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>Collection</span>
+                  <select
+                    value={publicationScope}
+                    onChange={(event) => setPublicationScope(event.target.value)}
+                    className="rounded-lg border border-accent/40 bg-background px-2 py-1 text-sm text-primary"
+                  >
+                    <option value="current">
+                      Current{currentPublicationParsha ? ` — ${currentPublicationParsha}` : ""}
+                    </option>
+                    <option value="all">All collections</option>
+                    {publicationParshas.slice(1).map((parsha) => (
+                      <option key={parsha} value={parsha}>
+                        {parsha}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
+            {visiblePublications.length === 0 ? (
               <p className="mt-2 text-sm text-muted-foreground">No publication data yet.</p>
             ) : (
               <div className="mt-2 overflow-x-auto">
@@ -250,7 +296,7 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.publications.map((p) => (
+                    {visiblePublications.map((p) => (
                       <tr key={p.id} className="border-t border-accent/20">
                         <td className="py-2 pr-3">
                           <span className="font-medium text-primary">{p.title}</span>
