@@ -198,6 +198,7 @@ export function touchSession(): { sessionId: string; isNew: boolean } {
     // Persist the first-session id so a reload during that same session still
     // reports the visitor as new, while later 30-minute sessions do not.
     lsSet(NEW_VISITOR_SESSION_KEY, fresh.id);
+    visitorWasCreated = false;
   }
   // A new session means a new first-touch attribution window.
   try {
