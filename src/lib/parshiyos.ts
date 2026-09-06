@@ -80,20 +80,46 @@ const YOM_TOV_MAP: Record<string, string> = {
   "Rosh Hashanah": "Rosh Hashanah",
   "Yom Kippur": "Yom Kippur",
   "Sukkot": "Sukkos",
-  "Sukkot I": "Sukkos",
-  "Sukkot II": "Sukkos",
+  "Sukkos": "Sukkos",
   "Shmini Atzeret": "Shemini Atzeres",
+  "Shemini Atzeret": "Shemini Atzeres",
   "Simchat Torah": "Simchas Torah",
   "Pesach": "Pesach",
-  "Pesach I": "Pesach",
-  "Pesach II": "Pesach",
-  "Pesach VII": "Pesach",
-  "Pesach VIII": "Pesach",
   "Shavuot": "Shavuos",
-  "Shavuot I": "Shavuos",
-  "Shavuot II": "Shavuos",
+  "Shavuos": "Shavuos",
 };
 
+/**
+ * Hebcal holiday titles carry decorations we don't want in a display key:
+ * a Hebrew year ("Rosh Hashana 5787"), a day number ("Pesach VII",
+ * "Sukkot II"), or a parenthetical ("Sukkot VII (Hoshana Raba)").
+ * Strip all of those before mapping.
+ */
+export function normalizeYomTovTitle(title: string): string {
+  return title
+    .replace(/\u2019/g, "'")
+    .replace(/\s*\(.*\)\s*$/, "")
+    .replace(/\s+\d{4,5}\s*$/, "")
+    .replace(/\s+(?:I|II|III|IV|V|VI|VII|VIII)\s*$/, "")
+    .trim();
+}
+
 export function hebcalYomTovToKey(title: string): string | null {
-  return YOM_TOV_MAP[title] ?? null;
+  return YOM_TOV_MAP[normalizeYomTovTitle(title)] ?? null;
+}
+
+
+/** Major Yom Tovim that replace the weekly parsha reading. */
+export const YOM_TOV_KEYS: string[] = [
+  "Rosh Hashanah", "Yom Kippur", "Sukkos", "Shemini Atzeres",
+  "Simchas Torah", "Pesach", "Shavuos",
+];
+
+/**
+ * Display label for a reading key: Yom Tov names stand alone, weekly
+ * parshiyos get the "Parshas " prefix (never doubled).
+ */
+export function formatReadingLabel(key: string): string {
+  if (YOM_TOV_KEYS.includes(key)) return key;
+  return /^parshas\s/i.test(key) ? key : `Parshas ${key}`;
 }

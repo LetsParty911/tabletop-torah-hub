@@ -3,8 +3,8 @@ import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { getSupabaseAdmin, getSupabaseForUser } from "@/integrations/supabase/ext.server";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
-import { hebcalToParshaKey, hebcalYomTovToKey } from "@/lib/parshiyos";
-import { fetchHebcalShabbat } from "@/lib/hebcal";
+import { fetchHebcalShabbatData, resolveReadingFromHebcal } from "@/lib/hebcal";
+
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { purgePdfEdgeCache, warmPdfEdgeCache } from "@/lib/pdf-edge-cache";
 import { checkRateLimit } from "@/lib/rate-limit.server";
@@ -136,16 +136,15 @@ export const listCanonicalPublications = createServerFn({ method: "GET" }).handl
 
 
 // Fetch the current Shabbos date (YYYY-MM-DD, NYC timezone) from Hebcal.
-// Returns null if Hebcal is unreachable or no parsha item is present.
+// Works on Yom Tov weeks where Hebcal returns no `parashat` item.
 async function fetchCurrentShabbosDate(): Promise<string | null> {
   try {
-    const items = await fetchHebcalShabbat();
-    const parsha = items.find((i) => i.category === "parashat");
-    return parsha?.date?.slice(0, 10) ?? null;
+    return resolveReadingFromHebcal(await fetchHebcalShabbatData()).readingDate;
   } catch {
     return null;
   }
 }
+
 
 // An override is "for the current week" if it was last updated on or after
 // the Sunday before the upcoming Shabbos (i.e. within the same Hebcal week).
@@ -198,32 +197,24 @@ async function resolveCurrentFeatured(): Promise<{
   let shabbosDate: string | null = null;
 
   try {
-    const items = await fetchHebcalShabbat();
-    const parsha = items.find((i) => i.category === "parashat");
-    shabbosDate = parsha?.date?.slice(0, 10) ?? null;
-    const yomTovOnShabbos = parsha
-      ? items.find(
-          (i) =>
-            i.category === "holiday" &&
-            i.subcat === "major" &&
-            i.date.slice(0, 10) === parsha.date.slice(0, 10),
-        )
-      : undefined;
+    // Shared resolver: handles Shabbos Yom Tov weeks with no `parashat` item.
+    const data = await fetchHebcalShabbatData();
+    const resolved = resolveReadingFromHebcal(data);
+    shabbosDate = resolved.readingDate;
+    parshaKey = resolved.parshaKey;
 
-    if (yomTovOnShabbos) {
-      parshaKey = hebcalYomTovToKey(yomTovOnShabbos.title) ?? yomTovOnShabbos.title;
-    } else if (parsha) {
-      parshaKey = hebcalToParshaKey(parsha.title);
-    }
-
-    // Derive Hebrew year from the parsha's hdate (e.g. "26th of Nisan, 5786")
-    const hdate = parsha?.hdate ?? items.find((i) => i.hdate)?.hdate;
+    // Derive Hebrew year from an hdate on the relevant Shabbos when possible.
+    const items = data.items;
+    const hdate =
+      items.find((i) => i.hdate && i.date.slice(0, 10) === shabbosDate)?.hdate ??
+      items.find((i) => i.hdate)?.hdate;
     if (hdate) {
       const m = hdate.match(/(\d{4,5})\s*$/);
       if (m) jewishYear = Number(m[1]);
     }
   } catch {
     // ignore
+
   }
 
   // Override only wins if it was set during this Hebcal week.
@@ -747,29 +738,17 @@ export const getPdfById = createServerFn({ method: "GET" })
 // even if a stale display-override exists in settings.
 export const getLiveCurrentParsha = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const items = await fetchHebcalShabbat();
-    const parsha = items.find((i) => i.category === "parashat");
-    const yomTov = parsha
-      ? items.find(
-          (i) =>
-            i.category === "holiday" &&
-            i.subcat === "major" &&
-            i.date.slice(0, 10) === parsha.date.slice(0, 10),
-        )
-      : undefined;
-
-    let parshaKey: string | null = null;
-    let displayLabel = "Parshas Hashavua";
-    if (yomTov) {
-      parshaKey = hebcalYomTovToKey(yomTov.title) ?? yomTov.title;
-      displayLabel = parshaKey;
-    } else if (parsha) {
-      parshaKey = hebcalToParshaKey(parsha.title);
-      displayLabel = `Parshas ${parshaKey}`;
-    }
+    // Shared resolver: Yom Tov is detected even with no `parashat` item.
+    const data = await fetchHebcalShabbatData();
+    const resolved = resolveReadingFromHebcal(data);
+    const parshaKey = resolved.parshaKey;
+    const displayLabel = resolved.label;
 
     let jewishYear: number | null = null;
-    const hdate = parsha?.hdate ?? items.find((i) => i.hdate)?.hdate;
+    const items = data.items;
+    const hdate =
+      items.find((i) => i.hdate && i.date.slice(0, 10) === resolved.readingDate)?.hdate ??
+      items.find((i) => i.hdate)?.hdate;
     if (hdate) {
       const m = hdate.match(/(\d{4,5})\s*$/);
       if (m) jewishYear = Number(m[1]);
@@ -782,7 +761,8 @@ export const getLiveCurrentParsha = createServerFn({ method: "GET" }).handler(as
         d.getUTCFullYear() + 3760 + (month > 9 || (month === 9 && day >= 15) ? 1 : 0);
     }
 
-    return { parshaKey, displayLabel, jewishYear, shabbosDate: parsha?.date?.slice(0, 10) ?? null };
+    return { parshaKey, displayLabel, jewishYear, shabbosDate: resolved.readingDate };
+
   } catch (e) {
     console.error("getLiveCurrentParsha error", e);
     return { parshaKey: null, displayLabel: "Parshas Hashavua", jewishYear: null, shabbosDate: null };
@@ -2393,25 +2373,13 @@ async function resolveCurrentParshaLabel(): Promise<{
   let rawKey: string | null = null;
   let shabbosDate: string | null = null;
 
-  // Hebcal first.
+  // Hebcal first (shared resolver: Yom Tov works with no `parashat` item).
   try {
-    const items = await fetchHebcalShabbat();
-    const parsha = items.find((i) => i.category === "parashat");
-    shabbosDate = parsha?.date?.slice(0, 10) ?? null;
-    const yomTov = parsha
-      ? items.find(
-          (i) =>
-            i.category === "holiday" &&
-            i.subcat === "major" &&
-            i.date.slice(0, 10) === parsha.date.slice(0, 10),
-        )
-      : undefined;
-    if (yomTov) {
-      rawKey = hebcalYomTovToKey(yomTov.title) ?? yomTov.title;
-    } else if (parsha) {
-      rawKey = hebcalToParshaKey(parsha.title);
-    }
+    const resolved = resolveReadingFromHebcal(await fetchHebcalShabbatData());
+    shabbosDate = resolved.readingDate;
+    rawKey = resolved.parshaKey;
   } catch { /* ignore */ }
+
 
   // Override only wins if it was set during this Hebcal week.
   const activeOverride = await readActiveParshaOverride(admin, shabbosDate);
