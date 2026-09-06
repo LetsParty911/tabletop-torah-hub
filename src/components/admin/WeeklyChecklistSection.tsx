@@ -1,5 +1,8 @@
+import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Circle, MinusCircle } from "lucide-react";
 import PublishProgress, { type PublishResult } from "@/components/admin/PublishProgress";
+import { useAuth } from "@/hooks/use-auth";
+import { adminListPdfs } from "@/integrations/supabase/api.functions";
 
 export type ChecklistStatus = "uploaded" | "skipped" | "missing";
 export type ChecklistItem = { title: string; status: ChecklistStatus };
@@ -19,6 +22,31 @@ type WeeklyChecklistSectionProps = {
   onToggleSkip: (title: string) => void;
 };
 
+type PdfLite = {
+  parsha_key?: string | null;
+  title?: string | null;
+  jewish_year?: number | null;
+  created_at?: string | null;
+};
+
+const normalize = (value: string | null | undefined) =>
+  (value ?? "")
+    .toLowerCase()
+    .replace(/[\u2018\u2019\u201c\u201d]/g, "'")
+    .replace(/[^a-z0-9]+/g, "");
+
+const TITLE_ALIASES: Record<string, string[]> = {
+  parshaquestionsanswers: [
+    "parshaquestionsanswers",
+    "roshhashanahquestionsanswers",
+    "roshhashanahqa",
+  ],
+  storiesfortheshabbostable: [
+    "storiesfortheshabbostable",
+    "storiesfortheyomtovtable",
+  ],
+};
+
 export default function WeeklyChecklistSection({
   currentParshaLabel,
   currentParshaKey,
@@ -33,6 +61,73 @@ export default function WeeklyChecklistSection({
   onUseExpectedTitle,
   onToggleSkip,
 }: WeeklyChecklistSectionProps) {
+  const { session } = useAuth();
+  const [verifiedTitles, setVerifiedTitles] = useState<Set<string> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const accessToken = session?.access_token;
+    if (!accessToken || !currentParshaKey) {
+      setVerifiedTitles(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    (async () => {
+      try {
+        const result = await adminListPdfs({ data: { accessToken } });
+        const rows = (result.pdfs ?? []) as PdfLite[];
+        const targetParsha = normalize(currentParshaKey);
+        const matching = rows
+          .filter((row) => normalize(row.parsha_key) === targetParsha)
+          .sort((a, b) =>
+            String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")),
+          );
+
+        // Use the year of the newest PDF for this tracked collection. This is
+        // more reliable around Rosh Hashanah than asking for the calendar's
+        // current Jewish year before the holiday begins.
+        const newestYear = matching.find((row) => typeof row.jewish_year === "number")?.jewish_year;
+        const currentRows =
+          typeof newestYear === "number"
+            ? matching.filter((row) => row.jewish_year === newestYear)
+            : matching;
+
+        if (!cancelled) {
+          setVerifiedTitles(
+            new Set(currentRows.map((row) => normalize(row.title)).filter(Boolean)),
+          );
+        }
+      } catch {
+        if (!cancelled) setVerifiedTitles(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.access_token, currentParshaKey]);
+
+  const effectiveChecklist = useMemo(() => {
+    if (!verifiedTitles) return checklist;
+
+    return checklist.map((item) => {
+      if (item.status !== "missing") return item;
+      const sourceKey = normalize(item.title);
+      const accepted = TITLE_ALIASES[sourceKey] ?? [sourceKey];
+      const found = accepted.some((key) => verifiedTitles.has(key));
+      return found ? { ...item, status: "uploaded" as const } : item;
+    });
+  }, [checklist, verifiedTitles]);
+
+  const effectiveUploadedCount = effectiveChecklist.filter(
+    (item) => item.status === "uploaded",
+  ).length;
+  const effectiveCountableTotal = effectiveChecklist.filter(
+    (item) => item.status !== "skipped",
+  ).length;
+
   return (
     <>
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -47,10 +142,10 @@ export default function WeeklyChecklistSection({
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <div className="text-sm font-medium text-primary">
-            {uploadedCount} uploaded
+            {effectiveUploadedCount || uploadedCount} uploaded
             <span className="text-muted-foreground font-normal">
-              {" "}· {checklist.length - countableTotal} skipped ·{" "}
-              {countableTotal - uploadedCount} remaining
+              {" "}· {effectiveChecklist.length - effectiveCountableTotal} skipped ·{" "}
+              {effectiveCountableTotal - effectiveUploadedCount} remaining
             </span>
           </div>
           <button
@@ -74,7 +169,7 @@ export default function WeeklyChecklistSection({
       />
 
       <ul className="mt-4 divide-y divide-accent/30">
-        {checklist.map((item) => (
+        {effectiveChecklist.map((item) => (
           <li
             key={item.title}
             className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3"
