@@ -19,6 +19,7 @@ import { standardizeCopy } from "@/lib/standardize-copy";
 import { publicationLabel } from "@/lib/badges";
 
 import { resolveHebcalParsha, nextParshaAfter, isPastReading } from "@/lib/hebcal";
+import { formatReadingLabel } from "@/lib/parshiyos";
 import {
   listHomepageWeek,
   getParshaOverride,
@@ -546,7 +547,7 @@ function Index() {
                 </div>
               </>
             )}
-            {upcomingParsha && upcomingParsha !== displayedParshaKey && (
+            {upcomingParsha && upcomingParsha !== displayedParshaKey ? (
               <div className="mx-auto mt-6 max-w-2xl rounded-xl border border-accent/40 bg-card/40 px-4 py-4 sm:px-5">
                 <h3 className="text-center font-serif text-base sm:text-lg font-bold text-primary">
                   Next Week: {formatReadingLabel(upcomingParsha)}
@@ -568,6 +569,16 @@ function Index() {
                     ctaLabel="Get the weekly download reminder"
                   />
                 </div>
+              </div>
+            ) : (
+              // No determinable next reading (Yom Tov week or Hebcal fallback):
+              // the reminder signup must still be reachable on the homepage.
+              <div className="mx-auto mt-6 max-w-2xl rounded-xl border border-accent/40 bg-card/40 px-4 py-4 sm:px-5">
+                <WeeklyEmailSignup
+                  sourceId="homepage"
+                  variant="compact"
+                  ctaLabel="Get the weekly download reminder"
+                />
               </div>
             )}
 
