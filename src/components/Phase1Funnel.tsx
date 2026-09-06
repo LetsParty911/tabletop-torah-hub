@@ -156,7 +156,10 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
           <div className="mt-4 grid gap-3 grid-cols-2 lg:grid-cols-4">
             <Card label="Unique visitors" value={String(data.totals.uniqueVisitors)} />
             <Card label="Sessions" value={String(data.totals.sessions)} />
-            <Card label="Returning visitors" value={String(data.totals.returningVisitors)} />
+            <Card
+              label="Returning visitors"
+              value={String(f?.returningVisitors ?? data.totals.returningVisitors)}
+            />
             <Card label="PDF accesses" value={String(data.totals.pdfAccesses)} />
             <Card label="Downloads" value={String(data.totals.downloads)} />
             <Card
