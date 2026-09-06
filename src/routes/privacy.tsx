@@ -101,8 +101,9 @@ function PrivacyPage() {
                     <p>
                       If you sign up for the weekly reminder — either from the signup box on the
                       site or the popup that appears after a download — we store your email address
-                      and the date you subscribed. We use it to send you a message when the new
-                      weekly collection is ready. Every email we send includes an unsubscribe link.
+                      and the date you subscribed. We use it to manage the mailing list and send
+                      messages about new weekly collections. Every email we send includes an
+                      unsubscribe link.
                     </p>
                   </Sub>
 
@@ -117,46 +118,70 @@ function PrivacyPage() {
                     <p>
                       When someone downloads a publication, we record which publication it was and
                       the city, region, country, and time zone of the request, as reported by our
-                      hosting provider.
+                      hosting provider. Download activity may also be recorded in the site analytics
+                      described below.
                     </p>
                   </Sub>
 
                   <Sub heading="4. Site analytics">
-                    <p>
-                      We use Google Tag Manager and Google Analytics to measure site usage,
-                      including which pages are visited, which publications are downloaded or
-                      printed, and interactions with the signup forms. Google may set cookies in
-                      your browser as part of this. Google's handling of that data is governed by
-                      its own privacy policy at{" "}
-                      <a
-                        href="https://policies.google.com/privacy"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-accent underline hover:text-primary transition-colors"
-                      >
-                        policies.google.com/privacy
-                      </a>
-                      . Analytics are not run on the site's administrative pages.
-                    </p>
+                    <div className="space-y-3">
+                      <p>
+                        We operate first-party site analytics that assign a browser visitor
+                        identifier and a session identifier. The analytics system records activity
+                        such as page views, publications displayed on screen, publication clicks,
+                        PDF opens and downloads, filter changes, searches, share actions, signup
+                        interactions, active-time measurements, and site errors.
+                      </p>
+                      <p>
+                        Analytics records may also include the publication ID and title, series,
+                        publisher, parsha and Jewish year; the landing page and referring site or
+                        URL; campaign parameters such as UTM source, medium and campaign; a
+                        normalized traffic-source category; device category; approximate country
+                        and region; and event-specific metadata such as the filter selected, search
+                        information, share method, or active-time interval.
+                      </p>
+                      <p>
+                        We also use Google Tag Manager and Google Analytics to measure site usage,
+                        including page visits, publication interactions, downloads or printing, and
+                        signup interactions. Google may set cookies in your browser as part of this.
+                        Google's handling of that data is governed by its own privacy policy at{" "}
+                        <a
+                          href="https://policies.google.com/privacy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-accent underline hover:text-primary transition-colors"
+                        >
+                          policies.google.com/privacy
+                        </a>
+                        . Analytics are not run on the site's administrative pages.
+                      </p>
+                    </div>
                   </Sub>
 
-                  <Sub heading="5. Information stored in your own browser">
+                  <Sub heading="5. Information stored in your browser">
                     <p>
-                      The site stores a small number of values in your browser's local and session
-                      storage, used for features such as remembering that the email popup was
-                      dismissed and enabling offline access and faster loading. You can clear these
-                      at any time through your browser settings.
+                      The first-party analytics system stores a visitor identifier in a cookie with
+                      a 12-month lifetime that is renewed when the site is used. It also uses browser
+                      storage for the visitor identifier, session identifier and session timing, and
+                      first-touch referral and campaign information. The site also stores values used
+                      for features such as remembering dismissed prompts and supporting faster or
+                      offline use. Google Analytics may use its own cookies or browser storage. These
+                      values can be cleared through your browser settings.
                     </p>
                   </Sub>
                 </div>
               </Section>
 
               <Section heading="Service providers">
-                <p>We use the following service providers to operate the site:</p>
+                <p>We use service providers to operate the site and related communications:</p>
                 <ul className="list-disc space-y-1 pl-6">
-                  <li>Lovable — website hosting and content delivery</li>
-                  <li>Supabase — database storage for subscriptions and download records</li>
+                  <li>Vercel and Lovable — website deployment, hosting, and development tooling</li>
+                  <li>
+                    Supabase — database storage for subscriptions, contact messages, download
+                    records, and analytics events
+                  </li>
                   <li>Google — Tag Manager and Analytics</li>
+                  <li>Sender.net and Resend — mailing-list management and email delivery</li>
                 </ul>
                 <p>We may also disclose information if we are legally required to do so.</p>
               </Section>
@@ -165,7 +190,8 @@ function PrivacyPage() {
                 <p>
                   Email addresses are kept until the subscriber unsubscribes or requests removal.
                   Contact form messages are kept as long as needed to handle the inquiry. Download
-                  records are kept indefinitely.
+                  records and analytics records are retained for operational and historical
+                  reporting unless they are deleted.
                 </p>
               </Section>
 
