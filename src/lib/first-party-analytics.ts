@@ -39,6 +39,7 @@ export type FpEventInput = PublicationContext & {
 const VISITOR_COOKIE = "tftt_vid";
 const VISITOR_STORAGE_KEY = "tftt:fp-visitor";
 const SESSION_STORAGE_KEY = "tftt:fp-session";
+const NEW_VISITOR_SESSION_KEY = "tftt:fp-new-visitor-session";
 const ATTRIBUTION_STORAGE_KEY = "tftt:fp-attribution";
 
 const VISITOR_TTL_DAYS = 365; // 12 months
@@ -136,10 +137,16 @@ export function getVisitorId(): string {
   return id;
 }
 
-/** True only for the very first session of a brand-new visitor id. */
+function isNewVisitorSession(sessionId: string): boolean {
+  if (!sessionId) return false;
+  return lsGet(NEW_VISITOR_SESSION_KEY) === sessionId;
+}
+
+/** True only during the very first session of a brand-new visitor id. */
 export function isNewVisitor(): boolean {
   getVisitorId();
-  return visitorWasCreated;
+  const { sessionId } = touchSession();
+  return isNewVisitorSession(sessionId);
 }
 
 // ---------------------------------------------------------------------------
@@ -176,12 +183,22 @@ export function touchSession(): { sessionId: string; isNew: boolean } {
   const existing = readSession();
 
   if (existing && now - existing.last < SESSION_IDLE_MS) {
-    writeSession({ ...existing, last: now });
-    return { sessionId: existing.id, isNew: false };
+    // If a visitor id was just created but an old session record somehow
+    // survived independently, bind the new visitor to a fresh session rather
+    // than mixing identities.
+    if (!visitorWasCreated) {
+      writeSession({ ...existing, last: now });
+      return { sessionId: existing.id, isNew: false };
+    }
   }
 
   const fresh: StoredSession = { id: randomId(), started: now, last: now };
   writeSession(fresh);
+  if (visitorWasCreated) {
+    // Persist the first-session id so a reload during that same session still
+    // reports the visitor as new, while later 30-minute sessions do not.
+    lsSet(NEW_VISITOR_SESSION_KEY, fresh.id);
+  }
   // A new session means a new first-touch attribution window.
   try {
     localStorage.removeItem(ATTRIBUTION_STORAGE_KEY);
@@ -388,7 +405,7 @@ export function trackFp(name: FpEventName, input: FpEventInput = {}): void {
       occurred_at: new Date().toISOString(),
       visitor_id: visitorId,
       session_id: sessionId,
-      is_new_visitor: visitorWasCreated,
+      is_new_visitor: isNewVisitorSession(sessionId),
       path,
       landing_path: attribution.landing_path,
       source_path: window.location.pathname,
@@ -422,7 +439,7 @@ function emitSessionStart(path: string, visitorId: string, sessionId: string): v
       occurred_at: new Date().toISOString(),
       visitor_id: visitorId,
       session_id: sessionId,
-      is_new_visitor: visitorWasCreated,
+      is_new_visitor: isNewVisitorSession(sessionId),
       path,
       landing_path: attribution.landing_path,
       source_path: path,
@@ -437,7 +454,6 @@ function emitSessionStart(path: string, visitorId: string, sessionId: string): v
     true,
   );
 }
-
 // ---------------------------------------------------------------------------
 // Route lifecycle
 // ---------------------------------------------------------------------------
