@@ -482,6 +482,13 @@ function Index() {
           </div>
         </section>
 
+        <ThursdayProgressMeter
+          heading="Next Week's Upload Progress"
+          ariaLabel={(fillStep) =>
+            `Next week's Divrei Torah upload progress: ${fillStep}% complete`
+          }
+        />
+
         {/* Resource collection */}
         <section id="this-weeks-collection" className="scroll-mt-8">
           <div className="px-1 sm:px-2">
