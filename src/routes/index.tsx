@@ -831,7 +831,7 @@ function Index() {
                             />
                           </div>
                         </div>
-                      </article>
+                      </PublicationCardTracker>
                       {i === (filteredResources.length > 1 ? 1 : 0) && (
                         <div
                           key="share-prompt"
