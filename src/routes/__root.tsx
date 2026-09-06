@@ -22,7 +22,8 @@ declare global {
 
 function GoogleAnalytics() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
+  const isAdmin =
+    pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/admin-analytics";
 
   // Load GTM (primary analytics container) on public routes only.
   useEffect(() => {
@@ -43,7 +44,6 @@ function GoogleAnalytics() {
     s.src = `https://www.googletagmanager.com/gtm.js?id=${GTM_CONTAINER_ID}`;
     document.head.appendChild(s);
   }, [isAdmin]);
-
 
   // GTM <noscript> iframe fallback — rendered into <body> on public routes only.
   // (Kept out of <head> to comply with HTML5 noscript content rules.)
@@ -124,19 +124,13 @@ function NotFoundComponent() {
       document.title = previousTitle;
       tag?.parentNode?.removeChild(tag);
     };
-
   }, []);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-
       <div className="max-w-md text-center">
-        <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
-          404
-        </p>
-        <h1 className="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
-          Page not found
-        </h1>
+        <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">404</p>
+        <h1 className="mt-3 text-3xl font-bold text-foreground sm:text-4xl">Page not found</h1>
         <p className="mt-3 text-base text-muted-foreground">
           Sorry, we couldn't find the page you were looking for.
         </p>
@@ -164,9 +158,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      // Page-specific title, description, og:*, and twitter:* are set on leaf routes.
       { property: "og:type", content: "website" },
-      // PWA
       { name: "theme-color", content: "#1A365D" },
       { name: "application-name", content: "Torah for the Table" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
@@ -180,14 +172,24 @@ export const Route = createRootRoute({
       { rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16x16.png" },
       { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32x32.png" },
       { rel: "apple-touch-icon", sizes: "180x180", href: "/favicon-180x180.png" },
-
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Inter:wght@400;500;600;700&display=swap" },
-      // AI crawler discovery hints
-      { rel: "alternate", type: "text/plain", href: "https://torahforthetable.com/llms.txt", title: "llms.txt" },
-      { rel: "sitemap", type: "application/xml", href: "https://torahforthetable.com/sitemap.xml" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Inter:wght@400;500;600;700&display=swap",
+      },
+      {
+        rel: "alternate",
+        type: "text/plain",
+        href: "https://torahforthetable.com/llms.txt",
+        title: "llms.txt",
+      },
+      {
+        rel: "sitemap",
+        type: "application/xml",
+        href: "https://torahforthetable.com/sitemap.xml",
+      },
     ],
     scripts: [
       {
@@ -237,21 +239,14 @@ function PwaRegistrar() {
   return null;
 }
 
-// First-party pageview tracking. Fires on every client-side route change
-// (this is a SPA, so a load-only hook would undercount). Admin paths are
-// skipped inside trackPageView / trackRouteView.
 function PageViewTracker() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   useEffect(() => {
-    // Legacy stream (page_views table) — unchanged, the download dashboard
-    // still reads it.
     captureAttribution(pathname);
     trackPageView(pathname);
-    // Canonical Phase 1 stream: session_start (once per session) + page_view.
     trackRouteView(pathname);
   }, [pathname]);
 
-  // Active-time heartbeat: only while visible AND focused.
   useEffect(() => startHeartbeat(), []);
 
   return null;
@@ -259,7 +254,8 @@ function PageViewTracker() {
 
 function SiteNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
+  const isAdmin =
+    pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/admin-analytics";
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -286,19 +282,40 @@ function SiteNav() {
           </Link>
 
           <div className="hidden items-center gap-6 md:flex">
-            <Link to="/" activeOptions={{ exact: true }} className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
+            <Link
+              to="/"
+              activeOptions={{ exact: true }}
+              className={linkCls}
+              activeProps={{ className: `${linkCls} ${activeCls}` }}
+            >
               Home
             </Link>
-            <Link to="/archive" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
+            <Link
+              to="/archive"
+              className={linkCls}
+              activeProps={{ className: `${linkCls} ${activeCls}` }}
+            >
               Archive
             </Link>
-            <Link to="/short-vorts" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
+            <Link
+              to="/short-vorts"
+              className={linkCls}
+              activeProps={{ className: `${linkCls} ${activeCls}` }}
+            >
               Short Vorts
             </Link>
-            <Link to="/resources" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
+            <Link
+              to="/resources"
+              className={linkCls}
+              activeProps={{ className: `${linkCls} ${activeCls}` }}
+            >
               Originals
             </Link>
-            <Link to="/about" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
+            <Link
+              to="/about"
+              className={linkCls}
+              activeProps={{ className: `${linkCls} ${activeCls}` }}
+            >
               About
             </Link>
           </div>
@@ -311,26 +328,51 @@ function SiteNav() {
             onClick={() => setMobileOpen((open) => !open)}
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-accent/35 bg-background text-primary transition-colors hover:bg-accent/10 md:hidden"
           >
-            {mobileOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
+            {mobileOpen ? (
+              <X className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <Menu className="h-5 w-5" aria-hidden="true" />
+            )}
           </button>
         </div>
 
         {mobileOpen && (
           <div id="mobile-navigation" className="border-t border-accent/20 pb-3 pt-2 md:hidden">
             <div className="grid gap-1">
-              <Link to="/" activeOptions={{ exact: true }} className={mobileLinkCls} activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}>
+              <Link
+                to="/"
+                activeOptions={{ exact: true }}
+                className={mobileLinkCls}
+                activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
+              >
                 Home
               </Link>
-              <Link to="/archive" className={mobileLinkCls} activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}>
+              <Link
+                to="/archive"
+                className={mobileLinkCls}
+                activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
+              >
                 Archive
               </Link>
-              <Link to="/short-vorts" className={mobileLinkCls} activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}>
+              <Link
+                to="/short-vorts"
+                className={mobileLinkCls}
+                activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
+              >
                 Short Vorts
               </Link>
-              <Link to="/resources" className={mobileLinkCls} activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}>
+              <Link
+                to="/resources"
+                className={mobileLinkCls}
+                activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
+              >
                 Originals
               </Link>
-              <Link to="/about" className={mobileLinkCls} activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}>
+              <Link
+                to="/about"
+                className={mobileLinkCls}
+                activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
+              >
                 About
               </Link>
             </div>
