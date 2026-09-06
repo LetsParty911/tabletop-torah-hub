@@ -638,7 +638,13 @@ function Index() {
                               type="button"
                               aria-pressed={active}
                               aria-label={`Filter by audience: ${audienceLabel(audience)}`}
-                              onClick={() => setAudienceFilter(active ? "All" : audience)}
+                              onClick={() => {
+                                const next = active ? "All" : audience;
+                                setAudienceFilter(next);
+                                trackFp("filter_change", {
+                                  metadata: { filter: "audience", value: next },
+                                });
+                              }}
                               className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                 active
                                   ? "border-accent bg-accent text-accent-foreground shadow-sm"
@@ -677,7 +683,13 @@ function Index() {
                               type="button"
                               aria-pressed={active}
                               aria-label={`Filter by length: ${o.label}`}
-                              onClick={() => setLengthFilter(active ? "All" : o.key)}
+                              onClick={() => {
+                                const next = active ? "All" : o.key;
+                                setLengthFilter(next);
+                                trackFp("filter_change", {
+                                  metadata: { filter: "length", value: next },
+                                });
+                              }}
                               className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                 active
                                   ? "border-accent bg-accent text-accent-foreground shadow-sm"
@@ -716,7 +728,13 @@ function Index() {
                                 type="button"
                                 aria-pressed={active}
                                 aria-label={`Filter by content type: ${o.label}`}
-                                onClick={() => setContentTypeFilter(active ? "All" : o.key)}
+                                onClick={() => {
+                                  const next = active ? "All" : o.key;
+                                  setContentTypeFilter(next);
+                                  trackFp("filter_change", {
+                                    metadata: { filter: "content_type", value: next },
+                                  });
+                                }}
                                 className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                   active
                                     ? "border-accent bg-accent text-accent-foreground shadow-sm"
