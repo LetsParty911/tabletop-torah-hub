@@ -520,6 +520,12 @@ function Index() {
                                   publicationLabel(r.publication || r.title) || r.title
                                 }
                                 publicationTitle={r.title}
+                                publisher={r.publisher}
+                                publicationSeries={r.publication}
+                                parsha={
+                                  (r as { parsha_key?: string | null }).parsha_key ??
+                                  displayedParshaKey
+                                }
                                 filename={buildDownloadFilename(
                                   (r as { parsha_key?: string | null }).parsha_key ??
                                     displayedParshaKey,
@@ -825,6 +831,12 @@ function Index() {
                             publicationId={r.id}
                             publicationName={publicationLabel(r.publication || r.title) || r.title}
                             publicationTitle={r.title}
+                            publisher={r.publisher}
+                            publicationSeries={r.publication}
+                            parsha={
+                              (r as { parsha_key?: string | null }).parsha_key ??
+                              displayedParshaKey
+                            }
                             filename={buildDownloadFilename(
                               (r as { parsha_key?: string | null }).parsha_key ??
                                 displayedParshaKey,
