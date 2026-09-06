@@ -1,0 +1,77 @@
+name: One-time Yom Tov headline update
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update homepage headline logic
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('src/routes/index.tsx')
+          text = path.read_text()
+
+          marker = '''const FEATURED_SLOTS = [
+            { key: "children", label: "Best for Children" },
+            { key: "family", label: "Best for the Family Table" },
+            { key: "quickest", label: "Quickest Read" },
+            { key: "deeper", label: "Deeper Learning" },
+          ] as const;'''
+
+          replacement = '''const YOM_TOV_LABELS = new Set([
+            "Rosh Hashanah",
+            "Yom Kippur",
+            "Sukkos",
+            "Shemini Atzeres",
+            "Simchas Torah",
+            "Pesach",
+            "Shavuos",
+          ]);
+
+          const FEATURED_SLOTS = [
+            { key: "children", label: "Best for Children" },
+            { key: "family", label: "Best for the Family Table" },
+            { key: "quickest", label: "Quickest Read" },
+            { key: "deeper", label: "Deeper Learning" },
+          ] as const;'''
+
+          if marker not in text:
+            raise SystemExit('FEATURED_SLOTS marker not found')
+          text = text.replace(marker, replacement, 1)
+
+          old = '''              {postShabbos
+                ? `Divrei Torah for ${displayedLabel}`
+                : "Free Divrei Torah for Your Shabbos Table"}'''
+
+          new = '''              {postShabbos
+                ? `Divrei Torah for ${displayedLabel}`
+                : YOM_TOV_LABELS.has(displayedLabel)
+                  ? "Free Divrei Torah for Your Yom Tov Table"
+                  : "Free Divrei Torah for Your Shabbos Table"}'''
+
+          if old not in text:
+            raise SystemExit('Hero headline marker not found')
+          text = text.replace(old, new, 1)
+          path.write_text(text)
+
+      - name: Remove one-time workflow and commit
+        run: |
+          rm .github/workflows/one-time-yomtov-headline.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/index.tsx .github/workflows/one-time-yomtov-headline.yml
+          git commit -m "Switch homepage table wording automatically for Yom Tov"
+          git push
