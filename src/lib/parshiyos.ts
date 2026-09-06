@@ -108,3 +108,18 @@ export function hebcalYomTovToKey(title: string): string | null {
   return YOM_TOV_MAP[normalizeYomTovTitle(title)] ?? null;
 }
 
+
+/** Major Yom Tovim that replace the weekly parsha reading. */
+export const YOM_TOV_KEYS: string[] = [
+  "Rosh Hashanah", "Yom Kippur", "Sukkos", "Shemini Atzeres",
+  "Simchas Torah", "Pesach", "Shavuos",
+];
+
+/**
+ * Display label for a reading key: Yom Tov names stand alone, weekly
+ * parshiyos get the "Parshas " prefix (never doubled).
+ */
+export function formatReadingLabel(key: string): string {
+  if (YOM_TOV_KEYS.includes(key)) return key;
+  return /^parshas\s/i.test(key) ? key : `Parshas ${key}`;
+}
