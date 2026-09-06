@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { adminPhase1Funnel } from "@/integrations/supabase/api.functions";
+import { adminPhase1SessionFunnel } from "@/integrations/supabase/phase1-session-funnel";
 
 type FunnelData = Awaited<ReturnType<typeof adminPhase1Funnel>>;
 type OkData = Extract<FunnelData, { ok: true }>;
+type SessionFunnelData = Awaited<ReturnType<typeof adminPhase1SessionFunnel>>;
 
 const RANGES = [7, 30, 90];
 
@@ -77,6 +79,7 @@ function Table({
 export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
   const [days, setDays] = useState(7);
   const [data, setData] = useState<OkData | null>(null);
+  const [sessionFunnel, setSessionFunnel] = useState<SessionFunnelData["funnel"] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -85,15 +88,21 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
     setLoading(true);
     setProblem(null);
     try {
-      const r = await adminPhase1Funnel({ data: { accessToken, days } });
+      const [r, sessionResult] = await Promise.all([
+        adminPhase1Funnel({ data: { accessToken, days } }),
+        adminPhase1SessionFunnel({ data: { accessToken, days } }),
+      ]);
       if (r.ok) {
         setData(r);
+        setSessionFunnel(sessionResult.funnel);
       } else {
         setData(null);
+        setSessionFunnel(null);
         setProblem(r.reason);
       }
     } catch (e) {
       setData(null);
+      setSessionFunnel(null);
       setProblem(e instanceof Error ? e.message : "Could not load analytics.");
     } finally {
       setLoading(false);
@@ -104,7 +113,7 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
     void load();
   }, [load]);
 
-  const f = data?.funnel;
+  const f = sessionFunnel;
 
   return (
     <div>
@@ -167,10 +176,10 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
               <div className="mt-2 space-y-1 text-sm">
                 {[
                   { label: "Sessions", value: f.sessions, prev: null as number | null },
-                  { label: "Publication impressions", value: f.impressions, prev: f.sessions },
-                  { label: "Publication clicks", value: f.clicks, prev: f.impressions },
-                  { label: "PDF accesses", value: f.accesses, prev: f.clicks },
-                  { label: "Downloads", value: f.downloads, prev: f.accesses },
+                  { label: "Sessions that saw a publication", value: f.impressions, prev: f.sessions },
+                  { label: "Sessions that clicked a publication", value: f.clicks, prev: f.impressions },
+                  { label: "Sessions that accessed a PDF", value: f.accesses, prev: f.clicks },
+                  { label: "Sessions that downloaded", value: f.downloads, prev: f.accesses },
                 ].map((step) => (
                   <div
                     key={step.label}
