@@ -24,46 +24,25 @@ jobs:
           path = Path('src/routes/index.tsx')
           text = path.read_text()
 
-          marker = '''const FEATURED_SLOTS = [
-            { key: "children", label: "Best for Children" },
-            { key: "family", label: "Best for the Family Table" },
-            { key: "quickest", label: "Quickest Read" },
-            { key: "deeper", label: "Deeper Learning" },
-          ] as const;'''
+          anchor = '  const displayedParshaKey = isFallback && fallbackParshaKey ? fallbackParshaKey : currentParshaKey;'
+          addition = '''  const displayedParshaKey = isFallback && fallbackParshaKey ? fallbackParshaKey : currentParshaKey;
+  const isYomTovCollection = new Set([
+    "Rosh Hashanah",
+    "Yom Kippur",
+    "Sukkos",
+    "Shemini Atzeres",
+    "Simchas Torah",
+    "Pesach",
+    "Shavuos",
+  ]).has(displayedLabel);'''
+          if anchor not in text:
+            raise SystemExit('displayedParshaKey marker not found')
+          text = text.replace(anchor, addition, 1)
 
-          replacement = '''const YOM_TOV_LABELS = new Set([
-            "Rosh Hashanah",
-            "Yom Kippur",
-            "Sukkos",
-            "Shemini Atzeres",
-            "Simchas Torah",
-            "Pesach",
-            "Shavuos",
-          ]);
-
-          const FEATURED_SLOTS = [
-            { key: "children", label: "Best for Children" },
-            { key: "family", label: "Best for the Family Table" },
-            { key: "quickest", label: "Quickest Read" },
-            { key: "deeper", label: "Deeper Learning" },
-          ] as const;'''
-
-          if marker not in text:
-            raise SystemExit('FEATURED_SLOTS marker not found')
-          text = text.replace(marker, replacement, 1)
-
-          old = '''              {postShabbos
-                ? `Divrei Torah for ${displayedLabel}`
-                : "Free Divrei Torah for Your Shabbos Table"}'''
-
-          new = '''              {postShabbos
-                ? `Divrei Torah for ${displayedLabel}`
-                : YOM_TOV_LABELS.has(displayedLabel)
-                  ? "Free Divrei Torah for Your Yom Tov Table"
-                  : "Free Divrei Torah for Your Shabbos Table"}'''
-
+          old = '"Free Divrei Torah for Your Shabbos Table"'
+          new = '`Free Divrei Torah for Your ${isYomTovCollection ? "Yom Tov" : "Shabbos"} Table`'
           if old not in text:
-            raise SystemExit('Hero headline marker not found')
+            raise SystemExit('Hero headline text not found')
           text = text.replace(old, new, 1)
           path.write_text(text)
 
