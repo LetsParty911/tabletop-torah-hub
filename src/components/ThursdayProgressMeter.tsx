@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getThursdayProgress } from "@/integrations/supabase/api.functions";
+import { getProgressVisibility } from "@/integrations/supabase/progress-visibility.functions";
 
 const STEPS = [0, 25, 50, 75, 95, 100] as const;
 type FillStep = (typeof STEPS)[number];
@@ -31,15 +32,20 @@ export function ThursdayProgressMeter({
 }: ThursdayProgressMeterProps) {
   const [fillStep, setFillStep] = useState<FillStep | null>(null);
   const [eta, setEta] = useState<string | null>(null);
+  const [visible, setVisible] = useState<boolean | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const p = await getThursdayProgress();
+        const [p, visibility] = await Promise.all([
+          getThursdayProgress(),
+          getProgressVisibility(),
+        ]);
         if (!cancelled) {
           setFillStep(p.fillStep);
           setEta(p.eta);
+          setVisible(visibility.visible);
         }
       } catch {
         // silent — meter just doesn't render
@@ -56,7 +62,7 @@ export function ThursdayProgressMeter({
     return !Number.isNaN(etaTime) && etaTime > Date.now();
   }, [eta]);
 
-  if (fillStep === null) return null;
+  if (fillStep === null || visible !== true) return null;
 
   const activeCount = SEGMENT_THRESHOLDS.filter((t) => t <= fillStep).length;
 
