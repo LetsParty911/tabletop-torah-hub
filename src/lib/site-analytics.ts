@@ -19,7 +19,7 @@ function randomId(): string {
 }
 
 export function isAdminPath(path: string): boolean {
-  return path === "/admin" || path.startsWith("/admin/");
+  return path === "/admin" || path.startsWith("/admin/") || path === "/admin-analytics";
 }
 
 export function getSessionId(): string {
