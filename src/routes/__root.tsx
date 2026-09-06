@@ -107,6 +107,8 @@ function AuthRedirectHandler() {
 function NotFoundComponent() {
   useEffect(() => {
     if (typeof document === "undefined") return;
+    // Meaningful site error only — a real 404, with a sanitized code.
+    trackFp("error", { metadata: { error_code: "not_found", status: 404 } });
     const previousTitle = document.title;
     document.title = "Page Not Found — Torah for the Table";
     let tag = document.querySelector('meta[name="robots"][data-notfound="1"]') as HTMLMetaElement | null;
