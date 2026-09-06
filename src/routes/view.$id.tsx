@@ -232,6 +232,9 @@ function ViewPdf() {
             publicationId={pdf.id}
             publicationName={publicationLabel(pdf.publication || pdf.title) || pdf.title}
             publicationTitle={pdf.title}
+            parsha={pdf.parsha_key}
+            publisher={pdf.publisher}
+            publicationSeries={pdf.publication}
             filename={buildDownloadFilename(
               pdf.parsha_key,
               pdf.publication || pdf.title,
