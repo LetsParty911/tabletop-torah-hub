@@ -631,15 +631,6 @@ function Index() {
                   {isFallback ? "This Week:" : "Next Week:"} {formatReadingLabel(upcomingParsha)}
                 </h3>
                 <div className="mt-3">
-                  <ThursdayProgressMeter
-                    heading={(fillStep) => `${fillStep}% uploaded`}
-                    showPercent={false}
-                    ariaLabel={(fillStep) =>
-                      `${isFallback ? "This" : "Next"} week's Divrei Torah upload progress: ${fillStep}% complete`
-                    }
-                  />
-                </div>
-                <div className="mt-3">
                   <WeeklyEmailSignup
                     sourceId="homepage"
                     variant="compact"
