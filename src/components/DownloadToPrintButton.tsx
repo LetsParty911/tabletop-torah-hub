@@ -30,6 +30,10 @@ export function DownloadToPrintButton({
   publicationName,
   publicationTitle,
   filename: preferredFilename,
+  parsha,
+  jewishYear,
+  publisher,
+  publicationSeries,
 }: DownloadToPrintButtonProps) {
   const displayName = publicationName ?? publicationTitle;
   const buttonLabel = displayName ? `Download ${displayName}` : "Download";
