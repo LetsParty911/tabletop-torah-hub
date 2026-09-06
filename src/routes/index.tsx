@@ -424,7 +424,7 @@ function Index() {
         <section id="this-weeks-collection" className="scroll-mt-8">
           <div className="px-1 sm:px-2">
             <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
-              {postShabbos ? "Still Available to Download" : "This Week's Collection"}
+              {postShabbos ? "Last Week's Collection" : "This Week's Collection"}
             </h2>
 
             {isFallback && resources.length > 0 && (
