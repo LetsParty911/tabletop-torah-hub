@@ -1,3 +1,10 @@
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  adminSetProgressVisibility,
+  getProgressVisibility,
+} from "@/integrations/supabase/progress-visibility.functions";
+
 const STEPS = [0, 25, 50, 75, 95, 100] as const;
 type FillStep = (typeof STEPS)[number];
 
@@ -18,6 +25,49 @@ export default function ThursdayProgressForm({
   onSubmit,
   busy,
 }: ThursdayProgressFormProps) {
+  const { session } = useAuth();
+  const accessToken = session?.access_token ?? null;
+  const [progressVisible, setProgressVisible] = useState(true);
+  const [visibilityLoading, setVisibilityLoading] = useState(true);
+  const [visibilitySaving, setVisibilitySaving] = useState(false);
+  const [visibilityMessage, setVisibilityMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await getProgressVisibility();
+        if (!cancelled) setProgressVisible(result.visible);
+      } catch {
+        // Preserve the existing visible behavior if the setting cannot load.
+      } finally {
+        if (!cancelled) setVisibilityLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const saveVisibility = async (visible: boolean) => {
+    if (!accessToken || visibilitySaving) return;
+    const previous = progressVisible;
+    setProgressVisible(visible);
+    setVisibilitySaving(true);
+    setVisibilityMessage(null);
+    try {
+      await adminSetProgressVisibility({ data: { accessToken, visible } });
+      setVisibilityMessage(visible ? "Progress bar is visible." : "Progress bar is hidden.");
+    } catch (err) {
+      setProgressVisible(previous);
+      setVisibilityMessage(
+        `Could not save visibility: ${err instanceof Error ? err.message : "unknown error"}`,
+      );
+    } finally {
+      setVisibilitySaving(false);
+    }
+  };
+
   return (
     <>
       <h2 className="font-serif text-2xl font-semibold text-primary">
@@ -25,9 +75,47 @@ export default function ThursdayProgressForm({
       </h2>
       <p className="text-sm text-muted-foreground mt-1">
         Lets visitors see how much of this week&apos;s Divrei Torah has been uploaded.
-        The ETA line hides itself automatically once it passes; the meter stays visible.
+        You can show or hide the progress bar at any time. The ETA line hides itself
+        automatically once it passes.
       </p>
       <form onSubmit={onSubmit} className="mt-4 space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">Progress bar visibility</label>
+          <div className="flex gap-2" role="group" aria-label="Progress bar visibility">
+            <button
+              type="button"
+              disabled={visibilityLoading || visibilitySaving || !accessToken}
+              onClick={() => saveVisibility(true)}
+              className={
+                "flex-1 rounded-md border-2 py-2 text-sm font-semibold transition-colors disabled:opacity-50 " +
+                (progressVisible
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-accent/60 bg-background text-primary hover:bg-accent/10")
+              }
+            >
+              On
+            </button>
+            <button
+              type="button"
+              disabled={visibilityLoading || visibilitySaving || !accessToken}
+              onClick={() => saveVisibility(false)}
+              className={
+                "flex-1 rounded-md border-2 py-2 text-sm font-semibold transition-colors disabled:opacity-50 " +
+                (!progressVisible
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-accent/60 bg-background text-primary hover:bg-accent/10")
+              }
+            >
+              Off
+            </button>
+          </div>
+          {visibilityMessage && (
+            <p className="mt-1 text-xs text-muted-foreground" role="status">
+              {visibilityMessage}
+            </p>
+          )}
+        </div>
+
         <div>
           <label className="block text-sm font-medium mb-1">Progress</label>
           <div className="flex gap-2">
