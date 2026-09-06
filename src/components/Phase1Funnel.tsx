@@ -29,7 +29,13 @@ function Table({
 }: {
   title: string;
   keyLabel: string;
-  rows: Array<{ key: string; sessions: number; clicks: number; accesses: number; downloads: number }>;
+  rows: Array<{
+    key: string;
+    sessions: number;
+    clicks: number;
+    accesses: number;
+    downloads: number;
+  }>;
 }) {
   return (
     <div className="mt-6">

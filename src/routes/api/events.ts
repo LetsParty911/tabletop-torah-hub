@@ -93,22 +93,24 @@ export const Route = createFileRoute("/api/events")({
             if (isAdminPath(path)) continue;
 
             const occurredAt = str("occurred_at", 40);
-            const occurred = occurredAt && !Number.isNaN(Date.parse(occurredAt))
-              ? new Date(occurredAt).toISOString()
-              : new Date().toISOString();
+            const occurred =
+              occurredAt && !Number.isNaN(Date.parse(occurredAt))
+                ? new Date(occurredAt).toISOString()
+                : new Date().toISOString();
 
             const jy = Number(e["jewish_year"]);
 
             let metadata: Record<string, unknown> = {};
-            if (e["metadata"] && typeof e["metadata"] === "object" && !Array.isArray(e["metadata"])) {
+            if (
+              e["metadata"] &&
+              typeof e["metadata"] === "object" &&
+              !Array.isArray(e["metadata"])
+            ) {
               // Keep the payload small and predictable.
               metadata = Object.fromEntries(
                 Object.entries(e["metadata"] as Record<string, unknown>)
                   .slice(0, 20)
-                  .map(([k, v]) => [
-                    k.slice(0, 40),
-                    typeof v === "string" ? v.slice(0, 300) : v,
-                  ]),
+                  .map(([k, v]) => [k.slice(0, 40), typeof v === "string" ? v.slice(0, 300) : v]),
               );
             }
 
