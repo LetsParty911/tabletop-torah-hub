@@ -124,7 +124,7 @@ export const adminPhase2ReturningAnalytics = createServerFn({ method: "POST" })
     z
       .object({
         accessToken: z.string().min(10),
-        days: z.number().int().min(7).max(365).optional(),
+        days: z.number().int().min(1).max(365).optional(),
       })
       .parse(input),
   )
