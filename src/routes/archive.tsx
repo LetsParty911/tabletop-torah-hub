@@ -4,7 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 import { trackSearch } from "@/lib/site-analytics";
+import { trackFp } from "@/lib/first-party-analytics";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { PublicationCardTracker } from "@/components/PublicationCardTracker";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -373,6 +375,7 @@ function ArchivePage() {
     if (loggedQuery.current === q) return;
     loggedQuery.current = q;
     trackSearch(q, totalPdfs);
+    trackFp("search", { metadata: { query: q.slice(0, 200), result_count: totalPdfs } });
   }, [query, totalPdfs]);
 
 
@@ -659,9 +662,14 @@ function ArchivePage() {
                         </h3>
                         <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                           {p.pdfs.map((r: ArchivePdf) => (
-                            <article
+                            <PublicationCardTracker
                               key={r.id}
                               className="rounded-2xl border-2 border-accent/40 bg-background/60 p-4 sm:p-5 hover:border-accent hover:shadow-md transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
+                              publication_id={r.id}
+                              publication_title={r.title}
+                              publication_series={r.publication ?? null}
+                              publisher={r.publisher ?? null}
+                              parsha={p.parshaKey ?? null}
                             >
                               <div className="flex items-start gap-3">
                                 <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-accent/15 text-primary shrink-0">
