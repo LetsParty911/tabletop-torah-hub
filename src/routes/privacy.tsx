@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 
 const PRIVACY_EMAIL = "hello@torahforthetable.com";
 const ENTITY_NAME = "Torah For The Table";
-const LAST_UPDATED = "August 4, 2026";
+const LAST_UPDATED = "September 6, 2026";
 
 const mailLink = (
   <a
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/privacy")({
   head: () => {
     const title = "Privacy Policy — Torah for the Table";
     const description =
-      "What Torah for the Table collects, why, and how to unsubscribe or request deletion. No advertising, no selling of your information.";
+      "What information Torah for the Table collects and how it is used.";
     const url = "https://torahforthetable.com/privacy";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -97,11 +97,8 @@ function PrivacyPage() {
 
             <div className="mt-8 space-y-8 font-serif text-base sm:text-lg text-foreground leading-relaxed max-w-2xl mx-auto text-left">
               <p>
-                Torah for the Table is a free service. We do not sell
-                advertising, we do not sell or rent your information, and we
-                collect as little as we can while still keeping the site working
-                and knowing whether it is useful. This policy explains exactly
-                what we collect and why.
+                This policy describes the information Torah for the Table
+                collects and how it is used.
               </p>
 
               <Section heading="Who we are">
@@ -120,13 +117,9 @@ function PrivacyPage() {
                       If you sign up for the weekly reminder — either from the
                       signup box on the site or the popup that appears after a
                       download — we store your email address and the date you
-                      subscribed. We use it for one thing: sending you a message
-                      when the new weekly collection is ready. We do not use it
-                      for anything else, and we do not share it with other
-                      organizations. Every email we send includes an unsubscribe
-                      link. That link is unique to you and removes you from the
-                      list immediately, without needing to log in or contact us.
-                      You can also write to us and we will remove you.
+                      subscribed. We use it to send you a message when the new
+                      weekly collection is ready. Every email we send includes
+                      an unsubscribe link.
                     </p>
                   </Sub>
 
@@ -141,26 +134,18 @@ function PrivacyPage() {
                   <Sub heading="3. Download records">
                     <p>
                       When someone downloads a publication, we record which
-                      publication it was and roughly where in the world the
-                      request came from — city, region, country, and time zone,
-                      as reported by our hosting provider. We want to be
-                      specific about what this is not: we do not store your IP
-                      address, your device information, your name, or your email
-                      address alongside these records, and they are not linked
-                      to your subscription if you have one. We cannot tell from
-                      this data which downloads were yours. We use it to
-                      understand which publications are worth continuing to
-                      include and roughly where the site is being used.
+                      publication it was and the city, region, country, and
+                      time zone of the request, as reported by our hosting
+                      provider.
                     </p>
                   </Sub>
 
                   <Sub heading="4. Site analytics">
                     <p>
-                      We use Google Tag Manager and Google Analytics to
-                      understand general usage — which pages are visited, which
-                      publications are downloaded or printed, and whether the
-                      signup forms are working. These record page addresses and
-                      the type of action taken. Google may set cookies in your
+                      We use Google Tag Manager and Google Analytics to measure
+                      site usage, including which pages are visited, which
+                      publications are downloaded or printed, and interactions
+                      with the signup forms. Google may set cookies in your
                       browser as part of this. Google's handling of that data is
                       governed by its own privacy policy at{" "}
                       <a
@@ -171,7 +156,7 @@ function PrivacyPage() {
                       >
                         policies.google.com/privacy
                       </a>
-                      . We do not run analytics on the site's administrative
+                      . Analytics are not run on the site's administrative
                       pages.
                     </p>
                   </Sub>
@@ -179,32 +164,18 @@ function PrivacyPage() {
                   <Sub heading="5. Information stored in your own browser">
                     <p>
                       The site stores a small number of values in your browser's
-                      local and session storage. These are not tracking
-                      identifiers and are never sent to us. They exist so that
-                      the email popup does not reappear after you have dismissed
-                      it or already signed up, and so the site can work offline
-                      and load faster as an installed app. You can clear these
-                      at any time through your browser settings.
+                      local and session storage, used for features such as
+                      remembering that the email popup was dismissed and
+                      enabling offline access and faster loading. You can clear
+                      these at any time through your browser settings.
                     </p>
                   </Sub>
                 </div>
               </Section>
 
-              <Section heading="What we do not do">
-                <ul className="list-disc space-y-1 pl-6">
-                  <li>We do not sell, rent, or trade your information.</li>
-                  <li>We do not display advertising.</li>
-                  <li>
-                    We do not use your information to build a profile of you.
-                  </li>
-                  <li>We do not require an account to use the site.</li>
-                </ul>
-              </Section>
-
-              <Section heading="Who else touches this data">
+              <Section heading="Service providers">
                 <p>
-                  We use a small number of service providers to run the site.
-                  They process data only to provide their service to us:
+                  We use the following service providers to operate the site:
                 </p>
                 <ul className="list-disc space-y-1 pl-6">
                   <li>Lovable — website hosting and content delivery</li>
@@ -220,36 +191,31 @@ function PrivacyPage() {
                 </p>
               </Section>
 
-              <Section heading="How long we keep it">
+              <Section heading="Data retention">
                 <p>
-                  We keep your email address until you unsubscribe or ask us to
-                  remove it. Contact form messages are kept as long as needed to
-                  handle your inquiry. Download records are kept indefinitely in
-                  aggregate form, since they contain no information identifying
-                  you.
+                  Email addresses are kept until the subscriber unsubscribes or
+                  requests removal. Contact form messages are kept as long as
+                  needed to handle the inquiry. Download records are kept
+                  indefinitely.
                 </p>
               </Section>
 
               <Section heading="Children">
                 <p>
                   The site includes material intended for children to read, and
-                  we are glad when families use it together. The site itself is
-                  meant to be used by adults, and we do not knowingly collect
-                  personal information from children under 13. If you believe a
-                  child has given us their email address, write to us and we
-                  will delete it.
+                  the site itself is meant to be used by adults. We do not
+                  knowingly collect personal information from children under 13.
+                  If you believe a child has given us their email address, write
+                  to us and we will delete it.
                 </p>
               </Section>
 
-              <Section heading="Your choices and rights">
+              <Section heading="Your choices">
                 <p>
-                  Whatever your location, you may unsubscribe at any time using
-                  the link in any email we send, ask us what information we hold
-                  about you, and ask us to correct or delete it. Depending on
-                  where you live, you may have additional rights under laws such
-                  as the GDPR or the CCPA. We aim to honor these requests for
-                  everyone, not only where required. Write to {mailLink} and we
-                  will respond.
+                  You may unsubscribe at any time using the link in any email we
+                  send. You may also contact us to ask what information we hold
+                  about you, or to request that it be corrected or deleted, at{" "}
+                  {mailLink}.
                 </p>
               </Section>
 

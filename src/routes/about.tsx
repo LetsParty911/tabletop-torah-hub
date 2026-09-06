@@ -175,15 +175,17 @@ function AboutPage() {
                 <h2 className="font-serif text-2xl font-bold text-primary">Privacy Policy</h2>
                 <div className="mt-2 font-serif text-base text-foreground leading-relaxed space-y-3">
                   <p>
-                    We collect only what is needed to run the site: an email address when you
-                    voluntarily join the weekly notification list, and standard anonymized
-                    analytics (page views, downloads) via Google Tag Manager. We do not sell,
-                    rent, or share your email address.
-                  </p>
-                  <p>
-                    Emails are used solely to send the weekly notification when new Divrei Torah
-                    are posted. You can unsubscribe at any time using the link in any email or
-                    by contacting us.
+                    The site collects an email address when you join the weekly notification
+                    list, and site usage analytics (page views, downloads) via Google Tag
+                    Manager. Emails are used to send the weekly notification when new Divrei
+                    Torah are posted. Details are on the{" "}
+                    <Link
+                      to="/privacy"
+                      className="text-accent underline hover:text-primary transition-colors"
+                    >
+                      Privacy Policy
+                    </Link>{" "}
+                    page.
                   </p>
                 </div>
               </section>
