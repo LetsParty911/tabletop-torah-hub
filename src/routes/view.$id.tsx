@@ -179,9 +179,8 @@ function ViewPdf() {
       publication_series: pdf.publication ?? null,
       publisher: pdf.publisher ?? null,
       parsha: pdf.parsha_key ?? null,
-      jewish_year: pdf.jewish_year ?? null,
     });
-  }, [pdf.id, pdf.title, pdf.publication, pdf.publisher, pdf.parsha_key, pdf.jewish_year]);
+  }, [pdf.id, pdf.title, pdf.publication, pdf.publisher, pdf.parsha_key]);
 
 
   const metaLine = [
