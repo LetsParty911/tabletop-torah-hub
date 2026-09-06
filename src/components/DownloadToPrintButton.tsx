@@ -111,7 +111,27 @@ export function DownloadToPrintButton({
     } catch {
       // never block the download
     }
-  }, [publicationId, publicationTitle]);
+
+    // Canonical Phase 1 event — same click, carries visitor_id + session_id.
+    // Exactly one canonical download event per click; the event_id also
+    // de-dupes server side if the beacon is retried.
+    trackFp("download", {
+      publication_id: publicationId ?? null,
+      publication_title: publicationTitle ?? null,
+      publication_series: publicationSeries ?? publicationName ?? null,
+      publisher: publisher ?? null,
+      parsha: parsha ?? null,
+      jewish_year: jewishYear ?? null,
+    });
+  }, [
+    publicationId,
+    publicationTitle,
+    publicationSeries,
+    publicationName,
+    publisher,
+    parsha,
+    jewishYear,
+  ]);
 
 
   const handleClick = useCallback(
