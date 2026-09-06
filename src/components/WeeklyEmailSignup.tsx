@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { subscribeEmail } from "@/integrations/supabase/api.functions";
 import { trackEvent, trackEventOnce } from "@/lib/analytics";
+import { trackFp } from "@/lib/first-party-analytics";
 
 type WeeklyEmailSignupProps = {
   /** Distinguishes the once-per-page analytics key across routes. */
@@ -52,6 +53,15 @@ export function WeeklyEmailSignup({
           },
           `tftt:analytics-sent:newsletter_signup:${sourceId}`,
         );
+        // Canonical event: successful subscription only. The email address is
+        // deliberately not part of the behavioral payload.
+        trackFp("signup", {
+          metadata: {
+            form_id: "weekly_torah_notifications",
+            source_id: sourceId,
+            already_subscribed: !!r.alreadySubscribed,
+          },
+        });
       } else {
         setSignupMsg(
           r.error ?? "We couldn't complete your subscription right now. Please try again.",
