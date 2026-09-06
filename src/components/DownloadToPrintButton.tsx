@@ -1,4 +1,5 @@
 import { getAttribution, getSessionId } from "@/lib/site-analytics";
+import { trackFp } from "@/lib/first-party-analytics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { AlertCircle, Download, Loader2 } from "lucide-react";
@@ -14,6 +15,11 @@ type DownloadToPrintButtonProps = {
   publicationTitle?: string;
   /** Preferred download filename; falls back to the server Content-Disposition. */
   filename?: string;
+  /** Canonical-event context (Phase 1 analytics). */
+  parsha?: string | null;
+  jewishYear?: number | null;
+  publisher?: string | null;
+  publicationSeries?: string | null;
 };
 
 export function DownloadToPrintButton({
