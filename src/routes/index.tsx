@@ -20,7 +20,12 @@ import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { publicationLabel } from "@/lib/badges";
 
-import { resolveHebcalParsha, resolveReadingForDate, nextParshaAfter, isPastReading } from "@/lib/hebcal";
+import {
+  resolveHebcalParsha,
+  resolveReadingForDate,
+  nextParshaAfter,
+  isPastReading,
+} from "@/lib/hebcal";
 import { formatReadingLabel } from "@/lib/parshiyos";
 import {
   listHomepageWeek,
@@ -281,18 +286,18 @@ function Index() {
   const displayedLabel = isFallback && fallbackParshaLabel ? fallbackParshaLabel : currentLabel;
   const displayedParshaKey = isFallback && fallbackParshaKey ? fallbackParshaKey : currentParshaKey;
   const normalizedCollectionKey = (displayedParshaKey ?? displayedLabel)
-  .replace(/^Parshas\s+/i, "")
-  .trim()
-  .toLowerCase();
-const isYomTovCollection = [
-  "rosh hashanah",
-  "yom kippur",
-  "sukkos",
-  "shemini atzeres",
-  "simchas torah",
-  "pesach",
-  "shavuos",
-].includes(normalizedCollectionKey);
+    .replace(/^Parshas\s+/i, "")
+    .trim()
+    .toLowerCase();
+  const isYomTovCollection = [
+    "rosh hashanah",
+    "yom kippur",
+    "sukkos",
+    "shemini atzeres",
+    "simchas torah",
+    "pesach",
+    "shavuos",
+  ].includes(normalizedCollectionKey);
   // The upcoming reading: when we're showing last week's collection, that's
   // the live parsha; otherwise it's the next one in the reading order.
   // On Yom Tov weeks the static list can't step forward, so the loader
@@ -885,8 +890,7 @@ const isYomTovCollection = [
                             publisher={r.publisher}
                             publicationSeries={r.publication}
                             parsha={
-                              (r as { parsha_key?: string | null }).parsha_key ??
-                              displayedParshaKey
+                              (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey
                             }
                             filename={buildDownloadFilename(
                               (r as { parsha_key?: string | null }).parsha_key ??

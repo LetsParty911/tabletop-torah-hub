@@ -9,7 +9,6 @@ import {
   normalizeYomTovTitle,
 } from "@/lib/parshiyos";
 
-
 export type HebcalItem = {
   title: string;
   category: string;
@@ -22,8 +21,7 @@ export type HebcalItem = {
  * Diaspora schedule. Hebcal defaults to Diaspora, so we deliberately never
  * send `i=on` — Israel runs a week ahead for several weeks in some years.
  */
-export const HEBCAL_SHABBAT_URL =
-  "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on";
+export const HEBCAL_SHABBAT_URL = "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on";
 
 const CACHE_MS = 24 * 60 * 60 * 1000;
 
@@ -156,14 +154,12 @@ export function resolveReadingFromHebcal(
 
   // Yom Tov detection must NOT depend on a parashat item existing.
   const yomTovOnShabbos = items.find(
-    (i) =>
-      i.category === "holiday" &&
-      i.subcat === "major" &&
-      i.date.slice(0, 10) === shabbosDate,
+    (i) => i.category === "holiday" && i.subcat === "major" && i.date.slice(0, 10) === shabbosDate,
   );
 
   if (yomTovOnShabbos) {
-    const key = hebcalYomTovToKey(yomTovOnShabbos.title) ?? normalizeYomTovTitle(yomTovOnShabbos.title);
+    const key =
+      hebcalYomTovToKey(yomTovOnShabbos.title) ?? normalizeYomTovTitle(yomTovOnShabbos.title);
     return { parshaKey: key, label: key, isStaticFallback: false, readingDate: shabbosDate };
   }
 
@@ -216,4 +212,3 @@ export function isPastReading(readingDate: string | null, now: Date = new Date()
   if (!readingDate) return false;
   return readingDate < easternDateKey(now);
 }
-
