@@ -51,17 +51,7 @@ export async function fetchHebcalShabbatData(): Promise<HebcalShabbat> {
   if (inFlight) return inFlight;
 
   inFlight = (async () => {
-    // Second layer: Cloudflare's edge cache for this exact request URL.
-    const res = await fetch(HEBCAL_SHABBAT_URL, {
-      headers: { Accept: "application/json" },
-      cf: { cacheTtl: CACHE_MS / 1000, cacheEverything: true },
-    } as CfFetchInit);
-    if (!res.ok) throw new Error(`Hebcal responded ${res.status}`);
-    const json = await res.json();
-    const data: HebcalShabbat = {
-      items: json?.items ?? [],
-      range: json?.range ?? null,
-    };
+    const data = await fetchHebcalShabbatPayload(HEBCAL_SHABBAT_URL);
     cache = { at: Date.now(), data };
     return data;
   })().finally(() => {
@@ -69,6 +59,38 @@ export async function fetchHebcalShabbatData(): Promise<HebcalShabbat> {
   });
 
   return inFlight;
+}
+
+async function fetchHebcalShabbatPayload(url: string): Promise<HebcalShabbat> {
+  // Cloudflare's edge cache for this exact request URL.
+  const res = await fetch(url, {
+    headers: { Accept: "application/json" },
+    cf: { cacheTtl: CACHE_MS / 1000, cacheEverything: true },
+  } as CfFetchInit);
+  if (!res.ok) throw new Error(`Hebcal responded ${res.status}`);
+  const json = await res.json();
+  return {
+    items: json?.items ?? [],
+    range: json?.range ?? null,
+  };
+}
+
+/**
+ * Resolve the reading for the Shabbos containing `dateISO` (YYYY-MM-DD).
+ * Used to find the week AFTER a Yom Tov week, which the static parsha list
+ * cannot express. Returns null on any failure (callers degrade gracefully).
+ */
+export async function resolveReadingForDate(dateISO: string): Promise<ResolvedReading | null> {
+  try {
+    const [y, m, d] = dateISO.split("-");
+    const url = `${HEBCAL_SHABBAT_URL}&gy=${y}&gm=${Number(m)}&gd=${Number(d)}`;
+    const data = await fetchHebcalShabbatPayload(url);
+    const resolved = resolveReadingFromHebcal(data, new Date(`${dateISO}T12:00:00Z`));
+    return resolved.parshaKey ? resolved : null;
+  } catch (e) {
+    console.error("Hebcal next-week load error", e);
+    return null;
+  }
 }
 
 /** Backwards-compatible items-only accessor. */
