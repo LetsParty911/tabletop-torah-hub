@@ -273,6 +273,7 @@ function Index() {
     fallbackParshaKey,
     subscriberCount,
     readingDate,
+    upcomingAfterYomTovKey,
   } = Route.useLoaderData() as LoaderData;
 
   // Everything user-facing (hero copy, counts, share text) derives from the
