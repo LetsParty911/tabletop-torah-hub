@@ -4,7 +4,7 @@ import { adminPhase2ReturningAnalytics } from "@/integrations/supabase/phase2-re
 type Phase2Data = Awaited<ReturnType<typeof adminPhase2ReturningAnalytics>>;
 type OkData = Extract<Phase2Data, { ok: true }>;
 
-const RANGES = [30, 90, 180, 365];
+const RANGES = [1, 7, 30, 90, 180, 365];
 
 function pct(n: number, d: number): string {
   if (!d) return "—";
