@@ -398,7 +398,25 @@ function Index() {
               <span className="font-semibold">
                 {resources.length} {resources.length === 1 ? "selection" : "selections"}
               </span>{" "}
-              {postShabbos ? "still available to download" : `for ${displayedLabel}`}
+              {postShabbos ? (
+                <>
+                  still available to download{" "}
+                  <a
+                    href="#filters"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      document
+                        .getElementById("filters")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                    className="text-inherit no-underline"
+                  >
+                    below
+                  </a>
+                </>
+              ) : (
+                `for ${displayedLabel}`
+              )}
             </p>
 
             <div className="mt-5 flex justify-center">
@@ -427,14 +445,6 @@ function Index() {
               </h2>
             )}
 
-            {isFallback && resources.length > 0 && (
-              <div className="mx-auto mt-3 max-w-2xl rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-center">
-                <p className="font-serif text-sm sm:text-base text-primary">
-                  This week's {currentLabel} collection is coming soon — enjoy last week's
-                  selections below.
-                </p>
-              </div>
-            )}
             {!isFallback && quickPicks.length > 0 && (
               <div className="mt-4 max-w-2xl mx-auto">
                 <p className="text-center font-sans text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
@@ -620,7 +630,7 @@ function Index() {
                       </button>
                     </div>
                   )}
-                  <div>
+                  <div id="filters" className="scroll-mt-24">
                     <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       By audience
                     </span>
