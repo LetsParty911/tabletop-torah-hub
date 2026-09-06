@@ -735,9 +735,18 @@ function Index() {
                 <div className="mt-5 sm:mt-6 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                   {filteredResources.map((r, i) => (
                     <>
-                      <article
+                      <PublicationCardTracker
                         key={r.id}
                         className="h-full rounded-xl border border-accent/35 bg-background/55 p-4 sm:p-5 hover:border-accent/70 hover:shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
+                        publication_id={r.id}
+                        publication_title={r.title}
+                        publication_series={r.publication ?? null}
+                        publisher={r.publisher ?? null}
+                        parsha={
+                          (r as { parsha_key?: string | null }).parsha_key ??
+                          displayedParshaKey ??
+                          null
+                        }
                       >
                         <div className="flex flex-1 items-start gap-3">
                           <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-accent/12 text-primary shrink-0">
