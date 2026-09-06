@@ -1,11 +1,9 @@
 // Stable identity for matching an uploaded PDF to a weekly checklist slot.
 //
 // Preferred: a foreign key (pdfs.publication_id / checklist_sources.publication_id
-// -> publications.id). When BOTH sides carry an id, only the id is compared, so a
-// typo, extra space, or punctuation change in a free-text title can never flip a
-// published item to "Missing".
-//
-// Fallback (pre-migration rows, or rows not yet linked): a normalized title key.
+// -> publications.id). Approved holiday aliases are an explicit exception: a
+// holiday-specific publication may intentionally have a different publication_id
+// while still filling the same recurring checklist slot.
 
 export type IdentityRow = {
   publication_id?: string | null;
@@ -34,6 +32,13 @@ function canonicalTitleKey(value: string | null | undefined): string {
   return TITLE_KEY_ALIASES[key] ?? key;
 }
 
+function hasApprovedAlias(row: IdentityRow): boolean {
+  return [row.title, row.publication].some((value) => {
+    const rawKey = normalizeTitleKey(value);
+    return Boolean(rawKey && TITLE_KEY_ALIASES[rawKey]);
+  });
+}
+
 /** All title-derived keys a row can be known by (title and/or legacy publication text). */
 export function titleKeysOf(row: IdentityRow): string[] {
   return [row.title, row.publication]
@@ -45,8 +50,16 @@ export function titleKeysOf(row: IdentityRow): string[] {
 export function matchesSource(pdf: IdentityRow, source: IdentityRow): boolean {
   const pdfId = pdf.publication_id ?? null;
   const srcId = source.publication_id ?? null;
-  // Both linked: the FK is authoritative — never fall back to fuzzy titles.
-  if (pdfId && srcId) return pdfId === srcId;
+
+  // Same stable publication identity is always a match.
+  if (pdfId && srcId && pdfId === srcId) return true;
+
+  // Different linked publications normally remain distinct. The only exception
+  // is an explicitly approved alias (for example a Yom Tov-specific edition).
+  if (pdfId && srcId && !hasApprovedAlias(pdf) && !hasApprovedAlias(source)) {
+    return false;
+  }
+
   const srcKeys = new Set(titleKeysOf(source));
   return titleKeysOf(pdf).some((k) => srcKeys.has(k));
 }
