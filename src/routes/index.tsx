@@ -416,16 +416,14 @@ function Index() {
           </div>
         </section>
 
-        <p className="text-center font-serif text-sm sm:text-base text-primary/90">
-          Welcome! Enjoy your downloads.
-        </p>
-
         {/* Resource collection */}
         <section id="this-weeks-collection" className="scroll-mt-8">
           <div className="px-1 sm:px-2">
-            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
-              {postShabbos ? "Last Week's Collection" : "This Week's Collection"}
-            </h2>
+            {!postShabbos && (
+              <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
+                This Week's Collection
+              </h2>
+            )}
 
             {isFallback && resources.length > 0 && (
               <div className="mx-auto mt-3 max-w-2xl rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-center">
