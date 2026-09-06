@@ -259,6 +259,7 @@ function Index() {
   // collection actually displayed on the page, not the upcoming parsha.
   const displayedLabel = isFallback && fallbackParshaLabel ? fallbackParshaLabel : currentLabel;
   const displayedParshaKey = isFallback && fallbackParshaKey ? fallbackParshaKey : currentParshaKey;
+  const isYomTovCollection = ["Rosh Hashanah", "Yom Kippur", "Sukkos", "Shemini Atzeres", "Simchas Torah", "Pesach", "Shavuos"].includes(displayedLabel);
   // The upcoming reading: when we're showing last week's collection, that's
   // the live parsha; otherwise it's the next one in the reading order.
   const upcomingParsha = isFallback
@@ -392,7 +393,7 @@ function Index() {
             <h1 className="mt-2 font-serif text-[2rem] leading-[1.08] sm:text-4xl md:text-5xl font-bold tracking-tight text-primary">
               {postShabbos
                 ? `Divrei Torah for ${displayedLabel}`
-                : "Free Divrei Torah for Your Shabbos Table"}
+                : `Free Divrei Torah for Your ${isYomTovCollection ? "Yom Tov" : "Shabbos"} Table`}
             </h1>
             <p className="mx-auto mt-3 max-w-2xl font-serif text-base leading-relaxed text-primary sm:text-lg md:text-xl">
               <span className="font-semibold">
