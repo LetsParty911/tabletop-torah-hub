@@ -1,5 +1,5 @@
 // PWA service-worker registration with preview safety guards.
-// Never registers in dev, iframe previews, or Lovable preview hosts.
+// Never registers in dev, iframe previews, Lovable preview hosts, or admin pages.
 // Supports a kill switch via ?sw=off which unregisters existing workers.
 
 declare const __BUILD_ID__: string;
@@ -43,7 +43,9 @@ export function registerPwa() {
   const killSwitch = url.searchParams.get("sw") === "off";
   const inIframe = window.self !== window.top;
   const host = window.location.hostname;
-  const refuse = !import.meta.env.PROD || inIframe || isPreviewHost(host) || killSwitch;
+  const adminRoute = url.pathname.startsWith("/admin");
+  const refuse =
+    !import.meta.env.PROD || inIframe || isPreviewHost(host) || killSwitch || adminRoute;
 
   if (refuse) {
     void unregisterMatching();
@@ -59,7 +61,6 @@ export function registerPwa() {
     reloading = true;
     window.location.reload();
   });
-
 
   window.addEventListener("load", () => {
     navigator.serviceWorker
@@ -97,4 +98,3 @@ export function registerPwa() {
       });
   });
 }
-
