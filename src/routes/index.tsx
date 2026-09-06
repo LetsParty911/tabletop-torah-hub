@@ -470,9 +470,18 @@ function Index() {
                       {featuredPicks.map(({ key, label, resource }) => {
                         const r = resource!;
                         return (
-                          <article
+                          <PublicationCardTracker
                             key={key}
                             className="h-full rounded-xl border border-accent/50 bg-background/70 p-4 sm:p-5 flex flex-col"
+                            publication_id={r.id}
+                            publication_title={r.title}
+                            publication_series={r.publication ?? null}
+                            publisher={r.publisher ?? null}
+                            parsha={
+                              (r as { parsha_key?: string | null }).parsha_key ??
+                              displayedParshaKey ??
+                              null
+                            }
                           >
                             <span className="self-start rounded-full bg-accent px-3 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-accent-foreground">
                               {label}
