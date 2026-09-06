@@ -430,7 +430,7 @@ function Index() {
             {isFallback && resources.length > 0 && (
               <div className="mx-auto mt-3 max-w-2xl rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-center">
                 <p className="font-serif text-sm sm:text-base text-primary">
-                  This week's collection for {currentLabel} is coming soon — enjoy last week's
+                  This week's {currentLabel} collection is coming soon — enjoy last week's
                   selections below.
                 </p>
               </div>
@@ -550,14 +550,14 @@ function Index() {
             {upcomingParsha && upcomingParsha !== displayedParshaKey ? (
               <div className="mx-auto mt-6 max-w-2xl rounded-xl border border-accent/40 bg-card/40 px-4 py-4 sm:px-5">
                 <h3 className="text-center font-serif text-base sm:text-lg font-bold text-primary">
-                  Next Week: {formatReadingLabel(upcomingParsha)}
+                  {isFallback ? "This Week:" : "Next Week:"} {formatReadingLabel(upcomingParsha)}
                 </h3>
                 <div className="mt-3">
                   <ThursdayProgressMeter
                     heading={(fillStep) => `${fillStep}% uploaded`}
                     showPercent={false}
                     ariaLabel={(fillStep) =>
-                      `Next week's Divrei Torah upload progress: ${fillStep}% complete`
+                      `${isFallback ? "This" : "Next"} week's Divrei Torah upload progress: ${fillStep}% complete`
                     }
                   />
                 </div>
