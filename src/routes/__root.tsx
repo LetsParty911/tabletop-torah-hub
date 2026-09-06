@@ -6,6 +6,7 @@ import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPwa } from "@/pwa-register";
 import { captureAttribution, trackPageView } from "@/lib/site-analytics";
+import { startHeartbeat, trackFp, trackRouteView } from "@/lib/first-party-analytics";
 
 import { SiteLogoHorizontal } from "@/components/SiteLogo";
 import { getSafePostLoginRedirect, POST_LOGIN_REDIRECT_KEY } from "@/lib/auth-redirect";
@@ -236,13 +237,21 @@ function PwaRegistrar() {
 
 // First-party pageview tracking. Fires on every client-side route change
 // (this is a SPA, so a load-only hook would undercount). Admin paths are
-// skipped inside trackPageView.
+// skipped inside trackPageView / trackRouteView.
 function PageViewTracker() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   useEffect(() => {
+    // Legacy stream (page_views table) — unchanged, the download dashboard
+    // still reads it.
     captureAttribution(pathname);
     trackPageView(pathname);
+    // Canonical Phase 1 stream: session_start (once per session) + page_view.
+    trackRouteView(pathname);
   }, [pathname]);
+
+  // Active-time heartbeat: only while visible AND focused.
+  useEffect(() => startHeartbeat(), []);
+
   return null;
 }
 
