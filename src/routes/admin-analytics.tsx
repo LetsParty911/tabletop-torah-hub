@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { checkIsAdmin } from "@/integrations/supabase/api.functions";
 import DownloadsDashboard from "@/components/DownloadsDashboard";
 import Phase1Funnel from "@/components/Phase1Funnel";
+import Phase2ReturningAnalytics from "@/components/Phase2ReturningAnalytics";
 
 export const Route = createFileRoute("/admin-analytics")({
   component: AdminAnalyticsPage,
@@ -84,7 +85,7 @@ function AdminAnalyticsPage() {
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="font-serif text-3xl md:text-4xl font-bold text-primary">Download Analytics</h1>
-            <p className="text-sm text-muted-foreground">Totals and a searchable log of recent downloads.</p>
+            <p className="text-sm text-muted-foreground">Visitor funnel, returning behavior, and download activity.</p>
           </div>
           <Link to="/admin" className="text-sm underline text-primary">
             ← Back to Admin
@@ -94,6 +95,12 @@ function AdminAnalyticsPage() {
         <section className="parchment-frame">
           <div className="parchment-panel">
             <Phase1Funnel accessToken={accessToken ?? ""} />
+          </div>
+        </section>
+
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <Phase2ReturningAnalytics accessToken={accessToken ?? ""} />
           </div>
         </section>
 
