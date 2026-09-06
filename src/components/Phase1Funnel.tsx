@@ -6,7 +6,7 @@ type FunnelData = Awaited<ReturnType<typeof adminPhase1Funnel>>;
 type OkData = Extract<FunnelData, { ok: true }>;
 type SessionFunnelData = Awaited<ReturnType<typeof adminPhase1SessionFunnel>>;
 
-const RANGES = [7, 30, 90];
+const RANGES = [1, 7, 30, 90];
 
 function pct(n: number, d: number): string {
   if (!d) return "—";
