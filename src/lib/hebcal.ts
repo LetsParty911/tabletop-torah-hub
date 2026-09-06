@@ -9,7 +9,6 @@ import {
   normalizeYomTovTitle,
 } from "@/lib/parshiyos";
 
-
 export type HebcalItem = {
   title: string;
   category: string;
@@ -22,8 +21,7 @@ export type HebcalItem = {
  * Diaspora schedule. Hebcal defaults to Diaspora, so we deliberately never
  * send `i=on` — Israel runs a week ahead for several weeks in some years.
  */
-export const HEBCAL_SHABBAT_URL =
-  "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on";
+export const HEBCAL_SHABBAT_URL = "https://www.hebcal.com/shabbat?cfg=json&geonameid=5128581&M=on";
 
 const CACHE_MS = 24 * 60 * 60 * 1000;
 
@@ -51,17 +49,7 @@ export async function fetchHebcalShabbatData(): Promise<HebcalShabbat> {
   if (inFlight) return inFlight;
 
   inFlight = (async () => {
-    // Second layer: Cloudflare's edge cache for this exact request URL.
-    const res = await fetch(HEBCAL_SHABBAT_URL, {
-      headers: { Accept: "application/json" },
-      cf: { cacheTtl: CACHE_MS / 1000, cacheEverything: true },
-    } as CfFetchInit);
-    if (!res.ok) throw new Error(`Hebcal responded ${res.status}`);
-    const json = await res.json();
-    const data: HebcalShabbat = {
-      items: json?.items ?? [],
-      range: json?.range ?? null,
-    };
+    const data = await fetchHebcalShabbatPayload(HEBCAL_SHABBAT_URL);
     cache = { at: Date.now(), data };
     return data;
   })().finally(() => {
@@ -69,6 +57,38 @@ export async function fetchHebcalShabbatData(): Promise<HebcalShabbat> {
   });
 
   return inFlight;
+}
+
+async function fetchHebcalShabbatPayload(url: string): Promise<HebcalShabbat> {
+  // Cloudflare's edge cache for this exact request URL.
+  const res = await fetch(url, {
+    headers: { Accept: "application/json" },
+    cf: { cacheTtl: CACHE_MS / 1000, cacheEverything: true },
+  } as CfFetchInit);
+  if (!res.ok) throw new Error(`Hebcal responded ${res.status}`);
+  const json = await res.json();
+  return {
+    items: json?.items ?? [],
+    range: json?.range ?? null,
+  };
+}
+
+/**
+ * Resolve the reading for the Shabbos containing `dateISO` (YYYY-MM-DD).
+ * Used to find the week AFTER a Yom Tov week, which the static parsha list
+ * cannot express. Returns null on any failure (callers degrade gracefully).
+ */
+export async function resolveReadingForDate(dateISO: string): Promise<ResolvedReading | null> {
+  try {
+    const [y, m, d] = dateISO.split("-");
+    const url = `${HEBCAL_SHABBAT_URL}&gy=${y}&gm=${Number(m)}&gd=${Number(d)}`;
+    const data = await fetchHebcalShabbatPayload(url);
+    const resolved = resolveReadingFromHebcal(data, new Date(`${dateISO}T12:00:00Z`));
+    return resolved.parshaKey ? resolved : null;
+  } catch (e) {
+    console.error("Hebcal next-week load error", e);
+    return null;
+  }
 }
 
 /** Backwards-compatible items-only accessor. */
@@ -134,14 +154,12 @@ export function resolveReadingFromHebcal(
 
   // Yom Tov detection must NOT depend on a parashat item existing.
   const yomTovOnShabbos = items.find(
-    (i) =>
-      i.category === "holiday" &&
-      i.subcat === "major" &&
-      i.date.slice(0, 10) === shabbosDate,
+    (i) => i.category === "holiday" && i.subcat === "major" && i.date.slice(0, 10) === shabbosDate,
   );
 
   if (yomTovOnShabbos) {
-    const key = hebcalYomTovToKey(yomTovOnShabbos.title) ?? normalizeYomTovTitle(yomTovOnShabbos.title);
+    const key =
+      hebcalYomTovToKey(yomTovOnShabbos.title) ?? normalizeYomTovTitle(yomTovOnShabbos.title);
     return { parshaKey: key, label: key, isStaticFallback: false, readingDate: shabbosDate };
   }
 
@@ -194,4 +212,3 @@ export function isPastReading(readingDate: string | null, now: Date = new Date()
   if (!readingDate) return false;
   return readingDate < easternDateKey(now);
 }
-
