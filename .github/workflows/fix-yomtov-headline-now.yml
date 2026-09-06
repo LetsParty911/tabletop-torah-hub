@@ -16,28 +16,29 @@ jobs:
         with:
           fetch-depth: 0
       - name: Patch Yom Tov detection
-        shell: python
         run: |
+          python3 - <<'PY'
           from pathlib import Path
           p = Path('src/routes/index.tsx')
           s = p.read_text()
           old = '  const isYomTovCollection = ["Rosh Hashanah", "Yom Kippur", "Sukkos", "Shemini Atzeres", "Simchas Torah", "Pesach", "Shavuos"].includes(displayedLabel);'
           new = '''  const normalizedCollectionKey = (displayedParshaKey ?? displayedLabel)
-    .replace(/^Parshas\\s+/i, "")
-    .trim()
-    .toLowerCase();
-  const isYomTovCollection = [
-    "rosh hashanah",
-    "yom kippur",
-    "sukkos",
-    "shemini atzeres",
-    "simchas torah",
-    "pesach",
-    "shavuos",
-  ].includes(normalizedCollectionKey);'''
+            .replace(/^Parshas\\s+/i, "")
+            .trim()
+            .toLowerCase();
+          const isYomTovCollection = [
+            "rosh hashanah",
+            "yom kippur",
+            "sukkos",
+            "shemini atzeres",
+            "simchas torah",
+            "pesach",
+            "shavuos",
+          ].includes(normalizedCollectionKey);'''
           if old not in s:
-            raise SystemExit('Expected Yom Tov detection line not found')
+              raise SystemExit('Expected Yom Tov detection line not found')
           p.write_text(s.replace(old, new, 1))
+          PY
       - name: Commit fix
         run: |
           rm .github/workflows/fix-yomtov-headline-now.yml
