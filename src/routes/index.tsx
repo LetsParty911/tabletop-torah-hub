@@ -482,6 +482,13 @@ function Index() {
           </div>
         </section>
 
+        <ThursdayProgressMeter
+          heading="Next Week's Upload Progress"
+          ariaLabel={(fillStep) =>
+            `Next week's Divrei Torah upload progress: ${fillStep}% complete`
+          }
+        />
+
         {/* Resource collection */}
         <section id="this-weeks-collection" className="scroll-mt-8">
           <div className="px-1 sm:px-2">
@@ -623,15 +630,6 @@ function Index() {
                 <h3 className="text-center font-serif text-base sm:text-lg font-bold text-primary">
                   {isFallback ? "This Week:" : "Next Week:"} {formatReadingLabel(upcomingParsha)}
                 </h3>
-                <div className="mt-3">
-                  <ThursdayProgressMeter
-                    heading={(fillStep) => `${fillStep}% uploaded`}
-                    showPercent={false}
-                    ariaLabel={(fillStep) =>
-                      `${isFallback ? "This" : "Next"} week's Divrei Torah upload progress: ${fillStep}% complete`
-                    }
-                  />
-                </div>
                 <div className="mt-3">
                   <WeeklyEmailSignup
                     sourceId="homepage"
