@@ -294,9 +294,11 @@ const isYomTovCollection = [
 ].includes(normalizedCollectionKey);
   // The upcoming reading: when we're showing last week's collection, that's
   // the live parsha; otherwise it's the next one in the reading order.
+  // On Yom Tov weeks the static list can't step forward, so the loader
+  // resolves the following Shabbos from Hebcal instead.
   const upcomingParsha = isFallback
-    ? (currentParshaKey ?? nextParshaAfter(displayedParshaKey))
-    : nextParshaAfter(displayedParshaKey);
+    ? (currentParshaKey ?? nextParshaAfter(displayedParshaKey) ?? upcomingAfterYomTovKey)
+    : (nextParshaAfter(displayedParshaKey) ?? upcomingAfterYomTovKey);
   // Post-Shabbos framing: client-only so SSR/hydration stays stable.
   const [postShabbos, setPostShabbos] = useState(false);
   useEffect(() => {
