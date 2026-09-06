@@ -551,7 +551,6 @@ function Index() {
               <div className="mx-auto mt-6 max-w-2xl rounded-xl border border-accent/40 bg-card/40 px-4 py-4 sm:px-5">
                 <h3 className="text-center font-serif text-base sm:text-lg font-bold text-primary">
                   Next Week: {formatReadingLabel(upcomingParsha)}
-
                 </h3>
                 <div className="mt-3">
                   <ThursdayProgressMeter
