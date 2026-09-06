@@ -431,7 +431,7 @@ const isYomTovCollection = [
                 `for ${displayedLabel}`
               )}
             </p>
-            {!postShabbos && resources.length > 0 && (
+            {resources.length > 0 && (
               <p className="mx-auto mt-2 max-w-xl font-sans text-sm leading-relaxed text-muted-foreground sm:text-base">
                 More Divrei Torah will be added throughout the week — check back daily.
               </p>
