@@ -232,3 +232,74 @@ GTM is not loaded on `/admin` routes, and `trackEvent()` / `trackEventOnce()` sh
 | `src/routes/view.$id.tsx` | PDF view, download, and print events. |
 | `src/routes/contact.tsx` | Contact form submit event. |
 | `src/components/EmailCapturePopup.tsx` | All popup lifecycle events. |
+
+---
+
+## First-party canonical event stream (Phase 1)
+
+Alongside the GTM/dataLayer events above, the site writes a canonical
+first-party event stream to `public.analytics_events` in the external
+"torah-by-the-table" Supabase project (schema:
+`supabase_analytics_events_migration.sql`). The legacy `page_views`,
+`search_events` and `download_events` writes continue unchanged, so the
+existing download dashboard is unaffected.
+
+**Client:** `src/lib/first-party-analytics.ts`
+**Ingest:** `POST /api/events` (`src/routes/api/events.ts`)
+
+### Identity
+
+- `visitor_id` — random id in a first-party cookie (`tftt_vid`, 12 months),
+  falling back to `localStorage` when cookies are unavailable.
+- `session_id` — 30-minute inactivity session shared across tabs via
+  `localStorage`; renewed after 30 minutes idle, `last_activity` refreshed on
+  tracked activity. `session_start` fires once per session.
+- Admin routes (`/admin`, `/admin/*`, `/admin-analytics`) are excluded on both
+  the client and the server.
+
+### Events
+
+| Event | Fires when |
+| --- | --- |
+| `session_start` | first tracked activity of a new 30-minute session |
+| `page_view` | every client-side route view (pathname only) |
+| `publication_impression` | card ≥50% visible for ~1s, deduped per page view |
+| `publication_click` | interaction with a publication card |
+| `filter_change` | audience / length / content-type filter selected |
+| `search` | submitted archive search, with `result_count` |
+| `pdf_open` | viewer page loads for a publication |
+| `download` | download click (one canonical event per click) |
+| `share_click` | WhatsApp / copy-link share, with `share_method` |
+| `signup` | successful weekly-email subscription (no email address stored) |
+| `heartbeat` | every 15s while visible **and** focused; `active_seconds` capped |
+| `error` | meaningful site errors only (e.g. 404), sanitized code |
+
+### Columns
+
+`event_id` (unique idempotency key), `event_name`, `occurred_at`,
+`visitor_id`, `session_id`, `is_new_visitor`, `path`, `landing_path`,
+`source_path`, `publication_id`, `publication_title`, `publication_series`,
+`publisher`, `parsha`, `jewish_year`, `device_type`, `referrer_host`,
+`referrer_url`, `utm_source`, `utm_medium`, `utm_campaign`, `source_group`,
+`country`, `region`, `metadata` (jsonb).
+
+`device_type` is derived server-side from the user-agent header; the raw UA is
+not stored. No IP addresses are stored. Geo on this table is country + region
+only. `event_id` is unique, so a retried beacon collapses to one row.
+
+### Attribution
+
+First-touch per session (UTM source/medium/campaign, external referrer,
+landing path) is captured once and never overwritten by internal navigation.
+`source_group` normalizes it to: WhatsApp, Email, Google, Direct,
+Other Campaign, Other Referral.
+
+### Dashboard
+
+`/admin-analytics` (admin-only, noindex) shows the Phase 1 funnel above the
+existing download dashboard: overview cards, the
+sessions → impressions → clicks → PDF accesses → downloads funnel, and
+breakdowns by source, device, publication, and new vs returning. Funnel stages
+use distinct session+publication keys; a session counts as converted with at
+least one download, and a viewer load plus a download click count as one PDF
+access.

@@ -30,6 +30,7 @@ import { Route as OgImageDotpngRouteImport } from './routes/og.image[.]png'
 import { Route as ApiTrackViewRouteImport } from './routes/api/track-view'
 import { Route as ApiTrackSearchRouteImport } from './routes/api/track-search'
 import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
+import { Route as ApiEventsRouteImport } from './routes/api/events'
 import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
 
@@ -138,6 +139,11 @@ const ApiTrackDownloadRoute = ApiTrackDownloadRouteImport.update({
   path: '/api/track-download',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiEventsRoute = ApiEventsRouteImport.update({
+  id: '/api/events',
+  path: '/api/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ViewIdPdfRoute = ViewIdPdfRouteImport.update({
   id: '/pdf',
   path: '/pdf',
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/events': typeof ApiEventsRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
@@ -189,6 +196,7 @@ export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/events': typeof ApiEventsRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/events': typeof ApiEventsRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/short-vorts'
     | '/sitemap.xml'
+    | '/api/events'
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/short-vorts'
     | '/sitemap.xml'
+    | '/api/events'
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
@@ -292,6 +303,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/short-vorts'
     | '/sitemap.xml'
+    | '/api/events'
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
@@ -318,6 +330,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   ShortVortsRoute: typeof ShortVortsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiEventsRoute: typeof ApiEventsRoute
   ApiTrackDownloadRoute: typeof ApiTrackDownloadRoute
   ApiTrackSearchRoute: typeof ApiTrackSearchRoute
   ApiTrackViewRoute: typeof ApiTrackViewRoute
@@ -476,6 +489,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTrackDownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/events': {
+      id: '/api/events'
+      path: '/api/events'
+      fullPath: '/api/events'
+      preLoaderRoute: typeof ApiEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/view/$id/pdf': {
       id: '/view/$id/pdf'
       path: '/pdf'
@@ -521,6 +541,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   ShortVortsRoute: ShortVortsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiEventsRoute: ApiEventsRoute,
   ApiTrackDownloadRoute: ApiTrackDownloadRoute,
   ApiTrackSearchRoute: ApiTrackSearchRoute,
   ApiTrackViewRoute: ApiTrackViewRoute,

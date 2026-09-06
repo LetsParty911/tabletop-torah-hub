@@ -1,4 +1,5 @@
 import { getAttribution, getSessionId } from "@/lib/site-analytics";
+import { trackFp } from "@/lib/first-party-analytics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { AlertCircle, Download, Loader2 } from "lucide-react";
@@ -14,6 +15,11 @@ type DownloadToPrintButtonProps = {
   publicationTitle?: string;
   /** Preferred download filename; falls back to the server Content-Disposition. */
   filename?: string;
+  /** Canonical-event context (Phase 1 analytics). */
+  parsha?: string | null;
+  jewishYear?: number | null;
+  publisher?: string | null;
+  publicationSeries?: string | null;
 };
 
 export function DownloadToPrintButton({
@@ -24,6 +30,10 @@ export function DownloadToPrintButton({
   publicationName,
   publicationTitle,
   filename: preferredFilename,
+  parsha,
+  jewishYear,
+  publisher,
+  publicationSeries,
 }: DownloadToPrintButtonProps) {
   const displayName = publicationName ?? publicationTitle;
   const buttonLabel = displayName ? `Download ${displayName}` : "Download";
@@ -101,7 +111,27 @@ export function DownloadToPrintButton({
     } catch {
       // never block the download
     }
-  }, [publicationId, publicationTitle]);
+
+    // Canonical Phase 1 event — same click, carries visitor_id + session_id.
+    // Exactly one canonical download event per click; the event_id also
+    // de-dupes server side if the beacon is retried.
+    trackFp("download", {
+      publication_id: publicationId ?? null,
+      publication_title: publicationTitle ?? null,
+      publication_series: publicationSeries ?? publicationName ?? null,
+      publisher: publisher ?? null,
+      parsha: parsha ?? null,
+      jewish_year: jewishYear ?? null,
+    });
+  }, [
+    publicationId,
+    publicationTitle,
+    publicationSeries,
+    publicationName,
+    publisher,
+    parsha,
+    jewishYear,
+  ]);
 
 
   const handleClick = useCallback(

@@ -8,6 +8,7 @@ import { getPdfById, getParshaOverride } from "@/integrations/supabase/api.funct
 import { resolveHebcalParsha } from "@/lib/hebcal";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { trackEvent } from "@/lib/analytics";
+import { trackFp } from "@/lib/first-party-analytics";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { buildDownloadFilename } from "@/lib/download-filename";
@@ -170,7 +171,16 @@ function ViewPdf() {
       file_title: pdf.title,
       source_name: pdf.title,
     });
-  }, [pdf.id, pdf.title]);
+    // Canonical Phase 1 event: the viewer page loaded successfully for this
+    // publication.
+    trackFp("pdf_open", {
+      publication_id: pdf.id,
+      publication_title: pdf.title,
+      publication_series: pdf.publication ?? null,
+      publisher: pdf.publisher ?? null,
+      parsha: pdf.parsha_key ?? null,
+    });
+  }, [pdf.id, pdf.title, pdf.publication, pdf.publisher, pdf.parsha_key]);
 
 
   const metaLine = [
@@ -222,6 +232,9 @@ function ViewPdf() {
             publicationId={pdf.id}
             publicationName={publicationLabel(pdf.publication || pdf.title) || pdf.title}
             publicationTitle={pdf.title}
+            parsha={pdf.parsha_key}
+            publisher={pdf.publisher}
+            publicationSeries={pdf.publication}
             filename={buildDownloadFilename(
               pdf.parsha_key,
               pdf.publication || pdf.title,

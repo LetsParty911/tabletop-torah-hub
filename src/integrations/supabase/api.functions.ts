@@ -3786,3 +3786,235 @@ export const adminTrafficSources = createServerFn({ method: "POST" })
       },
     };
   });
+
+// ---------- Admin: Phase 1 first-party funnel ----------
+// Reads the canonical analytics_events stream in the external project and
+// aggregates the overview, funnel and breakdown tables in memory. The legacy
+// download dashboard (adminDownloadFeed / adminTrafficSources) is untouched.
+type FunnelRow = Record<string, unknown>;
+
+const PDF_ACCESS_EVENTS = new Set(["pdf_open", "download"]);
+
+export const adminPhase1Funnel = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; days?: number }) =>
+    z
+      .object({ accessToken: z.string().min(10), days: z.number().int().positive().max(365).optional() })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const days = data.days ?? 7;
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+    const admin = getSupabaseAdmin();
+    const rows: FunnelRow[] = [];
+    const pageSize = 1000;
+    for (let offset = 0; offset < 60000; offset += pageSize) {
+      const { data: page, error } = await admin
+        .from("analytics_events")
+        .select(
+          "event_name, occurred_at, visitor_id, session_id, is_new_visitor, publication_id, publication_title, publication_series, publisher, parsha, device_type, source_group, metadata",
+        )
+        .gte("occurred_at", since)
+        .order("occurred_at", { ascending: false })
+        .range(offset, offset + pageSize - 1);
+      if (error) {
+        // Table may not exist yet before the migration is applied.
+        return { ok: false as const, reason: error.message, days };
+      }
+      const list = (page ?? []) as FunnelRow[];
+      rows.push(...list);
+      if (list.length < pageSize) break;
+    }
+
+    const s = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+
+    // Per-session rollup.
+    type SessionAgg = {
+      visitorId: string | null;
+      isNew: boolean;
+      device: string;
+      source: string;
+      impressions: Set<string>;
+      clicks: Set<string>;
+      accesses: Set<string>;
+      downloads: Set<string>;
+      downloadEvents: number;
+      activeSeconds: number;
+    };
+    const sessions = new Map<string, SessionAgg>();
+    const visitors = new Set<string>();
+    const returningVisitors = new Set<string>();
+
+    type PubAgg = {
+      title: string;
+      parsha: string | null;
+      series: string | null;
+      publisher: string | null;
+      impressions: Set<string>;
+      clicks: Set<string>;
+      accesses: Set<string>;
+      downloads: Set<string>;
+    };
+    const pubs = new Map<string, PubAgg>();
+
+    for (const r of rows) {
+      const sessionId = s(r["session_id"]);
+      const visitorId = s(r["visitor_id"]);
+      if (!sessionId) continue;
+
+      let agg = sessions.get(sessionId);
+      if (!agg) {
+        agg = {
+          visitorId,
+          isNew: r["is_new_visitor"] === true,
+          device: s(r["device_type"]) ?? "unknown",
+          source: s(r["source_group"]) ?? "Direct",
+          impressions: new Set(),
+          clicks: new Set(),
+          accesses: new Set(),
+          downloads: new Set(),
+          downloadEvents: 0,
+          activeSeconds: 0,
+        };
+        sessions.set(sessionId, agg);
+      }
+      if (r["is_new_visitor"] === true) agg.isNew = true;
+      if (visitorId) {
+        visitors.add(visitorId);
+        if (r["is_new_visitor"] !== true) returningVisitors.add(visitorId);
+      }
+
+      const name = s(r["event_name"]);
+      const pubId = s(r["publication_id"]);
+      const key = pubId ? `${sessionId}::${pubId}` : null;
+
+      if (pubId) {
+        let p = pubs.get(pubId);
+        if (!p) {
+          p = {
+            title: s(r["publication_title"]) ?? "Untitled",
+            parsha: s(r["parsha"]),
+            series: s(r["publication_series"]),
+            publisher: s(r["publisher"]),
+            impressions: new Set(),
+            clicks: new Set(),
+            accesses: new Set(),
+            downloads: new Set(),
+          };
+          pubs.set(pubId, p);
+        }
+        if (!p.parsha) p.parsha = s(r["parsha"]);
+        if (!p.series) p.series = s(r["publication_series"]);
+        if (!p.publisher) p.publisher = s(r["publisher"]);
+      }
+
+      if (name === "heartbeat") {
+        const meta = (r["metadata"] ?? {}) as Record<string, unknown>;
+        const delta = Number(meta["active_seconds"] ?? meta["delta"] ?? 0);
+        if (Number.isFinite(delta) && delta > 0) agg.activeSeconds += Math.min(delta, 20);
+        continue;
+      }
+
+      if (!key || !pubId) continue;
+      const p = pubs.get(pubId)!;
+
+      if (name === "publication_impression") {
+        agg.impressions.add(key);
+        p.impressions.add(key);
+      } else if (name === "publication_click") {
+        agg.clicks.add(key);
+        p.clicks.add(key);
+      }
+      if (name && PDF_ACCESS_EVENTS.has(name)) {
+        // A viewer load plus a download click count as ONE access.
+        agg.accesses.add(key);
+        p.accesses.add(key);
+      }
+      if (name === "download") {
+        agg.downloads.add(key);
+        p.downloads.add(key);
+        agg.downloadEvents += 1;
+      }
+    }
+
+    const all = [...sessions.values()];
+    const sessionCount = all.length;
+    const sum = (fn: (a: SessionAgg) => number) => all.reduce((n, a) => n + fn(a), 0);
+
+    const totalImpressions = sum((a) => a.impressions.size);
+    const totalClicks = sum((a) => a.clicks.size);
+    const totalAccesses = sum((a) => a.accesses.size);
+    const totalDownloads = sum((a) => a.downloads.size);
+    const convertedSessions = all.filter((a) => a.downloads.size > 0).length;
+    const activeTotal = sum((a) => a.activeSeconds);
+
+    const group = <K extends string>(keyOf: (a: SessionAgg) => K) => {
+      const m = new Map<
+        string,
+        { key: string; sessions: number; clicks: number; accesses: number; downloads: number }
+      >();
+      for (const a of all) {
+        const k = keyOf(a);
+        const e = m.get(k) ?? { key: k, sessions: 0, clicks: 0, accesses: 0, downloads: 0 };
+        e.sessions += 1;
+        e.clicks += a.clicks.size;
+        e.accesses += a.accesses.size;
+        e.downloads += a.downloads.size;
+        m.set(k, e);
+      }
+      return [...m.values()].sort((x, y) => y.sessions - x.sessions);
+    };
+
+    const newVsReturning = ["new", "returning"].map((label) => {
+      const subset = all.filter((a) => (a.isNew ? "new" : "returning") === label);
+      return {
+        key: label,
+        sessions: subset.length,
+        accesses: subset.reduce((n, a) => n + a.accesses.size, 0),
+        downloads: subset.reduce((n, a) => n + a.downloads.size, 0),
+        convertedSessions: subset.filter((a) => a.downloads.size > 0).length,
+      };
+    });
+
+    const publications = [...pubs.entries()]
+      .map(([id, p]) => ({
+        id,
+        title: p.title,
+        parsha: p.parsha,
+        series: p.series,
+        publisher: p.publisher,
+        impressions: p.impressions.size,
+        clicks: p.clicks.size,
+        accesses: p.accesses.size,
+        downloads: p.downloads.size,
+      }))
+      .sort((a, b) => b.downloads - a.downloads || b.clicks - a.clicks)
+      .slice(0, 40);
+
+    return {
+      ok: true as const,
+      days,
+      totals: {
+        uniqueVisitors: visitors.size,
+        sessions: sessionCount,
+        returningVisitors: returningVisitors.size,
+        pdfAccesses: totalAccesses,
+        downloads: totalDownloads,
+        conversionRate: sessionCount ? convertedSessions / sessionCount : 0,
+        avgActiveSeconds: sessionCount ? Math.round(activeTotal / sessionCount) : 0,
+      },
+      funnel: {
+        sessions: sessionCount,
+        impressions: totalImpressions,
+        clicks: totalClicks,
+        accesses: totalAccesses,
+        downloads: totalDownloads,
+      },
+      bySource: group((a) => a.source),
+      byDevice: group((a) => a.device),
+      newVsReturning,
+      publications,
+      rawEventCount: rows.length,
+    };
+  });

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Share2, Link2, Check } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { trackFp } from "@/lib/first-party-analytics";
 import { absoluteUrl } from "@/lib/site-url";
 
 type Props = {
@@ -34,6 +35,12 @@ export function SharePublicationButton({
 
   const viewUrl = buildViewUrl(pdfId);
 
+  const shareContext = {
+    publication_id: pdfId,
+    publication_title: title,
+    parsha: parsha ?? null,
+  };
+
   const handleShare = () => {
     const message = `${title}${parshaLabel ? ` — ${parshaLabel}` : ""}, free to download and print: ${viewUrl}`;
     trackEvent("share_whatsapp", {
@@ -41,6 +48,7 @@ export function SharePublicationButton({
       file_title: title,
       parsha: parsha ?? undefined,
     });
+    trackFp("share_click", { ...shareContext, metadata: { share_method: "whatsapp" } });
     window.open(
       `https://wa.me/?text=${encodeURIComponent(message)}`,
       "_blank",
@@ -57,6 +65,7 @@ export function SharePublicationButton({
         file_title: title,
         parsha: parsha ?? undefined,
       });
+      trackFp("share_click", { ...shareContext, metadata: { share_method: "copy_link" } });
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
       // Fallback: do nothing if clipboard is unavailable.

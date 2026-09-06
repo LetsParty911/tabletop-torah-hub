@@ -7,6 +7,8 @@ import { WhatsNewBanner } from "@/components/WhatsNewBanner";
 import { WhatsNewPopup } from "@/components/WhatsNewPopup";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { PublicationCardTracker } from "@/components/PublicationCardTracker";
+import { trackFp } from "@/lib/first-party-analytics";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { SITE_URL } from "@/lib/site-url";
 
@@ -470,9 +472,18 @@ function Index() {
                       {featuredPicks.map(({ key, label, resource }) => {
                         const r = resource!;
                         return (
-                          <article
+                          <PublicationCardTracker
                             key={key}
                             className="h-full rounded-xl border border-accent/50 bg-background/70 p-4 sm:p-5 flex flex-col"
+                            publication_id={r.id}
+                            publication_title={r.title}
+                            publication_series={r.publication ?? null}
+                            publisher={r.publisher ?? null}
+                            parsha={
+                              (r as { parsha_key?: string | null }).parsha_key ??
+                              displayedParshaKey ??
+                              null
+                            }
                           >
                             <span className="self-start rounded-full bg-accent px-3 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-accent-foreground">
                               {label}
@@ -509,6 +520,12 @@ function Index() {
                                   publicationLabel(r.publication || r.title) || r.title
                                 }
                                 publicationTitle={r.title}
+                                publisher={r.publisher}
+                                publicationSeries={r.publication}
+                                parsha={
+                                  (r as { parsha_key?: string | null }).parsha_key ??
+                                  displayedParshaKey
+                                }
                                 filename={buildDownloadFilename(
                                   (r as { parsha_key?: string | null }).parsha_key ??
                                     displayedParshaKey,
@@ -533,7 +550,7 @@ function Index() {
                                 />
                               </div>
                             </div>
-                          </article>
+                          </PublicationCardTracker>
                         );
                       })}
                     </div>
@@ -627,7 +644,13 @@ function Index() {
                               type="button"
                               aria-pressed={active}
                               aria-label={`Filter by audience: ${audienceLabel(audience)}`}
-                              onClick={() => setAudienceFilter(active ? "All" : audience)}
+                              onClick={() => {
+                                const next = active ? "All" : audience;
+                                setAudienceFilter(next);
+                                trackFp("filter_change", {
+                                  metadata: { filter: "audience", value: next },
+                                });
+                              }}
                               className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                 active
                                   ? "border-accent bg-accent text-accent-foreground shadow-sm"
@@ -666,7 +689,13 @@ function Index() {
                               type="button"
                               aria-pressed={active}
                               aria-label={`Filter by length: ${o.label}`}
-                              onClick={() => setLengthFilter(active ? "All" : o.key)}
+                              onClick={() => {
+                                const next = active ? "All" : o.key;
+                                setLengthFilter(next);
+                                trackFp("filter_change", {
+                                  metadata: { filter: "length", value: next },
+                                });
+                              }}
                               className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                 active
                                   ? "border-accent bg-accent text-accent-foreground shadow-sm"
@@ -705,7 +734,13 @@ function Index() {
                                 type="button"
                                 aria-pressed={active}
                                 aria-label={`Filter by content type: ${o.label}`}
-                                onClick={() => setContentTypeFilter(active ? "All" : o.key)}
+                                onClick={() => {
+                                  const next = active ? "All" : o.key;
+                                  setContentTypeFilter(next);
+                                  trackFp("filter_change", {
+                                    metadata: { filter: "content_type", value: next },
+                                  });
+                                }}
                                 className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                   active
                                     ? "border-accent bg-accent text-accent-foreground shadow-sm"
@@ -724,9 +759,18 @@ function Index() {
                 <div className="mt-5 sm:mt-6 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                   {filteredResources.map((r, i) => (
                     <>
-                      <article
+                      <PublicationCardTracker
                         key={r.id}
                         className="h-full rounded-xl border border-accent/35 bg-background/55 p-4 sm:p-5 hover:border-accent/70 hover:shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
+                        publication_id={r.id}
+                        publication_title={r.title}
+                        publication_series={r.publication ?? null}
+                        publisher={r.publisher ?? null}
+                        parsha={
+                          (r as { parsha_key?: string | null }).parsha_key ??
+                          displayedParshaKey ??
+                          null
+                        }
                       >
                         <div className="flex flex-1 items-start gap-3">
                           <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-accent/12 text-primary shrink-0">
@@ -787,6 +831,12 @@ function Index() {
                             publicationId={r.id}
                             publicationName={publicationLabel(r.publication || r.title) || r.title}
                             publicationTitle={r.title}
+                            publisher={r.publisher}
+                            publicationSeries={r.publication}
+                            parsha={
+                              (r as { parsha_key?: string | null }).parsha_key ??
+                              displayedParshaKey
+                            }
                             filename={buildDownloadFilename(
                               (r as { parsha_key?: string | null }).parsha_key ??
                                 displayedParshaKey,
@@ -811,7 +861,7 @@ function Index() {
                             />
                           </div>
                         </div>
-                      </article>
+                      </PublicationCardTracker>
                       {i === (filteredResources.length > 1 ? 1 : 0) && (
                         <div
                           key="share-prompt"
