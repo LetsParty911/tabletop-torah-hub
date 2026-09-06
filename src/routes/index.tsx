@@ -61,6 +61,11 @@ type LoaderData = {
   subscriberCount: number | null;
   /** ISO date of the Shabbos the displayed reading belongs to (Hebcal). */
   readingDate: string | null;
+  /**
+   * The next week's reading key, resolved server-side when the displayed
+   * reading is a Yom Tov (the static parsha list can't step past those).
+   */
+  upcomingAfterYomTovKey: string | null;
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
