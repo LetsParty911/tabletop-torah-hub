@@ -20,10 +20,24 @@ export const normalizeTitleKey = (value: string | null | undefined): string =>
     .replace(/[\u2018\u2019\u201c\u201d]/g, "'")
     .replace(/[^a-z0-9]+/g, "");
 
+// Approved holiday-specific display titles that fill an existing weekly
+// checklist slot. The checklist keeps one stable canonical source name while
+// the PDF itself may use a Yom Tov-specific title.
+const TITLE_KEY_ALIASES: Record<string, string> = {
+  roshhashanahqa: "parshaquestionsanswers",
+  roshhashanahquestionsanswers: "parshaquestionsanswers",
+  storiesfortheyomtovtable: "storiesfortheshabbostable",
+};
+
+function canonicalTitleKey(value: string | null | undefined): string {
+  const key = normalizeTitleKey(value);
+  return TITLE_KEY_ALIASES[key] ?? key;
+}
+
 /** All title-derived keys a row can be known by (title and/or legacy publication text). */
 export function titleKeysOf(row: IdentityRow): string[] {
   return [row.title, row.publication]
-    .map(normalizeTitleKey)
+    .map(canonicalTitleKey)
     .filter((k) => k.length > 0);
 }
 
