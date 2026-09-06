@@ -20,7 +20,7 @@ import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { publicationLabel } from "@/lib/badges";
 
-import { resolveHebcalParsha, nextParshaAfter, isPastReading } from "@/lib/hebcal";
+import { resolveHebcalParsha, resolveReadingForDate, nextParshaAfter, isPastReading } from "@/lib/hebcal";
 import { formatReadingLabel } from "@/lib/parshiyos";
 import {
   listHomepageWeek,
@@ -133,6 +133,20 @@ async function loadCurrentWeek(): Promise<LoaderData> {
   const { count } = await subscriberCountPromise;
   if (count >= 25) subscriberCount = count;
 
+  // 4. When the displayed reading is a Yom Tov, the static parsha list can't
+  // name the following week — resolve it from Hebcal for Shabbos + 7 days.
+  const displayedKey = isFallback && fallbackParshaKey ? fallbackParshaKey : parshaKey;
+  let upcomingAfterYomTovKey: string | null = null;
+  const staticNext = isFallback
+    ? (parshaKey ?? nextParshaAfter(displayedKey))
+    : nextParshaAfter(displayedKey);
+  if (!staticNext && readingDate) {
+    const nextShabbos = new Date(`${readingDate}T12:00:00Z`);
+    nextShabbos.setUTCDate(nextShabbos.getUTCDate() + 7);
+    const next = await resolveReadingForDate(nextShabbos.toISOString().slice(0, 10));
+    upcomingAfterYomTovKey = next?.parshaKey ?? null;
+  }
+
   return {
     label,
     parshaKey,
@@ -142,6 +156,7 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     fallbackParshaKey,
     subscriberCount,
     readingDate,
+    upcomingAfterYomTovKey,
   };
 }
 
