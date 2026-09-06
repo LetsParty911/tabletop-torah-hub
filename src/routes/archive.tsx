@@ -750,7 +750,7 @@ function ArchivePage() {
                                   />
                                 </div>
                               </div>
-                            </article>
+                            </PublicationCardTracker>
                           ))}
                         </div>
                       </div>
