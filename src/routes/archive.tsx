@@ -723,6 +723,9 @@ function ArchivePage() {
                                   publicationId={r.id}
                                   publicationName={publicationLabel(r.publication || r.title) || r.title}
                                   publicationTitle={r.title}
+                                  publisher={r.publisher}
+                                  publicationSeries={r.publication}
+                                  parsha={p.parshaKey}
                                   filename={buildDownloadFilename(
                                     p.parshaKey,
                                     (r as { publication?: string | null }).publication || r.title,
