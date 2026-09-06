@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { checkIsAdmin } from "@/integrations/supabase/api.functions";
 import DownloadsDashboard from "@/components/DownloadsDashboard";
+import Phase1Funnel from "@/components/Phase1Funnel";
 
 export const Route = createFileRoute("/admin-analytics")({
   component: AdminAnalyticsPage,
@@ -89,6 +90,12 @@ function AdminAnalyticsPage() {
             ← Back to Admin
           </Link>
         </header>
+
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <Phase1Funnel accessToken={accessToken ?? ""} />
+          </div>
+        </section>
 
         <section className="parchment-frame">
           <div className="parchment-panel">
