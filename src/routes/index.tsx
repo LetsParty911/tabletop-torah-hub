@@ -259,7 +259,19 @@ function Index() {
   // collection actually displayed on the page, not the upcoming parsha.
   const displayedLabel = isFallback && fallbackParshaLabel ? fallbackParshaLabel : currentLabel;
   const displayedParshaKey = isFallback && fallbackParshaKey ? fallbackParshaKey : currentParshaKey;
-  const isYomTovCollection = ["Rosh Hashanah", "Yom Kippur", "Sukkos", "Shemini Atzeres", "Simchas Torah", "Pesach", "Shavuos"].includes(displayedLabel);
+  const normalizedCollectionKey = (displayedParshaKey ?? displayedLabel)
+  .replace(/^Parshas\s+/i, "")
+  .trim()
+  .toLowerCase();
+const isYomTovCollection = [
+  "rosh hashanah",
+  "yom kippur",
+  "sukkos",
+  "shemini atzeres",
+  "simchas torah",
+  "pesach",
+  "shavuos",
+].includes(normalizedCollectionKey);
   // The upcoming reading: when we're showing last week's collection, that's
   // the live parsha; otherwise it's the next one in the reading order.
   const upcomingParsha = isFallback
