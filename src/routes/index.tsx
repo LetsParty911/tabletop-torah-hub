@@ -385,6 +385,17 @@ function Index() {
     (r) => matchesAudience(r) && matchesLength(r) && matchesContentType(r),
   );
 
+  // A filter group is only worth rendering when the current set actually
+  // offers more than one real choice (e.g. hide "By length" when every item
+  // is under 5 pages).
+  const audienceHasChoice =
+    new Set(sortedResources.map((r) => normalizeAudience(r.audience, r.title)).filter((v) => !!v))
+      .size > 1;
+  const lengthHasChoice =
+    sortedResources.some((r) => typeof r.page_count === "number" && r.page_count < 5) &&
+    sortedResources.some((r) => typeof r.page_count === "number" && r.page_count >= 5);
+  const contentTypeHasChoice = contentTypeOptions.length > 1;
+
   const featuredPicks = FEATURED_SLOTS.map((slot) => ({
     ...slot,
     resource: resources.find((r) => (r.featured_slot ?? "").trim().toLowerCase() === slot.key),
@@ -479,6 +490,11 @@ function Index() {
                 Browse {displayedLabel}
               </a>
             </div>
+            {resources.length > 0 && (
+              <div className="mt-3 flex justify-center">
+                <ShareButton className="w-full sm:w-auto" />
+              </div>
+            )}
           </div>
         </section>
 
@@ -675,96 +691,102 @@ function Index() {
                     </div>
                   )}
                   <div id="filters" className="scroll-mt-24">
-                    <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      By audience
-                    </span>
-                    <div className="mt-1.5 flex flex-wrap justify-start gap-2">
-                      {(["All", "Children", "Families", "Adults"] as const)
-                        .map((audience) => ({
-                          audience,
-                          count:
-                            audience === "All"
-                              ? audienceFiltered.length
-                              : audienceFiltered.filter(
-                                  (r) => normalizeAudience(r.audience, r.title) === audience,
-                                ).length,
-                        }))
-                        .filter(({ audience, count }) => audience === "All" || count > 0)
-                        .map(({ audience }) => {
-                          const active = audienceFilter === audience;
-                          return (
-                            <button
-                              key={audience}
-                              type="button"
-                              aria-pressed={active}
-                              aria-label={`Filter by audience: ${audienceLabel(audience)}`}
-                              onClick={() => {
-                                const next = active ? "All" : audience;
-                                setAudienceFilter(next);
-                                trackFp("filter_change", {
-                                  metadata: { filter: "audience", value: next },
-                                });
-                              }}
-                              className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
-                                active
-                                  ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                                  : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
-                              }`}
-                            >
-                              {audienceLabel(audience)}
-                            </button>
-                          );
-                        })}
-                    </div>
+                    {audienceHasChoice && (
+                      <>
+                        <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          By audience
+                        </span>
+                        <div className="mt-1.5 flex flex-wrap justify-start gap-2">
+                          {(["All", "Children", "Families", "Adults"] as const)
+                            .map((audience) => ({
+                              audience,
+                              count:
+                                audience === "All"
+                                  ? audienceFiltered.length
+                                  : audienceFiltered.filter(
+                                      (r) => normalizeAudience(r.audience, r.title) === audience,
+                                    ).length,
+                            }))
+                            .filter(({ audience, count }) => audience === "All" || count > 0)
+                            .map(({ audience }) => {
+                              const active = audienceFilter === audience;
+                              return (
+                                <button
+                                  key={audience}
+                                  type="button"
+                                  aria-pressed={active}
+                                  aria-label={`Filter by audience: ${audienceLabel(audience)}`}
+                                  onClick={() => {
+                                    const next = active ? "All" : audience;
+                                    setAudienceFilter(next);
+                                    trackFp("filter_change", {
+                                      metadata: { filter: "audience", value: next },
+                                    });
+                                  }}
+                                  className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
+                                    active
+                                      ? "border-accent bg-accent text-accent-foreground shadow-sm"
+                                      : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
+                                  }`}
+                                >
+                                  {audienceLabel(audience)}
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </>
+                    )}
                   </div>
 
-                  <div>
-                    <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      By length
-                    </span>
-                    <div className="mt-1.5 flex flex-wrap justify-start gap-2">
-                      {(() => {
-                        const shortCount = lengthScoped.filter(
-                          (r) => typeof r.page_count === "number" && r.page_count < 5,
-                        ).length;
-                        const longCount = lengthScoped.filter(
-                          (r) => typeof r.page_count === "number" && r.page_count >= 5,
-                        ).length;
-                        const options = [
-                          { key: "All" as const, label: "All", count: lengthScoped.length },
-                          { key: "short" as const, label: "Under 5 Pages", count: shortCount },
-                          { key: "long" as const, label: "5+ Pages", count: longCount },
-                        ].filter((o) => o.key === "All" || o.count > 0);
-                        return options.map((o) => {
-                          const active = lengthFilter === o.key;
-                          return (
-                            <button
-                              key={o.key}
-                              type="button"
-                              aria-pressed={active}
-                              aria-label={`Filter by length: ${o.label}`}
-                              onClick={() => {
-                                const next = active ? "All" : o.key;
-                                setLengthFilter(next);
-                                trackFp("filter_change", {
-                                  metadata: { filter: "length", value: next },
-                                });
-                              }}
-                              className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
-                                active
-                                  ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                                  : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
-                              }`}
-                            >
-                              {o.label}
-                            </button>
-                          );
-                        });
-                      })()}
+                  {lengthHasChoice && (
+                    <div>
+                      <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        By length
+                      </span>
+                      <div className="mt-1.5 flex flex-wrap justify-start gap-2">
+                        {(() => {
+                          const shortCount = lengthScoped.filter(
+                            (r) => typeof r.page_count === "number" && r.page_count < 5,
+                          ).length;
+                          const longCount = lengthScoped.filter(
+                            (r) => typeof r.page_count === "number" && r.page_count >= 5,
+                          ).length;
+                          const options = [
+                            { key: "All" as const, label: "All", count: lengthScoped.length },
+                            { key: "short" as const, label: "Under 5 Pages", count: shortCount },
+                            { key: "long" as const, label: "5+ Pages", count: longCount },
+                          ].filter((o) => o.key === "All" || o.count > 0);
+                          return options.map((o) => {
+                            const active = lengthFilter === o.key;
+                            return (
+                              <button
+                                key={o.key}
+                                type="button"
+                                aria-pressed={active}
+                                aria-label={`Filter by length: ${o.label}`}
+                                onClick={() => {
+                                  const next = active ? "All" : o.key;
+                                  setLengthFilter(next);
+                                  trackFp("filter_change", {
+                                    metadata: { filter: "length", value: next },
+                                  });
+                                }}
+                                className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
+                                  active
+                                    ? "border-accent bg-accent text-accent-foreground shadow-sm"
+                                    : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
+                                }`}
+                              >
+                                {o.label}
+                              </button>
+                            );
+                          });
+                        })()}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  {contentTypeOptions.length > 0 && (
+                  {contentTypeHasChoice && (
                     <div>
                       <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         By content type
@@ -852,16 +874,16 @@ function Index() {
                                 By {r.publisher}
                               </p>
                             )}
-                            {r.subtitle && (
-                              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                                {standardizeCopy(r.subtitle)}
-                              </p>
-                            )}
-                            {!r.subtitle && r.description && (
-                              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                                {standardizeCopy(r.description)}
-                              </p>
-                            )}
+                            {(() => {
+                              // Issue-specific summary wins; the generic
+                              // publication description is only a fallback.
+                              const summary = r.summary_quick || r.subtitle || r.description;
+                              return summary ? (
+                                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                                  {standardizeCopy(summary)}
+                                </p>
+                              ) : null;
+                            })()}
                             {(r.audience || r.format_type || typeof r.page_count === "number") && (
                               <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                 {[

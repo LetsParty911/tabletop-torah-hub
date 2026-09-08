@@ -6,7 +6,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { resolveHebcalParsha } from "@/lib/hebcal";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { VORTS, getVortsForParsha, type Vort } from "@/data/vorts";
-import { PARSHIYOS } from "@/lib/parshiyos";
+import { PARSHIYOS, formatReadingLabel, YOM_TOV_KEYS } from "@/lib/parshiyos";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 
 type LoaderData = {
@@ -23,7 +23,7 @@ async function loadVortsWeek(): Promise<LoaderData> {
     const o = await getParshaOverride();
     if (o.override && o.isActive) {
       parshaKey = o.override;
-      label = o.override.startsWith("Parshas") ? o.override : `Parshas ${o.override}`;
+      label = formatReadingLabel(o.override);
     }
   } catch {
     // ignore
@@ -48,7 +48,10 @@ export const Route = createFileRoute("/short-vorts")({
     const url = "https://torahforthetable.com/short-vorts";
     const image = "https://torahforthetable.com/og-image.png";
 
-    const all = (loaderData?.current?.length ? loaderData.current : VORTS[0]?.vorts ?? []).slice(0, 20);
+    const all = (loaderData?.current?.length ? loaderData.current : (VORTS[0]?.vorts ?? [])).slice(
+      0,
+      20,
+    );
 
     return {
       meta: [
@@ -115,11 +118,13 @@ function ParshaSection({
   heading,
   vorts,
   defaultOpen,
+  emptyLabel,
 }: {
   id: string;
   heading: string;
   vorts: Vort[];
   defaultOpen: boolean;
+  emptyLabel?: string;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -133,9 +138,7 @@ function ParshaSection({
           aria-controls={`${id}-panel`}
           className="flex w-full items-center justify-between gap-3 rounded-xl px-4 py-4 text-left transition-colors hover:bg-accent/10"
         >
-          <span className="font-serif text-lg font-bold text-primary sm:text-xl">
-            {heading}
-          </span>
+          <span className="font-serif text-lg font-bold text-primary sm:text-xl">{heading}</span>
           <span className="flex items-center gap-3">
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {vorts.length} {vorts.length === 1 ? "vort" : "vorts"}
@@ -159,14 +162,14 @@ function ParshaSection({
             <div className="parchment-frame">
               <div className="parchment-panel text-center">
                 <p className="text-sm text-muted-foreground">
-                  Vorts for {heading} are being prepared. In the meantime, browse the earlier
-                  weeks below, or download this week's full collection.
+                  {emptyLabel ?? heading} Short Vorts are being prepared. In the meantime, browse
+                  the full {emptyLabel ?? heading} collection.
                 </p>
                 <Link
                   to="/"
                   className="mt-4 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                 >
-                  Browse this week's collection
+                  Browse the {emptyLabel ?? "current"} collection
                 </Link>
               </div>
             </div>
@@ -178,11 +181,16 @@ function ParshaSection({
 }
 
 function sectionId(key: string): string {
-  return `vorts-${key.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+  return `vorts-${key
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")}`;
 }
 
 function ShortVortsPage() {
   const { label, parshaKey, current } = Route.useLoaderData();
+  const isYomTov =
+    !!parshaKey && YOM_TOV_KEYS.includes(parshaKey.replace(/^parshas\s+/i, "").trim());
   const normalizedCurrent = (parshaKey ?? "")
     .replace(/^parshas\s+/i, "")
     .trim()
@@ -205,12 +213,19 @@ function ShortVortsPage() {
   });
 
   const sections = [
-    { key: "current", heading: `This Week — ${label}`, vorts: current, defaultOpen: true },
+    {
+      key: "current",
+      heading: isYomTov ? label : `This Week — ${label}`,
+      vorts: current,
+      defaultOpen: true,
+      emptyLabel: label,
+    },
     ...others.map((p) => ({
       key: p.parshaKey,
-      heading: `Parshas ${p.parshaKey}`,
+      heading: formatReadingLabel(p.parshaKey),
       vorts: p.vorts,
       defaultOpen: false,
+      emptyLabel: formatReadingLabel(p.parshaKey),
     })),
   ].map((s) => ({ ...s, id: sectionId(s.key) }));
 
@@ -231,9 +246,8 @@ function ShortVortsPage() {
             Short Vorts on Parshas Hashavua
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            One-minute Torah thoughts you can say over at the Shabbos table — drawn from
-            Rashi, Midrash and Chazal. Short enough to remember, sharp enough to start a
-            conversation.
+            One-minute Torah thoughts you can say over at the Shabbos table — drawn from Rashi,
+            Midrash and Chazal. Short enough to remember, sharp enough to start a conversation.
           </p>
         </header>
 
@@ -267,6 +281,7 @@ function ShortVortsPage() {
               heading={s.heading}
               vorts={s.vorts}
               defaultOpen={s.defaultOpen}
+              emptyLabel={s.emptyLabel}
             />
           ))}
         </div>

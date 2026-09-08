@@ -18,6 +18,12 @@ export function SiteFooter() {
         <Link to="/short-vorts" className={linkClass}>
           Short Vorts
         </Link>
+        <Link to="/archive" className={linkClass}>
+          Archive
+        </Link>
+        <Link to="/originals" className={linkClass}>
+          Originals
+        </Link>
         <Link to="/about" className={linkClass}>
           About
         </Link>
