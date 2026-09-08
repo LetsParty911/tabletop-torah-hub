@@ -392,7 +392,7 @@ function Index() {
     new Set(
       sortedResources
         .map((r) => normalizeAudience(r.audience, r.title))
-        .filter((v): v is string => !!v),
+        .filter((v) => !!v),
     ).size > 1;
   const lengthHasChoice =
     sortedResources.some((r) => typeof r.page_count === "number" && r.page_count < 5) &&
