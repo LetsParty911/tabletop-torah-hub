@@ -385,6 +385,20 @@ function Index() {
     (r) => matchesAudience(r) && matchesLength(r) && matchesContentType(r),
   );
 
+  // A filter group is only worth rendering when the current set actually
+  // offers more than one real choice (e.g. hide "By length" when every item
+  // is under 5 pages).
+  const audienceHasChoice =
+    new Set(
+      sortedResources
+        .map((r) => normalizeAudience(r.audience, r.title))
+        .filter((v): v is string => !!v),
+    ).size > 1;
+  const lengthHasChoice =
+    sortedResources.some((r) => typeof r.page_count === "number" && r.page_count < 5) &&
+    sortedResources.some((r) => typeof r.page_count === "number" && r.page_count >= 5);
+  const contentTypeHasChoice = contentTypeOptions.length > 1;
+
   const featuredPicks = FEATURED_SLOTS.map((slot) => ({
     ...slot,
     resource: resources.find((r) => (r.featured_slot ?? "").trim().toLowerCase() === slot.key),
@@ -479,6 +493,11 @@ function Index() {
                 Browse {displayedLabel}
               </a>
             </div>
+            {resources.length > 0 && (
+              <div className="mt-3 flex justify-center">
+                <ShareButton className="w-full sm:w-auto" />
+              </div>
+            )}
           </div>
         </section>
 
@@ -675,6 +694,8 @@ function Index() {
                     </div>
                   )}
                   <div id="filters" className="scroll-mt-24">
+                    {audienceHasChoice && (
+                    <>
                     <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       By audience
                     </span>
@@ -716,8 +737,11 @@ function Index() {
                           );
                         })}
                     </div>
+                    </>
+                    )}
                   </div>
 
+                  {lengthHasChoice && (
                   <div>
                     <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       By length
@@ -763,8 +787,9 @@ function Index() {
                       })()}
                     </div>
                   </div>
+                  )}
 
-                  {contentTypeOptions.length > 0 && (
+                  {contentTypeHasChoice && (
                     <div>
                       <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         By content type
@@ -852,16 +877,16 @@ function Index() {
                                 By {r.publisher}
                               </p>
                             )}
-                            {r.subtitle && (
-                              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                                {standardizeCopy(r.subtitle)}
-                              </p>
-                            )}
-                            {!r.subtitle && r.description && (
-                              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                                {standardizeCopy(r.description)}
-                              </p>
-                            )}
+                            {(() => {
+                              // Issue-specific summary wins; the generic
+                              // publication description is only a fallback.
+                              const summary = r.summary_quick || r.subtitle || r.description;
+                              return summary ? (
+                                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                                  {standardizeCopy(summary)}
+                                </p>
+                              ) : null;
+                            })()}
                             {(r.audience || r.format_type || typeof r.page_count === "number") && (
                               <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                 {[
