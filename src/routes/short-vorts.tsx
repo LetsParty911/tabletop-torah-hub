@@ -48,7 +48,10 @@ export const Route = createFileRoute("/short-vorts")({
     const url = "https://torahforthetable.com/short-vorts";
     const image = "https://torahforthetable.com/og-image.png";
 
-    const all = (loaderData?.current?.length ? loaderData.current : VORTS[0]?.vorts ?? []).slice(0, 20);
+    const all = (loaderData?.current?.length ? loaderData.current : (VORTS[0]?.vorts ?? [])).slice(
+      0,
+      20,
+    );
 
     return {
       meta: [
@@ -135,9 +138,7 @@ function ParshaSection({
           aria-controls={`${id}-panel`}
           className="flex w-full items-center justify-between gap-3 rounded-xl px-4 py-4 text-left transition-colors hover:bg-accent/10"
         >
-          <span className="font-serif text-lg font-bold text-primary sm:text-xl">
-            {heading}
-          </span>
+          <span className="font-serif text-lg font-bold text-primary sm:text-xl">{heading}</span>
           <span className="flex items-center gap-3">
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {vorts.length} {vorts.length === 1 ? "vort" : "vorts"}
@@ -180,12 +181,16 @@ function ParshaSection({
 }
 
 function sectionId(key: string): string {
-  return `vorts-${key.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+  return `vorts-${key
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")}`;
 }
 
 function ShortVortsPage() {
   const { label, parshaKey, current } = Route.useLoaderData();
-  const isYomTov = !!parshaKey && YOM_TOV_KEYS.includes(parshaKey.replace(/^parshas\s+/i, "").trim());
+  const isYomTov =
+    !!parshaKey && YOM_TOV_KEYS.includes(parshaKey.replace(/^parshas\s+/i, "").trim());
   const normalizedCurrent = (parshaKey ?? "")
     .replace(/^parshas\s+/i, "")
     .trim()
@@ -241,9 +246,8 @@ function ShortVortsPage() {
             Short Vorts on Parshas Hashavua
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            One-minute Torah thoughts you can say over at the Shabbos table — drawn from
-            Rashi, Midrash and Chazal. Short enough to remember, sharp enough to start a
-            conversation.
+            One-minute Torah thoughts you can say over at the Shabbos table — drawn from Rashi,
+            Midrash and Chazal. Short enough to remember, sharp enough to start a conversation.
           </p>
         </header>
 
