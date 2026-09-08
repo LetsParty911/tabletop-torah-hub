@@ -6,7 +6,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { resolveHebcalParsha } from "@/lib/hebcal";
 import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { VORTS, getVortsForParsha, type Vort } from "@/data/vorts";
-import { PARSHIYOS } from "@/lib/parshiyos";
+import { PARSHIYOS, formatReadingLabel, YOM_TOV_KEYS } from "@/lib/parshiyos";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 
 type LoaderData = {
@@ -23,7 +23,7 @@ async function loadVortsWeek(): Promise<LoaderData> {
     const o = await getParshaOverride();
     if (o.override && o.isActive) {
       parshaKey = o.override;
-      label = o.override.startsWith("Parshas") ? o.override : `Parshas ${o.override}`;
+      label = formatReadingLabel(o.override);
     }
   } catch {
     // ignore
@@ -115,11 +115,13 @@ function ParshaSection({
   heading,
   vorts,
   defaultOpen,
+  emptyLabel,
 }: {
   id: string;
   heading: string;
   vorts: Vort[];
   defaultOpen: boolean;
+  emptyLabel?: string;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -159,14 +161,14 @@ function ParshaSection({
             <div className="parchment-frame">
               <div className="parchment-panel text-center">
                 <p className="text-sm text-muted-foreground">
-                  Vorts for {heading} are being prepared. In the meantime, browse the earlier
-                  weeks below, or download this week's full collection.
+                  {emptyLabel ?? heading} Short Vorts are being prepared. In the meantime, browse
+                  the full {emptyLabel ?? heading} collection.
                 </p>
                 <Link
                   to="/"
                   className="mt-4 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                 >
-                  Browse this week's collection
+                  Browse the {emptyLabel ?? "current"} collection
                 </Link>
               </div>
             </div>
@@ -183,6 +185,7 @@ function sectionId(key: string): string {
 
 function ShortVortsPage() {
   const { label, parshaKey, current } = Route.useLoaderData();
+  const isYomTov = !!parshaKey && YOM_TOV_KEYS.includes(parshaKey.replace(/^parshas\s+/i, "").trim());
   const normalizedCurrent = (parshaKey ?? "")
     .replace(/^parshas\s+/i, "")
     .trim()
@@ -205,12 +208,19 @@ function ShortVortsPage() {
   });
 
   const sections = [
-    { key: "current", heading: `This Week — ${label}`, vorts: current, defaultOpen: true },
+    {
+      key: "current",
+      heading: isYomTov ? label : `This Week — ${label}`,
+      vorts: current,
+      defaultOpen: true,
+      emptyLabel: label,
+    },
     ...others.map((p) => ({
       key: p.parshaKey,
-      heading: `Parshas ${p.parshaKey}`,
+      heading: formatReadingLabel(p.parshaKey),
       vorts: p.vorts,
       defaultOpen: false,
+      emptyLabel: formatReadingLabel(p.parshaKey),
     })),
   ].map((s) => ({ ...s, id: sectionId(s.key) }));
 
@@ -267,6 +277,7 @@ function ShortVortsPage() {
               heading={s.heading}
               vorts={s.vorts}
               defaultOpen={s.defaultOpen}
+              emptyLabel={s.emptyLabel}
             />
           ))}
         </div>
