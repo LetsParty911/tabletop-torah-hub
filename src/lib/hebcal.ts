@@ -15,6 +15,9 @@ export type HebcalItem = {
   subcat?: string;
   date: string;
   hdate?: string;
+  /** True for the actual Yom Tov day itself (Hebcal also tags Erev days and
+   * post-Yom-Tov fasts like Tzom Gedaliah as subcat "major" without this). */
+  yomtov?: boolean;
 };
 
 /**
@@ -152,24 +155,27 @@ export function resolveReadingFromHebcal(
   const shabbosDate = parsha?.date?.slice(0, 10) ?? rangeEnd ?? upcomingShabbosDate(now);
 
   // Yom Tov detection must NOT depend on a parashat item existing. Hebcal's
-  // reported `range` can span a connected Yom Tov + Shabbos block (e.g. Rosh
-  // Hashanah 2026: Fri 9/11 candle-lighting through Sun 9/13 Havdalah) where
-  // `range.end` lands on the Havdalah day, one day AFTER the actual Yom Tov
-  // date that carries the "major" holiday item (Sat 9/12). A single exact-date
-  // match against `shabbosDate` misses that item entirely and silently falls
-  // through to the generic "Parshas Hashavua" fallback below. Search the
-  // whole range window instead (falling back to the single shabbosDate when
-  // Hebcal reports no range) so a major holiday anywhere in the block is found.
+  // reported `range` can span a connected block covering Erev + both days +
+  // the day after (e.g. Rosh Hashanah 2026: range is 9/11-9/14, covering
+  // Erev Rosh Hashana, both Yom Tov days, AND Tzom Gedaliah — Hebcal tags
+  // Erev days and post-Yom-Tov fasts subcat "major" too, not just the real
+  // holiday). A single exact-date match against a computed `shabbosDate`
+  // used to miss the actual holiday entirely; searching the whole range
+  // fixes that, but must prefer items where `yomtov` is true (the real
+  // holiday day) over Erev/fast items in the same window, which come first
+  // in Hebcal's item order and would otherwise win by being found first.
   const holidayCandidates = items.filter(
     (i) => i.category === "holiday" && i.subcat === "major",
   );
+  const realYomTovDays = holidayCandidates.filter((i) => i.yomtov === true);
+  const searchPool = realYomTovDays.length > 0 ? realYomTovDays : holidayCandidates;
   const yomTovOnShabbos =
     rangeStart || rangeEnd
-      ? holidayCandidates.find((i) => {
+      ? searchPool.find((i) => {
           const d = i.date.slice(0, 10);
           return (!rangeStart || d >= rangeStart) && (!rangeEnd || d <= rangeEnd);
         })
-      : holidayCandidates.find((i) => i.date.slice(0, 10) === shabbosDate);
+      : searchPool.find((i) => i.date.slice(0, 10) === shabbosDate);
 
   if (yomTovOnShabbos) {
     const key =
