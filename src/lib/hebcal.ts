@@ -147,20 +147,35 @@ export function resolveReadingFromHebcal(
 
   // Shabbos date: prefer the parsha's own date, then Hebcal's range end,
   // then the computed upcoming Saturday.
-  const shabbosDate =
-    parsha?.date?.slice(0, 10) ??
-    (data.range?.end ? data.range.end.slice(0, 10) : null) ??
-    upcomingShabbosDate(now);
+  const rangeStart = data.range?.start ? data.range.start.slice(0, 10) : null;
+  const rangeEnd = data.range?.end ? data.range.end.slice(0, 10) : null;
+  const shabbosDate = parsha?.date?.slice(0, 10) ?? rangeEnd ?? upcomingShabbosDate(now);
 
-  // Yom Tov detection must NOT depend on a parashat item existing.
-  const yomTovOnShabbos = items.find(
-    (i) => i.category === "holiday" && i.subcat === "major" && i.date.slice(0, 10) === shabbosDate,
+  // Yom Tov detection must NOT depend on a parashat item existing. Hebcal's
+  // reported `range` can span a connected Yom Tov + Shabbos block (e.g. Rosh
+  // Hashanah 2026: Fri 9/11 candle-lighting through Sun 9/13 Havdalah) where
+  // `range.end` lands on the Havdalah day, one day AFTER the actual Yom Tov
+  // date that carries the "major" holiday item (Sat 9/12). A single exact-date
+  // match against `shabbosDate` misses that item entirely and silently falls
+  // through to the generic "Parshas Hashavua" fallback below. Search the
+  // whole range window instead (falling back to the single shabbosDate when
+  // Hebcal reports no range) so a major holiday anywhere in the block is found.
+  const holidayCandidates = items.filter(
+    (i) => i.category === "holiday" && i.subcat === "major",
   );
+  const yomTovOnShabbos =
+    rangeStart || rangeEnd
+      ? holidayCandidates.find((i) => {
+          const d = i.date.slice(0, 10);
+          return (!rangeStart || d >= rangeStart) && (!rangeEnd || d <= rangeEnd);
+        })
+      : holidayCandidates.find((i) => i.date.slice(0, 10) === shabbosDate);
 
   if (yomTovOnShabbos) {
     const key =
       hebcalYomTovToKey(yomTovOnShabbos.title) ?? normalizeYomTovTitle(yomTovOnShabbos.title);
-    return { parshaKey: key, label: key, isStaticFallback: false, readingDate: shabbosDate };
+    const matchedDate = yomTovOnShabbos.date.slice(0, 10);
+    return { parshaKey: key, label: key, isStaticFallback: false, readingDate: matchedDate };
   }
 
   if (parsha) {
