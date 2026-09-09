@@ -91,17 +91,7 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     const o = await getParshaOverride();
     if (o.override && o.isActive) {
       parshaKey = o.override;
-      label = o.override.startsWith("Parshas") ? o.override : `Parshas ${o.override}`;
-      const knownYomTov = [
-        "Rosh Hashanah",
-        "Yom Kippur",
-        "Sukkos",
-        "Shemini Atzeres",
-        "Simchas Torah",
-        "Pesach",
-        "Shavuos",
-      ];
-      if (knownYomTov.includes(o.override)) label = o.override;
+      label = formatReadingLabel(o.override);
     }
   } catch {
     // ignore
@@ -126,9 +116,7 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     isFallback = r.isFallback;
     if (r.isFallback && r.fallbackParshaKey) {
       fallbackParshaKey = r.fallbackParshaKey;
-      fallbackParshaLabel = r.fallbackParshaKey.startsWith("Parshas")
-        ? r.fallbackParshaKey
-        : `Parshas ${r.fallbackParshaKey}`;
+      fallbackParshaLabel = formatReadingLabel(r.fallbackParshaKey);
     }
   } catch (e) {
     console.error("Failed to load PDFs", e);
