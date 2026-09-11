@@ -82,7 +82,7 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
   const [sessionFunnel, setSessionFunnel] = useState<SessionFunnelData["funnel"] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [publicationScope, setPublicationScope] = useState("Rosh Hashanah");
+  const [publicationScope, setPublicationScope] = useState("all");
 
   const load = useCallback(async () => {
     if (!accessToken) return;

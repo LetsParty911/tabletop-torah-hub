@@ -120,11 +120,12 @@ export default function DownloadsDashboard({ accessToken }: { accessToken: strin
     }
   };
 
+  // Raw download actions — one row per download click, not unique people.
   const cards: Array<{ label: string; value: number | undefined }> = [
-    { label: "Total downloads", value: totals?.all },
-    { label: "Last 30 days", value: totals?.last30 },
-    { label: "Last 7 days", value: totals?.last7 },
-    { label: "Today", value: totals?.today },
+    { label: "Download actions (all time)", value: totals?.all },
+    { label: "Download actions · 30 days", value: totals?.last30 },
+    { label: "Download actions · 7 days", value: totals?.last7 },
+    { label: "Download actions · today (ET)", value: totals?.today },
   ];
 
   return (
