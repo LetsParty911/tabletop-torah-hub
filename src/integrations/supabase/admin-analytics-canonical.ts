@@ -49,7 +49,9 @@ async function requireAnalyticsAdmin(accessToken: string) {
   if (!email || !allow.includes(email)) throw new Error("Forbidden");
 }
 
-function buildCollectionWindows(rows: Array<{ parsha_key: string | null; created_at: string | null }>): WindowDef[] {
+function buildCollectionWindows(
+  rows: Array<{ parsha_key: string | null; created_at: string | null }>,
+): WindowDef[] {
   const firstAt = new Map<string, string>();
   const lastAt = new Map<string, string>();
 
@@ -69,7 +71,8 @@ function buildCollectionWindows(rows: Array<{ parsha_key: string | null; created
   for (let index = 0; index < ordered.length; index += 1) {
     const parsha = ordered[index]!;
     const start = firstAt.get(parsha)!;
-    const end = index === 0 ? new Date(Date.now() + 60_000).toISOString() : windows[index - 1]!.start;
+    const end =
+      index === 0 ? new Date(Date.now() + 60_000).toISOString() : windows[index - 1]!.start;
     windows.push({ parsha, start, end });
   }
   return windows;
@@ -83,7 +86,9 @@ async function fetchEventsBetween(start: string, end: string): Promise<EventRow[
   for (let offset = 0; offset < 100000; offset += pageSize) {
     const { data, error } = await admin
       .from("analytics_events")
-      .select("event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, device_type, source_group")
+      .select(
+        "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, device_type, source_group",
+      )
       .gte("occurred_at", start)
       .lt("occurred_at", end)
       .order("occurred_at", { ascending: true })
@@ -97,7 +102,9 @@ async function fetchEventsBetween(start: string, end: string): Promise<EventRow[
 }
 
 function visitorIds(rows: EventRow[]): string[] {
-  return [...new Set(rows.map((row) => row.visitor_id?.trim()).filter((id): id is string => Boolean(id)))];
+  return [
+    ...new Set(rows.map((row) => row.visitor_id?.trim()).filter((id): id is string => Boolean(id))),
+  ];
 }
 
 async function fetchPriorVisitors(ids: string[], before: string): Promise<Set<string>> {
@@ -151,8 +158,10 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
     }
 
     if (!session.visitorId && vid) session.visitorId = vid;
-    if (session.source === "Direct" && row.source_group?.trim()) session.source = row.source_group.trim();
-    if (session.device === "unknown" && row.device_type?.trim()) session.device = row.device_type.trim();
+    if (session.source === "Direct" && row.source_group?.trim())
+      session.source = row.source_group.trim();
+    if (session.device === "unknown" && row.device_type?.trim())
+      session.device = row.device_type.trim();
 
     if (vid) {
       visitors.add(vid);
@@ -168,7 +177,18 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
       page.sessions.add(sid);
       pageMap.set(path, page);
     }
-    if (["publication_click", "pdf_open", "download", "filter_change", "search", "share_click", "signup", "heartbeat"].includes(name)) {
+    if (
+      [
+        "publication_click",
+        "pdf_open",
+        "download",
+        "filter_change",
+        "search",
+        "share_click",
+        "signup",
+        "heartbeat",
+      ].includes(name)
+    ) {
       session.engaged = true;
     }
     if (name === "pdf_open" || name === "download") session.accessedPdf = true;
@@ -193,7 +213,9 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
   const sessionList = [...sessions.values()];
   const downloadingSessions = sessionList.filter((session) => session.downloaded).length;
   const pdfAccessingSessions = sessionList.filter((session) => session.accessedPdf).length;
-  const engagedSessions = sessionList.filter((session) => session.engaged || session.pageviews >= 2).length;
+  const engagedSessions = sessionList.filter(
+    (session) => session.engaged || session.pageviews >= 2,
+  ).length;
 
   return {
     pageviews: rows.filter((row) => row.event_name === "page_view").length,
@@ -221,7 +243,9 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
 
 export const adminCanonicalCollectionTraffic = createServerFn({ method: "POST" })
   .inputValidator((input: { accessToken: string; parsha?: string | null }) =>
-    z.object({ accessToken: z.string().min(10), parsha: z.string().nullable().optional() }).parse(input),
+    z
+      .object({ accessToken: z.string().min(10), parsha: z.string().nullable().optional() })
+      .parse(input),
   )
   .handler(async ({ data }) => {
     await requireAnalyticsAdmin(data.accessToken);
@@ -229,10 +253,13 @@ export const adminCanonicalCollectionTraffic = createServerFn({ method: "POST" }
     const pdfResult = await admin.from("pdfs").select("parsha_key, created_at");
     if (pdfResult.error) throw new Error(pdfResult.error.message);
 
-    const windows = buildCollectionWindows((pdfResult.data ?? []) as Array<{ parsha_key: string | null; created_at: string | null }>);
-    const selected = data.parsha && windows.some((window) => window.parsha === data.parsha)
-      ? data.parsha
-      : (windows[0]?.parsha ?? null);
+    const windows = buildCollectionWindows(
+      (pdfResult.data ?? []) as Array<{ parsha_key: string | null; created_at: string | null }>,
+    );
+    const selected =
+      data.parsha && windows.some((window) => window.parsha === data.parsha)
+        ? data.parsha
+        : (windows[0]?.parsha ?? null);
     const selectedIndex = selected ? windows.findIndex((window) => window.parsha === selected) : -1;
     const currentWindow = selectedIndex >= 0 ? windows[selectedIndex]! : null;
     const previousWindow = selectedIndex >= 0 ? (windows[selectedIndex + 1] ?? null) : null;
@@ -256,11 +283,15 @@ export const adminCanonicalCollectionTraffic = createServerFn({ method: "POST" }
 
     const [currentRows, previousRows] = await Promise.all([
       fetchEventsBetween(currentWindow.start, currentWindow.end),
-      previousWindow ? fetchEventsBetween(previousWindow.start, previousWindow.end) : Promise.resolve([] as EventRow[]),
+      previousWindow
+        ? fetchEventsBetween(previousWindow.start, previousWindow.end)
+        : Promise.resolve([] as EventRow[]),
     ]);
     const [currentPrior, previousPrior] = await Promise.all([
       fetchPriorVisitors(visitorIds(currentRows), currentWindow.start),
-      previousWindow ? fetchPriorVisitors(visitorIds(previousRows), previousWindow.start) : Promise.resolve(new Set<string>()),
+      previousWindow
+        ? fetchPriorVisitors(visitorIds(previousRows), previousWindow.start)
+        : Promise.resolve(new Set<string>()),
     ]);
 
     const current = summarizeCanonical(currentRows, currentPrior);
@@ -292,8 +323,12 @@ export const adminCanonicalCollectionTraffic = createServerFn({ method: "POST" }
       previous,
       currentSubscribers,
       previousSubscribers,
-      subscriberConversion: current.uniqueVisitors ? currentSubscribers / current.uniqueVisitors : 0,
-      previousSubscriberConversion: previous.uniqueVisitors ? previousSubscribers / previous.uniqueVisitors : 0,
+      subscriberConversion: current.uniqueVisitors
+        ? currentSubscribers / current.uniqueVisitors
+        : 0,
+      previousSubscriberConversion: previous.uniqueVisitors
+        ? previousSubscribers / previous.uniqueVisitors
+        : 0,
     };
   });
 
@@ -326,11 +361,15 @@ export function startOfTodayNewYork(now = new Date()): string {
   const raw = offset.replace(/^[-+]/, "");
   const [hours, minutes = "00"] = raw.split(":");
   const normalizedOffset = `${sign}${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
-  return new Date(`${get("year")}-${get("month")}-${get("day")}T00:00:00${normalizedOffset}`).toISOString();
+  return new Date(
+    `${get("year")}-${get("month")}-${get("day")}T00:00:00${normalizedOffset}`,
+  ).toISOString();
 }
 
 export const adminDownloadActionsTodayEt = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string }) => z.object({ accessToken: z.string().min(10) }).parse(input))
+  .inputValidator((input: { accessToken: string }) =>
+    z.object({ accessToken: z.string().min(10) }).parse(input),
+  )
   .handler(async ({ data }) => {
     await requireAnalyticsAdmin(data.accessToken);
     const admin = getSupabaseAdmin();

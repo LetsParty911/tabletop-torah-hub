@@ -71,8 +71,10 @@ type Visitor = {
   firstDownloadSessionNumber: number | null;
 };
 
-const nonempty = (value: unknown) => typeof value === "string" && value.trim() ? value.trim() : null;
-const hours = (a: string, b: string) => Math.max(0, (new Date(b).getTime() - new Date(a).getTime()) / 3_600_000);
+const nonempty = (value: unknown) =>
+  typeof value === "string" && value.trim() ? value.trim() : null;
+const hours = (a: string, b: string) =>
+  Math.max(0, (new Date(b).getTime() - new Date(a).getTime()) / 3_600_000);
 const shortId = (id: string) => id.replace(/-/g, "").slice(0, 8).toUpperCase();
 
 function median(values: number[]) {
@@ -102,7 +104,9 @@ async function fetchRows(since?: string, visitorIds?: string[], before?: string)
   for (let offset = 0; offset < 100000; offset += pageSize) {
     let query = admin
       .from("analytics_events")
-      .select("event_name, occurred_at, visitor_id, session_id, path, landing_path, publication_id, publication_title, publication_series, publisher, parsha, device_type, source_group, metadata")
+      .select(
+        "event_name, occurred_at, visitor_id, session_id, path, landing_path, publication_id, publication_title, publication_series, publisher, parsha, device_type, source_group, metadata",
+      )
       .order("occurred_at", { ascending: true })
       .range(offset, offset + pageSize - 1);
     if (since) query = query.gte("occurred_at", since);
@@ -121,7 +125,7 @@ async function fetchRows(since?: string, visitorIds?: string[], before?: string)
 async function fetchHistory(visitorIds: string[], before: string): Promise<Row[]> {
   const out: Row[] = [];
   for (let index = 0; index < visitorIds.length; index += 75) {
-    out.push(...await fetchRows(undefined, visitorIds.slice(index, index + 75), before));
+    out.push(...(await fetchRows(undefined, visitorIds.slice(index, index + 75), before)));
   }
   return out;
 }
@@ -159,22 +163,31 @@ function buildVisitors(rows: Row[], since: string): Visitor[] {
     session.activeInRange ||= row.occurred_at >= since;
     if (row.occurred_at < session.startedAt) session.startedAt = row.occurred_at;
     if (row.occurred_at > session.lastAt) session.lastAt = row.occurred_at;
-    if (session.source === "Direct" && nonempty(row.source_group)) session.source = nonempty(row.source_group)!;
-    if (session.device === "unknown" && nonempty(row.device_type)) session.device = nonempty(row.device_type)!;
+    if (session.source === "Direct" && nonempty(row.source_group))
+      session.source = nonempty(row.source_group)!;
+    if (session.device === "unknown" && nonempty(row.device_type))
+      session.device = nonempty(row.device_type)!;
 
     const name = nonempty(row.event_name) ?? "";
-    if (name === "page_view" && row.path && session.pages.length < 8 && !session.pages.includes(row.path)) {
+    if (
+      name === "page_view" &&
+      row.path &&
+      session.pages.length < 8 &&
+      !session.pages.includes(row.path)
+    ) {
       session.pages.push(row.path);
     }
 
     const publication = publicationOf(row);
     if (publication) {
       if (name === "publication_click") session.clicks.set(publication.id, publication);
-      if (name === "pdf_open" || name === "download") session.accesses.set(publication.id, publication);
+      if (name === "pdf_open" || name === "download")
+        session.accesses.set(publication.id, publication);
       if (name === "download") {
         session.downloads.set(publication.id, publication);
         session.downloadEvents += 1;
-        if (!session.firstDownloadAt || row.occurred_at < session.firstDownloadAt) session.firstDownloadAt = row.occurred_at;
+        if (!session.firstDownloadAt || row.occurred_at < session.firstDownloadAt)
+          session.firstDownloadAt = row.occurred_at;
       }
     }
 
@@ -200,7 +213,10 @@ function buildVisitors(rows: Row[], since: string): Visitor[] {
   for (const visitor of visitors) {
     visitor.sessions.sort((a, b) => a.startedAt.localeCompare(b.startedAt));
     visitor.sessions.forEach((session, index) => {
-      if (session.firstDownloadAt && (!visitor.firstDownloadAt || session.firstDownloadAt < visitor.firstDownloadAt)) {
+      if (
+        session.firstDownloadAt &&
+        (!visitor.firstDownloadAt || session.firstDownloadAt < visitor.firstDownloadAt)
+      ) {
         visitor.firstDownloadAt = session.firstDownloadAt;
         visitor.firstDownloadSessionNumber = index + 1;
       }
@@ -219,28 +235,43 @@ function isReturning(visitor: Visitor) {
 
 export const adminPhase2ReturningAnalyticsV2 = createServerFn({ method: "POST" })
   .inputValidator((input: { accessToken: string; days?: number }) =>
-    z.object({ accessToken: z.string().min(10), days: z.number().int().min(1).max(365).optional() }).parse(input),
+    z
+      .object({
+        accessToken: z.string().min(10),
+        days: z.number().int().min(1).max(365).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
     const days = data.days ?? 90;
     const since = new Date(Date.now() - days * 86_400_000).toISOString();
     const inRange = await fetchRows(since);
-    const activeIds = [...new Set(inRange.map((row) => nonempty(row.visitor_id)).filter((id): id is string => Boolean(id)))];
+    const activeIds = [
+      ...new Set(
+        inRange.map((row) => nonempty(row.visitor_id)).filter((id): id is string => Boolean(id)),
+      ),
+    ];
     const history = await fetchHistory(activeIds, since);
-    const visitors = buildVisitors([...history, ...inRange], since).filter((visitor) => firstActiveIndex(visitor) >= 0);
+    const visitors = buildVisitors([...history, ...inRange], since).filter(
+      (visitor) => firstActiveIndex(visitor) >= 0,
+    );
     const returning = visitors.filter(isReturning);
     const converted = visitors.filter((visitor) => visitor.firstDownloadAt !== null);
 
     const repeatSessions = visitors.reduce(
-      (total, visitor) => total + visitor.sessions.filter((session, index) => session.activeInRange && index >= 1).length,
+      (total, visitor) =>
+        total +
+        visitor.sessions.filter((session, index) => session.activeInRange && index >= 1).length,
       0,
     );
     const returnDelays = returning.map((visitor) => {
       const firstActive = visitor.sessions[firstActiveIndex(visitor)]!;
       return hours(visitor.sessions[0]!.startedAt, firstActive.startedAt) / 24;
     });
-    const conversionHours = converted.map((visitor) => hours(visitor.sessions[0]!.startedAt, visitor.firstDownloadAt!));
+    const conversionHours = converted.map((visitor) =>
+      hours(visitor.sessions[0]!.startedAt, visitor.firstDownloadAt!),
+    );
 
     const repeatConversion = [
       { key: "1st lifetime session", min: 1, max: 1 },
@@ -257,14 +288,33 @@ export const adminPhase2ReturningAnalyticsV2 = createServerFn({ method: "POST" }
           if (session.downloadEvents > 0) convertedSessions += 1;
         });
       }
-      return { key: bucket.key, sessions, convertedSessions, conversionRate: sessions ? convertedSessions / sessions : 0 };
+      return {
+        key: bucket.key,
+        sessions,
+        convertedSessions,
+        conversionRate: sessions ? convertedSessions / sessions : 0,
+      };
     });
 
-    type Cohort = { source: string; visitors: number; returnedVisitors: number; convertedVisitors: number; sessions: number; downloads: number };
+    type Cohort = {
+      source: string;
+      visitors: number;
+      returnedVisitors: number;
+      convertedVisitors: number;
+      sessions: number;
+      downloads: number;
+    };
     const cohortMap = new Map<string, Cohort>();
     for (const visitor of visitors) {
       const source = visitor.sessions[0]?.source ?? "Direct";
-      const cohort = cohortMap.get(source) ?? { source, visitors: 0, returnedVisitors: 0, convertedVisitors: 0, sessions: 0, downloads: 0 };
+      const cohort = cohortMap.get(source) ?? {
+        source,
+        visitors: 0,
+        returnedVisitors: 0,
+        convertedVisitors: 0,
+        sessions: 0,
+        downloads: 0,
+      };
       const activeSessions = visitor.sessions.filter((session) => session.activeInRange);
       cohort.visitors += 1;
       cohort.sessions += activeSessions.length;
@@ -352,7 +402,9 @@ export const adminPhase2ReturningAnalyticsV2 = createServerFn({ method: "POST" }
           sessions: visitor.sessions.length,
           daysSinceFirstVisit: hours(first.startedAt, last.lastAt) / 24,
           totalDownloads: activeSessions.reduce((sum, session) => sum + session.downloadEvents, 0),
-          totalActiveSeconds: Math.round(activeSessions.reduce((sum, session) => sum + session.activeSeconds, 0)),
+          totalActiveSeconds: Math.round(
+            activeSessions.reduce((sum, session) => sum + session.activeSeconds, 0),
+          ),
           firstDownloadSessionNumber: visitor.firstDownloadSessionNumber,
           topPublications: [] as Array<{ title: string; sessions: number }>,
           sessionJourney: visitor.sessions.slice(-6).map((session, index, shown) => ({
@@ -363,9 +415,15 @@ export const adminPhase2ReturningAnalyticsV2 = createServerFn({ method: "POST" }
             landingPath: session.landingPath,
             pages: session.pages.slice(0, 5),
             impressionCount: 0,
-            clicked: [...session.clicks.values()].map((publication) => publication.title).slice(0, 4),
-            accessed: [...session.accesses.values()].map((publication) => publication.title).slice(0, 4),
-            downloaded: [...session.downloads.values()].map((publication) => publication.title).slice(0, 4),
+            clicked: [...session.clicks.values()]
+              .map((publication) => publication.title)
+              .slice(0, 4),
+            accessed: [...session.accesses.values()]
+              .map((publication) => publication.title)
+              .slice(0, 4),
+            downloaded: [...session.downloads.values()]
+              .map((publication) => publication.title)
+              .slice(0, 4),
             activeSeconds: Math.round(session.activeSeconds),
             inReportingRange: session.activeInRange,
           })),
@@ -378,12 +436,17 @@ export const adminPhase2ReturningAnalyticsV2 = createServerFn({ method: "POST" }
       ok: true as const,
       days,
       since,
-      methodology: "Reporting range selects active visitors; prior canonical history is loaded for those visitors to determine lifetime first session, acquisition source, return status, and first download.",
+      methodology:
+        "Reporting range selects active visitors; prior canonical history is loaded for those visitors to determine lifetime first session, acquisition source, return status, and first download.",
       totals: {
         uniqueVisitors: visitors.length,
         returningVisitors: returning.length,
         returnRate: visitors.length ? returning.length / visitors.length : 0,
-        totalSessions: visitors.reduce((sum, visitor) => sum + visitor.sessions.filter((session) => session.activeInRange).length, 0),
+        totalSessions: visitors.reduce(
+          (sum, visitor) =>
+            sum + visitor.sessions.filter((session) => session.activeInRange).length,
+          0,
+        ),
         repeatSessions,
         convertedVisitors: converted.length,
         visitorConversionRate: visitors.length ? converted.length / visitors.length : 0,
@@ -392,7 +455,8 @@ export const adminPhase2ReturningAnalyticsV2 = createServerFn({ method: "POST" }
       },
       timeToConversion: {
         firstSession: visitors.filter((visitor) => visitor.firstDownloadSessionNumber === 1).length,
-        laterSession: visitors.filter((visitor) => (visitor.firstDownloadSessionNumber ?? 0) > 1).length,
+        laterSession: visitors.filter((visitor) => (visitor.firstDownloadSessionNumber ?? 0) > 1)
+          .length,
         noDownload: visitors.filter((visitor) => visitor.firstDownloadAt === null).length,
       },
       repeatConversion,
