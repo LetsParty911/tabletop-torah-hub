@@ -1,8 +1,8 @@
-const LOGO_HORIZONTAL_LIGHT = "/assets/logo-horizontal-light.svg";
+const LOGO_HORIZONTAL_LIGHT = "/assets/logo-horizontal.png";
 const LOGO_HEADER_DESKTOP = "/assets/logo-header-desktop.webp";
 const LOGO_HEADER_TABLET = "/assets/logo-header-tablet.webp";
 const LOGO_HEADER_MOBILE = "/assets/logo-header-mobile.webp";
-const LOGO_ICON = "/assets/logo-icon.svg";
+const LOGO_ICON = "/assets/logo-icon.png";
 
 /** Responsive Shabbos-table header lockup. */
 export function SiteLogoHorizontal({ className = "" }: { className?: string }) {
@@ -14,8 +14,8 @@ export function SiteLogoHorizontal({ className = "" }: { className?: string }) {
         <img
           src={LOGO_HEADER_MOBILE}
           alt="Torah for the Table"
-          width={600}
-          height={189}
+          width={561}
+          height={420}
           className="h-12 w-auto object-contain sm:h-14 md:h-16 lg:h-16"
         />
       </picture>
@@ -33,8 +33,8 @@ export function SiteLogoFooter({ className = "" }: { className?: string }) {
         <img
           src={LOGO_HEADER_MOBILE}
           alt="Torah for the Table"
-          width={600}
-          height={189}
+          width={561}
+          height={420}
           className="h-20 w-auto object-contain sm:h-24"
         />
       </picture>
@@ -48,8 +48,8 @@ export function SiteLogoStacked({ className = "" }: { className?: string }) {
     <img
       src={LOGO_HORIZONTAL_LIGHT}
       alt="Torah for the Table"
-      width={2400}
-      height={800}
+      width={1385}
+      height={1037}
       className={`h-16 w-auto object-contain sm:h-20 ${className}`}
     />
   );
