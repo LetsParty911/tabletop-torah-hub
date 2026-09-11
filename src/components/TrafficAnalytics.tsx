@@ -175,17 +175,17 @@ export default function TrafficAnalytics({ accessToken }: { accessToken: string 
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* 1 — Visitors and pageviews */}
-            <Tile title="Visitors and pageviews">
+            {/* 1 — Sessions, unique visitors and pageviews */}
+            <Tile title="Sessions, unique visitors and pageviews">
               {cur.pageviews === 0 ? (
-                <Quiet>No visits recorded this week</Quiet>
+                <Quiet>No visits recorded in this collection window</Quiet>
               ) : (
                 <>
                   <p className="font-serif text-3xl font-bold text-primary">
                     {cur.visitors}
                     <span className="text-base font-normal text-muted-foreground">
                       {" "}
-                      visitors · {cur.pageviews} pageviews
+                      sessions · {cur.uniqueVisitors} unique visitors · {cur.pageviews} pageviews
                     </span>
                   </p>
                   <div className="mt-1">
