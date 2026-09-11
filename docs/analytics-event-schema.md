@@ -1,305 +1,193 @@
-# TFTT Precision Analytics — Event Schema
+# Torah For The Table Analytics — Event & Metric Definitions
 
-> Analytics path: **Google Tag Manager only** (`GTM-WMVV6CJ7`). No direct GA4/gtag calls remain in the codebase. All events are pushed to `window.dataLayer` by `src/lib/analytics.ts`.
+This document describes the analytics definitions used by `/admin` and `/admin-analytics`.
 
-## Global fields
+## Primary source: canonical first-party events
 
-Every pushed event includes these fields automatically:
+Primary audience, engagement, funnel, source, device, and conversion metrics use `public.analytics_events` in the external Supabase analytics project.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `event` | `string` | Event name (see catalog below). |
-| `page_path` | `string` | `window.location.pathname` at push time. |
-| `page_location` | `string` | Full `window.location.href` at push time. |
-
-Additional parameters are merged on top per event.
-
-## Event catalog
-
-| Event | Category | Fired when | Deduplication |
-|-------|----------|------------|---------------|
-| `pdf_view` | Engagement | PDF viewer page (`/view/:id`) mounts. | None — fires on every mount. |
-| `pdf_download` | Engagement | User clicks a **Download** button on a card or in the PDF viewer header. | None — fires on every click. |
-| `pdf_print` | Engagement | User clicks **Print PDF** in the PDF viewer header. | None — fires on every click. |
-| `newsletter_signup_submit` | Conversion | User submits the homepage "Join the List" form. | None — fires on every submit attempt. |
-| `newsletter_signup` | Conversion | Newsletter subscription succeeds (homepage or popup). | **Once per browser session** via `trackEventOnce`. |
-| `contact_submit` | Conversion | Contact form submits successfully. | None — fires on every successful submit. |
-| `email_popup_shown` | Popup lifecycle | Email capture popup appears after a download click. | **Once per browser session**. |
-| `email_popup_dismissed` | Popup lifecycle | User dismisses the email capture popup. | **Once per browser session**. |
-| `email_popup_abandoned` | Popup lifecycle | User leaves the page while the popup is still open. | None — fires on `pagehide` if no outcome recorded. |
-| `email_popup_error` | Popup lifecycle | Popup signup fails (server error or exception). | None — fires on every failed attempt. |
-| `archive_pdf_open` | Engagement | *(Reserved)* Intended for opening a PDF from the archive. **Not currently wired.** | — |
-
----
-
-## Event details
-
-### `pdf_view`
-
-PDF viewer page loaded.
-
-| Parameter | Type | Source | Example |
-|-----------|------|--------|---------|
-| `file_id` | `string` | PDF UUID | `a1b2c3d4-...` |
-| `file_title` | `string` | PDF title | `Artscroll by the Shabbos Table` |
-| `source_name` | `string` | Same as `file_title` | `Artscroll by the Shabbos Table` |
-
-**File:** `src/routes/view.$id.tsx`
-
----
-
-### `pdf_download`
-
-User clicked a Download button.
-
-| Parameter | Type | Source | Example |
-|-----------|------|--------|---------|
-| `file_id` | `string` | PDF UUID | `a1b2c3d4-...` |
-| `file_title` | `string` | PDF title | `Toras Avigdor Kids` |
-| `source_name` | `string` | Same as `file_title` | `Toras Avigdor Kids` |
-| `parsha` | `string \| undefined` | Current parsha key (homepage) or archive parsha | `shemos` |
-| `jewish_year` | `number \| undefined` | Jewish year (archive only) | `5785` |
-
-**Files:**
-- Homepage cards: `src/routes/index.tsx`
-- Archive cards: `src/routes/archive.tsx`
-- PDF viewer header: `src/routes/view.$id.tsx`
-
----
-
-### `pdf_print`
-
-User clicked Print PDF in the viewer header.
-
-| Parameter | Type | Source | Example |
-|-----------|------|--------|---------|
-| `file_id` | `string` | PDF UUID | `a1b2c3d4-...` |
-| `file_title` | `string` | PDF title | `Artscroll by the Shabbos Table` |
-| `source_name` | `string` | Same as `file_title` | `Artscroll by the Shabbos Table` |
-
-**File:** `src/routes/view.$id.tsx`
-
----
-
-### `newsletter_signup_submit`
-
-Homepage newsletter form submitted (before server response).
-
-| Parameter | Type | Value |
-|-----------|------|-------|
-| `form_name` | `string` | `weekly_torah_notifications` |
-
-**File:** `src/routes/index.tsx`
-
----
-
-### `newsletter_signup`
-
-Newsletter subscription succeeded.
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `form_name` | `string` | `weekly_torah_notifications` (homepage) or `download_popup` (popup). |
-| `already_subscribed` | `boolean` | `true` if the email was already on the list. |
-| `engagement_ms` | `number` | *(popup only)* Milliseconds between popup shown and signup. |
-
-**Files:**
-- Homepage: `src/routes/index.tsx` (dedupe key `tftt:analytics-sent:newsletter_signup:homepage`)
-- Download popup: `src/components/EmailCapturePopup.tsx` (dedupe key `tftt:analytics-sent:newsletter_signup:popup`)
-
----
-
-### `contact_submit`
-
-Contact form submitted successfully.
-
-| Parameter | Type | Value |
-|-----------|------|-------|
-| `form_name` | `string` | `contact_form` |
-
-**File:** `src/routes/contact.tsx`
-
----
-
-### `email_popup_shown`
-
-Email capture popup appeared after a download click.
-
-| Parameter | Type | Value |
-|-----------|------|-------|
-| `trigger` | `string` | `download_click` |
-
-**File:** `src/components/EmailCapturePopup.tsx`
-
----
-
-### `email_popup_dismissed`
-
-User closed the email capture popup.
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `form_name` | `string` | `download_popup` |
-| `engagement_ms` | `number` | Milliseconds between popup shown and dismiss. |
-
-**File:** `src/components/EmailCapturePopup.tsx`
-
----
-
-### `email_popup_abandoned`
-
-User left the page while the popup was open without signing up or dismissing.
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `form_name` | `string` | `download_popup` |
-| `engagement_ms` | `number` | Milliseconds between popup shown and pagehide. |
-
-**File:** `src/components/EmailCapturePopup.tsx`
-
----
-
-### `email_popup_error`
-
-Popup signup failed.
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `form_name` | `string` | `download_popup` |
-| `error` | `string` | Server error message or `exception`. |
-| `engagement_ms` | `number` | Milliseconds between popup shown and error. |
-
-**File:** `src/components/EmailCapturePopup.tsx`
-
----
-
-### `archive_pdf_open` (reserved / not implemented)
-
-Originally requested in Phase 1 instrumentation. Intended to fire when a user opens a PDF from the archive list. Currently the archive uses direct download links (`pdf_download`) and does not have a separate "open" action.
-
-If implemented later, suggested parameters:
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `file_id` | `string` | PDF UUID |
-| `file_title` | `string` | PDF title |
-| `parsha` | `string` | Parsha key |
-| `jewish_year` | `number` | Jewish year |
-
----
-
-## Deduplication behavior
-
-`trackEventOnce()` writes a flag to `sessionStorage` before pushing. If the flag is already set, the event is skipped and a console info message is logged. Keys used:
-
-| Event | sessionStorage key |
-|-------|--------------------|
-| `email_popup_shown` | `tftt:analytics-sent:email_popup_shown` |
-| `email_popup_dismissed` | `tftt:analytics-sent:email_popup_dismissed` |
-| `newsletter_signup` (homepage) | `tftt:analytics-sent:newsletter_signup:homepage` |
-| `newsletter_signup` (popup) | `tftt:analytics-sent:newsletter_signup:popup` |
-
-Clearing `sessionStorage` for the origin will reset these flags.
-
-## Popup suppression logic
-
-The email capture popup is suppressed when any of the following are true:
-
-- Current path is `/admin` or `/admin/*`.
-- `sessionStorage.getItem("tftt:email-popup-dismissed:v2") === "1"`
-- `localStorage.getItem("tftt:email-popup-signed-up:v2") === "1"`
-
-It triggers 2 seconds after a `tftt:download-clicked` custom event, which is dispatched by every public Download button click.
-
-## Admin exclusion
-
-GTM is not loaded on `/admin` routes, and `trackEvent()` / `trackEventOnce()` short-circuit when `window.location.pathname` is `/admin` or starts with `/admin/`. No analytics events should fire from the admin panel.
-
-## GTM / GA4 configuration notes
-
-- Create **Custom Events** in GA4 with the exact names above.
-- Use `form_name` as an event parameter for segmentation (homepage vs. popup newsletter signups).
-- Use `engagement_ms` to build an engagement-time metric for popup interactions.
-- `already_subscribed` lets you distinguish new subscriptions from re-submissions.
-
-## Implementation files
-
-| File | Purpose |
-|------|---------|
-| `src/lib/analytics.ts` | `trackEvent`, `trackEventOnce`, `pdfEventParams`, admin-path guard. |
-| `src/routes/index.tsx` | Homepage newsletter + PDF download events. |
-| `src/routes/archive.tsx` | Archive PDF download events. |
-| `src/routes/view.$id.tsx` | PDF view, download, and print events. |
-| `src/routes/contact.tsx` | Contact form submit event. |
-| `src/components/EmailCapturePopup.tsx` | All popup lifecycle events. |
-
----
-
-## First-party canonical event stream (Phase 1)
-
-Alongside the GTM/dataLayer events above, the site writes a canonical
-first-party event stream to `public.analytics_events` in the external
-"torah-by-the-table" Supabase project (schema:
-`supabase_analytics_events_migration.sql`). The legacy `page_views`,
-`search_events` and `download_events` writes continue unchanged, so the
-existing download dashboard is unaffected.
-
-**Client:** `src/lib/first-party-analytics.ts`
+**Client:** `src/lib/first-party-analytics.ts`  
 **Ingest:** `POST /api/events` (`src/routes/api/events.ts`)
 
-### Identity
+Legacy `page_views`, `search_events`, `download_events`, and `download_attribution` remain available for historical/raw audit views. They are not the preferred source for primary conversion rates.
 
-- `visitor_id` — random id in a first-party cookie (`tftt_vid`, 12 months),
-  falling back to `localStorage` when cookies are unavailable.
-- `session_id` — 30-minute inactivity session shared across tabs via
-  `localStorage`; renewed after 30 minutes idle, `last_activity` refreshed on
-  tracked activity. `session_start` fires once per session.
-- Admin routes (`/admin`, `/admin/*`, `/admin-analytics`) are excluded on both
-  the client and the server.
+## Identity
 
-### Events
+- **Visitor ID:** random first-party ID stored in cookie `tftt_vid` with a sliding 12-month lifetime and a localStorage fallback.
+- **Session ID:** a first-party session shared across tabs. A new session begins after 30 minutes of inactivity.
+- **New visitor:** the first canonical session created for a new visitor ID.
+- **Returning visitor:** an active visitor with evidence of a prior canonical session. Range-based returning analytics queries earlier history for visitors active in the selected range; the collection dashboard also accepts the canonical non-first-session flag as evidence of return.
 
-| Event | Fires when |
+Admin routes are excluded on both client and ingest server. `/admin`, `/admin/*`, and `/admin-analytics*` must not emit canonical events.
+
+## Canonical event catalog
+
+| Event | Meaning |
 | --- | --- |
-| `session_start` | first tracked activity of a new 30-minute session |
-| `page_view` | every client-side route view (pathname only) |
-| `publication_impression` | card ≥50% visible for ~1s, deduped per page view |
-| `publication_click` | interaction with a publication card |
-| `filter_change` | audience / length / content-type filter selected |
-| `search` | submitted archive search, with `result_count` |
-| `pdf_open` | viewer page loads for a publication |
-| `download` | download click (one canonical event per click) |
-| `share_click` | WhatsApp / copy-link share, with `share_method` |
-| `signup` | successful weekly-email subscription (no email address stored) |
-| `heartbeat` | every 15s while visible **and** focused; `active_seconds` capped |
-| `error` | meaningful site errors only (e.g. 404), sanitized code |
+| `session_start` | First tracked activity of a new 30-minute session |
+| `page_view` | Client-side route view |
+| `publication_impression` | Publication card sufficiently visible; deduped per page view |
+| `publication_click` | Publication card interaction |
+| `filter_change` | Audience/length/content filter change |
+| `search` | Submitted search |
+| `pdf_open` | Publication PDF viewer opened |
+| `download` | Download action; one event per click/action |
+| `share_click` | Share action |
+| `signup` | Successful weekly-email subscription; email address is not stored in analytics_events |
+| `heartbeat` | Active-time sample while visible and focused |
+| `error` | Sanitized meaningful site error |
 
-### Columns
+## Stored canonical fields
 
-`event_id` (unique idempotency key), `event_name`, `occurred_at`,
-`visitor_id`, `session_id`, `is_new_visitor`, `path`, `landing_path`,
-`source_path`, `publication_id`, `publication_title`, `publication_series`,
-`publisher`, `parsha`, `jewish_year`, `device_type`, `referrer_host`,
-`referrer_url`, `utm_source`, `utm_medium`, `utm_campaign`, `source_group`,
-`country`, `region`, `metadata` (jsonb).
+`event_id`, `event_name`, `occurred_at`, `visitor_id`, `session_id`, `is_new_visitor`, `path`, `landing_path`, `source_path`, `publication_id`, `publication_title`, `publication_series`, `publisher`, `parsha`, `jewish_year`, `device_type`, `referrer_host`, `referrer_url`, `utm_source`, `utm_medium`, `utm_campaign`, `source_group`, `country`, `region`, `metadata`.
 
-`device_type` is derived server-side from the user-agent header; the raw UA is
-not stored. No IP addresses are stored. Geo on this table is country + region
-only. `event_id` is unique, so a retried beacon collapses to one row.
+Privacy rules:
 
-### Attribution
+- No raw IP address is stored.
+- No raw user-agent string is stored. Only the coarse derived `device_type` bucket is persisted.
+- No subscriber email address is stored in `analytics_events`.
+- Canonical event writes use an `event_id` uniqueness key so a retried beacon is deduplicated.
+- Low-confidence sessions are retained; they are identified, not silently discarded.
 
-First-touch per session (UTM source/medium/campaign, external referrer,
-landing path) is captured once and never overwritten by internal navigation.
-`source_group` normalizes it to: WhatsApp, Email, Google, Direct,
-Other Campaign, Other Referral.
+## Attribution
 
-### Dashboard
+First-touch attribution is captured once per session and is not overwritten by internal navigation. Canonical source groups are:
 
-`/admin-analytics` (admin-only, noindex) shows the Phase 1 funnel above the
-existing download dashboard: overview cards, the
-sessions → impressions → clicks → PDF accesses → downloads funnel, and
-breakdowns by source, device, publication, and new vs returning. Funnel stages
-use distinct session+publication keys; a session counts as converted with at
-least one download, and a viewer load plus a download click count as one PDF
-access.
+- WhatsApp
+- Email
+- Google
+- Direct
+- Other Campaign
+- Other Referral
+
+Source and device mixes in primary dashboards are **session-level** metrics.
+
+## Dashboard metric definitions
+
+### Session
+
+One canonical `session_id`, using the site's 30-minute inactivity rule.
+
+### Unique visitor
+
+One distinct canonical `visitor_id` active in the reporting interval.
+
+### Engaged session
+
+A session with at least one positive interaction, a heartbeat, two or more page views, or at least 10 seconds of tracked active time. Low-confidence sessions remain included in total-session denominators.
+
+### PDF-accessing session
+
+A session containing at least one `pdf_open` or `download` event.
+
+### Downloading session
+
+A session containing at least one canonical `download` event.
+
+### Unique PDF download
+
+One distinct **session + publication** pair with a download. Repeat download clicks on the same publication in the same session count once for this metric.
+
+### Download action
+
+Every canonical or legacy raw download event, depending on the labeled section. A person can generate multiple download actions.
+
+### Session download conversion
+
+`downloading sessions / total sessions`
+
+The numerator and denominator must use the same reporting interval.
+
+### New-subscriber conversion on the collection dashboard
+
+`new subscriber rows created during the collection window / unique canonical visitors during that same window`
+
+The numerator and denominator use identical collection-window timestamps.
+
+### Publication CTR
+
+`distinct session+publication click pairs / distinct session+publication impression pairs`
+
+### Publication access-to-download conversion
+
+`distinct session+publication download pairs / distinct session+publication access pairs`
+
+A PDF access is a `pdf_open` or `download`; a viewer open followed by a download remains one session+publication access pair.
+
+## Collection-window analytics (`/admin`)
+
+Collection windows are derived from the first upload timestamp of each collection/parsha and the start of the next collection. Because these are upload-derived periods, the UI labels them **collection windows**, not calendar weeks.
+
+For a selected collection, the following all use the same `[start, end)` timestamp interval:
+
+- canonical page views
+- canonical sessions
+- canonical unique visitors
+- canonical engaged sessions
+- canonical PDF-accessing sessions
+- canonical downloading sessions
+- canonical unique PDF downloads
+- canonical download actions
+- new subscriber rows
+
+This avoids the previous invalid calculation where traffic was window-filtered but downloads were counted by PDF parsha regardless of download timestamp.
+
+Top pages show both raw page views and unique sessions containing the page.
+
+## Since-you-were-last-here (`/admin`)
+
+Audience and download activity are canonical and show:
+
+- unique visitors
+- sessions
+- engaged sessions
+- top session source
+- downloading sessions
+- unique session+publication downloads
+- raw canonical download actions
+
+Subscriber and contact-message counts still come from their authoritative application tables. The legacy collection-to-collection raw download comparison is retained only as an explicitly labeled supplemental/audit statistic.
+
+## Funnel analytics (`/admin-analytics`)
+
+The funnel defaults to **All collections** and reports:
+
+- unique visitors
+- sessions
+- engaged sessions
+- returning visitors
+- PDF-accessing sessions
+- downloading sessions
+- unique PDF downloads
+- raw download actions
+- session download conversion
+- low-confidence sessions
+- average tracked active time
+
+By-source and by-device download rates use **downloading sessions / sessions**. They do not divide downloaded-PDF counts by sessions.
+
+Publication performance uses the CTR and access-to-download definitions above.
+
+## Returning behavior (`/admin-analytics`)
+
+The selected 1/7/30/90/180/365-day range defines the **active visitor population**. For those active visitors, earlier canonical history is fetched to determine:
+
+- true lifetime first session
+- whether the visitor is actually returning
+- original acquisition source
+- lifetime session ordinal
+- actual first recorded download and the session in which it occurred
+
+This prevents left-censoring from incorrectly treating the first session observed inside a reporting range as the visitor's first-ever session.
+
+A **repeat session in range** is an in-range session whose lifetime ordinal is 2 or higher.
+
+## Raw download-action audit (`/admin-analytics`)
+
+The lower dashboard intentionally continues to use the legacy `download_events` table as a raw/historical audit feed. Every KPI in this section is labeled **Download actions** to avoid confusing actions with people or conversions.
+
+`Today` is calculated from midnight in `America/New_York`, not UTC.
+
+## GTM / GA4
+
+GTM/dataLayer events may still exist for external analytics and marketing measurement, but they are not the source of truth for the primary first-party dashboard conversion metrics documented above.

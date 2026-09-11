@@ -1,66 +1,25 @@
 import { useEffect, useState } from "react";
 import { adminMiniDashboard } from "@/integrations/supabase/api.functions";
+import { adminCanonicalSinceLast } from "@/integrations/supabase/admin-analytics-canonical";
 
 type DashboardData = Awaited<ReturnType<typeof adminMiniDashboard>>;
-
+type CanonicalData = Awaited<ReturnType<typeof adminCanonicalSinceLast>>;
 const SITE_TZ = "America/New_York";
 
 function formatAnchor(iso: string): string {
   try {
-    const d = new Date(iso);
-    const date = new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat("en-US", {
       weekday: "short",
       month: "short",
       day: "numeric",
-      timeZone: SITE_TZ,
-    }).format(d);
-    const time = new Intl.DateTimeFormat("en-US", {
       hour: "numeric",
       minute: "2-digit",
       timeZone: SITE_TZ,
-    }).format(d);
-    return `${date} at ${time}`;
+    }).format(new Date(iso));
   } catch {
     return iso;
   }
 }
-
-function isSameSiteDay(iso: string): boolean {
-  try {
-    const d = new Date(iso);
-    const now = new Date();
-    const fmt = new Intl.DateTimeFormat("en-US", {
-      timeZone: SITE_TZ,
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-    return fmt.format(d) === fmt.format(now);
-  } catch {
-    return false;
-  }
-}
-
-function formatShortTime(iso: string): string {
-  try {
-    const d = new Date(iso);
-    const sameDay = isSameSiteDay(iso);
-    const time = new Intl.DateTimeFormat("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: SITE_TZ,
-    }).format(d);
-    if (sameDay) return time;
-    const weekday = new Intl.DateTimeFormat("en-US", {
-      weekday: "short",
-      timeZone: SITE_TZ,
-    }).format(d);
-    return `${weekday} ${time}`;
-  } catch {
-    return iso;
-  }
-}
-
 function Tile({
   label,
   children,
@@ -72,12 +31,7 @@ function Tile({
 }) {
   return (
     <div
-      className={
-        "rounded-2xl border-2 p-5 sm:p-6 " +
-        (quiet
-          ? "border-accent/30 bg-background/40"
-          : "border-accent/60 bg-background/70")
-      }
+      className={`rounded-2xl border-2 p-5 sm:p-6 ${quiet ? "border-accent/30 bg-background/40" : "border-accent/60 bg-background/70"}`}
     >
       <div className="text-[0.7rem] font-medium uppercase tracking-[0.14em] text-muted-foreground">
         {label}
@@ -86,15 +40,13 @@ function Tile({
     </div>
   );
 }
-
 function BigNumber({ children }: { children: React.ReactNode }) {
   return (
-    <div className="font-serif text-5xl sm:text-6xl font-bold leading-none text-primary">
+    <div className="font-serif text-5xl font-bold leading-none text-primary sm:text-6xl">
       {children}
     </div>
   );
 }
-
 function Quiet({ children }: { children: React.ReactNode }) {
   return <p className="font-serif text-lg text-muted-foreground">{children}</p>;
 }
@@ -112,6 +64,7 @@ export default function AdminMiniDashboard({
   };
 }) {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [canonical, setCanonical] = useState<CanonicalData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -120,7 +73,11 @@ export default function AdminMiniDashboard({
       if (!accessToken) return;
       try {
         const r = await adminMiniDashboard({ data: { accessToken } });
-        if (!cancelled) setData(r);
+        if (cancelled) return;
+        setData(r);
+        const since = r.anchorIso ?? new Date(Date.now() - 7 * 86400000).toISOString();
+        const c = await adminCanonicalSinceLast({ data: { accessToken, since } });
+        if (!cancelled) setCanonical(c);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Could not load dashboard");
       }
@@ -134,123 +91,110 @@ export default function AdminMiniDashboard({
   const change = data ? data.currentParshaDownloads - data.previousParshaDownloads : 0;
   const nothingNew =
     !!data &&
+    !!canonical &&
     data.newSubscriberCount === 0 &&
-    data.downloadsSince === 0 &&
+    canonical.downloadActions === 0 &&
     data.newContactCount === 0 &&
-    (data.visitorsSince ?? 0) === 0;
+    canonical.sessions === 0;
 
   return (
     <section className="parchment-frame">
       <div className="parchment-panel">
         <header className="text-center sm:text-left">
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-primary">
+          <h2 className="font-serif text-3xl font-bold text-primary sm:text-4xl">
             Since you were last here
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {!data
               ? error
                 ? "Couldn't load your update."
-                : "Gathering the good news…"
-              : data.fallbackWindow || !data.lastSeenAt || !data.anchorIso
+                : "Gathering your update…"
+              : data.fallbackWindow || !data.anchorIso
                 ? "In the last 7 days"
-                : `Last visit ${formatShortTime(data.lastSeenAt)} · comparing since ${formatShortTime(data.anchorIso)}`}
+                : `Since ${formatAnchor(data.anchorIso)}`}
           </p>
-          {data && (data.visitorsSince ?? 0) > 0 && (
+          {canonical && canonical.sessions > 0 && (
             <p className="mt-2 font-serif text-base text-foreground">
-              {data.visitorsSince} {data.visitorsSince === 1 ? "visitor" : "visitors"} came by
-              {data.topSourceSince ? ` — mostly from ${data.topSourceSince}` : ""}.
+              <b>{canonical.uniqueVisitors}</b> unique visitors across <b>{canonical.sessions}</b>{" "}
+              sessions · {canonical.engagedSessions} engaged sessions
+              {canonical.sources[0] ? ` · top source ${canonical.sources[0].label}` : ""}.
             </p>
           )}
         </header>
-
-
         {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
-
-        {data && nothingNew && (
+        {data && canonical && nothingNew && (
           <p className="mt-6 font-serif text-xl text-foreground">
-            {data.anchorIso
-              ? `All quiet since ${formatAnchor(data.anchorIso)} — nothing new to catch up on.`
-              : "All quiet in the last 7 days — nothing new to catch up on."}
+            No new visitor activity, downloads, subscribers, or contact messages in this period.
           </p>
         )}
-
-        {data && !nothingNew && (
-          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-            {/* 1 — New subscribers */}
+        {data && canonical && !nothingNew && (
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-2">
+            <Tile label="Audience since last visit" quiet={canonical.sessions === 0}>
+              {canonical.sessions === 0 ? (
+                <Quiet>No visitor sessions</Quiet>
+              ) : (
+                <>
+                  <BigNumber>{canonical.uniqueVisitors}</BigNumber>
+                  <p className="mt-3 text-sm">
+                    unique visitors · {canonical.sessions} sessions · {canonical.engagedSessions}{" "}
+                    engaged
+                  </p>
+                </>
+              )}
+            </Tile>
+            <Tile label="Download activity" quiet={canonical.downloadActions === 0}>
+              {canonical.downloadActions === 0 ? (
+                <Quiet>No download actions</Quiet>
+              ) : (
+                <>
+                  <BigNumber>{canonical.downloadActions}</BigNumber>
+                  <p className="mt-3 text-sm">
+                    download actions · {canonical.downloadingSessions} downloading sessions ·{" "}
+                    {canonical.uniquePdfDownloads} unique session+PDF downloads
+                  </p>
+                </>
+              )}
+            </Tile>
             <Tile label="New subscribers" quiet={data.newSubscriberCount === 0}>
               {data.newSubscriberCount === 0 ? (
                 <Quiet>No new subscribers</Quiet>
               ) : (
                 <>
                   <BigNumber>{data.newSubscriberCount}</BigNumber>
-                  <ul className="mt-3 space-y-1 text-sm text-foreground break-all">
-                    {data.newSubscriberEmails.map((e) => (
-                      <li key={e}>{e}</li>
-                    ))}
-                    {data.newSubscriberCount > data.newSubscriberEmails.length && (
-                      <li className="text-muted-foreground">
-                        and {data.newSubscriberCount - data.newSubscriberEmails.length} more
-                      </li>
-                    )}
-                  </ul>
-                </>
-              )}
-              <p className="mt-3 text-xs text-muted-foreground">
-                {data.totalSubscribers} subscribers in total
-              </p>
-            </Tile>
-
-            {/* 2 — Downloads since last visit */}
-            <Tile label="Downloads since your last visit" quiet={data.downloadsSince === 0}>
-              {data.downloadsSince === 0 ? (
-                <Quiet>No downloads yet</Quiet>
-              ) : (
-                <>
-                  <BigNumber>{data.downloadsSince}</BigNumber>
-                  {data.topSincePdfs.length > 0 && (
-                    <p className="mt-3 text-sm text-foreground">
-                      Mostly{" "}
-                      {data.topSincePdfs
-                        .map((p) => `${p.title} (${p.count})`)
-                        .join(", ")}
-                    </p>
-                  )}
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    {data.totalSubscribers} subscribers in total
+                  </p>
                 </>
               )}
             </Tile>
-
-            {/* 3 — This week's checklist */}
             <Tile label={`This week's checklist — ${checklist.parshaLabel}`}>
               {checklist.countableTotal > 0 && remaining === 0 ? (
-                <p className="font-serif text-2xl sm:text-3xl font-semibold text-primary">
+                <p className="font-serif text-2xl font-semibold text-primary sm:text-3xl">
                   All {checklist.countableTotal} in — you're done for this week.
                 </p>
               ) : (
                 <>
-                  <p className="font-serif text-2xl sm:text-3xl font-semibold text-primary">
-                    {checklist.uploadedCount} of {checklist.countableTotal} uploaded
-                    <span className="text-muted-foreground font-normal">
-                      {" "}
+                  <p className="font-serif text-2xl font-semibold text-primary sm:text-3xl">
+                    {checklist.uploadedCount} of {checklist.countableTotal} uploaded{" "}
+                    <span className="font-normal text-muted-foreground">
                       — {remaining} remaining
                     </span>
                   </p>
                   {checklist.missingTitles.length > 0 && (
-                    <p className="mt-3 text-sm text-foreground">
+                    <p className="mt-3 text-sm">
                       Still to come: {checklist.missingTitles.join(", ")}
                     </p>
                   )}
                 </>
               )}
             </Tile>
-
-            {/* 4 — New contact messages */}
             <Tile label="New contact messages" quiet={data.newContactCount === 0}>
               {data.newContactCount === 0 ? (
                 <Quiet>No new messages</Quiet>
               ) : (
                 <>
                   <BigNumber>{data.newContactCount}</BigNumber>
-                  <p className="mt-3 text-sm text-foreground">
+                  <p className="mt-3 text-sm">
                     From {data.newContactNames.join(", ")}
                     {data.newContactCount > data.newContactNames.length
                       ? ` and ${data.newContactCount - data.newContactNames.length} more`
@@ -259,14 +203,15 @@ export default function AdminMiniDashboard({
                 </>
               )}
             </Tile>
-
-            {/* 5 — This parsha vs last */}
-            <Tile label="This parsha vs last" quiet={data.currentParshaDownloads === 0}>
-              <p className="font-serif text-2xl sm:text-3xl font-semibold text-primary">
+            <Tile
+              label="Raw download actions · this collection vs previous"
+              quiet={data.currentParshaDownloads === 0}
+            >
+              <p className="font-serif text-2xl font-semibold text-primary sm:text-3xl">
                 {data.currentParshaDownloads}
-                <span className="text-muted-foreground font-normal text-lg">
+                <span className="text-lg font-normal text-muted-foreground">
                   {" "}
-                  vs {data.previousParshaDownloads} last parsha
+                  vs {data.previousParshaDownloads}
                 </span>{" "}
                 <span
                   className={
@@ -279,6 +224,10 @@ export default function AdminMiniDashboard({
                 >
                   {change > 0 ? `▲ +${change}` : change < 0 ? `▼ −${Math.abs(change)}` : "→ even"}
                 </span>
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Legacy/raw collection comparison; use Site traffic &amp; conversion below for
+                matched-window conversion metrics.
               </p>
             </Tile>
           </div>
