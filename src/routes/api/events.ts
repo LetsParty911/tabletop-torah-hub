@@ -33,6 +33,19 @@ function deviceTypeFrom(ua: string): string {
   return "desktop";
 }
 
+// Vercel geo headers are RFC3986-encoded and can be malformed; never throw here.
+function decodeGeo(value: string | null): string | null {
+  if (!value) return null;
+  let out = value;
+  try {
+    out = decodeURIComponent(value);
+  } catch {
+    out = value;
+  }
+  const trimmed = out.trim().slice(0, 120);
+  return trimmed ? trimmed : null;
+}
+
 function isAdminPath(p: string | null | undefined): boolean {
   if (!p) return false;
   return p === "/admin" || p.startsWith("/admin/") || p.startsWith("/admin-analytics");
