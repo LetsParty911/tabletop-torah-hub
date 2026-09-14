@@ -23,7 +23,7 @@ jobs:
       - name: Restore lockfile
         run: git restore package-lock.json
       - name: Format changed analytics files
-        run: npx prettier --write src/components/Phase1Funnel.tsx src/components/TrafficAnalytics.tsx src/components/Phase2ReturningAnalytics.tsx src/integrations/supabase/phase1-dashboard-v2.ts src/integrations/supabase/phase2-returning-analytics-v2.ts src/routes/api/events.ts src/routes/admin-analytics.tsx src/routes/privacy.tsx src/routes/about.tsx docs/analytics-event-schema.md supabase_analytics_events_migration.sql
+        run: npx prettier --write src/components/Phase1Funnel.tsx src/components/TrafficAnalytics.tsx src/components/Phase2ReturningAnalytics.tsx src/integrations/supabase/phase1-dashboard-v2.ts src/integrations/supabase/phase2-returning-analytics-v2.ts src/routes/api/events.ts src/routes/admin-analytics.tsx src/routes/privacy.tsx src/routes/about.tsx docs/analytics-event-schema.md
       - name: Build
         run: npm run build
       - name: Lint focused analytics files
