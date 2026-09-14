@@ -71,7 +71,7 @@ async function fetchRows(since: string): Promise<Row[]> {
     const { data, error } = await admin
       .from("analytics_events")
       .select(
-        "event_name, occurred_at, visitor_id, session_id, is_new_visitor, publication_id, publication_title, publication_series, publisher, parsha, device_type, source_group, metadata",
+        "event_name, occurred_at, visitor_id, session_id, is_new_visitor, publication_id, publication_title, publication_series, publisher, parsha, device_type, source_group, country, region, city, postal_code, metadata",
       )
       .gte("occurred_at", since)
       .order("occurred_at", { ascending: true })
@@ -147,6 +147,10 @@ export const adminPhase1DashboardV2 = createServerFn({ method: "POST" })
           visitorId: vid,
           device: s(row.device_type) ?? "unknown",
           source: s(row.source_group) ?? "Direct",
+          country: null,
+          region: null,
+          city: null,
+          postalCode: null,
           pageViews: 0,
           heartbeat: false,
           positiveAction: false,
