@@ -341,7 +341,17 @@ export const adminCanonicalCollectionTraffic = createServerFn({ method: "POST" }
 
 export const adminCanonicalSinceLast = createServerFn({ method: "POST" })
   .inputValidator((input: { accessToken: string; since: string }) =>
-    z.object({ accessToken: z.string().min(10), since: z.string().datetime() }).parse(input),
+    z
+      .object({
+        accessToken: z.string().min(10),
+        // Accept any parseable timestamp, not only strict Zod datetime format.
+        since: z
+          .string()
+          .min(1)
+          .refine((v) => !Number.isNaN(new Date(v).getTime()), "Invalid date")
+          .transform((v) => new Date(v).toISOString()),
+      })
+      .parse(input),
   )
   .handler(async ({ data }) => {
     await requireAnalyticsAdmin(data.accessToken);

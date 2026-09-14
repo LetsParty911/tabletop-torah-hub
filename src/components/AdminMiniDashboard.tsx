@@ -75,7 +75,13 @@ export default function AdminMiniDashboard({
         const r = await adminMiniDashboard({ data: { accessToken } });
         if (cancelled) return;
         setData(r);
-        const since = r.anchorIso ?? new Date(Date.now() - 7 * 86400000).toISOString();
+        // Normalize whatever the anchor looks like (DB timestamps can carry a
+        // "+00:00" offset or a space separator) into a strict ISO string.
+        const parsed = r.anchorIso ? new Date(r.anchorIso) : null;
+        const since =
+          parsed && !Number.isNaN(parsed.getTime())
+            ? parsed.toISOString()
+            : new Date(Date.now() - 7 * 86400000).toISOString();
         const c = await adminCanonicalSinceLast({ data: { accessToken, since } });
         if (!cancelled) setCanonical(c);
       } catch (e) {
