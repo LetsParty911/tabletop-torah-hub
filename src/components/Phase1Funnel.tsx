@@ -21,6 +21,17 @@ function Card({ label, value, note }: { label: string; value: string; note?: str
     </div>
   );
 }
+function Small({ label, value, note }: { label: string; value: string; note?: string }) {
+  return (
+    <div className="rounded-lg border border-accent/20 bg-background/40 p-3">
+      <div className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-0.5 text-base font-semibold text-primary">{value}</div>
+      {note && <div className="text-[0.7rem] text-muted-foreground">{note}</div>}
+    </div>
+  );
+}
 
 type BreakRow = {
   key: string;
@@ -48,13 +59,12 @@ function Breakdown({ title, rows }: { title: string; rows: BreakRow[] }) {
                 <span className="font-semibold text-primary">{r.key}</span>
                 <span>{r.sessions} sessions</span>
               </div>
-              <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground sm:grid-cols-5">
-                <span>{r.clicks} click pairs</span>
+              <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground sm:grid-cols-4">
                 <span>{r.accesses} access pairs</span>
                 <span>{r.uniquePdfDownloads} unique PDF downloads</span>
-                <span>{r.downloadActions} actions</span>
+                <span>{r.downloadActions} download actions</span>
                 <span className="font-semibold text-foreground">
-                  {pct(r.convertedSessions, r.sessions)} session conversion
+                  {pct(r.convertedSessions, r.sessions)} session download conversion
                 </span>
               </div>
             </div>
@@ -62,6 +72,39 @@ function Breakdown({ title, rows }: { title: string; rows: BreakRow[] }) {
         </div>
       )}
     </section>
+  );
+}
+
+type LocationRow = {
+  key: string;
+  sessions: number;
+  uniqueVisitors: number;
+  convertedSessions: number;
+  sessionDownloadConversion: number;
+};
+function LocationList({ title, rows }: { title: string; rows: LocationRow[] }) {
+  return (
+    <div className="rounded-xl border border-accent/20 bg-background/40 p-3">
+      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </div>
+      {rows.length === 0 ? (
+        <p className="mt-2 text-sm text-muted-foreground">No location data yet.</p>
+      ) : (
+        <ul className="mt-2 space-y-1.5 text-sm">
+          {rows.slice(0, 10).map((r) => (
+            <li key={r.key} className="flex items-start justify-between gap-3">
+              <span className="min-w-0 break-words">{r.key}</span>
+              <span className="shrink-0 text-right text-xs text-muted-foreground">
+                <b className="text-primary">{r.sessions}</b> sessions · {r.uniqueVisitors} visitors
+                <br />
+                {ratio(r.sessionDownloadConversion)} download conv.
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -104,10 +147,10 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-serif text-2xl font-bold text-primary">
-            Visitor &amp; Download Funnel
-          </h2>
-          <p className="mt-1 text-xs text-muted-foreground">Canonical first-party events only.</p>
+          <h2 className="font-serif text-2xl font-bold text-primary">Site overview</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Canonical first-party events only. Diagnostics and raw counts are further down.
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {RANGES.map((d) => (
@@ -133,58 +176,47 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
       {problem && <p className="mt-3 text-sm text-destructive">{problem}</p>}
       {data && (
         <>
-          <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
             <Card label="Unique visitors" value={String(data.totals.uniqueVisitors)} />
             <Card label="Sessions" value={String(data.totals.sessions)} />
             <Card
               label="Engaged sessions"
               value={String(data.totals.engagedSessions)}
-              note={pct(data.totals.engagedSessions, data.totals.sessions)}
-            />
-            <Card
-              label="Returning visitors"
-              value={String(data.totals.returningVisitors)}
-              note={pct(data.totals.returningVisitors, data.totals.uniqueVisitors)}
-            />
-            <Card
-              label="PDF-accessing sessions"
-              value={String(data.totals.pdfAccessingSessions)}
-              note={pct(data.totals.pdfAccessingSessions, data.totals.sessions)}
-            />
-            <Card
-              label="Downloading sessions"
-              value={String(data.totals.downloadingSessions)}
-              note={pct(data.totals.downloadingSessions, data.totals.sessions)}
-            />
-            <Card
-              label="Unique PDF downloads"
-              value={String(data.totals.uniquePdfDownloads)}
-              note="deduped session + publication pairs"
-            />
-            <Card
-              label="Download actions"
-              value={String(data.totals.downloadActions)}
-              note="raw recorded download events"
+              note={`${pct(data.totals.engagedSessions, data.totals.sessions)} of sessions`}
             />
             <Card
               label="Session download conversion"
               value={ratio(data.totals.sessionDownloadConversion)}
-              note="downloading sessions / sessions"
+              note={`${data.totals.downloadingSessions} downloading of ${data.totals.sessions} sessions`}
             />
             <Card
-              label="Low-confidence sessions"
-              value={String(data.totals.lowConfidenceSessions)}
-              note="retained, not discarded"
+              label="Returning visitors"
+              value={String(data.totals.returningVisitors)}
+              note={`${pct(data.totals.returningVisitors, data.totals.uniqueVisitors)} of visitors`}
             />
             <Card
-              label="Avg active time / session"
-              value={`${Math.round(data.totals.avgActiveSeconds)}s`}
+              label="New subscribers"
+              value={String(data.totals.newSubscribers)}
+              note={`${ratio(data.totals.subscriberConversion)} of unique visitors`}
             />
-            <Card label="Events recorded" value={String(data.rawEventCount)} />
           </div>
 
           <Breakdown title="By first-touch source" rows={data.bySource} />
           <Breakdown title="By device" rows={data.byDevice} />
+
+          <section className="mt-6">
+            <h3 className="font-serif text-lg font-bold text-primary">Locations</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Approximate locations derived from the network request by our hosting provider. They
+              can be inaccurate, and older recorded events may have no city or region. Location is
+              available for {data.totals.sessionsWithLocation} of {data.totals.sessions} sessions.
+            </p>
+            <div className="mt-3 grid gap-3 lg:grid-cols-3">
+              <LocationList title="Top countries" rows={data.byCountry} />
+              <LocationList title="Top states / regions" rows={data.byRegion} />
+              <LocationList title="Top cities" rows={data.byCity} />
+            </div>
+          </section>
 
           <section className="mt-6">
             <div className="flex flex-wrap items-end justify-between gap-3">
@@ -240,6 +272,44 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
 
           <details className="mt-6 rounded-xl border border-accent/30 bg-background/40 p-4 text-sm">
             <summary className="cursor-pointer font-semibold text-primary">
+              Diagnostics &amp; raw counts
+            </summary>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <Small
+                label="PDF-accessing sessions"
+                value={String(data.totals.pdfAccessingSessions)}
+                note={pct(data.totals.pdfAccessingSessions, data.totals.sessions)}
+              />
+              <Small
+                label="Downloading sessions"
+                value={String(data.totals.downloadingSessions)}
+                note={pct(data.totals.downloadingSessions, data.totals.sessions)}
+              />
+              <Small
+                label="Unique PDF downloads"
+                value={String(data.totals.uniquePdfDownloads)}
+                note="session + publication pairs"
+              />
+              <Small
+                label="Download actions"
+                value={String(data.totals.downloadActions)}
+                note="raw recorded events"
+              />
+              <Small
+                label="Avg active time / session"
+                value={`${Math.round(data.totals.avgActiveSeconds)}s`}
+              />
+              <Small
+                label="Low-confidence sessions"
+                value={String(data.totals.lowConfidenceSessions)}
+                note="retained, not discarded"
+              />
+              <Small label="Events recorded" value={String(data.rawEventCount)} />
+            </div>
+          </details>
+
+          <details className="mt-3 rounded-xl border border-accent/30 bg-background/40 p-4 text-sm">
+            <summary className="cursor-pointer font-semibold text-primary">
               Metric definitions
             </summary>
             <div className="mt-3 space-y-2 text-muted-foreground">
@@ -256,8 +326,13 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
                 before the range, or canonical non-first-session evidence.
               </p>
               <p>
-                <b className="text-foreground">Downloading session:</b> session with at least one
-                download event.
+                <b className="text-foreground">Session download conversion:</b> downloading sessions
+                / sessions.
+              </p>
+              <p>
+                <b className="text-foreground">New subscribers:</b> subscriber rows created in the
+                selected range. Subscriber conversion divides that by unique visitors in the same
+                range.
               </p>
               <p>
                 <b className="text-foreground">Unique PDF download:</b> one session+publication
@@ -271,6 +346,10 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
                 <b className="text-foreground">Engaged session:</b> positive action, heartbeat, at
                 least two pageviews, or at least 10 seconds of tracked active time. Low-confidence
                 sessions remain in totals.
+              </p>
+              <p>
+                <b className="text-foreground">Location:</b> approximate country, region, and city
+                reported for the network request. No IP address is stored.
               </p>
             </div>
           </details>
