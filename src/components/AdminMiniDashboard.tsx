@@ -178,6 +178,8 @@ export default function AdminMiniDashboard({
                 </>
               )}
             </Tile>
+            )}
+
             <Tile label="New subscribers" quiet={data.newSubscriberCount === 0}>
               {data.newSubscriberCount === 0 ? (
                 <Quiet>No new subscribers</Quiet>
