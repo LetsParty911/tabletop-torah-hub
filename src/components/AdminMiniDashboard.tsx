@@ -146,22 +146,26 @@ export default function AdminMiniDashboard({
             No new visitor activity, downloads, subscribers, or contact messages in this period.
           </p>
         )}
-        {data && canonical && !nothingNew && (
+        {data && !nothingNew && (
           <div className="mt-6 grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-2">
-            <Tile label="Audience since last visit" quiet={canonical.sessions === 0}>
-              {canonical.sessions === 0 ? (
-                <Quiet>No visitor sessions</Quiet>
-              ) : (
-                <>
-                  <BigNumber>{canonical.uniqueVisitors}</BigNumber>
-                  <p className="mt-3 text-sm">
-                    unique visitors · {canonical.sessions} sessions · {canonical.engagedSessions}{" "}
-                    engaged
-                  </p>
-                </>
-              )}
-            </Tile>
+            {canonical && (
+              <Tile label="Audience since last visit" quiet={canonical.sessions === 0}>
+                {canonical.sessions === 0 ? (
+                  <Quiet>No visitor sessions</Quiet>
+                ) : (
+                  <>
+                    <BigNumber>{canonical.uniqueVisitors}</BigNumber>
+                    <p className="mt-3 text-sm">
+                      unique visitors · {canonical.sessions} sessions · {canonical.engagedSessions}{" "}
+                      engaged
+                    </p>
+                  </>
+                )}
+              </Tile>
+            )}
+            {canonical && (
             <Tile label="Download activity" quiet={canonical.downloadActions === 0}>
+
               {canonical.downloadActions === 0 ? (
                 <Quiet>No download actions</Quiet>
               ) : (
