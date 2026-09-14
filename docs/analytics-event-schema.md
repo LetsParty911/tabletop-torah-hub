@@ -16,7 +16,7 @@ Legacy `page_views`, `search_events`, `download_events`, and `download_attributi
 - **Visitor ID:** random first-party ID stored in cookie `tftt_vid` with a sliding 12-month lifetime and a localStorage fallback.
 - **Session ID:** a first-party session shared across tabs. A new session begins after 30 minutes of inactivity.
 - **New visitor:** the first canonical session created for a new visitor ID.
-- **Returning visitor:** an active visitor with evidence of a prior canonical session. Range-based returning analytics queries earlier history for visitors active in the selected range; the collection dashboard also accepts the canonical non-first-session flag as evidence of return.
+- **Returning visitor:** an active visitor with an in-range canonical session known to be non-first, either from observed prior canonical history or the canonical non-first-session flag. A visitor can therefore become returning within the selected reporting range if session 2 occurs in that same range.
 
 Admin routes are excluded on both client and ingest server. `/admin`, `/admin/*`, and `/admin-analytics*` must not emit canonical events.
 
@@ -30,12 +30,14 @@ Admin routes are excluded on both client and ingest server. `/admin`, `/admin/*`
 | `publication_click` | Publication card interaction |
 | `filter_change` | Audience/length/content filter change |
 | `search` | Submitted search |
-| `pdf_open` | Publication PDF viewer opened |
-| `download` | Download action; one event per click/action |
+| `pdf_open` | Embedded publication PDF viewer successfully loaded; a mobile detail-page visit alone is not a PDF open |
+| `download` | User-initiated download action/request; one event per click/action |
 | `share_click` | Share action |
 | `signup` | Successful weekly-email subscription; email address is not stored in analytics_events |
 | `heartbeat` | Active-time sample while visible and focused |
 | `error` | Sanitized meaningful site error |
+
+A canonical `download` event confirms that the user initiated a download request. Browser telemetry does not reliably prove that the transfer completed, so the dashboards deliberately use **download action** rather than “completed download” language.
 
 ## Stored canonical fields
 
@@ -82,15 +84,15 @@ A session containing at least one `pdf_open` or `download` event.
 
 ### Downloading session
 
-A session containing at least one canonical `download` event.
+A session containing at least one canonical `download` action.
 
 ### Unique PDF download
 
-One distinct **session + publication** pair with a download. Repeat download clicks on the same publication in the same session count once for this metric.
+One distinct **session + publication** pair with a download action. Repeat download clicks on the same publication in the same session count once for this metric.
 
 ### Download action
 
-Every canonical or legacy raw download event, depending on the labeled section. A person can generate multiple download actions.
+Every canonical or legacy raw download event, depending on the labeled section. A person can generate multiple download actions. This is a user-initiated request/click metric, not a verified completed-transfer metric.
 
 ### Session download conversion
 
@@ -170,23 +172,31 @@ Publication performance uses the CTR and access-to-download definitions above.
 
 ## Returning behavior (`/admin-analytics`)
 
-The selected 1/7/30/90/180/365-day range defines the **active visitor population**. For those active visitors, earlier canonical history is fetched to determine:
+The selected 1/7/30/90/180/365-day range defines the **active visitor population**. For those active visitors, earlier canonical history is fetched before the reporting range.
 
-- true lifetime first session
-- whether the visitor is actually returning
-- original acquisition source
-- lifetime session ordinal
-- actual first recorded download and the session in which it occurred
+A visitor is considered returning when an in-range session is known to be non-first because either:
 
-This prevents left-censoring from incorrectly treating the first session observed inside a reporting range as the visitor's first-ever session.
+- earlier recorded canonical sessions establish that its ordinal is 2+, or
+- the canonical `is_new_visitor = false` flag provides non-first-session evidence.
 
-A **repeat session in range** is an in-range session whose lifetime ordinal is 2 or higher.
+This also correctly handles a visitor whose first and second canonical sessions both occur inside the selected range.
+
+Not every visitor necessarily has a fully observed canonical lifetime start. Therefore:
+
+- lifetime timing medians are calculated only when canonical session 1 is present;
+- session-stage charts are described as **recorded** session ordinals when earlier history may be missing;
+- source cohorts are described as the **earliest recorded source** unless the lifetime first canonical session is known;
+- visitor journeys use **recorded sessions** rather than claiming every displayed session number is a true lifetime ordinal.
+
+This prevents left-censoring from incorrectly treating the first session available in canonical history as the visitor's first-ever session.
+
+A **repeat session in range** is an in-range session known to be non-first by observed history or canonical non-first-session evidence.
 
 ## Raw download-action audit (`/admin-analytics`)
 
 The lower dashboard intentionally continues to use the legacy `download_events` table as a raw/historical audit feed. Every KPI in this section is labeled **Download actions** to avoid confusing actions with people or conversions.
 
-`Today` is calculated from midnight in `America/New_York`, not UTC.
+`Today` is calculated from midnight in `America/New_York`, using the UTC offset that applies at local midnight itself so DST transition dates remain correct.
 
 ## GTM / GA4
 
