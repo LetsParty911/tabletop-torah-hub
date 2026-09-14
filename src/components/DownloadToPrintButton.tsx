@@ -4,6 +4,70 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { AlertCircle, Download, Loader2 } from "lucide-react";
 
+type DownloadTrackingContext = {
+  publicationId?: string;
+  publicationName?: string;
+  publicationTitle?: string;
+  parsha?: string | null;
+  jewishYear?: number | null;
+  publisher?: string | null;
+  publicationSeries?: string | null;
+};
+
+export function trackDownloadAction({
+  publicationId,
+  publicationName,
+  publicationTitle,
+  parsha,
+  jewishYear,
+  publisher,
+  publicationSeries,
+}: DownloadTrackingContext) {
+  if (typeof window === "undefined") return;
+
+  const path = window.location.pathname;
+  const onAdminRoute =
+    path === "/admin" || path.startsWith("/admin/") || path.startsWith("/admin-analytics");
+  if (onAdminRoute || (!publicationId && !publicationTitle)) return;
+
+  try {
+    const attribution = getAttribution();
+    const payload = JSON.stringify({
+      publication_id: publicationId,
+      publication_title: publicationTitle,
+      source_path: path,
+      session_id: getSessionId(),
+      ...(attribution ?? {}),
+    });
+    const blob = new Blob([payload], { type: "application/json" });
+    const sent =
+      typeof navigator !== "undefined" &&
+      typeof navigator.sendBeacon === "function" &&
+      navigator.sendBeacon("/api/track-download", blob);
+    if (!sent) {
+      void fetch("/api/track-download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+        keepalive: true,
+      }).catch(() => {});
+    }
+  } catch {
+    // Analytics must never block the download action.
+  }
+
+  // Canonical event semantics: this records a user-initiated download action/request.
+  // Browsers do not expose a reliable signal that a plain file download completed.
+  trackFp("download", {
+    publication_id: publicationId ?? null,
+    publication_title: publicationTitle ?? null,
+    publication_series: publicationSeries ?? publicationName ?? null,
+    publisher: publisher ?? null,
+    parsha: parsha ?? null,
+    jewish_year: jewishYear ?? null,
+  });
+}
+
 type DownloadToPrintButtonProps = {
   href: string;
   onClick?: () => void;
@@ -51,8 +115,6 @@ export function DownloadToPrintButton({
     [],
   );
 
-
-
   // Warm the origin lookup before the click so the download starts sooner.
   //
   // This must NEVER run on touch devices: `rel=prefetch` pulls the entire PDF,
@@ -79,60 +141,25 @@ export function DownloadToPrintButton({
     }
   }, [href]);
 
-
   const trackDownload = useCallback(() => {
-    const onAdminRoute =
-      typeof window !== "undefined" &&
-      (window.location.pathname === "/admin" ||
-        window.location.pathname.startsWith("/admin/"));
-    if (onAdminRoute || (!publicationId && !publicationTitle)) return;
-    try {
-      const attribution = getAttribution();
-      const payload = JSON.stringify({
-        publication_id: publicationId,
-        publication_title: publicationTitle,
-        source_path: window.location.pathname,
-        session_id: getSessionId(),
-        ...(attribution ?? {}),
-      });
-      const blob = new Blob([payload], { type: "application/json" });
-      const sent =
-        typeof navigator !== "undefined" &&
-        typeof navigator.sendBeacon === "function" &&
-        navigator.sendBeacon("/api/track-download", blob);
-      if (!sent) {
-        void fetch("/api/track-download", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: payload,
-          keepalive: true,
-        }).catch(() => {});
-      }
-    } catch {
-      // never block the download
-    }
-
-    // Canonical Phase 1 event — same click, carries visitor_id + session_id.
-    // Exactly one canonical download event per click; the event_id also
-    // de-dupes server side if the beacon is retried.
-    trackFp("download", {
-      publication_id: publicationId ?? null,
-      publication_title: publicationTitle ?? null,
-      publication_series: publicationSeries ?? publicationName ?? null,
-      publisher: publisher ?? null,
-      parsha: parsha ?? null,
-      jewish_year: jewishYear ?? null,
+    trackDownloadAction({
+      publicationId,
+      publicationName,
+      publicationTitle,
+      parsha,
+      jewishYear,
+      publisher,
+      publicationSeries,
     });
   }, [
     publicationId,
-    publicationTitle,
-    publicationSeries,
     publicationName,
-    publisher,
+    publicationTitle,
     parsha,
     jewishYear,
+    publisher,
+    publicationSeries,
   ]);
-
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -159,11 +186,8 @@ export function DownloadToPrintButton({
       flushSync(() => setPhase("starting"));
       statusTimerRef.current = setTimeout(() => setPhase("idle"), 1200);
     },
-
     [onClick, busy, trackDownload],
   );
-
-
 
   return (
     <a
@@ -174,7 +198,6 @@ export function DownloadToPrintButton({
       onClick={handleClick}
       onMouseEnter={warm}
       onFocus={warm}
-      
       aria-live="polite"
       aria-busy={busy}
       aria-disabled={busy}
@@ -203,9 +226,6 @@ export function DownloadToPrintButton({
             ? "Download failed — try again"
             : buttonLabel}
       </span>
-
-
     </a>
   );
 }
-
