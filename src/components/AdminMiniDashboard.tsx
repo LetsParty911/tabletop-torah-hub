@@ -69,10 +69,19 @@ export default function AdminMiniDashboard({
 
   useEffect(() => {
     let cancelled = false;
+    // Never leave the card stuck on "Gathering your update…": if the backend
+    // takes too long we surface a real message instead of spinning forever.
+    const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T> =>
+      Promise.race([
+        p,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error("This is taking too long — try refreshing.")), ms),
+        ),
+      ]);
     (async () => {
       if (!accessToken) return;
       try {
-        const r = await adminMiniDashboard({ data: { accessToken } });
+        const r = await withTimeout(adminMiniDashboard({ data: { accessToken } }), 20000);
         if (cancelled) return;
         setData(r);
         // Normalize whatever the anchor looks like (DB timestamps can carry a
@@ -82,7 +91,10 @@ export default function AdminMiniDashboard({
           parsed && !Number.isNaN(parsed.getTime())
             ? parsed.toISOString()
             : new Date(Date.now() - 7 * 86400000).toISOString();
-        const c = await adminCanonicalSinceLast({ data: { accessToken, since } });
+        const c = await withTimeout(
+          adminCanonicalSinceLast({ data: { accessToken, since } }),
+          20000,
+        );
         if (!cancelled) setCanonical(c);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Could not load dashboard");
@@ -92,6 +104,7 @@ export default function AdminMiniDashboard({
       cancelled = true;
     };
   }, [accessToken]);
+
 
   const remaining = Math.max(0, checklist.countableTotal - checklist.uploadedCount);
   const change = data ? data.currentParshaDownloads - data.previousParshaDownloads : 0;
