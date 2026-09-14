@@ -168,6 +168,8 @@ export const Route = createFileRoute("/api/events")({
               source_group: str("source_group", 40) ?? "Direct",
               country,
               region,
+              city,
+              postal_code: postalCode,
               metadata,
             });
           }

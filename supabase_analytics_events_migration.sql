@@ -10,7 +10,8 @@
 -- still written, because the existing download dashboard reads them.
 --
 -- No IP addresses and no raw user agents are stored. Device type is derived
--- server-side. Geo is limited to country + region for this table.
+-- server-side. Geo is limited to country + region + city + postal code for this
+-- table, and is approximate/network-derived only.
 -- =====================================================================
 
 create extension if not exists "pgcrypto";
