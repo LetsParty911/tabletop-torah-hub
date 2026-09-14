@@ -175,7 +175,8 @@ function buildVisitors(rows: Row[], since: string): Visitor[] {
     // A canonical false value is strong evidence this is not the visitor's first session.
     // Let false dominate in case older rows contain a mixture of null/true/false values.
     if (row.is_new_visitor === false) session.isNewVisitor = false;
-    else if (session.isNewVisitor == null && row.is_new_visitor === true) session.isNewVisitor = true;
+    else if (session.isNewVisitor == null && row.is_new_visitor === true)
+      session.isNewVisitor = true;
 
     const name = nonempty(row.event_name) ?? "";
     if (
@@ -486,7 +487,8 @@ export const adminPhase2ReturningAnalyticsV2 = createServerFn({ method: "POST" }
       },
       timeToConversion: {
         firstSession: visitors.filter(
-          (visitor) => hasObservedLifetimeStart(visitor) && visitor.firstDownloadSessionNumber === 1,
+          (visitor) =>
+            hasObservedLifetimeStart(visitor) && visitor.firstDownloadSessionNumber === 1,
         ).length,
         laterSession: visitors.filter(
           (visitor) =>
