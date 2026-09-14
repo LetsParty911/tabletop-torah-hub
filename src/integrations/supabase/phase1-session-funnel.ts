@@ -29,7 +29,7 @@ type SessionState = {
 };
 
 export const adminPhase1SessionFunnel = createServerFn({ method: "POST" })
-  .validator((input: { accessToken: string; days?: number }) => z.object({ accessToken: z.string().min(10), days: z.number().int().positive().max(365).optional() }).parse(input))
+  .inputValidator((input: { accessToken: string; days?: number }) => z.object({ accessToken: z.string().min(10), days: z.number().int().positive().max(365).optional() }).parse(input))
   .handler(async ({ data }) => {
     await requireDashboardAdmin(data.accessToken);
     const days = data.days ?? 7;

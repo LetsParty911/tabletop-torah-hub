@@ -249,7 +249,7 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
 }
 
 export const adminCanonicalCollectionTraffic = createServerFn({ method: "POST" })
-  .validator((input: { accessToken: string; parsha?: string | null }) =>
+  .inputValidator((input: { accessToken: string; parsha?: string | null }) =>
     z
       .object({ accessToken: z.string().min(10), parsha: z.string().nullable().optional() })
       .parse(input),
@@ -340,7 +340,7 @@ export const adminCanonicalCollectionTraffic = createServerFn({ method: "POST" }
   });
 
 export const adminCanonicalSinceLast = createServerFn({ method: "POST" })
-  .validator((input: { accessToken: string; since: string }) =>
+  .inputValidator((input: { accessToken: string; since: string }) =>
     z.object({ accessToken: z.string().min(10), since: z.string().datetime() }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -399,7 +399,7 @@ export function startOfTodayNewYork(now = new Date()): string {
 }
 
 export const adminDownloadActionsTodayEt = createServerFn({ method: "POST" })
-  .validator((input: { accessToken: string }) =>
+  .inputValidator((input: { accessToken: string }) =>
     z.object({ accessToken: z.string().min(10) }).parse(input),
   )
   .handler(async ({ data }) => {

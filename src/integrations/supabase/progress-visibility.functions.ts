@@ -51,7 +51,7 @@ export const getProgressVisibility = createServerFn({ method: "GET" }).handler(
 );
 
 export const adminSetProgressVisibility = createServerFn({ method: "POST" })
-  .validator((input: { accessToken: string; visible: boolean }) =>
+  .inputValidator((input: { accessToken: string; visible: boolean }) =>
     z
       .object({
         accessToken: z.string().min(10),

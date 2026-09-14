@@ -283,7 +283,7 @@ function hasObservedLifetimeStart(visitor: Visitor) {
 }
 
 export const adminPhase2ReturningAnalyticsV2 = createServerFn({ method: "POST" })
-  .validator((input: { accessToken: string; days?: number }) =>
+  .inputValidator((input: { accessToken: string; days?: number }) =>
     z
       .object({
         accessToken: z.string().min(10),
