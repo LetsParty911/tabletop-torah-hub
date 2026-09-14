@@ -55,6 +55,8 @@ create table if not exists public.analytics_events (
   source_group text,
   country text,
   region text,
+  city text,
+  postal_code text,
 
   -- Event-specific values (query, result_count, filter values, share method,
   -- active_seconds, error_code, already_subscribed, ...)
@@ -76,6 +78,17 @@ create index if not exists analytics_events_visitor_idx
   on public.analytics_events (visitor_id);
 create index if not exists analytics_events_publication_idx
   on public.analytics_events (publication_id);
+-- Existing installations: add the approximate-location columns if absent.
+alter table public.analytics_events add column if not exists city text;
+alter table public.analytics_events add column if not exists postal_code text;
+
+create index if not exists analytics_events_country_idx
+  on public.analytics_events (country);
+create index if not exists analytics_events_region_idx
+  on public.analytics_events (region);
+create index if not exists analytics_events_city_idx
+  on public.analytics_events (city);
+
 create index if not exists analytics_events_source_group_idx
   on public.analytics_events (source_group);
 
