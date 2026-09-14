@@ -26,6 +26,7 @@ type Row = {
   occurred_at: string;
   visitor_id: string | null;
   session_id: string | null;
+  is_new_visitor: boolean | null;
   path: string | null;
   landing_path: string | null;
   publication_id: string | null;
@@ -62,6 +63,7 @@ type Session = {
   firstDownloadAt: string | null;
   activeSeconds: number;
   activeInRange: boolean;
+  isNewVisitor: boolean | null;
 };
 
 type Visitor = {
@@ -105,7 +107,7 @@ async function fetchRows(since?: string, visitorIds?: string[], before?: string)
     let query = admin
       .from("analytics_events")
       .select(
-        "event_name, occurred_at, visitor_id, session_id, path, landing_path, publication_id, publication_title, publication_series, publisher, parsha, device_type, source_group, metadata",
+        "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, landing_path, publication_id, publication_title, publication_series, publisher, parsha, device_type, source_group, metadata",
       )
       .order("occurred_at", { ascending: true })
       .range(offset, offset + pageSize - 1);
@@ -156,6 +158,7 @@ function buildVisitors(rows: Row[], since: string): Visitor[] {
         firstDownloadAt: null,
         activeSeconds: 0,
         activeInRange: row.occurred_at >= since,
+        isNewVisitor: row.is_new_visitor,
       };
       sessionMap.set(sessionId, session);
     }
@@ -163,10 +166,16 @@ function buildVisitors(rows: Row[], since: string): Visitor[] {
     session.activeInRange ||= row.occurred_at >= since;
     if (row.occurred_at < session.startedAt) session.startedAt = row.occurred_at;
     if (row.occurred_at > session.lastAt) session.lastAt = row.occurred_at;
-    if (session.source === "Direct" && nonempty(row.source_group))
+    if (session.source === "Direct" && nonempty(row.source_group)) {
       session.source = nonempty(row.source_group)!;
-    if (session.device === "unknown" && nonempty(row.device_type))
+    }
+    if (session.device === "unknown" && nonempty(row.device_type)) {
       session.device = nonempty(row.device_type)!;
+    }
+    // A canonical false value is strong evidence this is not the visitor's first session.
+    // Let false dominate in case older rows contain a mixture of null/true/false values.
+    if (row.is_new_visitor === false) session.isNewVisitor = false;
+    else if (session.isNewVisitor == null && row.is_new_visitor === true) session.isNewVisitor = true;
 
     const name = nonempty(row.event_name) ?? "";
     if (
@@ -181,13 +190,15 @@ function buildVisitors(rows: Row[], since: string): Visitor[] {
     const publication = publicationOf(row);
     if (publication) {
       if (name === "publication_click") session.clicks.set(publication.id, publication);
-      if (name === "pdf_open" || name === "download")
+      if (name === "pdf_open" || name === "download") {
         session.accesses.set(publication.id, publication);
+      }
       if (name === "download") {
         session.downloads.set(publication.id, publication);
         session.downloadEvents += 1;
-        if (!session.firstDownloadAt || row.occurred_at < session.firstDownloadAt)
+        if (!session.firstDownloadAt || row.occurred_at < session.firstDownloadAt) {
           session.firstDownloadAt = row.occurred_at;
+        }
       }
     }
 
@@ -230,7 +241,13 @@ function firstActiveIndex(visitor: Visitor) {
 }
 
 function isReturning(visitor: Visitor) {
-  return firstActiveIndex(visitor) > 0;
+  return visitor.sessions.some(
+    (session, index) => session.activeInRange && (index >= 1 || session.isNewVisitor === false),
+  );
+}
+
+function hasObservedLifetimeStart(visitor: Visitor) {
+  return visitor.sessions[0]?.isNewVisitor === true;
 }
 
 export const adminPhase2ReturningAnalyticsV2 = createServerFn({ method: "POST" })
@@ -262,16 +279,27 @@ export const adminPhase2ReturningAnalyticsV2 = createServerFn({ method: "POST" }
     const repeatSessions = visitors.reduce(
       (total, visitor) =>
         total +
-        visitor.sessions.filter((session, index) => session.activeInRange && index >= 1).length,
+        visitor.sessions.filter(
+          (session, index) =>
+            session.activeInRange && (index >= 1 || session.isNewVisitor === false),
+        ).length,
       0,
     );
-    const returnDelays = returning.map((visitor) => {
-      const firstActive = visitor.sessions[firstActiveIndex(visitor)]!;
-      return hours(visitor.sessions[0]!.startedAt, firstActive.startedAt) / 24;
+
+    // Return delay is a lifetime metric: session 1 -> session 2. Do not substitute
+    // "first session in the selected range", which can be a visitor's 5th or 20th session.
+    // If the first canonical session is not observed, the delay is unknown and excluded.
+    const returnDelays = returning.flatMap((visitor) => {
+      if (!hasObservedLifetimeStart(visitor) || visitor.sessions.length < 2) return [];
+      return [hours(visitor.sessions[0]!.startedAt, visitor.sessions[1]!.startedAt) / 24];
     });
-    const conversionHours = converted.map((visitor) =>
-      hours(visitor.sessions[0]!.startedAt, visitor.firstDownloadAt!),
-    );
+
+    // Likewise, time-to-first-download is only a true lifetime duration when the
+    // visitor's canonical first session is present in history.
+    const conversionHours = converted.flatMap((visitor) => {
+      if (!hasObservedLifetimeStart(visitor) || !visitor.firstDownloadAt) return [];
+      return [hours(visitor.sessions[0]!.startedAt, visitor.firstDownloadAt)];
+    });
 
     const repeatConversion = [
       { key: "1st lifetime session", min: 1, max: 1 },
@@ -432,12 +460,14 @@ export const adminPhase2ReturningAnalyticsV2 = createServerFn({ method: "POST" }
       .sort((a, b) => b.sessions - a.sessions || b.lastSeenAt.localeCompare(a.lastSeenAt))
       .slice(0, 20);
 
+    const knownLifetimeStartVisitors = visitors.filter(hasObservedLifetimeStart).length;
+
     return {
       ok: true as const,
       days,
       since,
       methodology:
-        "Reporting range selects active visitors; prior canonical history is loaded for those visitors to determine lifetime first session, acquisition source, return status, and first download.",
+        "The selected range defines the active visitor population. Earlier canonical history is loaded for those visitors. A visitor is returning when an in-range session is lifetime session 2+ or carries canonical non-first-session evidence. Lifetime timing medians use only visitors whose first canonical session is observed.",
       totals: {
         uniqueVisitors: visitors.length,
         returningVisitors: returning.length,
@@ -452,11 +482,16 @@ export const adminPhase2ReturningAnalyticsV2 = createServerFn({ method: "POST" }
         visitorConversionRate: visitors.length ? converted.length / visitors.length : 0,
         medianDaysToReturn: median(returnDelays),
         medianHoursToFirstDownload: median(conversionHours),
+        knownLifetimeStartVisitors,
       },
       timeToConversion: {
-        firstSession: visitors.filter((visitor) => visitor.firstDownloadSessionNumber === 1).length,
-        laterSession: visitors.filter((visitor) => (visitor.firstDownloadSessionNumber ?? 0) > 1)
-          .length,
+        firstSession: visitors.filter(
+          (visitor) => hasObservedLifetimeStart(visitor) && visitor.firstDownloadSessionNumber === 1,
+        ).length,
+        laterSession: visitors.filter(
+          (visitor) =>
+            hasObservedLifetimeStart(visitor) && (visitor.firstDownloadSessionNumber ?? 0) > 1,
+        ).length,
         noDownload: visitors.filter((visitor) => visitor.firstDownloadAt === null).length,
       },
       repeatConversion,
