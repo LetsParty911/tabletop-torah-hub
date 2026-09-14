@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 
 export const getWeeklyChecklistPublishedTitles = createServerFn({ method: "POST" })
-  .validator((input: { parshaKey: string }) =>
+  .inputValidator((input: { parshaKey: string }) =>
     z.object({ parshaKey: z.string().min(1) }).parse(input),
   )
   .handler(async ({ data }) => {
