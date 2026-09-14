@@ -14,7 +14,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci --no-audit --no-fund
+      - run: npm install --no-audit --no-fund
+      - run: git restore package-lock.json
       - run: npm run build
       - name: Lint changed analytics files
         run: npx eslint src/components/TrafficAnalytics.tsx src/components/Phase1Funnel.tsx src/components/Phase2ReturningAnalytics.tsx src/components/AdminMiniDashboard.tsx src/components/DownloadsDashboard.tsx src/components/DownloadsByMinute.tsx src/components/DownloadAnalytics.tsx src/components/DownloadToPrintButton.tsx 'src/routes/view.$id.tsx' src/integrations/supabase/admin-analytics-canonical.ts src/integrations/supabase/phase1-dashboard-v2.ts src/integrations/supabase/phase2-returning-analytics-v2.ts
