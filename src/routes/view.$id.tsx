@@ -13,10 +13,7 @@ import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { publicationLabel } from "@/lib/badges";
-import {
-  DownloadToPrintButton,
-  trackDownloadAction,
-} from "@/components/DownloadToPrintButton";
+import { DownloadToPrintButton, trackDownloadAction } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -91,8 +88,7 @@ export const Route = createFileRoute("/view/$id")({
       const d = new Date(v);
       return isNaN(d.getTime()) ? null : d.toISOString();
     };
-    const datePublished =
-      toIso(loaderData?.pdf?.weekOf) ?? toIso(loaderData?.pdf?.createdAt);
+    const datePublished = toIso(loaderData?.pdf?.weekOf) ?? toIso(loaderData?.pdf?.createdAt);
     const dateModified = toIso(loaderData?.pdf?.updatedAt);
 
     const jsonLd: Record<string, unknown> = {
@@ -234,9 +230,7 @@ function ViewPdf() {
               <p className="mt-1 text-sm font-normal text-muted-foreground">By {pdf.publisher}</p>
             )}
             {pdf.subtitle && (
-              <p className="mt-1 text-sm text-muted-foreground">
-                {standardizeCopy(pdf.subtitle)}
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">{standardizeCopy(pdf.subtitle)}</p>
             )}
             {metaLine && (
               <p className="mt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
