@@ -83,11 +83,14 @@ alter table public.analytics_events add column if not exists city text;
 alter table public.analytics_events add column if not exists postal_code text;
 
 create index if not exists analytics_events_country_idx
-  on public.analytics_events (country);
+  on public.analytics_events (country)
+  where country is not null;
 create index if not exists analytics_events_region_idx
-  on public.analytics_events (region);
+  on public.analytics_events (region)
+  where region is not null;
 create index if not exists analytics_events_city_idx
-  on public.analytics_events (city);
+  on public.analytics_events (city)
+  where city is not null;
 
 create index if not exists analytics_events_source_group_idx
   on public.analytics_events (source_group);

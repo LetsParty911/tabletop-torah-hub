@@ -136,9 +136,12 @@ function PrivacyPage() {
                         Analytics records may also include the publication ID and title, series,
                         publisher, parsha and Jewish year; the landing page and referring site or
                         URL; campaign parameters such as UTM source, medium and campaign; a
-                        normalized traffic-source category; device category; approximate country
-                        and region; and event-specific metadata such as the filter selected, search
-                        information, share method, or active-time interval.
+                        normalized traffic-source category; device category; and approximate,
+                        network-derived country, state or region, city, and postal code. This
+                        location can be inaccurate, for example when a mobile carrier or VPN routes
+                        traffic elsewhere. The canonical analytics table does not retain the
+                        visitor's raw IP address. Event-specific metadata may include the filter
+                        selected, search information, share method, or active-time interval.
                       </p>
                       <p>
                         We also use Google Tag Manager and Google Analytics to measure site usage,
@@ -161,12 +164,12 @@ function PrivacyPage() {
                   <Sub heading="5. Information stored in your browser">
                     <p>
                       The first-party analytics system stores a visitor identifier in a cookie with
-                      a 12-month lifetime that is renewed when the site is used. It also uses browser
-                      storage for the visitor identifier, session identifier and session timing, and
-                      first-touch referral and campaign information. The site also stores values used
-                      for features such as remembering dismissed prompts and supporting faster or
-                      offline use. Google Analytics may use its own cookies or browser storage. These
-                      values can be cleared through your browser settings.
+                      a 12-month lifetime that is renewed when the site is used. It also uses
+                      browser storage for the visitor identifier, session identifier and session
+                      timing, and first-touch referral and campaign information. The site also
+                      stores values used for features such as remembering dismissed prompts and
+                      supporting faster or offline use. Google Analytics may use its own cookies or
+                      browser storage. These values can be cleared through your browser settings.
                     </p>
                   </Sub>
                 </div>

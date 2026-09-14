@@ -1,6 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { DownloadAnalytics } from "@/components/DownloadAnalytics";
-import TrafficAnalytics from "@/components/TrafficAnalytics";
 import AdminMiniDashboard from "@/components/AdminMiniDashboard";
 import SubscribersManager, { type Subscriber } from "@/components/admin/SubscribersManager";
 import UploadPdfForm from "@/components/admin/UploadPdfForm";
@@ -1386,12 +1384,21 @@ function AdminPage() {
           }}
         />
 
+        <div className="flex justify-end">
+          <Link
+            to="/admin-analytics"
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Open Site Analytics →
+          </Link>
+        </div>
+
         <Tabs defaultValue="this-week" className="w-full">
           <TabsList className="flex flex-wrap h-auto gap-1">
             <TabsTrigger value="this-week">This Week</TabsTrigger>
             <TabsTrigger value="site-content">Site Content</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
-            <TabsTrigger value="subscribers-analytics">Subscribers &amp; Analytics</TabsTrigger>
+            <TabsTrigger value="subscribers-analytics">Subscribers</TabsTrigger>
           </TabsList>
           <TabsContent value="this-week" className="space-y-8 mt-8">
         <section className="parchment-frame">
@@ -1669,24 +1676,6 @@ function AdminPage() {
         </section>
           </TabsContent>
           <TabsContent value="subscribers-analytics" className="space-y-8 mt-8">
-        <section className="parchment-frame">
-          <div className="parchment-panel">
-            <div className="mb-4 flex justify-end">
-              <Link
-                to="/admin-analytics"
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                Open full download dashboard →
-              </Link>
-            </div>
-            <DownloadAnalytics accessToken={accessToken ?? ""} />
-          </div>
-        </section>
-        <section className="parchment-frame">
-          <div className="parchment-panel">
-            <TrafficAnalytics accessToken={accessToken ?? ""} />
-          </div>
-        </section>
         <section className="parchment-frame">
           <div className="parchment-panel">
             <SubscribersManager

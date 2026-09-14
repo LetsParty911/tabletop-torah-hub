@@ -246,6 +246,11 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
                             }).format(new Date(s.startedAt))}{" "}
                             ET · {s.source} · {s.device} · {s.activeSeconds}s active
                           </div>
+                          {s.approximateLocation && (
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              Approx. location (network-derived): {s.approximateLocation}
+                            </div>
+                          )}
                           {s.pages.length > 0 && (
                             <div className="mt-1 break-words">Pages: {s.pages.join(" → ")}</div>
                           )}
@@ -285,6 +290,11 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
                 <b className="text-foreground">Lifetime timing:</b> calculated only when canonical
                 session 1 is present, so pre-canonical or otherwise missing history is not treated
                 as a known lifetime start.
+              </p>
+              <p>
+                <b className="text-foreground">Approximate location:</b> network-derived location
+                reported by the hosting provider for a recorded session. It can be inaccurate and
+                may be unavailable for older sessions; it is not an exact address.
               </p>
               <p>
                 In-range events analyzed: {data.rawEventCount}. Historical events consulted:{" "}

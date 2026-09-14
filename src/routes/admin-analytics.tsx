@@ -38,7 +38,11 @@ function AdminAnalyticsPage() {
     (window.location.hash.includes("access_token=") || window.location.search.includes("code="));
 
   if (loading || hasAuthCallbackInUrl) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Loading…
+      </div>
+    );
   }
 
   if (!session) {
@@ -47,7 +51,9 @@ function AdminAnalyticsPage() {
         <div className="parchment-frame max-w-md w-full">
           <div className="parchment-panel text-center">
             <h1 className="font-serif text-3xl font-bold text-primary">Admin Sign-in</h1>
-            <p className="mt-3 text-muted-foreground">Sign in with Google to view site analytics.</p>
+            <p className="mt-3 text-muted-foreground">
+              Sign in with Google to view site analytics.
+            </p>
             <button
               onClick={signInWithGoogle}
               className="mt-6 inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -77,7 +83,11 @@ function AdminAnalyticsPage() {
   }
 
   if (isAdmin === null) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Verifying access…</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Verifying access…
+      </div>
+    );
   }
 
   return (
@@ -85,7 +95,9 @@ function AdminAnalyticsPage() {
       <div className="mx-auto max-w-6xl px-4 py-8 space-y-6">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="font-serif text-3xl md:text-4xl font-bold text-primary">Site Analytics</h1>
+            <h1 className="font-serif text-3xl md:text-4xl font-bold text-primary">
+              Site Analytics
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Canonical first-party analytics is the primary source for audience, conversion,
               source, device, location, publication, and returning-visitor metrics. Legacy/raw

@@ -22,26 +22,26 @@ Admin routes are excluded on both client and ingest server. `/admin`, `/admin/*`
 
 ## Canonical event catalog
 
-| Event | Meaning |
-| --- | --- |
-| `session_start` | First tracked activity of a new 30-minute session |
-| `page_view` | Client-side route view |
-| `publication_impression` | Publication card sufficiently visible; deduped per page view |
-| `publication_click` | Publication card interaction |
-| `filter_change` | Audience/length/content filter change |
-| `search` | Submitted search |
-| `pdf_open` | Embedded publication PDF viewer successfully loaded; a mobile detail-page visit alone is not a PDF open |
-| `download` | User-initiated download action/request; one event per click/action |
-| `share_click` | Share action |
-| `signup` | Successful weekly-email subscription; email address is not stored in analytics_events |
-| `heartbeat` | Active-time sample while visible and focused |
-| `error` | Sanitized meaningful site error |
+| Event                    | Meaning                                                                                                 |
+| ------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `session_start`          | First tracked activity of a new 30-minute session                                                       |
+| `page_view`              | Client-side route view                                                                                  |
+| `publication_impression` | Publication card sufficiently visible; deduped per page view                                            |
+| `publication_click`      | Publication card interaction                                                                            |
+| `filter_change`          | Audience/length/content filter change                                                                   |
+| `search`                 | Submitted search                                                                                        |
+| `pdf_open`               | Embedded publication PDF viewer successfully loaded; a mobile detail-page visit alone is not a PDF open |
+| `download`               | User-initiated download action/request; one event per click/action                                      |
+| `share_click`            | Share action                                                                                            |
+| `signup`                 | Successful weekly-email subscription; email address is not stored in analytics_events                   |
+| `heartbeat`              | Active-time sample while visible and focused                                                            |
+| `error`                  | Sanitized meaningful site error                                                                         |
 
 A canonical `download` event confirms that the user initiated a download request. Browser telemetry does not reliably prove that the transfer completed, so the dashboards deliberately use **download action** rather than “completed download” language.
 
 ## Stored canonical fields
 
-`event_id`, `event_name`, `occurred_at`, `visitor_id`, `session_id`, `is_new_visitor`, `path`, `landing_path`, `source_path`, `publication_id`, `publication_title`, `publication_series`, `publisher`, `parsha`, `jewish_year`, `device_type`, `referrer_host`, `referrer_url`, `utm_source`, `utm_medium`, `utm_campaign`, `source_group`, `country`, `region`, `metadata`.
+`event_id`, `event_name`, `occurred_at`, `visitor_id`, `session_id`, `is_new_visitor`, `path`, `landing_path`, `source_path`, `publication_id`, `publication_title`, `publication_series`, `publisher`, `parsha`, `jewish_year`, `device_type`, `referrer_host`, `referrer_url`, `utm_source`, `utm_medium`, `utm_campaign`, `source_group`, `country`, `region`, `city`, `postal_code`, `metadata`.
 
 Privacy rules:
 
@@ -201,3 +201,7 @@ The lower dashboard intentionally continues to use the legacy `download_events` 
 ## GTM / GA4
 
 GTM/dataLayer events may still exist for external analytics and marketing measurement, but they are not the source of truth for the primary first-party dashboard conversion metrics documented above.
+
+### Approximate location
+
+Canonical events may store hosting-provider, network-derived `country`, `region`, `city`, and `postal_code`. These values are approximate and can be wrong because of mobile-carrier routing, VPNs, proxies, or ISP topology. The canonical analytics table does **not** retain the visitor's raw IP address or latitude/longitude. Location rankings are aggregated at the session level rather than counting every event as a separate location observation. Historical canonical rows recorded before the richer-location enhancement may have only country/region or may have no city/postal value.

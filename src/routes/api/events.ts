@@ -90,10 +90,7 @@ export const Route = createFileRoute("/api/events")({
           const country =
             header("x-vercel-ip-country") ?? cfStr("country") ?? header("cf-ipcountry") ?? null;
           const region =
-            header("x-vercel-ip-country-region") ??
-            cfStr("region") ??
-            cfStr("regionCode") ??
-            null;
+            header("x-vercel-ip-country-region") ?? cfStr("region") ?? cfStr("regionCode") ?? null;
           const city = decodeGeo(header("x-vercel-ip-city")) ?? cfStr("city") ?? null;
           const postalCode =
             decodeGeo(header("x-vercel-ip-postal-code")) ?? cfStr("postalCode") ?? null;

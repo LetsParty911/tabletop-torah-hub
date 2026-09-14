@@ -182,9 +182,11 @@ function AboutPage() {
                 <div className="mt-2 font-serif text-base text-foreground leading-relaxed space-y-3">
                   <p>
                     The site collects an email address when you join the weekly notification list,
-                    and site usage analytics (page views, downloads) via Google Tag Manager. Emails
-                    are used to send the weekly notification when new Divrei Torah are posted.
-                    Details are on the{" "}
+                    and uses site analytics for usage such as page views and downloads. First-party
+                    analytics may include approximate network-derived country, state or region,
+                    city, and postal code; this can be inaccurate, and the canonical analytics table
+                    does not retain raw IP addresses. Emails are used to send the weekly
+                    notification when new Divrei Torah are posted. Details are on the{" "}
                     <Link
                       to="/privacy"
                       className="text-accent underline hover:text-primary transition-colors"

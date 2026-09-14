@@ -7,11 +7,9 @@ type Traffic = Awaited<ReturnType<typeof adminCanonicalCollectionTraffic>>;
 function pctRatio(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
-
 function pct(n: number, d: number): string {
   return d ? `${((n / d) * 100).toFixed(1)}%` : "—";
 }
-
 function fmtDate(iso: string): string {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
@@ -21,13 +19,25 @@ function fmtDate(iso: string): string {
   }).format(new Date(iso));
 }
 
-function Tile({ title, children }: { title: string; children: React.ReactNode }) {
+function ComparisonCard({
+  label,
+  current,
+  previous,
+  note,
+}: {
+  label: string;
+  current: React.ReactNode;
+  previous: React.ReactNode;
+  note?: React.ReactNode;
+}) {
   return (
     <div className="rounded-xl border border-border bg-background/60 p-4">
       <div className="text-[0.65rem] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-        {title}
+        {label}
       </div>
-      <div className="mt-2">{children}</div>
+      <div className="mt-2 font-serif text-2xl font-bold text-primary">{current}</div>
+      <div className="mt-1 text-xs text-muted-foreground">Previous: {previous}</div>
+      {note && <div className="mt-1 text-xs text-muted-foreground">{note}</div>}
     </div>
   );
 }
@@ -48,7 +58,7 @@ export default function TrafficAnalytics({ accessToken }: { accessToken: string 
         setData(result);
         setParsha(result.selectedParsha);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Could not load site traffic");
+        setError(e instanceof Error ? e.message : "Could not load collection performance");
       } finally {
         setLoading(false);
       }
@@ -67,9 +77,9 @@ export default function TrafficAnalytics({ accessToken }: { accessToken: string 
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Site traffic &amp; conversion</h2>
+          <h2 className="font-serif text-2xl font-bold text-primary">Collection performance</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Primary metrics use the canonical first-party event stream.
+            Matched collection windows using the canonical first-party event stream.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -93,7 +103,7 @@ export default function TrafficAnalytics({ accessToken }: { accessToken: string 
             type="button"
             onClick={() => void load(parsha)}
             className="rounded-md border border-border px-2 py-1 text-xs"
-            aria-label="Refresh analytics"
+            aria-label="Refresh collection performance"
           >
             {loading ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -120,103 +130,47 @@ export default function TrafficAnalytics({ accessToken }: { accessToken: string 
             ) : null}
           </p>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Tile title="Audience">
-              <p className="font-serif text-3xl font-bold text-primary">{cur.uniqueVisitors}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                unique visitors · {cur.sessions} sessions · {cur.pageviews} pageviews
-              </p>
-            </Tile>
-
-            <Tile title="Engaged sessions">
-              <p className="font-serif text-3xl font-bold text-primary">{cur.engagedSessions}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {pct(cur.engagedSessions, cur.sessions)} of sessions
-              </p>
-            </Tile>
-
-            <Tile title="Download conversion">
-              <p className="font-serif text-3xl font-bold text-primary">
-                {pctRatio(cur.downloadConversion)}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {cur.downloadingSessions} downloading sessions of {cur.sessions} total sessions
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Previous collection: {pctRatio(prev.downloadConversion)}
-              </p>
-            </Tile>
-
-            <Tile title="PDF activity">
-              <p className="font-serif text-3xl font-bold text-primary">{cur.downloadActions}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                download actions · {cur.uniquePdfDownloads} unique session+PDF downloads
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {cur.pdfAccessingSessions} sessions accessed a PDF
-              </p>
-            </Tile>
-
-            <Tile title="New-subscriber conversion">
-              <p className="font-serif text-3xl font-bold text-primary">
-                {pctRatio(data.subscriberConversion)}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {data.currentSubscribers} new subscribers / {cur.uniqueVisitors} unique visitors
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Previous collection: {pctRatio(data.previousSubscriberConversion)}
-              </p>
-            </Tile>
-
-            <Tile title="Returning visitors">
-              <p className="font-serif text-3xl font-bold text-primary">
-                {pct(cur.returningVisitors, cur.uniqueVisitors)}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {cur.returningVisitors} of {cur.uniqueVisitors} visitors had evidence of a prior
-                session
-              </p>
-            </Tile>
-
-            <Tile title="Traffic sources · sessions">
-              {cur.sources.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No source data yet</p>
-              ) : (
-                <ul className="space-y-1 text-sm">
-                  {cur.sources.slice(0, 8).map((x) => (
-                    <li key={x.label} className="flex justify-between gap-3">
-                      <span>{x.label}</span>
-                      <span className="font-semibold text-primary">
-                        {x.sessions} · {pct(x.sessions, cur.sessions)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Tile>
-
-            <Tile title="Device mix · sessions">
-              {cur.devices.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No device data yet</p>
-              ) : (
-                <ul className="space-y-1 text-sm">
-                  {cur.devices.map((x) => (
-                    <li key={x.label} className="flex justify-between gap-3">
-                      <span className="capitalize">{x.label}</span>
-                      <span className="font-semibold text-primary">
-                        {x.sessions} · {pct(x.sessions, cur.sessions)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Tile>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ComparisonCard
+              label="Unique visitors"
+              current={cur.uniqueVisitors}
+              previous={prev.uniqueVisitors}
+              note={`${cur.sessions} sessions now · ${prev.sessions} previous`}
+            />
+            <ComparisonCard
+              label="Sessions"
+              current={cur.sessions}
+              previous={prev.sessions}
+              note={`${pct(cur.engagedSessions, cur.sessions)} engaged now`}
+            />
+            <ComparisonCard
+              label="Download conversion"
+              current={pctRatio(cur.downloadConversion)}
+              previous={pctRatio(prev.downloadConversion)}
+              note={`${cur.downloadingSessions} downloading sessions now`}
+            />
+            <ComparisonCard
+              label="New subscribers"
+              current={data.currentSubscribers}
+              previous={data.previousSubscribers}
+              note={`${pctRatio(data.subscriberConversion)} now · ${pctRatio(data.previousSubscriberConversion)} previous (new subscribers / unique visitors)`}
+            />
+            <ComparisonCard
+              label="Returning visitors"
+              current={`${cur.returningVisitors} · ${pct(cur.returningVisitors, cur.uniqueVisitors)}`}
+              previous={`${prev.returningVisitors} · ${pct(prev.returningVisitors, prev.uniqueVisitors)}`}
+            />
+            <ComparisonCard
+              label="PDF activity"
+              current={`${cur.uniquePdfDownloads} unique PDF downloads`}
+              previous={`${prev.uniquePdfDownloads} unique PDF downloads`}
+              note={`${cur.downloadActions} download actions · ${cur.pdfAccessingSessions} PDF-accessing sessions now`}
+            />
           </div>
 
-          <div className="mt-4 rounded-xl border border-border bg-background/60 p-4">
+          <div className="mt-5 rounded-xl border border-border bg-background/60 p-4">
             <div className="text-[0.65rem] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Top pages
+              Top pages · selected collection window
             </div>
             {cur.topPages.length === 0 ? (
               <p className="mt-2 text-sm text-muted-foreground">No pageviews yet</p>
@@ -241,32 +195,25 @@ export default function TrafficAnalytics({ accessToken }: { accessToken: string 
 
           <details className="mt-4 rounded-xl border border-border bg-background/40 p-4 text-sm">
             <summary className="cursor-pointer font-semibold text-primary">
-              Metric definitions
+              Collection metric definitions
             </summary>
             <div className="mt-3 space-y-2 text-muted-foreground">
               <p>
-                <b className="text-foreground">Session:</b> activity grouped under one 30-minute
-                inactivity session ID.
+                <b className="text-foreground">Collection window:</b> the matched reporting interval
+                derived for the selected publication collection; all conversion numerators and
+                denominators use that same interval.
               </p>
               <p>
-                <b className="text-foreground">Unique visitor:</b> one first-party visitor ID in the
-                reporting window.
-              </p>
-              <p>
-                <b className="text-foreground">Returning visitor:</b> visitor with canonical
-                evidence that the active session was not the first visitor session.
-              </p>
-              <p>
-                <b className="text-foreground">Downloading session:</b> session containing at least
-                one download event.
+                <b className="text-foreground">Download conversion:</b> sessions with at least one
+                canonical download action / all sessions in that collection window.
               </p>
               <p>
                 <b className="text-foreground">Unique PDF download:</b> one session+publication
-                pair, deduplicating repeat clicks on the same PDF inside a session.
+                pair, deduplicating repeated clicks on the same PDF inside a session.
               </p>
               <p>
-                <b className="text-foreground">Download action:</b> every recorded download event,
-                including repeated downloads.
+                <b className="text-foreground">Download action:</b> every recorded user-initiated
+                download request, including repeats.
               </p>
             </div>
           </details>
