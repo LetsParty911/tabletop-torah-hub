@@ -169,21 +169,10 @@ export function resolveReadingFromHebcal(
   );
   const realYomTovDays = holidayCandidates.filter((i) => i.yomtov === true);
   const searchPool = realYomTovDays.length > 0 ? realYomTovDays : holidayCandidates;
-  const yomTovOnShabbos =
-    rangeStart || rangeEnd
-      ? searchPool.find((i) => {
-          const d = i.date.slice(0, 10);
-          return (!rangeStart || d >= rangeStart) && (!rangeEnd || d <= rangeEnd);
-        })
-      : searchPool.find((i) => i.date.slice(0, 10) === shabbosDate);
-
-  if (yomTovOnShabbos) {
-    const key =
-      hebcalYomTovToKey(yomTovOnShabbos.title) ?? normalizeYomTovTitle(yomTovOnShabbos.title);
-    const matchedDate = yomTovOnShabbos.date.slice(0, 10);
-    return { parshaKey: key, label: key, isStaticFallback: false, readingDate: matchedDate };
-  }
-
+  // A real weekly parsha always wins. Hebcal's reported range can span
+  // adjacent Yom Tov days (e.g. Simchas Torah on Friday, Shabbos Bereishis),
+  // so a holiday merely falling inside the window must not override the
+  // `parashat` item Hebcal explicitly assigns to this Shabbos.
   if (parsha) {
     // Unmapped names pass through unchanged rather than erroring.
     const key = hebcalToParshaKey(parsha.title);
@@ -193,6 +182,22 @@ export function resolveReadingFromHebcal(
       isStaticFallback: false,
       readingDate: shabbosDate,
     };
+  }
+
+  const yomTovOnShabbos =
+    rangeStart || rangeEnd
+      ? (searchPool.find((i) => i.date.slice(0, 10) === shabbosDate) ??
+        searchPool.find((i) => {
+          const d = i.date.slice(0, 10);
+          return (!rangeStart || d >= rangeStart) && (!rangeEnd || d <= rangeEnd);
+        }))
+      : searchPool.find((i) => i.date.slice(0, 10) === shabbosDate);
+
+  if (yomTovOnShabbos) {
+    const key =
+      hebcalYomTovToKey(yomTovOnShabbos.title) ?? normalizeYomTovTitle(yomTovOnShabbos.title);
+    const matchedDate = yomTovOnShabbos.date.slice(0, 10);
+    return { parshaKey: key, label: key, isStaticFallback: false, readingDate: matchedDate };
   }
 
   return { parshaKey: null, label: "Parshas Hashavua", isStaticFallback: true, readingDate: null };
