@@ -5,15 +5,6 @@ import { adminCanonicalSinceLast } from "@/integrations/supabase/admin-analytics
 type DashboardData = Awaited<ReturnType<typeof adminMiniDashboard>>;
 type CanonicalData = Awaited<ReturnType<typeof adminCanonicalSinceLast>>;
 const SITE_TZ = "America/New_York";
-const FALLBACK_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-
-function normalizeSinceTimestamp(value: string | null | undefined): string {
-  if (value) {
-    const parsed = Date.parse(value);
-    if (!Number.isNaN(parsed)) return new Date(parsed).toISOString();
-  }
-  return new Date(Date.now() - FALLBACK_WINDOW_MS).toISOString();
-}
 
 function formatAnchor(iso: string): string {
   try {
@@ -84,12 +75,11 @@ export default function AdminMiniDashboard({
         const r = await adminMiniDashboard({ data: { accessToken } });
         if (cancelled) return;
         setData(r);
-        const since = normalizeSinceTimestamp(r.anchorIso);
+        const since = r.anchorIso ?? new Date(Date.now() - 7 * 86400000).toISOString();
         const c = await adminCanonicalSinceLast({ data: { accessToken, since } });
         if (!cancelled) setCanonical(c);
       } catch (e) {
-        console.error("AdminMiniDashboard load failed", e);
-        if (!cancelled) setError("Could not load your update. Please refresh and try again.");
+        if (!cancelled) setError(e instanceof Error ? e.message : "Could not load dashboard");
       }
     })();
     return () => {
