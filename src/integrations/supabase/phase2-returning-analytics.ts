@@ -120,7 +120,7 @@ function shortVisitorId(id: string): string {
 }
 
 export const adminPhase2ReturningAnalytics = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; days?: number }) =>
+  .validator((input: { accessToken: string; days?: number }) =>
     z
       .object({
         accessToken: z.string().min(10),

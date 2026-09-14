@@ -105,7 +105,7 @@ async function priorVisitors(visitorIds: string[], since: string): Promise<Set<s
 }
 
 export const adminPhase1DashboardV2 = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; days?: number }) =>
+  .validator((input: { accessToken: string; days?: number }) =>
     z
       .object({
         accessToken: z.string().min(10),
