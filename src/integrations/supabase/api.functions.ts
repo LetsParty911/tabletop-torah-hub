@@ -398,7 +398,7 @@ async function resolveDisplayedCollection(
 }
 
 export const listPublishedPdfs = createServerFn({ method: "GET" })
-  .inputValidator((input: { parshaKey: string }) =>
+  .validator((input: { parshaKey: string }) =>
     z.object({ parshaKey: z.string().min(1).max(120) }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -415,7 +415,7 @@ export const listPublishedPdfs = createServerFn({ method: "GET" })
 // Homepage loader: returns live-parsha collection, or the most recent
 // published collection as a fallback when the live parsha has no PDFs.
 export const listHomepageWeek = createServerFn({ method: "GET" })
-  .inputValidator((input: { parshaKey: string | null }) =>
+  .validator((input: { parshaKey: string | null }) =>
     z.object({ parshaKey: z.string().min(1).max(120).nullable() }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -632,7 +632,7 @@ export function pdfThumbUrl(id: string): string | null {
 }
 
 export const getPdfById = createServerFn({ method: "GET" })
-  .inputValidator((input: { id: string }) =>
+  .validator((input: { id: string }) =>
     z.object({ id: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -795,7 +795,7 @@ export const getParshaOverride = createServerFn({ method: "GET" }).handler(async
 
 // ---------- Public: subscribe email (unsubscribe-aware reactivation) ----------
 export const subscribeEmail = createServerFn({ method: "POST" })
-  .inputValidator((input: { email: string; source?: string; consent?: boolean }) =>
+  .validator((input: { email: string; source?: string; consent?: boolean }) =>
     z
       .object({
         email: z.string().trim().email().max(254),
@@ -993,7 +993,7 @@ async function sendWelcomeEmailSafe(
 
 // ---------- Public: contact form submission ----------
 export const submitContactMessage = createServerFn({ method: "POST" })
-  .inputValidator((input: { name?: string; email: string; message: string }) =>
+  .validator((input: { name?: string; email: string; message: string }) =>
     z
       .object({
         name: z.string().trim().max(120).optional(),
@@ -1052,7 +1052,7 @@ async function requireAdmin(accessToken: string | null) {
 
 // ---------- Admin: check role ----------
 export const checkIsAdmin = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string }) =>
+  .validator((input: { accessToken: string }) =>
     z.object({ accessToken: z.string().min(10) }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -1066,7 +1066,7 @@ export const checkIsAdmin = createServerFn({ method: "POST" })
 
 // ---------- Admin: list ALL pdfs ----------
 export const adminListPdfs = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string }) =>
+  .validator((input: { accessToken: string }) =>
     z.object({ accessToken: z.string().min(10) }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -1110,7 +1110,7 @@ export const adminListPdfs = createServerFn({ method: "POST" })
 
 // ---------- Admin: generate/regenerate summary via external edge function ----------
 export const adminGenerateSummary = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; id: string }) =>
+  .validator((input: { accessToken: string; id: string }) =>
     z.object({ accessToken: z.string().min(10), id: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -1164,7 +1164,7 @@ export const adminGenerateSummary = createServerFn({ method: "POST" })
 
 // ---------- Admin: upload PDF (base64) + insert row ----------
 export const adminUploadPdf = createServerFn({ method: "POST" })
-  .inputValidator((input: {
+  .validator((input: {
     accessToken: string;
     parshaKey: string;
     title: string;
@@ -1323,7 +1323,7 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
 // The image is rendered in the admin browser (pdf.js) and stored in the public
 // `pdf-thumbs` bucket as `<pdf id>.png`, overwriting any previous preview.
 export const adminUploadPdfThumb = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; id: string; pngBase64: string }) =>
+  .validator((input: { accessToken: string; id: string; pngBase64: string }) =>
     z
       .object({
         accessToken: z.string().min(10),
@@ -1349,7 +1349,7 @@ export const adminUploadPdfThumb = createServerFn({ method: "POST" })
 
 // ---------- Admin: update PDF metadata (category, publication, tags, title/subtitle) ----------
 export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
-  .inputValidator((input: {
+  .validator((input: {
     accessToken: string;
     id: string;
     title?: string;
@@ -1431,7 +1431,7 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
 
 // ---------- Admin: replace PDF file on existing row ----------
 export const adminReplacePdfFile = createServerFn({ method: "POST" })
-  .inputValidator((input: {
+  .validator((input: {
     accessToken: string;
     id: string;
     fileName: string;
@@ -1492,7 +1492,7 @@ export const adminReplacePdfFile = createServerFn({ method: "POST" })
 // underlying optimizePdfImages for the full safety rules (CMYK/SMask
 // skipped, minimum size/savings thresholds, per-image failure isolation).
 export const adminRecompressExistingPdf = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; id: string }) =>
+  .validator((input: { accessToken: string; id: string }) =>
     z.object({ accessToken: z.string().min(10), id: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -1561,7 +1561,7 @@ export const adminRecompressExistingPdf = createServerFn({ method: "POST" })
 
 // ---------- Admin: toggle published ----------
 export const adminTogglePublished = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; id: string; published: boolean }) =>
+  .validator((input: { accessToken: string; id: string; published: boolean }) =>
     z
       .object({
         accessToken: z.string().min(10),
@@ -1590,7 +1590,7 @@ export const adminTogglePublished = createServerFn({ method: "POST" })
 
 // ---------- Admin: bulk publish a set of PDFs ----------
 export const adminBulkPublish = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; ids: string[] }) =>
+  .validator((input: { accessToken: string; ids: string[] }) =>
     z
       .object({
         accessToken: z.string().min(10),
@@ -1612,7 +1612,7 @@ export const adminBulkPublish = createServerFn({ method: "POST" })
 
 // ---------- Admin: delete pdf ----------
 export const adminDeletePdf = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; id: string }) =>
+  .validator((input: { accessToken: string; id: string }) =>
     z.object({ accessToken: z.string().min(10), id: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -1630,7 +1630,7 @@ export const adminDeletePdf = createServerFn({ method: "POST" })
 
 // ---------- Admin: set parsha override ----------
 export const adminSetParshaOverride = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; override: string | null }) =>
+  .validator((input: { accessToken: string; override: string | null }) =>
     z
       .object({
         accessToken: z.string().min(10),
@@ -1651,7 +1651,7 @@ export const adminSetParshaOverride = createServerFn({ method: "POST" })
 
 // ---------- Admin: list subscribers ----------
 export const adminListSubscribers = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string }) =>
+  .validator((input: { accessToken: string }) =>
     z.object({ accessToken: z.string().min(10) }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -1667,7 +1667,7 @@ export const adminListSubscribers = createServerFn({ method: "POST" })
 
 // ---------- Admin: delete subscribers by id (single or bulk) ----------
 export const adminDeleteSubscribers = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; ids: string[] }) =>
+  .validator((input: { accessToken: string; ids: string[] }) =>
     z
       .object({
         accessToken: z.string().min(10),
@@ -1688,7 +1688,7 @@ export const adminDeleteSubscribers = createServerFn({ method: "POST" })
 
 // ---------- Admin: list weekly skips for parsha+year ----------
 export const adminListWeeklySkips = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; parshaKey: string; jewishYear: number }) =>
+  .validator((input: { accessToken: string; parshaKey: string; jewishYear: number }) =>
     z
       .object({
         accessToken: z.string().min(10),
@@ -1711,7 +1711,7 @@ export const adminListWeeklySkips = createServerFn({ method: "POST" })
 
 // ---------- Admin: add a weekly skip ----------
 export const adminAddWeeklySkip = createServerFn({ method: "POST" })
-  .inputValidator((input: {
+  .validator((input: {
     accessToken: string;
     parshaKey: string;
     titleKey: string;
@@ -1761,7 +1761,7 @@ export const listChecklistSources = createServerFn({ method: "GET" }).handler(as
 
 // ---------- Admin: list ALL checklist sources ----------
 export const adminListChecklistSources = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string }) =>
+  .validator((input: { accessToken: string }) =>
     z.object({ accessToken: z.string().min(10) }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -1785,7 +1785,7 @@ export const adminListChecklistSources = createServerFn({ method: "POST" })
 
 // ---------- Admin: add checklist source ----------
 export const adminAddChecklistSource = createServerFn({ method: "POST" })
-  .inputValidator((input: {
+  .validator((input: {
     accessToken: string;
     title: string;
     sortOrder: number;
@@ -1810,7 +1810,7 @@ export const adminAddChecklistSource = createServerFn({ method: "POST" })
 
 // ---------- Admin: update checklist source (title / active / sort_order) ----------
 export const adminUpdateChecklistSource = createServerFn({ method: "POST" })
-  .inputValidator((input: {
+  .validator((input: {
     accessToken: string;
     id: string;
     title?: string;
@@ -1842,7 +1842,7 @@ export const adminUpdateChecklistSource = createServerFn({ method: "POST" })
 
 // ---------- Admin: delete checklist source ----------
 export const adminDeleteChecklistSource = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; id: string }) =>
+  .validator((input: { accessToken: string; id: string }) =>
     z.object({ accessToken: z.string().min(10), id: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -1855,7 +1855,7 @@ export const adminDeleteChecklistSource = createServerFn({ method: "POST" })
 
 // ---------- Admin: list contact messages ----------
 export const adminListContactMessages = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string }) =>
+  .validator((input: { accessToken: string }) =>
     z.object({ accessToken: z.string().min(10) }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -1871,7 +1871,7 @@ export const adminListContactMessages = createServerFn({ method: "POST" })
 
 // ---------- Admin: delete a contact message ----------
 export const adminDeleteContactMessage = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; id: string }) =>
+  .validator((input: { accessToken: string; id: string }) =>
     z.object({ accessToken: z.string().min(10), id: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -1912,7 +1912,7 @@ export const getAnnouncementBanner = createServerFn({ method: "GET" }).handler(
 
 // ---------- Admin: update announcement banner ----------
 export const adminSetAnnouncementBanner = createServerFn({ method: "POST" })
-  .inputValidator((input: {
+  .validator((input: {
     accessToken: string;
     enabled: boolean;
     text: string | null;
@@ -1976,7 +1976,7 @@ export const getThursdayProgress = createServerFn({ method: "GET" }).handler(
 
 // ---------- Admin: update Thursday progress meter ----------
 export const adminSetThursdayProgress = createServerFn({ method: "POST" })
-  .inputValidator((input: {
+  .validator((input: {
     accessToken: string;
     fillStep: 0 | 25 | 50 | 75 | 95 | 100;
     eta: string | null;
@@ -2042,7 +2042,7 @@ export const getWhatsNewBanner = createServerFn({ method: "GET" }).handler(
 
 // ---------- Admin: update "What's New" banner ----------
 export const adminSetWhatsNewBanner = createServerFn({ method: "POST" })
-  .inputValidator((input: {
+  .validator((input: {
     accessToken: string;
     enabled: boolean;
     text: string | null;
@@ -2150,7 +2150,7 @@ const whatsNewPopupItemSchema = z.object({
 });
 
 export const adminSetWhatsNewPopup = createServerFn({ method: "POST" })
-  .inputValidator((input: {
+  .validator((input: {
     accessToken: string;
     enabled: boolean;
     heading: string;
@@ -2217,7 +2217,7 @@ export const adminSetWhatsNewPopup = createServerFn({ method: "POST" })
 
 // ---------- Admin: remove a weekly skip ----------
 export const adminRemoveWeeklySkip = createServerFn({ method: "POST" })
-  .inputValidator((input: {
+  .validator((input: {
     accessToken: string;
     parshaKey: string;
     titleKey: string;
@@ -2491,7 +2491,7 @@ async function getWeeklyEmailContentInternal(): Promise<WeeklyEmailContent> {
 
 // ---------- Admin: preview current week's email ----------
 export const adminGetWeeklyEmailPreview = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string }) =>
+  .validator((input: { accessToken: string }) =>
     z.object({ accessToken: z.string().min(10) }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -2501,7 +2501,7 @@ export const adminGetWeeklyEmailPreview = createServerFn({ method: "POST" })
 
 // ---------- Admin: list weekly send history ----------
 export const adminListWeeklyEmailSends = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string }) =>
+  .validator((input: { accessToken: string }) =>
     z.object({ accessToken: z.string().min(10) }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -2518,7 +2518,7 @@ export const adminListWeeklyEmailSends = createServerFn({ method: "POST" })
 
 // ---------- Admin: send the weekly email ----------
 export const adminSendWeeklyEmail = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string }) =>
+  .validator((input: { accessToken: string }) =>
     z.object({ accessToken: z.string().min(10) }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -2725,7 +2725,7 @@ export const adminSendWeeklyEmail = createServerFn({ method: "POST" })
 
 // ---------- Public: validate unsubscribe token (no-op read) ----------
 export const lookupUnsubscribe = createServerFn({ method: "POST" })
-  .inputValidator((input: { token: string }) =>
+  .validator((input: { token: string }) =>
     z.object({ token: z.string().min(8).max(128) }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -2745,7 +2745,7 @@ export const lookupUnsubscribe = createServerFn({ method: "POST" })
 
 // ---------- Public: confirm unsubscribe ----------
 export const confirmUnsubscribe = createServerFn({ method: "POST" })
-  .inputValidator((input: { token: string }) =>
+  .validator((input: { token: string }) =>
     z.object({ token: z.string().min(8).max(128) }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -2768,7 +2768,7 @@ export const confirmUnsubscribe = createServerFn({ method: "POST" })
 // ---------- Admin: generate publication metadata (description/audience/type + page_count) ----------
 // Uses Lovable AI Gateway directly (no external edge function needed).
 export const adminGeneratePublicationMeta = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; id: string }) =>
+  .validator((input: { accessToken: string; id: string }) =>
     z.object({ accessToken: z.string().min(10), id: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -2931,7 +2931,7 @@ Analyze the attached PDF and return the json object described in the system prom
 
 // ---------- Admin: list PDFs missing description ----------
 export const adminListPdfsMissingDescription = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string }) =>
+  .validator((input: { accessToken: string }) =>
     z.object({ accessToken: z.string().min(10) }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -2948,7 +2948,7 @@ export const adminListPdfsMissingDescription = createServerFn({ method: "POST" }
 
 // ---------- Admin: download analytics ----------
 export const adminDownloadStats = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; days?: number }) =>
+  .validator((input: { accessToken: string; days?: number }) =>
     z
       .object({ accessToken: z.string().min(10), days: z.number().int().min(1).max(365).optional() })
       .parse(input),
@@ -3064,7 +3064,7 @@ export const adminDownloadStats = createServerFn({ method: "POST" })
 
 // ---------- Admin: "Since you were last here" mini dashboard ----------
 export const adminMiniDashboard = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string }) =>
+  .validator((input: { accessToken: string }) =>
     z.object({ accessToken: z.string().min(10) }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -3347,7 +3347,7 @@ function summarizeViews(rows: PageViewRow[]) {
 }
 
 export const adminSiteTraffic = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; parsha?: string | null }) =>
+  .validator((input: { accessToken: string; parsha?: string | null }) =>
     z
       .object({ accessToken: z.string().min(10), parsha: z.string().nullable().optional() })
       .parse(input),
@@ -3456,7 +3456,7 @@ export const adminSiteTraffic = createServerFn({ method: "POST" })
 
 // ---------- Admin: downloads feed (totals + searchable recent list) ----------
 export const adminDownloadFeed = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     (input: { accessToken: string; days?: number | null; search?: string; limit?: number; offset?: number }) =>
       z
         .object({
@@ -3610,7 +3610,7 @@ export const adminDownloadFeed = createServerFn({ method: "POST" })
 // Minute-by-minute download counts for a short recent window, so spikes
 // inside the last hour are visible instead of being flattened into a day.
 export const adminDownloadMinutes = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; minutes?: number }) =>
+  .validator((input: { accessToken: string; minutes?: number }) =>
     z
       .object({
         accessToken: z.string().min(10),
@@ -3655,7 +3655,7 @@ export const adminDownloadMinutes = createServerFn({ method: "POST" })
 // visits (page_views) and which ones drive actual PDF downloads
 // (download_attribution).
 export const adminTrafficSources = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; days?: number | null }) =>
+  .validator((input: { accessToken: string; days?: number | null }) =>
     z
       .object({
         accessToken: z.string().min(10),
@@ -3796,7 +3796,7 @@ type FunnelRow = Record<string, unknown>;
 const PDF_ACCESS_EVENTS = new Set(["pdf_open", "download"]);
 
 export const adminPhase1Funnel = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; days?: number }) =>
+  .validator((input: { accessToken: string; days?: number }) =>
     z
       .object({ accessToken: z.string().min(10), days: z.number().int().positive().max(365).optional() })
       .parse(input),
