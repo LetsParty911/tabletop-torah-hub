@@ -283,6 +283,64 @@ export const adminPhase1DashboardV2 = createServerFn({ method: "POST" })
       return [...map.values()].sort((a, b) => b.sessions - a.sessions);
     };
 
+    // Approximate, network-derived location rankings — session-level, not per event.
+    const locationGroup = (key: (x: Session) => string | null) => {
+      const map = new Map<
+        string,
+        {
+          key: string;
+          sessions: number;
+          visitors: Set<string>;
+          convertedSessions: number;
+          downloadActions: number;
+        }
+      >();
+      for (const x of all) {
+        const k = key(x);
+        if (!k) continue;
+        const a = map.get(k) ?? {
+          key: k,
+          sessions: 0,
+          visitors: new Set<string>(),
+          convertedSessions: 0,
+          downloadActions: 0,
+        };
+        a.sessions += 1;
+        if (x.visitorId) a.visitors.add(x.visitorId);
+        if (x.downloads.size > 0) a.convertedSessions += 1;
+        a.downloadActions += x.downloadActions;
+        map.set(k, a);
+      }
+      return [...map.values()]
+        .map((a) => ({
+          key: a.key,
+          sessions: a.sessions,
+          uniqueVisitors: a.visitors.size,
+          convertedSessions: a.convertedSessions,
+          downloadActions: a.downloadActions,
+          sessionDownloadConversion: a.sessions ? a.convertedSessions / a.sessions : 0,
+        }))
+        .sort((a, b) => b.sessions - a.sessions)
+        .slice(0, 15);
+    };
+
+    const byCountry = locationGroup((x) => x.country);
+    const byRegion = locationGroup((x) =>
+      x.region ? [x.region, x.country].filter(Boolean).join(", ") : null,
+    );
+    const byCity = locationGroup((x) =>
+      x.city ? [x.city, x.region, x.country].filter(Boolean).join(", ") : null,
+    );
+    const sessionsWithLocation = all.filter((x) => x.country || x.region || x.city).length;
+
+    const admin = getSupabaseAdmin();
+    const { count: subscriberCount, error: subscriberError } = await admin
+      .from("subscribers")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", since);
+    if (subscriberError) throw new Error(subscriberError.message);
+    const newSubscribers = subscriberCount ?? 0;
+
     const publications = [...pubs.values()]
       .map((p) => ({
         id: p.id,
