@@ -69,10 +69,19 @@ export default function AdminMiniDashboard({
 
   useEffect(() => {
     let cancelled = false;
+    // Never leave the card stuck on "Gathering your update…": if the backend
+    // takes too long we surface a real message instead of spinning forever.
+    const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T> =>
+      Promise.race([
+        p,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error("This is taking too long — try refreshing.")), ms),
+        ),
+      ]);
     (async () => {
       if (!accessToken) return;
       try {
-        const r = await adminMiniDashboard({ data: { accessToken } });
+        const r = await withTimeout(adminMiniDashboard({ data: { accessToken } }), 20000);
         if (cancelled) return;
         setData(r);
         // Normalize whatever the anchor looks like (DB timestamps can carry a
@@ -82,7 +91,10 @@ export default function AdminMiniDashboard({
           parsed && !Number.isNaN(parsed.getTime())
             ? parsed.toISOString()
             : new Date(Date.now() - 7 * 86400000).toISOString();
-        const c = await adminCanonicalSinceLast({ data: { accessToken, since } });
+        const c = await withTimeout(
+          adminCanonicalSinceLast({ data: { accessToken, since } }),
+          20000,
+        );
         if (!cancelled) setCanonical(c);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Could not load dashboard");
@@ -92,6 +104,7 @@ export default function AdminMiniDashboard({
       cancelled = true;
     };
   }, [accessToken]);
+
 
   const remaining = Math.max(0, checklist.countableTotal - checklist.uploadedCount);
   const change = data ? data.currentParshaDownloads - data.previousParshaDownloads : 0;
@@ -133,22 +146,26 @@ export default function AdminMiniDashboard({
             No new visitor activity, downloads, subscribers, or contact messages in this period.
           </p>
         )}
-        {data && canonical && !nothingNew && (
+        {data && !nothingNew && (
           <div className="mt-6 grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-2">
-            <Tile label="Audience since last visit" quiet={canonical.sessions === 0}>
-              {canonical.sessions === 0 ? (
-                <Quiet>No visitor sessions</Quiet>
-              ) : (
-                <>
-                  <BigNumber>{canonical.uniqueVisitors}</BigNumber>
-                  <p className="mt-3 text-sm">
-                    unique visitors · {canonical.sessions} sessions · {canonical.engagedSessions}{" "}
-                    engaged
-                  </p>
-                </>
-              )}
-            </Tile>
+            {canonical && (
+              <Tile label="Audience since last visit" quiet={canonical.sessions === 0}>
+                {canonical.sessions === 0 ? (
+                  <Quiet>No visitor sessions</Quiet>
+                ) : (
+                  <>
+                    <BigNumber>{canonical.uniqueVisitors}</BigNumber>
+                    <p className="mt-3 text-sm">
+                      unique visitors · {canonical.sessions} sessions · {canonical.engagedSessions}{" "}
+                      engaged
+                    </p>
+                  </>
+                )}
+              </Tile>
+            )}
+            {canonical && (
             <Tile label="Download activity" quiet={canonical.downloadActions === 0}>
+
               {canonical.downloadActions === 0 ? (
                 <Quiet>No download actions</Quiet>
               ) : (
@@ -161,6 +178,8 @@ export default function AdminMiniDashboard({
                 </>
               )}
             </Tile>
+            )}
+
             <Tile label="New subscribers" quiet={data.newSubscriberCount === 0}>
               {data.newSubscriberCount === 0 ? (
                 <Quiet>No new subscribers</Quiet>

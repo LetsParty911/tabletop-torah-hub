@@ -3170,16 +3170,29 @@ export const adminMiniDashboard = createServerFn({ method: "POST" })
     const newContactCount = ((newMsgs.data ?? []) as any[]).length;
 
     // --- This parsha vs last (same attribution as Download analytics) ---
-    const allDl = await admin.from("download_events").select("publication_id").limit(50000);
-    const allEvents = (allDl.data ?? []) as any[];
-    let currentParshaDownloads = 0;
-    let previousParshaDownloads = 0;
-    for (const e of allEvents) {
-      const info = e.publication_id ? pdfInfo.get(e.publication_id as string) : undefined;
-      if (!info?.parsha) continue;
-      if (currentParsha && info.parsha === currentParsha) currentParshaDownloads += 1;
-      else if (previousParsha && info.parsha === previousParsha) previousParshaDownloads += 1;
-    }
+    // Counted in the database rather than by pulling every historical row:
+    // the old 50k-row scan could exceed the worker's budget and leave the
+    // admin card spinning on "Gathering your update…" forever.
+    const idsForParsha = (parsha: string | null) =>
+      parsha
+        ? Array.from(pdfInfo.entries())
+            .filter(([, info]) => info.parsha === parsha)
+            .map(([id]) => id)
+        : [];
+    const countDownloads = async (parsha: string | null) => {
+      const ids = idsForParsha(parsha);
+      if (ids.length === 0) return 0;
+      const r = await admin
+        .from("download_events")
+        .select("id", { count: "exact", head: true })
+        .in("publication_id", ids);
+      return r.count ?? 0;
+    };
+    const [currentParshaDownloads, previousParshaDownloads] = await Promise.all([
+      countDownloads(currentParsha),
+      countDownloads(previousParsha),
+    ]);
+
 
     const subCount = await admin.from("subscribers").select("id", { count: "exact", head: true });
 
