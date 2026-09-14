@@ -49,8 +49,9 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
         <div>
           <h2 className="font-serif text-2xl font-bold text-primary">Returning Visitor Behavior</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            The selected range chooses active visitors; earlier canonical history is used to
-            determine true return status, original acquisition source, and first download.
+            The selected range chooses active visitors. Earlier canonical history is consulted for
+            return status and recorded download history; lifetime labels are used only where the
+            visitor&apos;s first canonical session is actually observed.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -92,22 +93,33 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
             <Stat
               label="Median days to return"
               value={maybe(data.totals.medianDaysToReturn, "d")}
+              note="only where canonical session 1 is observed"
             />
             <Stat
               label="Median lifetime time to first download"
               value={maybe(data.totals.medianHoursToFirstDownload, "h")}
+              note="only where canonical session 1 is observed"
             />
           </div>
 
+          <p className="text-xs text-muted-foreground">
+            Known canonical lifetime starts: {data.totals.knownLifetimeStartVisitors} of{" "}
+            {data.totals.uniqueVisitors} active visitors.
+          </p>
+
           <section>
             <h3 className="font-serif text-lg font-bold text-primary">
-              Session conversion by lifetime visit stage
+              Session conversion by recorded visit stage
             </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Ordinals are based on canonical sessions actually present in recorded history; they
+              are not labeled lifetime when earlier history may be missing.
+            </p>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               {data.repeatConversion.map((r) => (
                 <Stat
                   key={r.key}
-                  label={r.key}
+                  label={r.key.replace("lifetime", "recorded")}
                   value={pct(r.convertedSessions, r.sessions)}
                   note={`${r.convertedSessions} downloading sessions / ${r.sessions} sessions`}
                 />
@@ -119,6 +131,9 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
             <h3 className="font-serif text-lg font-bold text-primary">
               Lifetime time to first download
             </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              This section includes only visitors whose first canonical session is observed.
+            </p>
             <div className="mt-2 grid gap-3 sm:grid-cols-3">
               <Stat
                 label="First lifetime session"
@@ -133,7 +148,13 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
           </section>
 
           <section>
-            <h3 className="font-serif text-lg font-bold text-primary">Acquisition cohorts</h3>
+            <h3 className="font-serif text-lg font-bold text-primary">
+              Earliest recorded source cohorts
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              For visitors whose canonical lifetime start is not observed, this is the earliest
+              source present in canonical history, not a guaranteed original acquisition source.
+            </p>
             <div className="mt-3 space-y-2">
               {data.cohorts.map((r) => (
                 <div
@@ -203,7 +224,7 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
                     <summary className="cursor-pointer">
                       <span className="font-semibold text-primary">Visitor {j.visitor}</span>
                       <span className="ml-2 text-xs text-muted-foreground">
-                        {j.source} · {j.sessions} lifetime sessions · {j.totalDownloads} download
+                        {j.source} · {j.sessions} recorded sessions · {j.totalDownloads} download
                         actions in range
                       </span>
                     </summary>
@@ -214,7 +235,7 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
                           className="rounded-lg border border-accent/20 p-3"
                         >
                           <div className="font-medium text-primary">
-                            Lifetime session {s.sessionNumber}
+                            Recorded session {s.sessionNumber}
                             {s.inReportingRange ? " · in selected range" : " · historical"}
                           </div>
                           <div className="text-xs text-muted-foreground">
@@ -248,16 +269,22 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
             <div className="mt-3 space-y-2 text-muted-foreground">
               <p>{data.methodology}</p>
               <p>
-                <b className="text-foreground">Returning visitor:</b> an active visitor with at
-                least one canonical session before the reporting range.
+                <b className="text-foreground">Returning visitor:</b> an active visitor with an
+                in-range canonical session known to be non-first, either from observed session
+                history or the canonical non-first-session flag.
               </p>
               <p>
-                <b className="text-foreground">Repeat session:</b> a session in the selected range
-                whose lifetime ordinal is 2 or higher.
+                <b className="text-foreground">Repeat session:</b> an in-range session known to be
+                non-first by observed history or canonical non-first-session evidence.
               </p>
               <p>
                 <b className="text-foreground">Converted visitor:</b> an active visitor with at
-                least one recorded download at any point in canonical history.
+                least one recorded download action at any point in canonical history.
+              </p>
+              <p>
+                <b className="text-foreground">Lifetime timing:</b> calculated only when canonical
+                session 1 is present, so pre-canonical or otherwise missing history is not treated
+                as a known lifetime start.
               </p>
               <p>
                 In-range events analyzed: {data.rawEventCount}. Historical events consulted:{" "}
