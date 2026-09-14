@@ -5,12 +5,13 @@ import { checkIsAdmin } from "@/integrations/supabase/api.functions";
 import DownloadsDashboard from "@/components/DownloadsDashboard";
 import Phase1Funnel from "@/components/Phase1Funnel";
 import Phase2ReturningAnalytics from "@/components/Phase2ReturningAnalytics";
+import TrafficAnalytics from "@/components/TrafficAnalytics";
 
 export const Route = createFileRoute("/admin-analytics")({
   component: AdminAnalyticsPage,
   head: () => ({
     meta: [
-      { title: "Download Analytics — Torah for the Table" },
+      { title: "Site Analytics — Torah for the Table" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -46,7 +47,7 @@ function AdminAnalyticsPage() {
         <div className="parchment-frame max-w-md w-full">
           <div className="parchment-panel text-center">
             <h1 className="font-serif text-3xl font-bold text-primary">Admin Sign-in</h1>
-            <p className="mt-3 text-muted-foreground">Sign in with Google to view download analytics.</p>
+            <p className="mt-3 text-muted-foreground">Sign in with Google to view site analytics.</p>
             <button
               onClick={signInWithGoogle}
               className="mt-6 inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -82,10 +83,14 @@ function AdminAnalyticsPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-4 py-8 space-y-6">
-        <header className="flex flex-wrap items-center justify-between gap-3">
+        <header className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="font-serif text-3xl md:text-4xl font-bold text-primary">Download Analytics</h1>
-            <p className="text-sm text-muted-foreground">Visitor funnel, returning behavior, and download activity.</p>
+            <h1 className="font-serif text-3xl md:text-4xl font-bold text-primary">Site Analytics</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Canonical first-party analytics is the primary source for audience, conversion,
+              source, device, location, publication, and returning-visitor metrics. Legacy/raw
+              download data is retained only for audit and troubleshooting.
+            </p>
           </div>
           <Link to="/admin" className="text-sm underline text-primary">
             ← Back to Admin
@@ -100,15 +105,24 @@ function AdminAnalyticsPage() {
 
         <section className="parchment-frame">
           <div className="parchment-panel">
-            <Phase2ReturningAnalytics accessToken={accessToken ?? ""} />
+            <TrafficAnalytics accessToken={accessToken ?? ""} />
           </div>
         </section>
 
         <section className="parchment-frame">
           <div className="parchment-panel">
-            <DownloadsDashboard accessToken={accessToken ?? ""} />
+            <Phase2ReturningAnalytics accessToken={accessToken ?? ""} />
           </div>
         </section>
+
+        <details className="parchment-frame">
+          <summary className="parchment-panel cursor-pointer font-serif text-xl font-bold text-primary">
+            Advanced · raw download audit
+          </summary>
+          <div className="parchment-panel border-t border-border/60">
+            <DownloadsDashboard accessToken={accessToken ?? ""} />
+          </div>
+        </details>
       </div>
     </div>
   );
