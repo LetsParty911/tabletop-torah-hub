@@ -1,41 +1,51 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 
+const NOINDEX = { "X-Robots-Tag": "noindex" } as const;
+
 export const Route = createFileRoute("/view/$id/pdf")({
   server: {
     handlers: {
       GET: async ({ params }) => {
         const id = params.id;
         if (!/^[0-9a-f-]{36}$/i.test(id)) {
-          return new Response("Bad request", { status: 400 });
+          return new Response("Bad request", { status: 400, headers: NOINDEX });
         }
-        const admin = getSupabaseAdmin();
-        const { data: row, error } = await admin
-          .from("pdfs")
-          .select("title, file_path, published")
-          .eq("id", id)
-          .maybeSingle();
-        if (error || !row || !row.published) {
-          return new Response("Not found", { status: 404 });
+
+        try {
+          const admin = getSupabaseAdmin();
+          const { data: row, error } = await admin
+            .from("pdfs")
+            .select("file_path, published")
+            .eq("id", id)
+            .maybeSingle();
+
+          if (error || !row || !row.published || !row.file_path) {
+            return new Response("Not found", { status: 404, headers: NOINDEX });
+          }
+
+          // The PDFs bucket is public, so let Supabase Storage/CDN deliver the
+          // PDF directly instead of proxy-streaming every preview through the
+          // app Worker. This route still checks the publication's current
+          // published state before revealing the object URL.
+          const { data } = admin.storage.from("pdfs").getPublicUrl(row.file_path);
+          if (!data?.publicUrl) {
+            return new Response("Load failed", { status: 500, headers: NOINDEX });
+          }
+
+          return new Response(null, {
+            status: 302,
+            headers: {
+              ...NOINDEX,
+              Location: data.publicUrl,
+              "Cache-Control": "no-store",
+              "X-Content-Type-Options": "nosniff",
+            },
+          });
+        } catch (err) {
+          console.error("[view/pdf] failed", err);
+          return new Response("Load failed", { status: 500, headers: NOINDEX });
         }
-        const { data: stream, error: dErr } = await admin.storage
-          .from("pdfs")
-          .download(row.file_path)
-          .asStream();
-        if (dErr || !stream) {
-          return new Response("Load failed", { status: 500 });
-        }
-        const safeName =
-          (row.title || "document").replace(/[^a-zA-Z0-9._ -]/g, "_").trim() + ".pdf";
-        return new Response(stream, {
-          status: 200,
-          headers: {
-            "Content-Type": "application/pdf",
-            "Content-Disposition": `inline; filename="${safeName}"`,
-            "Cache-Control": "private, max-age=300",
-            "X-Content-Type-Options": "nosniff",
-          },
-        });
       },
     },
   },
