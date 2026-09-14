@@ -63,11 +63,27 @@ export const Route = createFileRoute("/api/events")({
           const incoming = Array.isArray(body["events"]) ? (body["events"] as unknown[]) : [];
           if (!incoming.length) return new Response(null, { status: 204 });
 
+          // Approximate, network-derived location only. We never persist the raw IP
+          // address or coordinates — only coarse country/region/city/postal code.
           const cf = (request as unknown as { cf?: Record<string, unknown> }).cf ?? {};
+          const cfStr = (key: string) => {
+            const v = cf[key];
+            return typeof v === "string" && v.trim() ? v.trim() : null;
+          };
+          const header = (name: string) => {
+            const v = request.headers.get(name);
+            return v && v.trim() ? v.trim() : null;
+          };
           const country =
-            (cf["country"] as string | undefined) ?? request.headers.get("cf-ipcountry") ?? null;
+            header("x-vercel-ip-country") ?? cfStr("country") ?? header("cf-ipcountry") ?? null;
           const region =
-            (cf["region"] as string | undefined) ?? request.headers.get("cf-ipregion") ?? null;
+            header("x-vercel-ip-country-region") ??
+            cfStr("region") ??
+            cfStr("regionCode") ??
+            null;
+          const city = decodeGeo(header("x-vercel-ip-city")) ?? cfStr("city") ?? null;
+          const postalCode =
+            decodeGeo(header("x-vercel-ip-postal-code")) ?? cfStr("postalCode") ?? null;
           const deviceType = deviceTypeFrom(request.headers.get("user-agent") ?? "");
 
           const rows: Array<Record<string, unknown>> = [];
