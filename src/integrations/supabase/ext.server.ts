@@ -18,7 +18,23 @@ function assertEnv(name: string, value: string | undefined): string {
 
 // Never let the Worker/edge fetch cache reuse a PostgREST response across
 // requests — SSR pages must always read the live table contents.
+//
+// IMPORTANT: only apply the no-cache header to PostgREST. Applying it to every
+// Supabase request also reaches Storage uploads, where Cache-Control is object
+// metadata. That caused newer PDFs to be stored as `no-cache` instead of the
+// intended browser-cache TTL.
 const noStoreFetch: typeof fetch = (input, init) => {
+  const requestUrl =
+    typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.toString()
+        : input.url;
+
+  if (!requestUrl.includes("/rest/v1/")) {
+    return fetch(input as any, init as any);
+  }
+
   const headers = new Headers(init?.headers);
   headers.set("Cache-Control", "no-cache");
   return fetch(input as any, { ...init, headers, cache: "no-store" } as any);
