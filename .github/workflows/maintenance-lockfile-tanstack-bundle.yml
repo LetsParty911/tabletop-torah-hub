@@ -1,0 +1,22 @@
+name: Maintenance lockfile and TanStack cleanup
+
+on:
+  push:
+    branches: [maintenance-lockfile-tanstack-bundle]
+    paths:
+      - '.github/workflows/maintenance-lockfile-tanstack-bundle.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  maintain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Replace deprecated inputValidator calls
+        run: |
+          python3 - <<'PY'
