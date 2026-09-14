@@ -164,6 +164,11 @@ export const adminPhase1DashboardV2 = createServerFn({ method: "POST" })
         sessions.set(sid, session);
       }
       if (!session.visitorId && vid) session.visitorId = vid;
+      // Session-level approximate location: first non-empty value wins.
+      session.country ??= s(row.country);
+      session.region ??= s(row.region);
+      session.city ??= s(row.city);
+      session.postalCode ??= s(row.postal_code);
       const name = s(row.event_name) ?? "";
       if (name === "page_view") session.pageViews += 1;
       if (name === "heartbeat") {
