@@ -340,9 +340,16 @@ export const adminCanonicalCollectionTraffic = createServerFn({ method: "POST" }
   });
 
 export const adminCanonicalSinceLast = createServerFn({ method: "POST" })
-  .validator((input: { accessToken: string; since: string }) =>
-    z.object({ accessToken: z.string().min(10), since: z.string().datetime() }).parse(input),
-  )
+  .validator((input: { accessToken: string; since: string }) => {
+    const parsed = z.object({ accessToken: z.string().min(10), since: z.string() }).parse(input);
+    const sinceMs = Date.parse(parsed.since);
+    return {
+      accessToken: parsed.accessToken,
+      since: Number.isNaN(sinceMs)
+        ? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+        : new Date(sinceMs).toISOString(),
+    };
+  })
   .handler(async ({ data }) => {
     await requireAnalyticsAdmin(data.accessToken);
     const rows = await fetchEventsBetween(data.since, new Date().toISOString());
