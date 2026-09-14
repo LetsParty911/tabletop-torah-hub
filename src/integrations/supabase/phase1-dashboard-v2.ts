@@ -34,6 +34,10 @@ type Row = {
   parsha: string | null;
   device_type: string | null;
   source_group: string | null;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  postal_code: string | null;
   metadata: Record<string, unknown> | null;
 };
 
@@ -41,6 +45,10 @@ type Session = {
   visitorId: string | null;
   device: string;
   source: string;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  postalCode: string | null;
   pageViews: number;
   heartbeat: boolean;
   positiveAction: boolean;
