@@ -83,7 +83,7 @@ async function fetchEventsBetween(start: string, end: string): Promise<EventRow[
   const out: EventRow[] = [];
   const pageSize = 1000;
 
-  for (let offset = 0; offset < 100000; offset += pageSize) {
+  for (let offset = 0; ; offset += pageSize) {
     const { data, error } = await admin
       .from("analytics_events")
       .select(
@@ -110,19 +110,26 @@ function visitorIds(rows: EventRow[]): string[] {
 async function fetchPriorVisitors(ids: string[], before: string): Promise<Set<string>> {
   const admin = getSupabaseAdmin();
   const prior = new Set<string>();
+  const pageSize = 1000;
 
   for (let index = 0; index < ids.length; index += 75) {
     const batch = ids.slice(index, index + 75);
     if (!batch.length) continue;
-    const { data, error } = await admin
-      .from("analytics_events")
-      .select("visitor_id")
-      .in("visitor_id", batch)
-      .lt("occurred_at", before)
-      .limit(10000);
-    if (error) throw new Error(error.message);
-    for (const row of (data ?? []) as Array<{ visitor_id: string | null }>) {
-      if (row.visitor_id) prior.add(row.visitor_id);
+
+    for (let offset = 0; ; offset += pageSize) {
+      const { data, error } = await admin
+        .from("analytics_events")
+        .select("visitor_id, occurred_at")
+        .in("visitor_id", batch)
+        .lt("occurred_at", before)
+        .order("occurred_at", { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (error) throw new Error(error.message);
+      const page = (data ?? []) as Array<{ visitor_id: string | null; occurred_at: string }>;
+      for (const row of page) {
+        if (row.visitor_id) prior.add(row.visitor_id);
+      }
+      if (page.length < pageSize || batch.every((id) => prior.has(id))) break;
     }
   }
   return prior;
@@ -343,7 +350,7 @@ export const adminCanonicalSinceLast = createServerFn({ method: "POST" })
     return summarizeCanonical(rows, prior);
   });
 
-export function startOfTodayNewYork(now = new Date()): string {
+function newYorkParts(date: Date) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
     year: "numeric",
@@ -352,18 +359,43 @@ export function startOfTodayNewYork(now = new Date()): string {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-    hour12: false,
-    timeZoneName: "shortOffset",
-  }).formatToParts(now);
-  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
-  const offset = get("timeZoneName").replace("GMT", "") || "-04:00";
-  const sign = offset.startsWith("-") ? "-" : "+";
-  const raw = offset.replace(/^[-+]/, "");
-  const [hours, minutes = "00"] = raw.split(":");
-  const normalizedOffset = `${sign}${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
-  return new Date(
-    `${get("year")}-${get("month")}-${get("day")}T00:00:00${normalizedOffset}`,
-  ).toISOString();
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? "0");
+  return {
+    year: get("year"),
+    month: get("month"),
+    day: get("day"),
+    hour: get("hour"),
+    minute: get("minute"),
+    second: get("second"),
+  };
+}
+
+export function startOfTodayNewYork(now = new Date()): string {
+  const today = newYorkParts(now);
+  const targetWallClock = Date.UTC(today.year, today.month - 1, today.day, 0, 0, 0);
+
+  // Start with UTC midnight for the New York calendar date, then iteratively
+  // correct until that instant formats to 00:00:00 in New York. This resolves
+  // the offset that applies at local midnight itself, including DST-change days.
+  let candidate = targetWallClock;
+  for (let iteration = 0; iteration < 3; iteration += 1) {
+    const shown = newYorkParts(new Date(candidate));
+    const shownWallClock = Date.UTC(
+      shown.year,
+      shown.month - 1,
+      shown.day,
+      shown.hour,
+      shown.minute,
+      shown.second,
+    );
+    const correction = targetWallClock - shownWallClock;
+    candidate += correction;
+    if (correction === 0) break;
+  }
+
+  return new Date(candidate).toISOString();
 }
 
 export const adminDownloadActionsTodayEt = createServerFn({ method: "POST" })
