@@ -1,6 +1,6 @@
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import { ArrowLeft } from "lucide-react";
@@ -13,12 +13,14 @@ import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { publicationLabel } from "@/lib/badges";
-import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import {
+  DownloadToPrintButton,
+  trackDownloadAction,
+} from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
-
 
 export const Route = createFileRoute("/view/$id")({
   loader: async ({ params }) => {
@@ -144,7 +146,9 @@ export const Route = createFileRoute("/view/$id")({
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
       <h1 className="font-serif text-3xl text-primary">Resource Not Found</h1>
       <p className="text-muted-foreground">This PDF is unavailable or unpublished.</p>
-      <Link to="/" className="text-accent underline">Back to Home</Link>
+      <Link to="/" className="text-accent underline">
+        Back to Home
+      </Link>
     </div>
   ),
   component: ViewPdf,
@@ -156,11 +160,11 @@ function ViewPdf() {
   const isMobile = useIsMobile();
   const [mounted, setMounted] = useState(false);
   const [thumbFailed, setThumbFailed] = useState(false);
+  const pdfOpenTrackedRef = useRef<string | null>(null);
   useEffect(() => setMounted(true), []);
   // Mobile browsers (Android Chrome / iOS Safari) can't render PDFs inline —
   // they show a black frame. Only embed once we know we're on desktop.
   const canEmbed = mounted && !isMobile;
-
 
   // Warm the edge cache for this PDF so the Download click is instant.
   usePrewarmDownloads([pdf.id]);
@@ -171,8 +175,11 @@ function ViewPdf() {
       file_title: pdf.title,
       source_name: pdf.title,
     });
-    // Canonical Phase 1 event: the viewer page loaded successfully for this
-    // publication.
+  }, [pdf.id, pdf.title]);
+
+  const trackCanonicalPdfOpen = () => {
+    if (pdfOpenTrackedRef.current === pdf.id) return;
+    pdfOpenTrackedRef.current = pdf.id;
     trackFp("pdf_open", {
       publication_id: pdf.id,
       publication_title: pdf.title,
@@ -180,8 +187,23 @@ function ViewPdf() {
       publisher: pdf.publisher ?? null,
       parsha: pdf.parsha_key ?? null,
     });
-  }, [pdf.id, pdf.title, pdf.publication, pdf.publisher, pdf.parsha_key]);
+  };
 
+  const trackFallbackDownload = () => {
+    trackEvent("pdf_download", {
+      file_id: pdf.id,
+      file_title: pdf.title,
+      source_name: pdf.title,
+    });
+    trackDownloadAction({
+      publicationId: pdf.id,
+      publicationName: publicationLabel(pdf.publication || pdf.title) || pdf.title,
+      publicationTitle: pdf.title,
+      parsha: pdf.parsha_key,
+      publisher: pdf.publisher,
+      publicationSeries: pdf.publication,
+    });
+  };
 
   const metaLine = [
     audienceLabel(normalizeAudience(pdf.audience, pdf.title)) ?? pdf.audience,
@@ -209,9 +231,7 @@ function ViewPdf() {
               )}
             </div>
             {pdf.publisher && (
-              <p className="mt-1 text-sm font-normal text-muted-foreground">
-                By {pdf.publisher}
-              </p>
+              <p className="mt-1 text-sm font-normal text-muted-foreground">By {pdf.publisher}</p>
             )}
             {pdf.subtitle && (
               <p className="mt-1 text-sm text-muted-foreground">
@@ -235,10 +255,7 @@ function ViewPdf() {
             parsha={pdf.parsha_key}
             publisher={pdf.publisher}
             publicationSeries={pdf.publication}
-            filename={buildDownloadFilename(
-              pdf.parsha_key,
-              pdf.publication || pdf.title,
-            )}
+            filename={buildDownloadFilename(pdf.parsha_key, pdf.publication || pdf.title)}
             onClick={() =>
               trackEvent("pdf_download", {
                 file_id: pdf.id,
@@ -266,13 +283,15 @@ function ViewPdf() {
                 src={viewerSrc}
                 title={`Embedded PDF viewer: ${pdf.title}`}
                 className="w-full border-0 bg-muted h-[80vh] rounded-lg"
+                onLoad={trackCanonicalPdfOpen}
               />
               <p className="mt-2 text-sm text-muted-foreground">
                 Can't read the embedded viewer?{" "}
                 <a
                   href={`/view/${pdf.id}/download`}
                   rel="nofollow"
-                  download
+                  download={buildDownloadFilename(pdf.parsha_key, pdf.publication || pdf.title)}
+                  onClick={trackFallbackDownload}
                   className="font-medium text-accent underline hover:text-primary transition-colors duration-150"
                 >
                   Download the PDF file for {pdf.title}
@@ -306,7 +325,6 @@ function ViewPdf() {
           )}
         </div>
 
-
         <div className="mt-6">
           <Link
             to={isCurrentWeek ? "/" : "/archive"}
@@ -325,4 +343,3 @@ function ViewPdf() {
     </div>
   );
 }
-
