@@ -36,6 +36,10 @@ type Row = {
   parsha: string | null;
   device_type: string | null;
   source_group: string | null;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  postal_code: string | null;
   metadata: Record<string, unknown> | null;
 };
 
@@ -55,6 +59,10 @@ type Session = {
   source: string;
   device: string;
   landingPath: string | null;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  postalCode: string | null;
   pages: string[];
   clicks: Map<string, Publication>;
   accesses: Map<string, Publication>;
@@ -78,6 +86,20 @@ const nonempty = (value: unknown) =>
 const hours = (a: string, b: string) =>
   Math.max(0, (new Date(b).getTime() - new Date(a).getTime()) / 3_600_000);
 const shortId = (id: string) => id.replace(/-/g, "").slice(0, 8).toUpperCase();
+
+// Approximate, network-derived location label, e.g. "Passaic, NJ 07055, US".
+function locationLabel(session: {
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string | null;
+}): string | null {
+  const head = [session.city, [session.region, session.postalCode].filter(Boolean).join(" ")]
+    .filter(Boolean)
+    .join(", ");
+  const label = [head, session.country].filter(Boolean).join(", ");
+  return label || null;
+}
 
 function median(values: number[]) {
   if (!values.length) return null;
@@ -107,7 +129,7 @@ async function fetchRows(since?: string, visitorIds?: string[], before?: string)
     let query = admin
       .from("analytics_events")
       .select(
-        "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, landing_path, publication_id, publication_title, publication_series, publisher, parsha, device_type, source_group, metadata",
+        "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, landing_path, publication_id, publication_title, publication_series, publisher, parsha, device_type, source_group, country, region, city, postal_code, metadata",
       )
       .order("occurred_at", { ascending: true })
       .range(offset, offset + pageSize - 1);
@@ -150,6 +172,10 @@ function buildVisitors(rows: Row[], since: string): Visitor[] {
         source: nonempty(row.source_group) ?? "Direct",
         device: nonempty(row.device_type) ?? "unknown",
         landingPath: nonempty(row.landing_path),
+        country: null,
+        region: null,
+        city: null,
+        postalCode: null,
         pages: [],
         clicks: new Map(),
         accesses: new Map(),
@@ -172,6 +198,11 @@ function buildVisitors(rows: Row[], since: string): Visitor[] {
     if (session.device === "unknown" && nonempty(row.device_type)) {
       session.device = nonempty(row.device_type)!;
     }
+    // First non-empty approximate location observed for the session.
+    session.country ??= nonempty(row.country);
+    session.region ??= nonempty(row.region);
+    session.city ??= nonempty(row.city);
+    session.postalCode ??= nonempty(row.postal_code);
     // A canonical false value is strong evidence this is not the visitor's first session.
     // Let false dominate in case older rows contain a mixture of null/true/false values.
     if (row.is_new_visitor === false) session.isNewVisitor = false;
@@ -442,6 +473,7 @@ export const adminPhase2ReturningAnalyticsV2 = createServerFn({ method: "POST" }
             source: session.source,
             device: session.device,
             landingPath: session.landingPath,
+            approximateLocation: locationLabel(session),
             pages: session.pages.slice(0, 5),
             impressionCount: 0,
             clicked: [...session.clicks.values()]

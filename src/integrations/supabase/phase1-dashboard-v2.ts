@@ -34,6 +34,10 @@ type Row = {
   parsha: string | null;
   device_type: string | null;
   source_group: string | null;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  postal_code: string | null;
   metadata: Record<string, unknown> | null;
 };
 
@@ -41,6 +45,10 @@ type Session = {
   visitorId: string | null;
   device: string;
   source: string;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  postalCode: string | null;
   pageViews: number;
   heartbeat: boolean;
   positiveAction: boolean;
@@ -63,7 +71,7 @@ async function fetchRows(since: string): Promise<Row[]> {
     const { data, error } = await admin
       .from("analytics_events")
       .select(
-        "event_name, occurred_at, visitor_id, session_id, is_new_visitor, publication_id, publication_title, publication_series, publisher, parsha, device_type, source_group, metadata",
+        "event_name, occurred_at, visitor_id, session_id, is_new_visitor, publication_id, publication_title, publication_series, publisher, parsha, device_type, source_group, country, region, city, postal_code, metadata",
       )
       .gte("occurred_at", since)
       .order("occurred_at", { ascending: true })
@@ -139,6 +147,10 @@ export const adminPhase1DashboardV2 = createServerFn({ method: "POST" })
           visitorId: vid,
           device: s(row.device_type) ?? "unknown",
           source: s(row.source_group) ?? "Direct",
+          country: null,
+          region: null,
+          city: null,
+          postalCode: null,
           pageViews: 0,
           heartbeat: false,
           positiveAction: false,
@@ -152,6 +164,11 @@ export const adminPhase1DashboardV2 = createServerFn({ method: "POST" })
         sessions.set(sid, session);
       }
       if (!session.visitorId && vid) session.visitorId = vid;
+      // Session-level approximate location: first non-empty value wins.
+      session.country ??= s(row.country);
+      session.region ??= s(row.region);
+      session.city ??= s(row.city);
+      session.postalCode ??= s(row.postal_code);
       const name = s(row.event_name) ?? "";
       if (name === "page_view") session.pageViews += 1;
       if (name === "heartbeat") {
@@ -266,6 +283,64 @@ export const adminPhase1DashboardV2 = createServerFn({ method: "POST" })
       return [...map.values()].sort((a, b) => b.sessions - a.sessions);
     };
 
+    // Approximate, network-derived location rankings — session-level, not per event.
+    const locationGroup = (key: (x: Session) => string | null) => {
+      const map = new Map<
+        string,
+        {
+          key: string;
+          sessions: number;
+          visitors: Set<string>;
+          convertedSessions: number;
+          downloadActions: number;
+        }
+      >();
+      for (const x of all) {
+        const k = key(x);
+        if (!k) continue;
+        const a = map.get(k) ?? {
+          key: k,
+          sessions: 0,
+          visitors: new Set<string>(),
+          convertedSessions: 0,
+          downloadActions: 0,
+        };
+        a.sessions += 1;
+        if (x.visitorId) a.visitors.add(x.visitorId);
+        if (x.downloads.size > 0) a.convertedSessions += 1;
+        a.downloadActions += x.downloadActions;
+        map.set(k, a);
+      }
+      return [...map.values()]
+        .map((a) => ({
+          key: a.key,
+          sessions: a.sessions,
+          uniqueVisitors: a.visitors.size,
+          convertedSessions: a.convertedSessions,
+          downloadActions: a.downloadActions,
+          sessionDownloadConversion: a.sessions ? a.convertedSessions / a.sessions : 0,
+        }))
+        .sort((a, b) => b.sessions - a.sessions)
+        .slice(0, 15);
+    };
+
+    const byCountry = locationGroup((x) => x.country);
+    const byRegion = locationGroup((x) =>
+      x.region ? [x.region, x.country].filter(Boolean).join(", ") : null,
+    );
+    const byCity = locationGroup((x) =>
+      x.city ? [x.city, x.region, x.country].filter(Boolean).join(", ") : null,
+    );
+    const sessionsWithLocation = all.filter((x) => x.country || x.region || x.city).length;
+
+    const admin = getSupabaseAdmin();
+    const { count: subscriberCount, error: subscriberError } = await admin
+      .from("subscribers")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", since);
+    if (subscriberError) throw new Error(subscriberError.message);
+    const newSubscribers = subscriberCount ?? 0;
+
     const publications = [...pubs.values()]
       .map((p) => ({
         id: p.id,
@@ -297,9 +372,15 @@ export const adminPhase1DashboardV2 = createServerFn({ method: "POST" })
         downloadActions,
         sessionDownloadConversion: all.length ? downloadingSessions / all.length : 0,
         avgActiveSeconds: all.length ? activeSeconds / all.length : 0,
+        newSubscribers,
+        subscriberConversion: uniqueVisitors.size ? newSubscribers / uniqueVisitors.size : 0,
+        sessionsWithLocation,
       },
       bySource: group((x) => x.source),
       byDevice: group((x) => x.device),
+      byCountry,
+      byRegion,
+      byCity,
       publications,
       rawEventCount: rows.length,
     };
