@@ -23,12 +23,15 @@ type ThursdayProgressMeterProps = {
   ariaLabel?: AriaValue;
   /** Hide the separate right-side percentage label. */
   showPercent?: boolean;
+  /** Optional explanatory copy shown beneath the upcoming reading. */
+  message?: string;
 };
 
 export function ThursdayProgressMeter({
   heading = "Upcoming Divrei Torah",
   ariaLabel = (fillStep) => `Upcoming Divrei Torah upload progress: ${fillStep}% complete`,
   showPercent = true,
+  message,
 }: ThursdayProgressMeterProps) {
   const [fillStep, setFillStep] = useState<FillStep | null>(null);
   const [eta, setEta] = useState<string | null>(null);
@@ -83,6 +86,11 @@ export function ThursdayProgressMeter({
         <h2 className="mt-2 font-serif text-2xl font-bold leading-tight text-primary sm:text-3xl">
           {displayHeading}
         </h2>
+        {message && (
+          <p className="mx-auto mt-3 max-w-xl font-sans text-sm leading-relaxed text-muted-foreground sm:text-base">
+            {message}
+          </p>
+        )}
       </div>
 
       <div className="mt-5 flex items-baseline justify-between border-t border-accent/25 pt-3">
