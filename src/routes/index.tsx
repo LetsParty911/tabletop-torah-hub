@@ -3,8 +3,6 @@ import { useEffect, useState } from "react";
 import { isPostShabbosWindow } from "@/lib/post-shabbos";
 import { FileText, Share2 } from "lucide-react";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
-import { WhatsNewBanner } from "@/components/WhatsNewBanner";
-import { WhatsNewPopup } from "@/components/WhatsNewPopup";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { PublicationCardTracker } from "@/components/PublicationCardTracker";
@@ -247,7 +245,6 @@ function Index() {
     isFallback,
     fallbackParshaLabel,
     fallbackParshaKey,
-    subscriberCount,
     readingDate,
     upcomingAfterYomTovKey,
   } = Route.useLoaderData() as LoaderData;
@@ -280,6 +277,7 @@ function Index() {
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
   const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long">("All");
   const [contentTypeFilter, setContentTypeFilter] = useState<string>("All");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const sortedResources = resources;
   usePrewarmDownloads(sortedResources.map((r) => r.id));
@@ -293,6 +291,9 @@ function Index() {
   const quickPickQuickRead = sortedResources
     .filter((r) => typeof r.page_count === "number")
     .sort((a, b) => (a.page_count as number) - (b.page_count as number))[0];
+  const quickReadLabel = quickPickQuickRead?.page_count
+    ? `Quickest Read · ${quickPickQuickRead.page_count} ${quickPickQuickRead.page_count === 1 ? "page" : "pages"}`
+    : "Quickest Read";
   const quickPicks = [
     quickPickForKids && { label: "For Kids", resource: quickPickForKids },
     quickPickForFamily &&
@@ -303,7 +304,7 @@ function Index() {
     quickPickQuickRead &&
       quickPickQuickRead.id !== quickPickForKids?.id &&
       quickPickQuickRead.id !== quickPickForFamily?.id && {
-        label: "Quick 1–2 Page Read",
+        label: quickReadLabel,
         resource: quickPickQuickRead,
       },
   ].filter(Boolean) as { label: string; resource: Resource }[];
@@ -341,6 +342,8 @@ function Index() {
     sortedResources.some((r) => typeof r.page_count === "number" && r.page_count < 5) &&
     sortedResources.some((r) => typeof r.page_count === "number" && r.page_count >= 5);
   const contentTypeHasChoice = contentTypeOptions.length > 1;
+  const activeFilterCount =
+    Number(audienceFilter !== "All") + Number(lengthFilter !== "All") + Number(contentTypeFilter !== "All");
 
   const featuredPicks = FEATURED_SLOTS.map((slot) => ({
     ...slot,
@@ -378,10 +381,14 @@ function Index() {
   const upcomingLabel =
     upcomingParsha && upcomingParsha !== displayedParshaKey ? formatReadingLabel(upcomingParsha) : null;
 
+  const clearFilters = () => {
+    setAudienceFilter("All");
+    setLengthFilter("All");
+    setContentTypeFilter("All");
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <WhatsNewPopup />
-      <WhatsNewBanner />
       <AnnouncementBanner />
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
         <section className="parchment-frame">
@@ -416,11 +423,6 @@ function Index() {
                 `for ${displayedLabel}`
               )}
             </p>
-            {resources.length > 0 && (
-              <p className="mx-auto mt-2 max-w-xl font-sans text-sm leading-relaxed text-muted-foreground sm:text-base">
-                More Divrei Torah for the upcoming Shabbos or Yom Tov will be added by Thursday evening. Please check back then.
-              </p>
-            )}
 
             <div className="mt-5 flex justify-center">
               <a
@@ -444,6 +446,9 @@ function Index() {
 
         <ThursdayProgressMeter
           heading={upcomingLabel ? `Upcoming: ${upcomingLabel}` : "Upcoming Divrei Torah"}
+          message="New Divrei Torah will be added then."
+          completeHref="#this-weeks-collection"
+          completeCtaLabel={upcomingLabel ? `Browse ${upcomingLabel}` : "Browse the new collection"}
           ariaLabel={(fillStep) =>
             `${upcomingLabel ? `${upcomingLabel} upload` : "Upcoming Divrei Torah upload"} progress: ${fillStep}% complete`
           }
@@ -461,7 +466,7 @@ function Index() {
               </h2>
             )}
 
-            {!isFallback && quickPicks.length > 0 && (
+            {quickPicks.length > 0 && (
               <div className="mt-4 max-w-2xl mx-auto">
                 <p className="text-center font-sans text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
                   Start here
@@ -513,7 +518,7 @@ function Index() {
                               </Link>
                             </h3>
                             {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
-                            {r.subtitle && <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{standardizeCopy(r.subtitle)}</p>}
+                            {r.subtitle && <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-3">{standardizeCopy(r.subtitle)}</p>}
                             {typeof r.page_count === "number" && (
                               <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                 {r.page_count} {r.page_count === 1 ? "page" : "pages"}
@@ -567,26 +572,42 @@ function Index() {
               </p>
             ) : (
               <>
-                <div className="mt-5 space-y-3 sticky top-14 z-30 -mx-3 px-3 py-3 bg-background/95 backdrop-blur border-b border-accent/20 sm:static sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0">
-                  {(audienceFilter !== "All" || lengthFilter !== "All" || contentTypeFilter !== "All") && (
-                    <div className="flex justify-end">
+                <div id="filters" className="mt-5 sticky top-14 z-30 -mx-3 bg-background/95 px-3 py-3 backdrop-blur border-b border-accent/20 sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none sm:border-0 scroll-mt-24">
+                  <div className="flex items-center justify-between gap-3 sm:hidden">
+                    <button
+                      type="button"
+                      aria-expanded={filtersOpen}
+                      onClick={() => setFiltersOpen((open) => !open)}
+                      className="flex-1 rounded-full border border-accent/45 bg-background px-4 py-2 text-left font-serif text-sm font-semibold text-primary shadow-sm"
+                    >
+                      Filter {resources.length} selections{activeFilterCount > 0 ? ` · ${activeFilterCount} active` : ""}
+                    </button>
+                    {activeFilterCount > 0 && (
                       <button
                         type="button"
-                        onClick={() => {
-                          setAudienceFilter("All");
-                          setLengthFilter("All");
-                          setContentTypeFilter("All");
-                        }}
-                        className="text-xs font-serif text-accent-readable hover:text-primary hover:underline transition-colors"
+                        onClick={clearFilters}
+                        className="text-xs font-serif text-accent-readable hover:text-primary hover:underline"
                       >
-                        Clear filters
+                        Clear
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
-                  <div id="filters" className="scroll-mt-24">
+                  <div className={`${filtersOpen ? "block" : "hidden"} mt-3 space-y-3 sm:mt-0 sm:block`}>
+                    {activeFilterCount > 0 && (
+                      <div className="hidden justify-end sm:flex">
+                        <button
+                          type="button"
+                          onClick={clearFilters}
+                          className="text-xs font-serif text-accent-readable hover:text-primary hover:underline transition-colors"
+                        >
+                          Clear filters
+                        </button>
+                      </div>
+                    )}
+
                     {audienceHasChoice && (
-                      <>
+                      <div>
                         <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By audience</span>
                         <div className="mt-1.5 flex flex-wrap justify-start gap-2">
                           {(["All", "Children", "Families", "Adults"] as const)
@@ -622,183 +643,176 @@ function Index() {
                               );
                             })}
                         </div>
-                      </>
+                      </div>
+                    )}
+
+                    {lengthHasChoice && (
+                      <div>
+                        <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By length</span>
+                        <div className="mt-1.5 flex flex-wrap justify-start gap-2">
+                          {(() => {
+                            const shortCount = lengthScoped.filter(
+                              (r) => typeof r.page_count === "number" && r.page_count < 5,
+                            ).length;
+                            const longCount = lengthScoped.filter(
+                              (r) => typeof r.page_count === "number" && r.page_count >= 5,
+                            ).length;
+                            const options = [
+                              { key: "All" as const, label: "All", count: lengthScoped.length },
+                              { key: "short" as const, label: "Under 5 Pages", count: shortCount },
+                              { key: "long" as const, label: "5+ Pages", count: longCount },
+                            ].filter((o) => o.key === "All" || o.count > 0);
+                            return options.map((o) => {
+                              const active = lengthFilter === o.key;
+                              return (
+                                <button
+                                  key={o.key}
+                                  type="button"
+                                  aria-pressed={active}
+                                  aria-label={`Filter by length: ${o.label}`}
+                                  onClick={() => {
+                                    const next = active ? "All" : o.key;
+                                    setLengthFilter(next);
+                                    trackFp("filter_change", { metadata: { filter: "length", value: next } });
+                                  }}
+                                  className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
+                                    active
+                                      ? "border-accent bg-accent text-accent-foreground shadow-sm"
+                                      : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
+                                  }`}
+                                >
+                                  {o.label}
+                                </button>
+                              );
+                            });
+                          })()}
+                        </div>
+                      </div>
+                    )}
+
+                    {contentTypeHasChoice && (
+                      <div>
+                        <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By content type</span>
+                        <div className="mt-1.5 flex flex-wrap justify-start gap-2">
+                          {[
+                            { key: "All", label: "All", count: contentTypeScoped.length },
+                            ...contentTypeOptions.map((t) => ({
+                              key: t,
+                              label: t,
+                              count: contentTypeScoped.filter((r) => resourceContentType(r) === t).length,
+                            })),
+                          ]
+                            .filter((o) => o.key === "All" || o.count > 0)
+                            .map((o) => {
+                              const active = contentTypeFilter === o.key;
+                              return (
+                                <button
+                                  key={o.key}
+                                  type="button"
+                                  aria-pressed={active}
+                                  aria-label={`Filter by content type: ${o.label}`}
+                                  onClick={() => {
+                                    const next = active ? "All" : o.key;
+                                    setContentTypeFilter(next);
+                                    trackFp("filter_change", { metadata: { filter: "content_type", value: next } });
+                                  }}
+                                  className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
+                                    active
+                                      ? "border-accent bg-accent text-accent-foreground shadow-sm"
+                                      : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
+                                  }`}
+                                >
+                                  {o.label}
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </div>
                     )}
                   </div>
-
-                  {lengthHasChoice && (
-                    <div>
-                      <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By length</span>
-                      <div className="mt-1.5 flex flex-wrap justify-start gap-2">
-                        {(() => {
-                          const shortCount = lengthScoped.filter(
-                            (r) => typeof r.page_count === "number" && r.page_count < 5,
-                          ).length;
-                          const longCount = lengthScoped.filter(
-                            (r) => typeof r.page_count === "number" && r.page_count >= 5,
-                          ).length;
-                          const options = [
-                            { key: "All" as const, label: "All", count: lengthScoped.length },
-                            { key: "short" as const, label: "Under 5 Pages", count: shortCount },
-                            { key: "long" as const, label: "5+ Pages", count: longCount },
-                          ].filter((o) => o.key === "All" || o.count > 0);
-                          return options.map((o) => {
-                            const active = lengthFilter === o.key;
-                            return (
-                              <button
-                                key={o.key}
-                                type="button"
-                                aria-pressed={active}
-                                aria-label={`Filter by length: ${o.label}`}
-                                onClick={() => {
-                                  const next = active ? "All" : o.key;
-                                  setLengthFilter(next);
-                                  trackFp("filter_change", { metadata: { filter: "length", value: next } });
-                                }}
-                                className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
-                                  active
-                                    ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                                    : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
-                                }`}
-                              >
-                                {o.label}
-                              </button>
-                            );
-                          });
-                        })()}
-                      </div>
-                    </div>
-                  )}
-
-                  {contentTypeHasChoice && (
-                    <div>
-                      <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By content type</span>
-                      <div className="mt-1.5 flex flex-wrap justify-start gap-2">
-                        {[
-                          { key: "All", label: "All", count: contentTypeScoped.length },
-                          ...contentTypeOptions.map((t) => ({
-                            key: t,
-                            label: t,
-                            count: contentTypeScoped.filter((r) => resourceContentType(r) === t).length,
-                          })),
-                        ]
-                          .filter((o) => o.key === "All" || o.count > 0)
-                          .map((o) => {
-                            const active = contentTypeFilter === o.key;
-                            return (
-                              <button
-                                key={o.key}
-                                type="button"
-                                aria-pressed={active}
-                                aria-label={`Filter by content type: ${o.label}`}
-                                onClick={() => {
-                                  const next = active ? "All" : o.key;
-                                  setContentTypeFilter(next);
-                                  trackFp("filter_change", { metadata: { filter: "content_type", value: next } });
-                                }}
-                                className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
-                                  active
-                                    ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                                    : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
-                                }`}
-                              >
-                                {o.label}
-                              </button>
-                            );
-                          })}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 <div className="mt-5 sm:mt-6 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
-                  {filteredResources.map((r, i) => (
-                    <>
-                      <PublicationCardTracker
-                        key={r.id}
-                        className="h-full rounded-xl border border-accent/35 bg-background/55 p-4 sm:p-5 hover:border-accent/70 hover:shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
-                        publication_id={r.id}
-                        publication_title={r.title}
-                        publication_series={r.publication ?? null}
-                        publisher={r.publisher ?? null}
-                        parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey ?? null}
-                      >
-                        <div className="flex flex-1 items-start gap-3">
-                          <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-accent/12 text-primary shrink-0">
-                            <FileText className="h-5 w-5" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-start justify-between gap-2">
-                              <h3 className="font-serif text-base sm:text-xl font-bold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
-                                <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline transition-colors duration-150">
-                                  {r.title}
-                                </Link>
-                              </h3>
-                              {r.badge && (
-                                <span className="shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
-                                  {r.badge}
-                                </span>
-                              )}
-                            </div>
-                            {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
-                            {(() => {
-                              const summary = r.summary_quick || r.subtitle || r.description;
-                              return summary ? (
-                                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{standardizeCopy(summary)}</p>
-                              ) : null;
-                            })()}
-                            {(r.audience || r.format_type || typeof r.page_count === "number") && (
-                              <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                {[
-                                  audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience,
-                                  formatTypeLabel(r.format_type),
-                                  typeof r.page_count === "number"
-                                    ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
-                                    : null,
-                                ]
-                                  .filter(Boolean)
-                                  .join(" · ")}
-                              </p>
+                  {filteredResources.map((r) => (
+                    <PublicationCardTracker
+                      key={r.id}
+                      className="h-full rounded-xl border border-accent/35 bg-background/55 p-4 sm:p-5 hover:border-accent/70 hover:shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
+                      publication_id={r.id}
+                      publication_title={r.title}
+                      publication_series={r.publication ?? null}
+                      publisher={r.publisher ?? null}
+                      parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey ?? null}
+                    >
+                      <div className="flex flex-1 items-start gap-3">
+                        <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-accent/12 text-primary shrink-0">
+                          <FileText className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="font-serif text-base sm:text-xl font-bold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
+                              <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline transition-colors duration-150">
+                                {r.title}
+                              </Link>
+                            </h3>
+                            {r.badge && (
+                              <span className="shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
+                                {r.badge}
+                              </span>
                             )}
                           </div>
+                          {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
+                          {(() => {
+                            const summary = r.summary_quick || r.subtitle;
+                            return summary ? (
+                              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-3">{standardizeCopy(summary)}</p>
+                            ) : null;
+                          })()}
+                          {(r.audience || r.format_type || typeof r.page_count === "number") && (
+                            <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                              {[
+                                audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience,
+                                formatTypeLabel(r.format_type),
+                                typeof r.page_count === "number"
+                                  ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
+                                  : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
+                          )}
                         </div>
+                      </div>
 
-                        <div className="mt-auto pt-4">
-                          <DownloadToPrintButton
-                            href={`/view/${r.id}/download`}
-                            publicationId={r.id}
-                            publicationName={publicationLabel(r.publication || r.title) || r.title}
-                            publicationTitle={r.title}
-                            publisher={r.publisher}
-                            publicationSeries={r.publication}
+                      <div className="mt-auto pt-4">
+                        <DownloadToPrintButton
+                          href={`/view/${r.id}/download`}
+                          publicationId={r.id}
+                          publicationName={publicationLabel(r.publication || r.title) || r.title}
+                          publicationTitle={r.title}
+                          publisher={r.publisher}
+                          publicationSeries={r.publication}
+                          parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
+                          filename={buildDownloadFilename(
+                            (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
+                            r.publication || r.title,
+                          )}
+                          onClick={() => {
+                            trackEvent("pdf_download", pdfParams(r));
+                            if (typeof window !== "undefined") {
+                              window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
+                            }
+                          }}
+                          className="w-full px-3 py-2.5 lg:py-2"
+                        />
+                        <div className="mt-2 flex justify-center">
+                          <SharePublicationButton
+                            pdfId={r.id}
+                            title={r.title}
                             parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
-                            filename={buildDownloadFilename(
-                              (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
-                              r.publication || r.title,
-                            )}
-                            onClick={() => {
-                              trackEvent("pdf_download", pdfParams(r));
-                              if (typeof window !== "undefined") {
-                                window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
-                              }
-                            }}
-                            className="w-full px-3 py-2.5 lg:py-2"
                           />
-                          <div className="mt-2 flex justify-center">
-                            <SharePublicationButton
-                              pdfId={r.id}
-                              title={r.title}
-                              parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
-                            />
-                          </div>
                         </div>
-                      </PublicationCardTracker>
-                      {i === (filteredResources.length > 1 ? 1 : 0) && (
-                        <div key="share-prompt" className="col-span-1 sm:col-span-2 flex justify-center py-2">
-                          <ShareButton />
-                        </div>
-                      )}
-                    </>
+                      </div>
+                    </PublicationCardTracker>
                   ))}
                 </div>
 
