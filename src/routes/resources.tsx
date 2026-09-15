@@ -32,6 +32,7 @@ export const Route = createFileRoute("/resources")({
 type SeriesCard = {
   title: string;
   description: string;
+  sample: string;
   linkTo: string;
   linkSearch?: Record<string, string>;
   cta: string;
@@ -42,6 +43,7 @@ const SERIES: SeriesCard[] = [
     title: "Short Vorts",
     description:
       "Brief, focused divrei Torah written in-house each week. Each vort is drawn from a classical source — Rashi, Midrash, or Chazal — and rewritten in a few sentences so it can be said over at the table without preparation.",
+    sample: "What to expect: one source, one clear idea, about a minute to say over.",
     linkTo: "/short-vorts",
     cta: "Read this week's Short Vorts →",
   },
@@ -49,6 +51,7 @@ const SERIES: SeriesCard[] = [
     title: "Stories for the Shabbos Table",
     description:
       "Source-based stories from Chazal and Tanach, retold for the table. Each story opens with the original Hebrew source and its translation, followed by a plain-English retelling and a “For the Table” discussion question that draws everyone into the conversation.",
+    sample: "What to expect: source, translation, story, and one discussion question.",
     linkTo: "/archive",
     linkSearch: { q: "Stories for the Shabbos Table" },
     cta: "Browse Stories for the Shabbos Table →",
@@ -57,17 +60,19 @@ const SERIES: SeriesCard[] = [
     title: "Mi Ka'amcha Yisroel",
     description:
       "A weekly piece that uses parashah insights to discuss communication and positive speech. Each installment takes a moment from the parsha where words shape an outcome — a blessing, a rebuke, a report — and draws out a practical point about how we speak to family, friends, and neighbors.",
+    sample: "What to expect: a parsha moment connected to practical speech and relationships.",
     linkTo: "/archive",
     linkSearch: { q: "Mi Ka'amcha Yisroel" },
     cta: "Browse Mi Ka'amcha Yisroel →",
   },
   {
-    title: "Parsha Questions & Answers",
+    title: "Parsha Q&A",
     description:
       "Source-based questions and answers on the parsha each week, written for learning together at the table. Every set is accompanied by a Kids' Corner page with riddles and picture puzzles so younger children have their own way in.",
+    sample: "What to expect: table-ready questions, answers, plus a Kids' Corner.",
     linkTo: "/archive",
-    linkSearch: { q: "Parsha Questions" },
-    cta: "Browse Parsha Questions & Answers →",
+    linkSearch: { q: "Parsha Q&A" },
+    cta: "Browse Parsha Q&A →",
   },
 ];
 
@@ -108,8 +113,11 @@ function ResourcesPage() {
                   className="flex flex-col rounded-xl border border-accent/30 bg-card/40 p-5"
                 >
                   <h2 className="font-serif text-xl font-bold text-primary">{s.title}</h2>
-                  <p className="mt-2 flex-1 font-serif text-sm sm:text-base leading-relaxed text-foreground">
+                  <p className="mt-2 font-serif text-sm sm:text-base leading-relaxed text-foreground">
                     {s.description}
+                  </p>
+                  <p className="mt-3 flex-1 rounded-lg border border-accent/20 bg-background/50 px-3 py-2 text-xs sm:text-sm text-muted-foreground">
+                    {s.sample}
                   </p>
                   <p className="mt-4 text-sm sm:text-base">
                     <Link

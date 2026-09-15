@@ -15,6 +15,7 @@ import { normalizeAudience, audienceLabel, type AudienceKey } from "@/lib/audien
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { publicationLabel } from "@/lib/badges";
+import { formatReadingLabel } from "@/lib/parshiyos";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 
 type ArchiveSearch = {
@@ -94,9 +95,7 @@ export const Route = createFileRoute("/archive")({
 
     const parshaLabel =
       search.parsha !== "all"
-        ? /^(parshas|parashat)\s/i.test(search.parsha)
-          ? search.parsha
-          : `Parshas ${search.parsha}`
+        ? formatReadingLabel(search.parsha.replace(/^(parshas|parashat)\s+/i, "").trim())
         : null;
     const yearPart = search.year !== "all" ? ` ${search.year}` : "";
 
@@ -422,6 +421,33 @@ function ArchivePage() {
         {years.length > 0 && (
           <section className="parchment-frame">
             <div className="parchment-panel">
+              <div className="mb-4 flex flex-col items-center gap-2 border-b border-accent/20 pb-4">
+                <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Yamim Noraim
+                </span>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {["Rosh Hashanah", "Yom Kippur"].map((holiday) => {
+                    const active = parshaFilter === holiday;
+                    const available = allParshiyos.includes(holiday);
+                    return available ? (
+                      <button
+                        key={holiday}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setParshaFilter(active ? "all" : holiday)}
+                        className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                          active
+                            ? "border-accent bg-accent text-accent-foreground"
+                            : "border-accent/40 bg-background/70 text-primary hover:bg-accent/10"
+                        }`}
+                      >
+                        {holiday}
+                      </button>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+
               <div className="grid gap-3 sm:gap-4 sm:grid-cols-[1fr_1fr_2fr] items-end">
                 <label className="block text-left">
                   <span className="block font-sans text-[0.65rem] uppercase tracking-[0.2em] text-accent mb-1.5">
@@ -658,7 +684,7 @@ function ArchivePage() {
                     {y.parshiyos.map((p: ArchiveParsha) => (
                       <div key={`${y.year}-${p.parshaKey}`}>
                         <h3 className="font-serif text-xl sm:text-2xl font-semibold text-primary mb-4">
-                          Parshas {p.parshaKey}
+                          {formatReadingLabel(p.parshaKey)}
                         </h3>
                         <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                           {p.pdfs.map((r: ArchivePdf) => (
@@ -709,7 +735,9 @@ function ArchivePage() {
                                         audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience,
                                         formatTypeLabel(r.format_type),
                                         typeof r.page_count === "number"
-                                          ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
+                                          ? r.page_count >= 20
+                                            ? `Long Study · ${r.page_count} pages`
+                                            : `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
                                           : null,
                                       ].filter(Boolean).join(" · ")}
                                     </p>
