@@ -11,6 +11,7 @@ import { trackEvent } from "@/lib/analytics";
 import { trackFp } from "@/lib/first-party-analytics";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
+import { formatReadingLabel } from "@/lib/parshiyos";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { publicationLabel } from "@/lib/badges";
 import { DownloadToPrintButton, trackDownloadAction } from "@/components/DownloadToPrintButton";
@@ -53,9 +54,7 @@ export const Route = createFileRoute("/view/$id")({
     // Parsha comes from the record; never hardcoded, never an empty "Parshas " stub.
     const rawParsha = (loaderData?.pdf?.parsha_key ?? "").trim();
     const parshaLabel = rawParsha
-      ? /^(parshas|parashat)\s/i.test(rawParsha)
-        ? rawParsha
-        : `Parshas ${rawParsha}`
+      ? formatReadingLabel(rawParsha.replace(/^(parshas|parashat)\s+/i, "").trim())
       : null;
 
     // Share cards lead with the publication + parsha; the tab title adds the site name.
@@ -213,7 +212,9 @@ function ViewPdf() {
     audienceLabel(normalizeAudience(pdf.audience, pdf.title)) ?? pdf.audience,
     formatTypeLabel(pdf.format_type),
     typeof pdf.page_count === "number"
-      ? `${pdf.page_count} ${pdf.page_count === 1 ? "page" : "pages"}`
+      ? pdf.page_count >= 20
+        ? `Long Study · ${pdf.page_count} pages`
+        : `${pdf.page_count} ${pdf.page_count === 1 ? "page" : "pages"}`
       : null,
   ]
     .filter(Boolean)

@@ -141,7 +141,7 @@ function ParshaSection({
           <span className="font-serif text-lg font-bold text-primary sm:text-xl">{heading}</span>
           <span className="flex items-center gap-3">
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {vorts.length} {vorts.length === 1 ? "vort" : "vorts"}
+              {vorts.length > 0 ? `${vorts.length} ${vorts.length === 1 ? "vort" : "vorts"}` : "Preparing"}
             </span>
             <ChevronDown
               className={`h-5 w-5 text-accent transition-transform ${open ? "rotate-180" : ""}`}
@@ -215,7 +215,7 @@ function ShortVortsPage() {
   const sections = [
     {
       key: "current",
-      heading: isYomTov ? label : `This Week — ${label}`,
+      heading: current.length > 0 ? (isYomTov ? label : `This Week — ${label}`) : `${label} — In preparation`,
       vorts: current,
       defaultOpen: true,
       emptyLabel: label,

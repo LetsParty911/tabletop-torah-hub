@@ -251,6 +251,16 @@ function Index() {
 
   const displayedLabel = isFallback && fallbackParshaLabel ? fallbackParshaLabel : currentLabel;
   const displayedParshaKey = isFallback && fallbackParshaKey ? fallbackParshaKey : currentParshaKey;
+  const normalizedCurrentKey = (currentParshaKey ?? currentLabel)
+    .replace(/^Parshas\s+/i, "")
+    .trim()
+    .toLowerCase();
+  const easternToday = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+  const showYomKippurNotice = easternToday >= "2026-09-15" && easternToday <= "2026-09-20";
+  const shabbatShuvaLabel =
+    isFallback && normalizedCurrentKey === "ha'azinu" && showYomKippurNotice
+      ? `Shabbat Shuva / ${currentLabel}`
+      : currentLabel;
   const normalizedCollectionKey = (displayedParshaKey ?? displayedLabel)
     .replace(/^Parshas\s+/i, "")
     .trim()
@@ -357,6 +367,12 @@ function Index() {
     parsha: displayedParshaKey ?? undefined,
   });
 
+  const pageCountLabel = (r: Resource) => {
+    if (typeof r.page_count !== "number") return null;
+    const pages = `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`;
+    return r.page_count >= 20 ? `Long Study · ${pages}` : pages;
+  };
+
   const shareText = `${resources.length} free, handpicked Divrei Torah for ${displayedLabel} — ready to download and print: ${SITE_URL}/`;
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
@@ -397,30 +413,22 @@ function Index() {
               Weekly Divrei Torah
             </p>
             <h1 className="mt-2 font-serif text-[2rem] leading-[1.08] sm:text-4xl md:text-5xl font-bold tracking-tight text-primary">
-              {postShabbos
-                ? `Divrei Torah for ${displayedLabel}`
-                : `Free Divrei Torah for Your ${isYomTovCollection ? "Yom Tov" : "Shabbos"} Table`}
+              {isFallback
+                ? shabbatShuvaLabel
+                : postShabbos
+                  ? `Divrei Torah for ${displayedLabel}`
+                  : `Free Divrei Torah for Your ${isYomTovCollection ? "Yom Tov" : "Shabbos"} Table`}
             </h1>
             <p className="mx-auto mt-3 max-w-2xl font-serif text-base leading-relaxed text-primary sm:text-lg md:text-xl">
-              <span className="font-semibold">
-                {resources.length} {resources.length === 1 ? "selection" : "selections"}
-              </span>{" "}
-              {postShabbos ? (
-                <>
-                  still available to download{" "}
-                  <a
-                    href="#filters"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      document.getElementById("filters")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }}
-                    className="text-inherit no-underline"
-                  >
-                    below
-                  </a>
-                </>
+              {isFallback ? (
+                <>New Divrei Torah for this Shabbos are being prepared.</>
               ) : (
-                `for ${displayedLabel}`
+                <>
+                  <span className="font-semibold">
+                    {resources.length} {resources.length === 1 ? "selection" : "selections"}
+                  </span>{" "}
+                  {postShabbos ? "still available to download below" : `for ${displayedLabel}`}
+                </>
               )}
             </p>
 
@@ -433,7 +441,7 @@ function Index() {
                 }}
                 className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
               >
-                Browse {displayedLabel}
+                {isFallback ? `Browse ${displayedLabel} collection` : `See this week's PDFs`}
               </a>
             </div>
             {resources.length > 0 && (
@@ -445,14 +453,33 @@ function Index() {
         </section>
 
         <ThursdayProgressMeter
-          heading={upcomingLabel ? `Upcoming: ${upcomingLabel}` : "Upcoming Divrei Torah"}
+          heading={isFallback ? currentLabel : upcomingLabel ? `Upcoming: ${upcomingLabel}` : "Upcoming Divrei Torah"}
+          badgeLabel={isFallback ? "This Shabbos" : "Upcoming"}
           message="New Divrei Torah will be added then."
           completeHref="#this-weeks-collection"
-          completeCtaLabel={upcomingLabel ? `Browse ${upcomingLabel}` : "Browse the new collection"}
+          completeCtaLabel={isFallback ? `See ${currentLabel} PDFs` : upcomingLabel ? `Browse ${upcomingLabel}` : "Browse the new collection"}
           ariaLabel={(fillStep) =>
-            `${upcomingLabel ? `${upcomingLabel} upload` : "Upcoming Divrei Torah upload"} progress: ${fillStep}% complete`
+            `${isFallback ? `${currentLabel} upload` : upcomingLabel ? `${upcomingLabel} upload` : "Upcoming Divrei Torah upload"} progress: ${fillStep}% complete`
           }
         />
+
+        {showYomKippurNotice && (
+          <section className="mx-auto max-w-md rounded-xl border border-accent/40 bg-card/40 px-4 py-4 text-center sm:px-5">
+            <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable">Coming next</p>
+            <h2 className="mt-1 font-serif text-xl font-bold text-primary sm:text-2xl">Yom Kippur</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Yom Kippur materials are being prepared now. New PDFs will be posted ahead of Yom Tov.
+            </p>
+          </section>
+        )}
+
+        {isFallback && (
+          <div className="mx-auto max-w-2xl rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-center">
+            <p className="font-serif text-sm text-primary sm:text-base">
+              <span className="font-semibold">{displayedLabel} collection still available</span> — {resources.length} {resources.length === 1 ? "selection" : "selections"}.
+            </p>
+          </div>
+        )}
 
         <div className="mx-auto max-w-2xl rounded-xl border border-accent/40 bg-card/40 px-4 py-4 sm:px-5">
           <WeeklyEmailSignup sourceId="homepage" variant="compact" ctaLabel="Get the weekly download reminder" />
@@ -460,11 +487,9 @@ function Index() {
 
         <section id="this-weeks-collection" className="scroll-mt-8">
           <div className="px-1 sm:px-2">
-            {!postShabbos && (
-              <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
-                This Week's Collection
-              </h2>
-            )}
+            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
+              {isFallback ? `${displayedLabel} Collection — Still Available` : "This Week's Collection"}
+            </h2>
 
             {quickPicks.length > 0 && (
               <div className="mt-4 max-w-2xl mx-auto">
@@ -519,9 +544,9 @@ function Index() {
                             </h3>
                             {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
                             {r.subtitle && <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-3">{standardizeCopy(r.subtitle)}</p>}
-                            {typeof r.page_count === "number" && (
+                            {pageCountLabel(r) && (
                               <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                {r.page_count} {r.page_count === 1 ? "page" : "pages"}
+                                {pageCountLabel(r)}
                               </p>
                             )}
                             <div className="mt-auto pt-4">
@@ -772,9 +797,7 @@ function Index() {
                               {[
                                 audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience,
                                 formatTypeLabel(r.format_type),
-                                typeof r.page_count === "number"
-                                  ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
-                                  : null,
+                                pageCountLabel(r),
                               ]
                                 .filter(Boolean)
                                 .join(" · ")}
