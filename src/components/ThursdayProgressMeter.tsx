@@ -67,26 +67,32 @@ export function ThursdayProgressMeter({
   const activeCount = SEGMENT_THRESHOLDS.filter((t) => t <= fillStep).length;
 
   const headingText = typeof heading === "function" ? heading(fillStep) : heading;
+  const displayHeading = headingText.replace(/^Upcoming(?::\s*|\s+)/i, "");
   const ariaText = typeof ariaLabel === "function" ? ariaLabel(fillStep) : ariaLabel;
 
   return (
     <div
-      className="mx-auto max-w-md rounded-xl border border-accent/40 bg-background/60 px-4 py-4 sm:px-5"
+      className="mx-auto max-w-md rounded-xl border-2 border-primary/35 bg-background/70 px-4 py-5 shadow-sm sm:px-5 sm:py-6"
       role="group"
       aria-label={ariaText}
     >
-      <h2 className="text-center font-serif text-lg font-bold leading-snug text-primary sm:text-xl">
-        {headingText}
-      </h2>
-
-      <div className="mt-3 flex items-baseline justify-between">
-        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">
-          Upload Progress
+      <div className="text-center">
+        <span className="inline-flex rounded-full border border-accent/50 bg-accent/10 px-3 py-1 font-sans text-[0.65rem] font-bold uppercase tracking-[0.22em] text-accent-readable sm:text-xs">
+          Upcoming
         </span>
-        {showPercent && <span className="text-sm font-bold text-accent-readable">{fillStep}%</span>}
+        <h2 className="mt-2 font-serif text-2xl font-bold leading-tight text-primary sm:text-3xl">
+          {displayHeading}
+        </h2>
       </div>
 
-      <div className="mt-2 flex gap-1">
+      <div className="mt-5 flex items-baseline justify-between border-t border-accent/25 pt-3">
+        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+          Upload Progress
+        </span>
+        {showPercent && <span className="text-base font-bold text-accent-readable">{fillStep}%</span>}
+      </div>
+
+      <div className="mt-2 flex gap-1.5">
         {SEGMENT_THRESHOLDS.map((threshold, i) => (
           <div
             key={threshold}
