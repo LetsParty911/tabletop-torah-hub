@@ -21,8 +21,12 @@ type ThursdayProgressMeterProps = {
   ariaLabel?: AriaValue;
   /** Hide the separate right-side percentage label. */
   showPercent?: boolean;
-  /** Optional explanatory copy shown beneath the upcoming reading. */
+  /** Optional explanatory copy shown beneath the upcoming reading at 0%. */
   message?: string;
+  /** Optional destination shown when the upload reaches 100%. */
+  completeHref?: string;
+  /** Optional CTA text shown when the upload reaches 100%. */
+  completeCtaLabel?: string;
 };
 
 export function ThursdayProgressMeter({
@@ -30,6 +34,8 @@ export function ThursdayProgressMeter({
   ariaLabel = (fillStep) => `Upcoming Divrei Torah upload progress: ${fillStep}% complete`,
   showPercent = true,
   message,
+  completeHref,
+  completeCtaLabel = "Browse the new collection",
 }: ThursdayProgressMeterProps) {
   const [fillStep, setFillStep] = useState<FillStep | null>(null);
   const [eta, setEta] = useState<string | null>(null);
@@ -57,24 +63,6 @@ export function ThursdayProgressMeter({
     };
   }, []);
 
-  // The upcoming card owns the Thursday-update message now. Hide the older
-  // generic sentence in the current-collection hero so the page reads in a
-  // clean sequence: current collection -> upcoming reading -> email reminder.
-  useEffect(() => {
-    const oldCopy =
-      "More Divrei Torah for the upcoming Shabbos or Yom Tov will be added by Thursday evening. Please check back then.";
-    const heroCopy = Array.from(document.querySelectorAll("p")).find(
-      (p) => p.textContent?.trim() === oldCopy,
-    );
-    if (!heroCopy) return;
-
-    const previousDisplay = heroCopy.style.display;
-    heroCopy.style.display = "none";
-    return () => {
-      heroCopy.style.display = previousDisplay;
-    };
-  }, []);
-
   const showEta = useMemo(() => {
     if (!eta) return false;
     const etaTime = new Date(eta).getTime();
@@ -87,6 +75,7 @@ export function ThursdayProgressMeter({
   const headingText = typeof heading === "function" ? heading(fillStep) : heading;
   const displayHeading = headingText.replace(/^Upcoming(?::\s*|\s+)/i, "");
   const ariaText = typeof ariaLabel === "function" ? ariaLabel(fillStep) : ariaLabel;
+  const inProgress = fillStep > 0 && fillStep < 100;
 
   return (
     <div
@@ -102,7 +91,7 @@ export function ThursdayProgressMeter({
           {displayHeading}
         </h2>
 
-        {fillStep === 0 ? (
+        {fillStep === 0 && (
           <>
             <p className="mt-4 font-sans text-base font-bold text-primary sm:text-lg">
               Next update: Thursday evening
@@ -111,10 +100,26 @@ export function ThursdayProgressMeter({
               {message ?? "New Divrei Torah will be added then."}
             </p>
           </>
-        ) : null}
+        )}
+
+        {fillStep === 100 && (
+          <div className="mt-4">
+            <p className="font-sans text-base font-bold text-primary sm:text-lg">
+              Updated — new Divrei Torah are ready
+            </p>
+            {completeHref && (
+              <a
+                href={completeHref}
+                className="mt-3 inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 font-serif text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                {completeCtaLabel}
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
-      {fillStep > 0 && (
+      {inProgress && (
         <>
           <div className="mt-5 flex items-baseline justify-between border-t border-accent/25 pt-3">
             <span className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
@@ -123,7 +128,7 @@ export function ThursdayProgressMeter({
             {showPercent && <span className="text-base font-bold text-accent-readable">{fillStep}%</span>}
           </div>
 
-          <div className="mt-2 flex gap-1.5">
+          <div className="mt-2 flex gap-1.5" aria-hidden="true">
             {SEGMENT_THRESHOLDS.map((threshold, i) => (
               <div
                 key={threshold}
@@ -137,7 +142,7 @@ export function ThursdayProgressMeter({
         </>
       )}
 
-      {showEta && eta && fillStep > 0 && (
+      {showEta && eta && inProgress && (
         <p className="mt-2 text-xs text-muted-foreground">Expected complete by {formatEta(eta)}</p>
       )}
     </div>
