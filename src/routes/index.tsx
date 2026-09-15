@@ -64,19 +64,11 @@ type LoaderData = {
   fallbackParshaLabel: string | null;
   fallbackParshaKey: string | null;
   subscriberCount: number | null;
-  /** ISO date of the Shabbos the displayed reading belongs to (Hebcal). */
   readingDate: string | null;
-  /**
-   * The next week's reading key, resolved server-side when the displayed
-   * reading is a Yom Tov (the static parsha list can't step past those).
-   */
   upcomingAfterYomTovKey: string | null;
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
-  // Has no dependency on anything below - start it now so it runs
-  // concurrently with the parsha/PDF chain instead of adding its own
-  // sequential round trip after everything else finishes.
   const subscriberCountPromise = getActiveSubscriberCount().catch((e) => {
     console.error("Failed to load subscriber count", e);
     return { count: 0 };
@@ -86,7 +78,6 @@ async function loadCurrentWeek(): Promise<LoaderData> {
   let parshaKey: string | null = null;
   let readingDate: string | null = null;
 
-  // 1. Manual override
   try {
     const o = await getParshaOverride();
     if (o.override && o.isActive) {
@@ -97,7 +88,6 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     // ignore
   }
 
-  // 2. Hebcal (Diaspora schedule, 24h cached, static fallback on failure)
   if (!parshaKey) {
     const resolved = await resolveHebcalParsha();
     parshaKey = resolved.parshaKey;
@@ -105,7 +95,6 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     readingDate = resolved.readingDate;
   }
 
-  // 3. PDFs with fallback to most recent published collection
   let resources: Resource[] = [];
   let isFallback = false;
   let fallbackParshaLabel: string | null = null;
@@ -126,8 +115,6 @@ async function loadCurrentWeek(): Promise<LoaderData> {
   const { count } = await subscriberCountPromise;
   if (count >= 25) subscriberCount = count;
 
-  // 4. When the displayed reading is a Yom Tov, the static parsha list can't
-  // name the following week — resolve it from Hebcal for Shabbos + 7 days.
   const displayedKey = isFallback && fallbackParshaKey ? fallbackParshaKey : parshaKey;
   let upcomingAfterYomTovKey: string | null = null;
   const staticNext = isFallback
@@ -178,7 +165,6 @@ export const Route = createFileRoute("/")({
   ),
   head: ({ loaderData }) => {
     const data = loaderData as LoaderData | undefined;
-    // Mirror the page: everything reflects the collection actually displayed.
     const displayedLabel =
       data?.isFallback && data.fallbackParshaLabel
         ? data.fallbackParshaLabel
@@ -216,7 +202,6 @@ export const Route = createFileRoute("/")({
         { name: "twitter:image", content: image },
       ],
       links: [{ rel: "canonical", href: url }],
-
       scripts: [
         {
           type: "application/ld+json",
@@ -247,8 +232,6 @@ export const Route = createFileRoute("/")({
   },
 });
 
-// Audience normalization is shared with the archive page.
-
 const FEATURED_SLOTS = [
   { key: "children", label: "Best for Children" },
   { key: "family", label: "Best for the Family Table" },
@@ -269,8 +252,6 @@ function Index() {
     upcomingAfterYomTovKey,
   } = Route.useLoaderData() as LoaderData;
 
-  // Everything user-facing (hero copy, counts, share text) derives from the
-  // collection actually displayed on the page, not the upcoming parsha.
   const displayedLabel = isFallback && fallbackParshaLabel ? fallbackParshaLabel : currentLabel;
   const displayedParshaKey = isFallback && fallbackParshaKey ? fallbackParshaKey : currentParshaKey;
   const normalizedCollectionKey = (displayedParshaKey ?? displayedLabel)
@@ -286,39 +267,23 @@ function Index() {
     "pesach",
     "shavuos",
   ].includes(normalizedCollectionKey);
-  // The upcoming reading: when we're showing last week's collection, that's
-  // the live parsha; otherwise it's the next one in the reading order.
-  // On Yom Tov weeks the static list can't step forward, so the loader
-  // resolves the following Shabbos from Hebcal instead.
   const upcomingParsha = isFallback
     ? (currentParshaKey ?? nextParshaAfter(displayedParshaKey) ?? upcomingAfterYomTovKey)
     : (nextParshaAfter(displayedParshaKey) ?? upcomingAfterYomTovKey);
-  // Post-Shabbos framing: client-only so SSR/hydration stays stable.
+
   const [postShabbos, setPostShabbos] = useState(false);
   useEffect(() => {
-    // Hebcal keeps reporting last Shabbos's parsha until it rolls forward, so
-    // "showing last week" is either an explicit fallback OR a reading whose
-    // Shabbos has already passed in Eastern time.
     const showingLastShabbos = isFallback || isPastReading(readingDate);
     setPostShabbos(showingLastShabbos && resources.length > 0 && isPostShabbosWindow());
   }, [isFallback, resources.length, readingDate]);
 
-  const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">(
-    "All",
-  );
+  const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
   const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long">("All");
   const [contentTypeFilter, setContentTypeFilter] = useState<string>("All");
 
-  // Display order comes from the admin checklist sort order (lower number first),
-  // which the server already applies when building `resources`.
   const sortedResources = resources;
-
-  // Warm the edge cache for this week's PDFs so the Download click is instant.
   usePrewarmDownloads(sortedResources.map((r) => r.id));
 
-  // Quick Picks: three low-friction starting points drawn from this week's
-  // actual collection (never hardcoded), so a first-time visitor isn't
-  // immediately faced with the full list of 20+ options.
   const quickPickForKids = sortedResources.find(
     (r) => normalizeAudience(r.audience, r.title) === "Children",
   );
@@ -343,7 +308,6 @@ function Index() {
       },
   ].filter(Boolean) as { label: string; resource: Resource }[];
 
-  // Each filter is independent so every row's options can respect the others.
   const matchesAudience = (r: Resource, value = audienceFilter) =>
     value === "All" || normalizeAudience(r.audience, r.title) === value;
   const matchesLength = (r: Resource, value = lengthFilter) =>
@@ -371,12 +335,8 @@ function Index() {
     (r) => matchesAudience(r) && matchesLength(r) && matchesContentType(r),
   );
 
-  // A filter group is only worth rendering when the current set actually
-  // offers more than one real choice (e.g. hide "By length" when every item
-  // is under 5 pages).
   const audienceHasChoice =
-    new Set(sortedResources.map((r) => normalizeAudience(r.audience, r.title)).filter((v) => !!v))
-      .size > 1;
+    new Set(sortedResources.map((r) => normalizeAudience(r.audience, r.title)).filter((v) => !!v)).size > 1;
   const lengthHasChoice =
     sortedResources.some((r) => typeof r.page_count === "number" && r.page_count < 5) &&
     sortedResources.some((r) => typeof r.page_count === "number" && r.page_count >= 5);
@@ -416,9 +376,7 @@ function Index() {
   );
 
   const upcomingLabel =
-    upcomingParsha && upcomingParsha !== displayedParshaKey
-      ? formatReadingLabel(upcomingParsha)
-      : null;
+    upcomingParsha && upcomingParsha !== displayedParshaKey ? formatReadingLabel(upcomingParsha) : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -426,7 +384,6 @@ function Index() {
       <WhatsNewBanner />
       <AnnouncementBanner />
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
-        {/* Hero */}
         <section className="parchment-frame">
           <div className="parchment-panel text-center">
             <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-accent-readable sm:text-xs">
@@ -448,9 +405,7 @@ function Index() {
                     href="#filters"
                     onClick={(e) => {
                       e.preventDefault();
-                      document
-                        .getElementById("filters")
-                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      document.getElementById("filters")?.scrollIntoView({ behavior: "smooth", block: "start" });
                     }}
                     className="text-inherit no-underline"
                   >
@@ -472,9 +427,7 @@ function Index() {
                 href="#this-weeks-collection"
                 onClick={(e) => {
                   e.preventDefault();
-                  document
-                    .getElementById("this-weeks-collection")
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  document.getElementById("this-weeks-collection")?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
                 className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
               >
@@ -497,14 +450,9 @@ function Index() {
         />
 
         <div className="mx-auto max-w-2xl rounded-xl border border-accent/40 bg-card/40 px-4 py-4 sm:px-5">
-          <WeeklyEmailSignup
-            sourceId="homepage"
-            variant="compact"
-            ctaLabel="Get the weekly download reminder"
-          />
+          <WeeklyEmailSignup sourceId="homepage" variant="compact" ctaLabel="Get the weekly download reminder" />
         </div>
 
-        {/* Resource collection */}
         <section id="this-weeks-collection" className="scroll-mt-8">
           <div className="px-1 sm:px-2">
             {!postShabbos && (
@@ -528,17 +476,14 @@ function Index() {
                       params={{ id: resource.id }}
                       className="rounded-xl border border-accent/25 bg-card/30 p-3 text-center transition-colors hover:border-accent/60 hover:bg-card/50"
                     >
-                      <p className="font-sans text-[0.62rem] uppercase tracking-[0.14em] text-accent-readable">
-                        {label}
-                      </p>
-                      <p className="mt-1 font-serif text-base font-bold text-primary leading-snug">
-                        {resource.title}
-                      </p>
+                      <p className="font-sans text-[0.62rem] uppercase tracking-[0.14em] text-accent-readable">{label}</p>
+                      <p className="mt-1 font-serif text-base font-bold text-primary leading-snug">{resource.title}</p>
                     </Link>
                   ))}
                 </div>
               </div>
             )}
+
             {featuredPicks.length > 0 && (
               <>
                 <section className="parchment-frame">
@@ -557,34 +502,18 @@ function Index() {
                             publication_title={r.title}
                             publication_series={r.publication ?? null}
                             publisher={r.publisher ?? null}
-                            parsha={
-                              (r as { parsha_key?: string | null }).parsha_key ??
-                              displayedParshaKey ??
-                              null
-                            }
+                            parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey ?? null}
                           >
                             <span className="self-start rounded-full bg-accent px-3 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-accent-foreground">
                               {label}
                             </span>
                             <h3 className="mt-3 font-serif text-base sm:text-xl font-bold text-primary leading-snug">
-                              <Link
-                                to="/view/$id"
-                                params={{ id: r.id }}
-                                className="hover:text-accent hover:underline transition-colors duration-150"
-                              >
+                              <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline transition-colors duration-150">
                                 {r.title}
                               </Link>
                             </h3>
-                            {r.publisher && (
-                              <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">
-                                By {r.publisher}
-                              </p>
-                            )}
-                            {r.subtitle && (
-                              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                                {standardizeCopy(r.subtitle)}
-                              </p>
-                            )}
+                            {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
+                            {r.subtitle && <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{standardizeCopy(r.subtitle)}</p>}
                             {typeof r.page_count === "number" && (
                               <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                 {r.page_count} {r.page_count === 1 ? "page" : "pages"}
@@ -594,19 +523,13 @@ function Index() {
                               <DownloadToPrintButton
                                 href={`/view/${r.id}/download`}
                                 publicationId={r.id}
-                                publicationName={
-                                  publicationLabel(r.publication || r.title) || r.title
-                                }
+                                publicationName={publicationLabel(r.publication || r.title) || r.title}
                                 publicationTitle={r.title}
                                 publisher={r.publisher}
                                 publicationSeries={r.publication}
-                                parsha={
-                                  (r as { parsha_key?: string | null }).parsha_key ??
-                                  displayedParshaKey
-                                }
+                                parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
                                 filename={buildDownloadFilename(
-                                  (r as { parsha_key?: string | null }).parsha_key ??
-                                    displayedParshaKey,
+                                  (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
                                   r.publication || r.title,
                                 )}
                                 onClick={() => {
@@ -621,10 +544,7 @@ function Index() {
                                 <SharePublicationButton
                                   pdfId={r.id}
                                   title={r.title}
-                                  parsha={
-                                    (r as { parsha_key?: string | null }).parsha_key ??
-                                    displayedParshaKey
-                                  }
+                                  parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
                                 />
                               </div>
                             </div>
@@ -648,9 +568,7 @@ function Index() {
             ) : (
               <>
                 <div className="mt-5 space-y-3 sticky top-14 z-30 -mx-3 px-3 py-3 bg-background/95 backdrop-blur border-b border-accent/20 sm:static sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0">
-                  {(audienceFilter !== "All" ||
-                    lengthFilter !== "All" ||
-                    contentTypeFilter !== "All") && (
+                  {(audienceFilter !== "All" || lengthFilter !== "All" || contentTypeFilter !== "All") && (
                     <div className="flex justify-end">
                       <button
                         type="button"
@@ -665,12 +583,11 @@ function Index() {
                       </button>
                     </div>
                   )}
+
                   <div id="filters" className="scroll-mt-24">
                     {audienceHasChoice && (
                       <>
-                        <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                          By audience
-                        </span>
+                        <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By audience</span>
                         <div className="mt-1.5 flex flex-wrap justify-start gap-2">
                           {(["All", "Children", "Families", "Adults"] as const)
                             .map((audience) => ({
@@ -678,9 +595,7 @@ function Index() {
                               count:
                                 audience === "All"
                                   ? audienceFiltered.length
-                                  : audienceFiltered.filter(
-                                      (r) => normalizeAudience(r.audience, r.title) === audience,
-                                    ).length,
+                                  : audienceFiltered.filter((r) => normalizeAudience(r.audience, r.title) === audience).length,
                             }))
                             .filter(({ audience, count }) => audience === "All" || count > 0)
                             .map(({ audience }) => {
@@ -694,9 +609,7 @@ function Index() {
                                   onClick={() => {
                                     const next = active ? "All" : audience;
                                     setAudienceFilter(next);
-                                    trackFp("filter_change", {
-                                      metadata: { filter: "audience", value: next },
-                                    });
+                                    trackFp("filter_change", { metadata: { filter: "audience", value: next } });
                                   }}
                                   className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                     active
@@ -715,16 +628,14 @@ function Index() {
 
                   {lengthHasChoice && (
                     <div>
-                      <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        By length
-                      </span>
+                      <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By length</span>
                       <div className="mt-1.5 flex flex-wrap justify-start gap-2">
                         {(() => {
                           const shortCount = lengthScoped.filter(
                             (r) => typeof r.page_count === "number" && r.page_count < 5,
                           ).length;
                           const longCount = lengthScoped.filter(
-                            (r) => typeof r.page_count === "number" && r.page_count >= 5;
+                            (r) => typeof r.page_count === "number" && r.page_count >= 5,
                           ).length;
                           const options = [
                             { key: "All" as const, label: "All", count: lengthScoped.length },
@@ -742,9 +653,7 @@ function Index() {
                                 onClick={() => {
                                   const next = active ? "All" : o.key;
                                   setLengthFilter(next);
-                                  trackFp("filter_change", {
-                                    metadata: { filter: "length", value: next },
-                                  });
+                                  trackFp("filter_change", { metadata: { filter: "length", value: next } });
                                 }}
                                 className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                   active
@@ -763,17 +672,14 @@ function Index() {
 
                   {contentTypeHasChoice && (
                     <div>
-                      <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        By content type
-                      </span>
+                      <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By content type</span>
                       <div className="mt-1.5 flex flex-wrap justify-start gap-2">
                         {[
                           { key: "All", label: "All", count: contentTypeScoped.length },
                           ...contentTypeOptions.map((t) => ({
                             key: t,
                             label: t,
-                            count: contentTypeScoped.filter((r) => resourceContentType(r) === t)
-                              .length,
+                            count: contentTypeScoped.filter((r) => resourceContentType(r) === t).length,
                           })),
                         ]
                           .filter((o) => o.key === "All" || o.count > 0)
@@ -788,9 +694,7 @@ function Index() {
                                 onClick={() => {
                                   const next = active ? "All" : o.key;
                                   setContentTypeFilter(next);
-                                  trackFp("filter_change", {
-                                    metadata: { filter: "content_type", value: next },
-                                  });
+                                  trackFp("filter_change", { metadata: { filter: "content_type", value: next } });
                                 }}
                                 className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
                                   active
@@ -817,11 +721,7 @@ function Index() {
                         publication_title={r.title}
                         publication_series={r.publication ?? null}
                         publisher={r.publisher ?? null}
-                        parsha={
-                          (r as { parsha_key?: string | null }).parsha_key ??
-                          displayedParshaKey ??
-                          null
-                        }
+                        parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey ?? null}
                       >
                         <div className="flex flex-1 items-start gap-3">
                           <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-accent/12 text-primary shrink-0">
@@ -830,11 +730,7 @@ function Index() {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-2">
                               <h3 className="font-serif text-base sm:text-xl font-bold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
-                                <Link
-                                  to="/view/$id"
-                                  params={{ id: r.id }}
-                                  className="hover:text-accent hover:underline transition-colors duration-150"
-                                >
+                                <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline transition-colors duration-150">
                                   {r.title}
                                 </Link>
                               </h3>
@@ -844,26 +740,17 @@ function Index() {
                                 </span>
                               )}
                             </div>
-                            {r.publisher && (
-                              <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">
-                                By {r.publisher}
-                              </p>
-                            )}
+                            {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
                             {(() => {
-                              // Issue-specific summary wins; the generic
-                              // publication description is only a fallback.
                               const summary = r.summary_quick || r.subtitle || r.description;
                               return summary ? (
-                                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                                  {standardizeCopy(summary)}
-                                </p>
+                                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{standardizeCopy(summary)}</p>
                               ) : null;
                             })()}
                             {(r.audience || r.format_type || typeof r.page_count === "number") && (
                               <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                 {[
-                                  audienceLabel(normalizeAudience(r.audience, r.title)) ??
-                                    r.audience,
+                                  audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience,
                                   formatTypeLabel(r.format_type),
                                   typeof r.page_count === "number"
                                     ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
@@ -884,12 +771,9 @@ function Index() {
                             publicationTitle={r.title}
                             publisher={r.publisher}
                             publicationSeries={r.publication}
-                            parsha={
-                              (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey
-                            }
+                            parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
                             filename={buildDownloadFilename(
-                              (r as { parsha_key?: string | null }).parsha_key ??
-                                displayedParshaKey,
+                              (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
                               r.publication || r.title,
                             )}
                             onClick={() => {
@@ -904,19 +788,13 @@ function Index() {
                             <SharePublicationButton
                               pdfId={r.id}
                               title={r.title}
-                              parsha={
-                                (r as { parsha_key?: string | null }).parsha_key ??
-                                displayedParshaKey
-                              }
+                              parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
                             />
                           </div>
                         </div>
                       </PublicationCardTracker>
                       {i === (filteredResources.length > 1 ? 1 : 0) && (
-                        <div
-                          key="share-prompt"
-                          className="col-span-1 sm:col-span-2 flex justify-center py-2"
-                        >
+                        <div key="share-prompt" className="col-span-1 sm:col-span-2 flex justify-center py-2">
                           <ShareButton />
                         </div>
                       )}
@@ -931,14 +809,10 @@ function Index() {
                 )}
               </>
             )}
+
             <p className="mt-7 mx-auto max-w-2xl px-2 text-center text-xs sm:text-sm text-muted-foreground/80 leading-relaxed">
-              Torah For The Table is a 501(c)(3) nonprofit organization providing free, carefully
-              selected Torah resources for children, families, and adults. Each week, we make
-              meaningful Divrei Torah, Parsha questions, and original educational content easy to
-              find, print, and share at the Shabbos table.{" "}
-              <Link to="/about" className="text-accent hover:text-primary underline">
-                Our mission and programs
-              </Link>
+              Torah For The Table is a 501(c)(3) nonprofit organization providing free, carefully selected Torah resources for children, families, and adults. Each week, we make meaningful Divrei Torah, Parsha questions, and original educational content easy to find, print, and share at the Shabbos table.{" "}
+              <Link to="/about" className="text-accent hover:text-primary underline">Our mission and programs</Link>
             </p>
           </div>
         </section>
@@ -947,7 +821,6 @@ function Index() {
           <span className="gold-divider-dot" />
         </div>
 
-        {/* Memorial */}
         <section className="parchment-frame max-w-2xl mx-auto">
           <div
             className="parchment-panel text-center bg-card shadow-sm"
@@ -956,20 +829,10 @@ function Index() {
           >
             <div className="flex items-center justify-center gap-3 text-accent">
               <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
-              <span
-                className="font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.3em]"
-                dir="ltr"
-              >
-                Dedication
-              </span>
+              <span className="font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.3em]" dir="ltr">Dedication</span>
               <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
             </div>
-            <h2
-              dir="rtl"
-              lang="he"
-              className="mt-5 font-serif font-semibold text-primary"
-              style={{ fontSize: "1.25rem", letterSpacing: "0.04em" }}
-            >
+            <h2 dir="rtl" lang="he" className="mt-5 font-serif font-semibold text-primary" style={{ fontSize: "1.25rem", letterSpacing: "0.04em" }}>
               לעילוי נשמת
             </h2>
             <div
