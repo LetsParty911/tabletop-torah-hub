@@ -21,13 +21,13 @@ type AriaValue = string | ((fillStep: FillStep) => string);
 type ThursdayProgressMeterProps = {
   heading?: HeadingValue;
   ariaLabel?: AriaValue;
-  /** Hide the separate right-side percentage label (use when the heading already shows it). */
+  /** Hide the separate right-side percentage label. */
   showPercent?: boolean;
 };
 
 export function ThursdayProgressMeter({
-  heading = "This Week's Upload Progress",
-  ariaLabel = (fillStep) => `This week's Divrei Torah upload progress: ${fillStep}% complete`,
+  heading = "Upcoming Divrei Torah",
+  ariaLabel = (fillStep) => `Upcoming Divrei Torah upload progress: ${fillStep}% complete`,
   showPercent = true,
 }: ThursdayProgressMeterProps) {
   const [fillStep, setFillStep] = useState<FillStep | null>(null);
@@ -71,13 +71,17 @@ export function ThursdayProgressMeter({
 
   return (
     <div
-      className="mx-auto max-w-md rounded-lg border border-accent/40 bg-background/60 px-4 py-3"
+      className="mx-auto max-w-md rounded-xl border border-accent/40 bg-background/60 px-4 py-4 sm:px-5"
       role="group"
       aria-label={ariaText}
     >
-      <div className="flex items-baseline justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wide text-primary">
-          {headingText}
+      <h2 className="text-center font-serif text-lg font-bold leading-snug text-primary sm:text-xl">
+        {headingText}
+      </h2>
+
+      <div className="mt-3 flex items-baseline justify-between">
+        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">
+          Upload Progress
         </span>
         {showPercent && <span className="text-sm font-bold text-accent-readable">{fillStep}%</span>}
       </div>
