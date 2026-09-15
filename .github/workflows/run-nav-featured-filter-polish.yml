@@ -1,0 +1,24 @@
+name: Run navigation polish script
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/run-nav-featured-filter-polish.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/apply_nav_featured_filter_polish.py
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/__root.tsx src/routes/index.tsx
+          git commit -m "Refine navigation featured picks and sticky filters"
+          git push
