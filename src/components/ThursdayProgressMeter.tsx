@@ -4,8 +4,6 @@ import { getProgressVisibility } from "@/integrations/supabase/progress-visibili
 
 const STEPS = [0, 25, 50, 75, 95, 100] as const;
 type FillStep = (typeof STEPS)[number];
-// The bar always shows 5 segments (one per non-zero threshold); 0% just
-// means none of them are lit yet.
 const SEGMENT_THRESHOLDS = [25, 50, 75, 95, 100] as const;
 
 function formatEta(iso: string): string {
@@ -59,6 +57,24 @@ export function ThursdayProgressMeter({
     };
   }, []);
 
+  // The upcoming card owns the Thursday-update message now. Hide the older
+  // generic sentence in the current-collection hero so the page reads in a
+  // clean sequence: current collection -> upcoming reading -> email reminder.
+  useEffect(() => {
+    const oldCopy =
+      "More Divrei Torah for the upcoming Shabbos or Yom Tov will be added by Thursday evening. Please check back then.";
+    const heroCopy = Array.from(document.querySelectorAll("p")).find(
+      (p) => p.textContent?.trim() === oldCopy,
+    );
+    if (!heroCopy) return;
+
+    const previousDisplay = heroCopy.style.display;
+    heroCopy.style.display = "none";
+    return () => {
+      heroCopy.style.display = previousDisplay;
+    };
+  }, []);
+
   const showEta = useMemo(() => {
     if (!eta) return false;
     const etaTime = new Date(eta).getTime();
@@ -68,7 +84,6 @@ export function ThursdayProgressMeter({
   if (fillStep === null || visible !== true) return null;
 
   const activeCount = SEGMENT_THRESHOLDS.filter((t) => t <= fillStep).length;
-
   const headingText = typeof heading === "function" ? heading(fillStep) : heading;
   const displayHeading = headingText.replace(/^Upcoming(?::\s*|\s+)/i, "");
   const ariaText = typeof ariaLabel === "function" ? ariaLabel(fillStep) : ariaLabel;
@@ -96,10 +111,6 @@ export function ThursdayProgressMeter({
               {message ?? "New Divrei Torah will be added then."}
             </p>
           </>
-        ) : message ? (
-          <p className="mx-auto mt-3 max-w-xl font-sans text-sm leading-relaxed text-muted-foreground sm:text-base">
-            {message}
-          </p>
         ) : null}
       </div>
 
@@ -126,7 +137,7 @@ export function ThursdayProgressMeter({
         </>
       )}
 
-      {showEta && eta && (
+      {showEta && eta && fillStep > 0 && (
         <p className="mt-2 text-xs text-muted-foreground">Expected complete by {formatEta(eta)}</p>
       )}
     </div>
