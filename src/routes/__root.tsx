@@ -25,7 +25,6 @@ function GoogleAnalytics() {
   const isAdmin =
     pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/admin-analytics";
 
-  // Load GTM (primary analytics container) on public routes only.
   useEffect(() => {
     if (isAdmin) return;
     if (typeof window === "undefined") return;
@@ -45,8 +44,6 @@ function GoogleAnalytics() {
     document.head.appendChild(s);
   }, [isAdmin]);
 
-  // GTM <noscript> iframe fallback — rendered into <body> on public routes only.
-  // (Kept out of <head> to comply with HTML5 noscript content rules.)
   if (isAdmin || !GTM_CONTAINER_ID) return null;
   return (
     <noscript>
@@ -107,7 +104,6 @@ function AuthRedirectHandler() {
 function NotFoundComponent() {
   useEffect(() => {
     if (typeof document === "undefined") return;
-    // Meaningful site error only — a real 404, with a sanitized code.
     trackFp("error", { metadata: { error_code: "not_found", status: 404 } });
     const previousTitle = document.title;
     document.title = "Page Not Found — Torah for the Table";
@@ -278,7 +274,7 @@ function SiteNav() {
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
         <div className="flex items-center justify-between gap-3 py-1.5 md:py-2.5">
           <Link to="/" aria-label="Torah for the Table — home" className="shrink-0">
-            <SiteLogoHorizontal className="[&_img]:h-12 md:[&_img]:h-16" />
+            <SiteLogoHorizontal className="[&_img]:h-14 md:[&_img]:h-16" />
           </Link>
 
           <div className="hidden items-center gap-6 md:flex">
@@ -326,7 +322,7 @@ function SiteNav() {
             aria-expanded={mobileOpen}
             aria-controls="mobile-navigation"
             onClick={() => setMobileOpen((open) => !open)}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-accent/35 bg-background text-primary transition-colors hover:bg-accent/10 md:hidden"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent/35 bg-background text-primary transition-colors hover:bg-accent/10 md:hidden"
           >
             {mobileOpen ? (
               <X className="h-5 w-5" aria-hidden="true" />
