@@ -1,0 +1,48 @@
+name: Apply homepage upcoming UX
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/apply-upcoming-card-ux.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.event.head_commit.message == 'Apply homepage upcoming UX'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update homepage copy placement
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/routes/index.tsx')
+          text = path.read_text()
+
+          old = '''            {resources.length > 0 && (
+              <p className="mx-auto mt-2 max-w-xl font-sans text-sm leading-relaxed text-muted-foreground sm:text-base">
+                More Divrei Torah for the upcoming Shabbos or Yom Tov will be added by Thursday evening. Please check back then.
+              </p>
+            )}
+
+'''
+          if old not in text:
+              raise SystemExit('Expected hero availability block not found')
+
+          text = text.replace(old, '', 1)
+          path.write_text(text)
+          PY
+
+      - name: Commit homepage change
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/index.tsx
+          git commit -m "Move upcoming availability copy out of current collection" || exit 0
+          git push
