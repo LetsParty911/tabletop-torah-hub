@@ -1,0 +1,207 @@
+name: Apply navigation and collection polish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/apply-nav-featured-filter-polish.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.event.head_commit.message == 'Apply navigation and collection polish'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply approved polish
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          # Header navigation: add Contact after About in desktop + mobile.
+          root = Path('src/routes/__root.tsx')
+          text = root.read_text()
+          desktop = '''            <Link
+              to="/about"
+              className={linkCls}
+              activeProps={{ className: `${linkCls} ${activeCls}` }}
+            >
+              About
+            </Link>
+'''
+          desktop_new = desktop + '''            <Link
+              to="/contact"
+              className={linkCls}
+              activeProps={{ className: `${linkCls} ${activeCls}` }}
+            >
+              Contact
+            </Link>
+'''
+          if text.count(desktop) != 1:
+              raise SystemExit('Expected desktop About nav block not found exactly once')
+          text = text.replace(desktop, desktop_new, 1)
+
+          mobile = '''              <Link
+                to="/about"
+                className={mobileLinkCls}
+                activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
+              >
+                About
+              </Link>
+'''
+          mobile_new = mobile + '''              <Link
+                to="/contact"
+                className={mobileLinkCls}
+                activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
+              >
+                Contact
+              </Link>
+'''
+          if text.count(mobile) != 1:
+              raise SystemExit('Expected mobile About nav block not found exactly once')
+          text = text.replace(mobile, mobile_new, 1)
+          root.write_text(text)
+
+          # Footer: mirror primary nav order and use canonical /resources URL.
+          footer = Path('src/components/SiteFooter.tsx')
+          text = footer.read_text()
+          old = '''        <Link to="/" className={linkClass}>
+          Home
+        </Link>
+        <Link to="/short-vorts" className={linkClass}>
+          Short Vorts
+        </Link>
+        <Link to="/archive" className={linkClass}>
+          Archive
+        </Link>
+        <Link to="/originals" className={linkClass}>
+          Originals
+        </Link>
+        <Link to="/about" className={linkClass}>
+          About
+        </Link>
+        <Link to="/contact" className={linkClass}>
+          Contact
+        </Link>
+        <Link to="/privacy" className={linkClass}>
+          Privacy
+        </Link>
+'''
+          new = '''        <Link to="/" className={linkClass}>
+          Home
+        </Link>
+        <Link to="/archive" className={linkClass}>
+          Archive
+        </Link>
+        <Link to="/short-vorts" className={linkClass}>
+          Short Vorts
+        </Link>
+        <Link to="/resources" className={linkClass}>
+          Originals
+        </Link>
+        <Link to="/about" className={linkClass}>
+          About
+        </Link>
+        <Link to="/contact" className={linkClass}>
+          Contact
+        </Link>
+        <Link to="/privacy" className={linkClass}>
+          Privacy
+        </Link>
+'''
+          if old not in text:
+              raise SystemExit('Expected footer nav block not found')
+          footer.write_text(text.replace(old, new, 1))
+
+          # Homepage: date context, restrained Featured cue, compact sticky desktop filters.
+          index = Path('src/routes/index.tsx')
+          text = index.read_text()
+
+          anchor = '''  const shabbatShuvaLabel =
+    isFallback && normalizedCurrentKey === "ha'azinu" && showYomKippurNotice
+      ? `Shabbat Shuva / ${currentLabel}`
+      : currentLabel;
+'''
+          replacement = anchor + '''  const heroDateLine = readingDate
+    ? new Date(`${readingDate}T12:00:00Z`)
+        .toLocaleDateString("en-US", {
+          timeZone: "America/New_York",
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        })
+        .replace(/^Saturday,/, "Shabbos,")
+    : null;
+'''
+          if anchor not in text:
+              raise SystemExit('Hero date anchor not found')
+          text = text.replace(anchor, replacement, 1)
+
+          h1 = '''            </h1>
+            <p className="mx-auto mt-3 max-w-2xl font-serif text-base leading-relaxed text-primary sm:text-lg md:text-xl">
+'''
+          h1_new = '''            </h1>
+            {heroDateLine && (
+              <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-sm">
+                {heroDateLine}
+              </p>
+            )}
+            <p className="mx-auto mt-3 max-w-2xl font-serif text-base leading-relaxed text-primary sm:text-lg md:text-xl">
+'''
+          if h1 not in text:
+              raise SystemExit('Hero heading insertion point not found')
+          text = text.replace(h1, h1_new, 1)
+
+          featured = '''                  <div className="parchment-panel">
+                    <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
+                      This Week's Recommended Picks
+                    </h2>
+'''
+          featured_new = '''                  <div className="parchment-panel">
+                    <p className="text-center font-sans text-[0.65rem] font-bold uppercase tracking-[0.2em] text-accent-readable sm:text-xs">
+                      <span aria-hidden="true">★</span> Featured
+                    </p>
+                    <h2 className="mt-1 font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
+                      This Week's Recommended Picks
+                    </h2>
+'''
+          if featured not in text:
+              raise SystemExit('Featured section anchor not found')
+          text = text.replace(featured, featured_new, 1)
+
+          old_filters = '''                <div id="filters" className="mt-5 sticky top-14 z-30 -mx-3 bg-background/95 px-3 py-3 backdrop-blur border-b border-accent/20 sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none sm:border-0 scroll-mt-24">
+'''
+          new_filters = '''                <div id="filters" className="mt-5 sticky top-14 sm:top-20 z-30 -mx-3 bg-background/95 px-3 py-3 backdrop-blur border-y border-accent/20 sm:mx-0 sm:rounded-xl sm:border sm:px-4 sm:shadow-sm scroll-mt-24">
+'''
+          if old_filters not in text:
+              raise SystemExit('Filter wrapper anchor not found')
+          text = text.replace(old_filters, new_filters, 1)
+
+          old_filter_body = '''                  <div className={`${filtersOpen ? "block" : "hidden"} mt-3 space-y-3 sm:mt-0 sm:block`}>
+'''
+          new_filter_body = '''                  <div className={`${filtersOpen ? "block" : "hidden"} mt-3 space-y-3 sm:mt-0 sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:space-y-0`}>
+'''
+          if old_filter_body not in text:
+              raise SystemExit('Filter body anchor not found')
+          text = text.replace(old_filter_body, new_filter_body, 1)
+
+          old_clear = '                      <div className="hidden justify-end sm:flex">\n'
+          new_clear = '                      <div className="hidden justify-end sm:col-span-3 sm:flex">\n'
+          if old_clear not in text:
+              raise SystemExit('Desktop clear-filter row not found')
+          text = text.replace(old_clear, new_clear, 1)
+
+          index.write_text(text)
+          PY
+
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/__root.tsx src/components/SiteFooter.tsx src/routes/index.tsx
+          git commit -m "Refine navigation featured picks and sticky filters" || exit 0
+          git push
