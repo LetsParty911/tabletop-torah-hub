@@ -261,6 +261,16 @@ function Index() {
     isFallback && normalizedCurrentKey === "ha'azinu" && showYomKippurNotice
       ? `Shabbat Shuva / ${currentLabel}`
       : currentLabel;
+  const heroDateLine = readingDate
+    ? new Date(`${readingDate}T12:00:00Z`)
+        .toLocaleDateString("en-US", {
+          timeZone: "America/New_York",
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        })
+        .replace(/^Saturday,/, "Shabbos,")
+    : null;
   const normalizedCollectionKey = (displayedParshaKey ?? displayedLabel)
     .replace(/^Parshas\s+/i, "")
     .trim()
@@ -419,6 +429,11 @@ function Index() {
                   ? `Divrei Torah for ${displayedLabel}`
                   : `Free Divrei Torah for Your ${isYomTovCollection ? "Yom Tov" : "Shabbos"} Table`}
             </h1>
+            {heroDateLine && (
+              <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-sm">
+                {heroDateLine}
+              </p>
+            )}
             <p className="mx-auto mt-3 max-w-2xl font-serif text-base leading-relaxed text-primary sm:text-lg md:text-xl">
               {isFallback ? (
                 <>New Divrei Torah for this Shabbos are being prepared.</>
@@ -518,7 +533,10 @@ function Index() {
               <>
                 <section className="parchment-frame">
                   <div className="parchment-panel">
-                    <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
+                    <p className="text-center font-sans text-[0.65rem] font-bold uppercase tracking-[0.2em] text-accent-readable sm:text-xs">
+                      <span aria-hidden="true">★</span> Featured
+                    </p>
+                    <h2 className="mt-1 font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
                       This Week's Recommended Picks
                     </h2>
                     <div className="mt-5 grid gap-4 grid-cols-1 sm:grid-cols-2">
@@ -597,7 +615,7 @@ function Index() {
               </p>
             ) : (
               <>
-                <div id="filters" className="mt-5 sticky top-14 z-30 -mx-3 bg-background/95 px-3 py-3 backdrop-blur border-b border-accent/20 sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none sm:border-0 scroll-mt-24">
+                <div id="filters" className="mt-5 sticky top-14 sm:top-20 z-30 -mx-3 bg-background/95 px-3 py-3 backdrop-blur border-y border-accent/20 sm:mx-0 sm:rounded-xl sm:border sm:px-4 sm:shadow-sm scroll-mt-24">
                   <div className="flex items-center justify-between gap-3 sm:hidden">
                     <button
                       type="button"
@@ -618,9 +636,9 @@ function Index() {
                     )}
                   </div>
 
-                  <div className={`${filtersOpen ? "block" : "hidden"} mt-3 space-y-3 sm:mt-0 sm:block`}>
+                  <div className={`${filtersOpen ? "block" : "hidden"} mt-3 space-y-3 sm:mt-0 sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:space-y-0`}>
                     {activeFilterCount > 0 && (
-                      <div className="hidden justify-end sm:flex">
+                      <div className="hidden justify-end sm:col-span-3 sm:flex">
                         <button
                           type="button"
                           onClick={clearFilters}

@@ -314,6 +314,13 @@ function SiteNav() {
             >
               About
             </Link>
+            <Link
+              to="/contact"
+              className={linkCls}
+              activeProps={{ className: `${linkCls} ${activeCls}` }}
+            >
+              Contact
+            </Link>
           </div>
 
           <button
@@ -370,6 +377,13 @@ function SiteNav() {
                 activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
               >
                 About
+              </Link>
+              <Link
+                to="/contact"
+                className={mobileLinkCls}
+                activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
+              >
+                Contact
               </Link>
             </div>
           </div>
