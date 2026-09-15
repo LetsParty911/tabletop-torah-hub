@@ -303,8 +303,6 @@ function Index() {
     setPostShabbos(showingLastShabbos && resources.length > 0 && isPostShabbosWindow());
   }, [isFallback, resources.length, readingDate]);
 
-  const collectionLabel = postShabbos ? "Last Shabbos's" : "This Week's";
-
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">(
     "All",
   );
@@ -413,9 +411,14 @@ function Index() {
       className={`inline-flex items-center justify-center gap-2 rounded-full border border-accent bg-transparent px-5 py-2.5 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors ${className ?? ""}`}
     >
       <Share2 className="h-4 w-4" />
-      Share {collectionLabel} Divrei Torah
+      Share {displayedLabel} Divrei Torah
     </a>
   );
+
+  const upcomingLabel =
+    upcomingParsha && upcomingParsha !== displayedParshaKey
+      ? formatReadingLabel(upcomingParsha)
+      : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -487,11 +490,19 @@ function Index() {
         </section>
 
         <ThursdayProgressMeter
-          heading="Next Week's Upload Progress"
+          heading={upcomingLabel ? `Upcoming: ${upcomingLabel}` : "Upcoming Divrei Torah"}
           ariaLabel={(fillStep) =>
-            `Next week's Divrei Torah upload progress: ${fillStep}% complete`
+            `${upcomingLabel ? `${upcomingLabel} upload` : "Upcoming Divrei Torah upload"} progress: ${fillStep}% complete`
           }
         />
+
+        <div className="mx-auto max-w-2xl rounded-xl border border-accent/40 bg-card/40 px-4 py-4 sm:px-5">
+          <WeeklyEmailSignup
+            sourceId="homepage"
+            variant="compact"
+            ctaLabel="Get the weekly download reminder"
+          />
+        </div>
 
         {/* Resource collection */}
         <section id="this-weeks-collection" className="scroll-mt-8">
@@ -629,30 +640,6 @@ function Index() {
                 </div>
               </>
             )}
-            {upcomingParsha && upcomingParsha !== displayedParshaKey ? (
-              <div className="mx-auto mt-6 max-w-2xl rounded-xl border border-accent/40 bg-card/40 px-4 py-4 sm:px-5">
-                <h3 className="text-center font-serif text-base sm:text-lg font-bold text-primary">
-                  {isFallback ? "This Week:" : "Next Week:"} {formatReadingLabel(upcomingParsha)}
-                </h3>
-                <div className="mt-3">
-                  <WeeklyEmailSignup
-                    sourceId="homepage"
-                    variant="compact"
-                    ctaLabel="Get the weekly download reminder"
-                  />
-                </div>
-              </div>
-            ) : (
-              // No determinable next reading (Yom Tov week or Hebcal fallback):
-              // the reminder signup must still be reachable on the homepage.
-              <div className="mx-auto mt-6 max-w-2xl rounded-xl border border-accent/40 bg-card/40 px-4 py-4 sm:px-5">
-                <WeeklyEmailSignup
-                  sourceId="homepage"
-                  variant="compact"
-                  ctaLabel="Get the weekly download reminder"
-                />
-              </div>
-            )}
 
             {resources.length === 0 ? (
               <p className="mt-6 text-center text-muted-foreground max-w-md mx-auto">
@@ -737,7 +724,7 @@ function Index() {
                             (r) => typeof r.page_count === "number" && r.page_count < 5,
                           ).length;
                           const longCount = lengthScoped.filter(
-                            (r) => typeof r.page_count === "number" && r.page_count >= 5,
+                            (r) => typeof r.page_count === "number" && r.page_count >= 5;
                           ).length;
                           const options = [
                             { key: "All" as const, label: "All", count: lengthScoped.length },
