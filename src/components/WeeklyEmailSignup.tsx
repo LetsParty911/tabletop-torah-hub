@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { subscribeEmail } from "@/integrations/supabase/api.functions";
 import { trackEvent, trackEventOnce } from "@/lib/analytics";
 import { trackFp } from "@/lib/first-party-analytics";
@@ -24,6 +24,7 @@ export function WeeklyEmailSignup({
   const [signupMsg, setSignupMsg] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const consentRef = useRef<HTMLInputElement | null>(null);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +33,7 @@ export function WeeklyEmailSignup({
 
     if (!consent) {
       setSignupMsg("Please agree to receive emails before subscribing.");
+      consentRef.current?.focus();
       return;
     }
 
@@ -53,8 +55,6 @@ export function WeeklyEmailSignup({
           },
           `tftt:analytics-sent:newsletter_signup:${sourceId}`,
         );
-        // Canonical event: successful subscription only. The email address is
-        // deliberately not part of the behavioral payload.
         trackFp("signup", {
           metadata: {
             form_id: "weekly_torah_notifications",
@@ -75,6 +75,19 @@ export function WeeklyEmailSignup({
     }
   };
 
+  const consentInput = (
+    <input
+      ref={consentRef}
+      type="checkbox"
+      checked={consent}
+      onChange={(e) => {
+        setConsent(e.target.checked);
+        if (e.target.checked) setSignupMsg(null);
+      }}
+      className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--gold-decorative,currentColor)]"
+    />
+  );
+
   if (variant === "compact") {
     return (
       <div id="weekly-email-signup" className={`scroll-mt-8 ${className}`}>
@@ -91,7 +104,7 @@ export function WeeklyEmailSignup({
             <p className="text-center font-sans text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-accent-readable">
               {ctaLabel}
             </p>
-            <form onSubmit={handleSignup} className="mt-2 flex flex-col gap-2">
+            <form onSubmit={handleSignup} className="mt-2 flex flex-col gap-2" noValidate>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <input
                   type="email"
@@ -104,20 +117,14 @@ export function WeeklyEmailSignup({
                 />
                 <button
                   type="submit"
-                  disabled={submitting || !consent}
+                  disabled={submitting}
                   className="rounded-full bg-primary px-5 py-2 font-serif text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {submitting ? "Subscribing…" : "Subscribe"}
                 </button>
               </div>
               <label className="flex items-start gap-2 text-left text-xs text-muted-foreground">
-                <input
-                  type="checkbox"
-                  required
-                  checked={consent}
-                  onChange={(e) => setConsent(e.target.checked)}
-                  className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-[var(--gold-decorative,currentColor)]"
-                />
+                {consentInput}
                 <span>
                   I agree to receive emails from Torah For The Table. You can unsubscribe at any
                   time.
@@ -166,7 +173,7 @@ export function WeeklyEmailSignup({
           </div>
         ) : (
           <>
-            <form onSubmit={handleSignup} className="mt-5 flex flex-col gap-3 max-w-md mx-auto">
+            <form onSubmit={handleSignup} className="mt-5 flex flex-col gap-3 max-w-md mx-auto" noValidate>
               <div className="flex flex-col sm:flex-row gap-3">
                 <input
                   type="email"
@@ -179,20 +186,14 @@ export function WeeklyEmailSignup({
                 />
                 <button
                   type="submit"
-                  disabled={submitting || !consent}
+                  disabled={submitting}
                   className="rounded-full bg-primary px-8 py-3.5 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {submitting ? "Subscribing…" : "Subscribe"}
                 </button>
               </div>
               <label className="flex items-start gap-2 text-left text-sm text-foreground">
-                <input
-                  type="checkbox"
-                  required
-                  checked={consent}
-                  onChange={(e) => setConsent(e.target.checked)}
-                  className="mt-1 h-4 w-4 shrink-0 accent-[var(--gold-decorative,currentColor)]"
-                />
+                {consentInput}
                 <span>
                   I agree to receive emails from Torah For The Table. You can unsubscribe at any
                   time.
