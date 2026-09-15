@@ -158,6 +158,14 @@ function ViewPdf() {
   const [thumbFailed, setThumbFailed] = useState(false);
   const pdfOpenTrackedRef = useRef<string | null>(null);
   useEffect(() => setMounted(true), []);
+
+  // Mobile/tablet can't embed the PDF (no iframe onLoad), so record the
+  // canonical pdf_open on page load instead — otherwise phone visits never
+  // count as PDF access in the analytics dashboards.
+  useEffect(() => {
+    if (mounted && isMobile) trackCanonicalPdfOpen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, isMobile, pdf.id]);
   // Mobile browsers (Android Chrome / iOS Safari) can't render PDFs inline —
   // they show a black frame. Only embed once we know we're on desktop.
   const canEmbed = mounted && !isMobile;
