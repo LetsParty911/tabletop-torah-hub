@@ -11,11 +11,11 @@ permissions:
 
 jobs:
   apply:
-    if: github.event.head_commit.message == 'Apply homepage upcoming UX'
+    if: github.event.head_commit.message == 'Finish homepage upcoming UX'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Update homepage copy placement
+      - name: Update homepage flow
         shell: bash
         run: |
           python - <<'PY'
@@ -24,25 +24,42 @@ jobs:
           path = Path('src/routes/index.tsx')
           text = path.read_text()
 
-          old = '''            {resources.length > 0 && (
+          hero = '''            {resources.length > 0 && (
               <p className="mx-auto mt-2 max-w-xl font-sans text-sm leading-relaxed text-muted-foreground sm:text-base">
                 More Divrei Torah for the upcoming Shabbos or Yom Tov will be added by Thursday evening. Please check back then.
               </p>
             )}
 
 '''
-          if old not in text:
-              raise SystemExit('Expected hero availability block not found')
+          text = text.replace(hero, '', 1)
 
-          text = text.replace(old, '', 1)
+          old_meter = '''        <ThursdayProgressMeter
+          heading={upcomingLabel ? `Upcoming: ${upcomingLabel}` : "Upcoming Divrei Torah"}
+          ariaLabel={(fillStep) =>
+            `${upcomingLabel ? `${upcomingLabel} upload` : "Upcoming Divrei Torah upload"} progress: ${fillStep}% complete`
+          }
+        />'''
+
+          new_meter = '''        <ThursdayProgressMeter
+          heading={upcomingLabel ? `Upcoming: ${upcomingLabel}` : "Upcoming Divrei Torah"}
+          message="New Divrei Torah will be added then."
+          ariaLabel={(fillStep) =>
+            `${upcomingLabel ? `${upcomingLabel} upload` : "Upcoming Divrei Torah upload"} progress: ${fillStep}% complete`
+          }
+        />'''
+
+          if old_meter not in text and 'message="New Divrei Torah will be added then."' not in text:
+              raise SystemExit('Expected progress meter block not found')
+          text = text.replace(old_meter, new_meter, 1)
           path.write_text(text)
           PY
 
-      - name: Commit homepage change
+      - name: Remove one-off workflow and commit
         shell: bash
         run: |
+          rm .github/workflows/apply-upcoming-card-ux.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/routes/index.tsx
-          git commit -m "Move upcoming availability copy out of current collection" || exit 0
+          git add src/routes/index.tsx .github/workflows/apply-upcoming-card-ux.yml
+          git commit -m "Finish upcoming card zero-state UX"
           git push
