@@ -15,13 +15,13 @@ export function SiteFooter() {
         <Link to="/" className={linkClass}>
           Home
         </Link>
-        <Link to="/short-vorts" className={linkClass}>
-          Short Vorts
-        </Link>
         <Link to="/archive" className={linkClass}>
           Archive
         </Link>
-        <Link to="/originals" className={linkClass}>
+        <Link to="/short-vorts" className={linkClass}>
+          Short Vorts
+        </Link>
+        <Link to="/resources" className={linkClass}>
           Originals
         </Link>
         <Link to="/about" className={linkClass}>
