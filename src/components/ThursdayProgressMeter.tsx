@@ -23,6 +23,8 @@ type ThursdayProgressMeterProps = {
   showPercent?: boolean;
   /** Optional explanatory copy shown beneath the upcoming reading at 0%. */
   message?: string;
+  /** Small status label above the reading name. */
+  badgeLabel?: string;
   /** Optional destination shown when the upload reaches 100%. */
   completeHref?: string;
   /** Optional CTA text shown when the upload reaches 100%. */
@@ -34,6 +36,7 @@ export function ThursdayProgressMeter({
   ariaLabel = (fillStep) => `Upcoming Divrei Torah upload progress: ${fillStep}% complete`,
   showPercent = true,
   message,
+  badgeLabel = "Upcoming",
   completeHref,
   completeCtaLabel = "Browse the new collection",
 }: ThursdayProgressMeterProps) {
@@ -85,7 +88,7 @@ export function ThursdayProgressMeter({
     >
       <div className="text-center">
         <span className="inline-flex rounded-full border border-accent/50 bg-accent/10 px-3 py-1 font-sans text-[0.65rem] font-bold uppercase tracking-[0.22em] text-accent-readable sm:text-xs">
-          Upcoming
+          {badgeLabel}
         </span>
         <h2 className="mt-2 font-serif text-2xl font-bold leading-tight text-primary sm:text-3xl">
           {displayHeading}
