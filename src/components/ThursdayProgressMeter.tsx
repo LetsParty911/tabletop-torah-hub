@@ -86,31 +86,45 @@ export function ThursdayProgressMeter({
         <h2 className="mt-2 font-serif text-2xl font-bold leading-tight text-primary sm:text-3xl">
           {displayHeading}
         </h2>
-        {message && (
+
+        {fillStep === 0 ? (
+          <>
+            <p className="mt-4 font-sans text-base font-bold text-primary sm:text-lg">
+              Next update: Thursday evening
+            </p>
+            <p className="mt-1 font-sans text-sm leading-relaxed text-muted-foreground sm:text-base">
+              {message ?? "New Divrei Torah will be added then."}
+            </p>
+          </>
+        ) : message ? (
           <p className="mx-auto mt-3 max-w-xl font-sans text-sm leading-relaxed text-muted-foreground sm:text-base">
             {message}
           </p>
-        )}
+        ) : null}
       </div>
 
-      <div className="mt-5 flex items-baseline justify-between border-t border-accent/25 pt-3">
-        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
-          Upload Progress
-        </span>
-        {showPercent && <span className="text-base font-bold text-accent-readable">{fillStep}%</span>}
-      </div>
+      {fillStep > 0 && (
+        <>
+          <div className="mt-5 flex items-baseline justify-between border-t border-accent/25 pt-3">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+              Upload Progress
+            </span>
+            {showPercent && <span className="text-base font-bold text-accent-readable">{fillStep}%</span>}
+          </div>
 
-      <div className="mt-2 flex gap-1.5">
-        {SEGMENT_THRESHOLDS.map((threshold, i) => (
-          <div
-            key={threshold}
-            className={
-              "h-2.5 flex-1 rounded-sm transition-colors duration-300 " +
-              (i < activeCount ? "bg-primary" : "bg-accent/15")
-            }
-          />
-        ))}
-      </div>
+          <div className="mt-2 flex gap-1.5">
+            {SEGMENT_THRESHOLDS.map((threshold, i) => (
+              <div
+                key={threshold}
+                className={
+                  "h-2.5 flex-1 rounded-sm transition-colors duration-300 " +
+                  (i < activeCount ? "bg-primary" : "bg-accent/15")
+                }
+              />
+            ))}
+          </div>
+        </>
+      )}
 
       {showEta && eta && (
         <p className="mt-2 text-xs text-muted-foreground">Expected complete by {formatEta(eta)}</p>
