@@ -1,0 +1,27 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "torahforthetable.org"
+        }
+      ],
+      "destination": "https://torahforthetable.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.torahforthetable.org"
+        }
+      ],
+      "destination": "https://torahforthetable.com/:path*",
+      "permanent": true
+    }
+  ]
+}
