@@ -17,7 +17,7 @@ export function WeeklyEmailSignup({
   sourceId = "page",
   className = "",
   variant = "full",
-  ctaLabel = "Get the weekly download reminder",
+  ctaLabel = "Get the new Shabbos collection every Thursday",
 }: WeeklyEmailSignupProps) {
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
