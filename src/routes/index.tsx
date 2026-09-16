@@ -161,27 +161,12 @@ export const Route = createFileRoute("/")({
       </Link>
     </div>
   ),
-  head: ({ loaderData }) => {
-    const data = loaderData as LoaderData | undefined;
-    const displayedLabel =
-      data?.isFallback && data.fallbackParshaLabel
-        ? data.fallbackParshaLabel
-        : (data?.label ?? "Parshas Hashavua");
-    const count = data?.resources.length ?? 0;
-
-    const title =
-      count > 0
-        ? `Print Divrei Torah for ${displayedLabel} — Torah for the Table`
-        : "Torah for the Table — Weekly Divrei Torah";
+  head: () => {
+    const title = "Curated Divrei Torah for Your Shabbos Table | Torah For The Table";
     const description =
-      count > 0
-        ? `${count} handpicked, print-ready ${count === 1 ? "Dvar" : "Divrei"} Torah for ${displayedLabel} — free downloads for children, families, and adults.`
-        : "A weekly collection of Divrei Torah for Shabbos and Yom Tov — thoughtfully gathered in one quiet, uncluttered place for the Shabbos table.";
+      "Carefully selected Divrei Torah for children, families and adults — easy to find, print and bring to your Shabbos or Yom Tov table.";
     const url = "https://torahforthetable.com/";
-    const image =
-      count > 0
-        ? `https://torahforthetable.com/og/image.png?parsha=${encodeURIComponent(displayedLabel)}&count=${count}`
-        : "https://torahforthetable.com/og-image.png";
+    const image = "https://torahforthetable.com/og-image.png";
     return {
       meta: [
         { title },
