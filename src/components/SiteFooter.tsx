@@ -18,6 +18,9 @@ export function SiteFooter() {
         <Link to="/archive" className={linkClass}>
           Archive
         </Link>
+        <Link to="/publications" className={linkClass}>
+          Publications
+        </Link>
         <Link to="/short-vorts" className={linkClass}>
           Short Vorts
         </Link>
