@@ -419,9 +419,18 @@ function Index() {
                 {heroDateLine}
               </p>
             )}
+            {isFallback && (
+              <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-accent/50 bg-accent/10 px-4 py-1.5 font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
+                <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
+                Collection in progress
+              </p>
+            )}
             <p className="mx-auto mt-3 max-w-2xl font-serif text-base leading-relaxed text-primary sm:text-lg md:text-xl">
               {isFallback ? (
-                <>New Divrei Torah for this Shabbos are being prepared.</>
+                <>
+                  This week&apos;s selections aren&apos;t live yet. More Divrei Torah will be added
+                  Thursday evening.
+                </>
               ) : (
                 <>
                   <span className="font-semibold">
@@ -432,23 +441,56 @@ function Index() {
               )}
             </p>
 
-            <div className="mt-5 flex justify-center">
-              <a
-                href="#this-weeks-collection"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById("this-weeks-collection")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-                className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
-              >
-                {isFallback ? `Browse ${displayedLabel} collection` : `See this week's PDFs`}
-              </a>
-            </div>
+            {isFallback ? (
+              <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <a
+                  href="#weekly-email-signup"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const el = document.getElementById("weekly-email-signup");
+                    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    el?.querySelector<HTMLInputElement>('input[type="email"]')?.focus({
+                      preventScroll: true,
+                    });
+                  }}
+                  className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
+                >
+                  Email me this week&apos;s collection
+                </a>
+                <a
+                  href="#this-weeks-collection"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document
+                      .getElementById("this-weeks-collection")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className="inline-flex w-full items-center justify-center rounded-full border border-accent bg-transparent px-7 py-3 font-serif font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
+                >
+                  Browse {displayedLabel} collection
+                </a>
+              </div>
+            ) : (
+              <div className="mt-5 flex justify-center">
+                <a
+                  href="#this-weeks-collection"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById("this-weeks-collection")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
+                >
+                  See this week&apos;s PDFs
+                </a>
+              </div>
+            )}
             {resources.length > 0 && (
               <>
-                <p className="mt-3 text-center font-sans text-sm text-muted-foreground sm:text-base">
-                  More Divrei Torah will be added Thursday evening — please check back then.
-                </p>
+                {!isFallback && (
+                  <p className="mt-3 text-center font-sans text-sm text-muted-foreground sm:text-base">
+                    More Divrei Torah will be added Thursday evening — please check back then.
+                  </p>
+                )}
                 <div className="mt-3 flex justify-center">
                   <ShareButton className="w-full sm:w-auto" />
                 </div>
