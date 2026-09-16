@@ -5,6 +5,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 import { ArrowLeft } from "lucide-react";
 import { getPdfById, getParshaOverride } from "@/integrations/supabase/api.functions";
+import { getItemPublicationContext } from "@/integrations/supabase/item-page.functions";
 import { resolveHebcalParsha } from "@/lib/hebcal";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { trackEvent } from "@/lib/analytics";
@@ -22,7 +23,10 @@ import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 
 export const Route = createFileRoute("/view/$id")({
   loader: async ({ params }) => {
-    const r = await getPdfById({ data: { id: params.id } });
+    const [r, publicationContext] = await Promise.all([
+      getPdfById({ data: { id: params.id } }),
+      getItemPublicationContext({ data: { id: params.id } }),
+    ]);
     if (!r.pdf) throw notFound();
 
     // Determine whether this publication belongs to the live week, so the
@@ -45,7 +49,7 @@ export const Route = createFileRoute("/view/$id")({
       // ignore — default to archived-style link, which is always accurate
     }
 
-    return { pdf: r.pdf, isCurrentWeek };
+    return { pdf: r.pdf, isCurrentWeek, publicationContext };
   },
   head: ({ loaderData, params }) => {
     const title = loaderData?.pdf?.title ?? "View PDF";
@@ -150,7 +154,9 @@ export const Route = createFileRoute("/view/$id")({
 });
 
 function ViewPdf() {
-  const { pdf, isCurrentWeek } = Route.useLoaderData();
+  const { pdf, isCurrentWeek, publicationContext } = Route.useLoaderData();
+  const publication = publicationContext.publication;
+  const related = publicationContext.related;
   const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=FitH`;
   const isMobile = useIsMobile();
   const [mounted, setMounted] = useState(false);
@@ -186,8 +192,8 @@ function ViewPdf() {
     trackFp("pdf_open", {
       publication_id: pdf.id,
       publication_title: pdf.title,
-      publication_series: pdf.publication ?? null,
-      publisher: pdf.publisher ?? null,
+      publication_series: publication?.name ?? pdf.publication ?? null,
+      publisher: publication?.publisher ?? pdf.publisher ?? null,
       parsha: pdf.parsha_key ?? null,
     });
   };
@@ -200,11 +206,11 @@ function ViewPdf() {
     });
     trackDownloadAction({
       publicationId: pdf.id,
-      publicationName: publicationLabel(pdf.publication || pdf.title) || pdf.title,
+      publicationName: publicationLabel(publication?.name || pdf.publication || pdf.title) || pdf.title,
       publicationTitle: pdf.title,
       parsha: pdf.parsha_key,
-      publisher: pdf.publisher,
-      publicationSeries: pdf.publication,
+      publisher: publication?.publisher ?? pdf.publisher,
+      publicationSeries: publication?.name ?? pdf.publication,
     });
   };
 
@@ -235,8 +241,10 @@ function ViewPdf() {
                 </span>
               )}
             </div>
-            {pdf.publisher && (
-              <p className="mt-1 text-sm font-normal text-muted-foreground">By {pdf.publisher}</p>
+            {(publication?.publisher || pdf.publisher) && (
+              <p className="mt-1 text-sm font-normal text-muted-foreground">
+                Published by {publication?.publisher || pdf.publisher}
+              </p>
             )}
             {pdf.subtitle && (
               <p className="mt-1 text-sm text-muted-foreground">{standardizeCopy(pdf.subtitle)}</p>
@@ -246,19 +254,42 @@ function ViewPdf() {
                 {metaLine}
               </p>
             )}
+            {publication && (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Part of{" "}
+                <Link
+                  to="/publication/$slug"
+                  params={{ slug: publication.slug }}
+                  className="font-medium text-accent underline hover:text-primary"
+                >
+                  {publication.name}
+                </Link>
+              </p>
+            )}
           </div>
         </div>
+
+        {pdf.description && (
+          <section className="mt-5 rounded-xl border border-accent/30 bg-accent/5 p-4 sm:p-5">
+            <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable">
+              What you'll find
+            </p>
+            <p className="mt-2 font-serif text-base leading-relaxed text-primary/85">
+              {standardizeCopy(pdf.description)}
+            </p>
+          </section>
+        )}
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <DownloadToPrintButton
             href={`/view/${pdf.id}/download`}
             publicationId={pdf.id}
-            publicationName={publicationLabel(pdf.publication || pdf.title) || pdf.title}
+            publicationName={publicationLabel(publication?.name || pdf.publication || pdf.title) || pdf.title}
             publicationTitle={pdf.title}
             parsha={pdf.parsha_key}
-            publisher={pdf.publisher}
-            publicationSeries={pdf.publication}
-            filename={buildDownloadFilename(pdf.parsha_key, pdf.publication || pdf.title)}
+            publisher={publication?.publisher ?? pdf.publisher}
+            publicationSeries={publication?.name ?? pdf.publication}
+            filename={buildDownloadFilename(pdf.parsha_key, publication?.name || pdf.publication || pdf.title)}
             onClick={() =>
               trackEvent("pdf_download", {
                 file_id: pdf.id,
@@ -293,7 +324,7 @@ function ViewPdf() {
                 <a
                   href={`/view/${pdf.id}/download`}
                   rel="nofollow"
-                  download={buildDownloadFilename(pdf.parsha_key, pdf.publication || pdf.title)}
+                  download={buildDownloadFilename(pdf.parsha_key, publication?.name || pdf.publication || pdf.title)}
                   onClick={trackFallbackDownload}
                   className="font-medium text-accent underline hover:text-primary transition-colors duration-150"
                 >
@@ -328,7 +359,62 @@ function ViewPdf() {
           )}
         </div>
 
-        <div className="mt-6">
+        {publication && related.length > 0 && (
+          <section className="mt-9 border-t border-accent/25 pt-7">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable">
+                  More from this publication
+                </p>
+                <h2 className="mt-1 font-serif text-2xl font-bold text-primary">{publication.name}</h2>
+              </div>
+              <Link
+                to="/publication/$slug"
+                params={{ slug: publication.slug }}
+                className="text-sm font-medium text-accent underline hover:text-primary"
+              >
+                View all editions
+              </Link>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {related.map((edition) => {
+                const reading = formatReadingLabel(edition.parsha_key);
+                const label = edition.jewish_year ? `${reading} ${edition.jewish_year}` : reading;
+                const relatedMeta = [
+                  edition.audience
+                    ? audienceLabel(normalizeAudience(edition.audience, edition.title)) ?? edition.audience
+                    : null,
+                  formatTypeLabel(edition.format_type),
+                  typeof edition.page_count === "number"
+                    ? `${edition.page_count} ${edition.page_count === 1 ? "page" : "pages"}`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ");
+
+                return (
+                  <Link
+                    key={edition.id}
+                    to="/view/$id"
+                    params={{ id: edition.id }}
+                    className="rounded-xl border border-accent/30 bg-background/65 p-4 transition-colors hover:border-accent/60 hover:bg-accent/5"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{label}</p>
+                    <p className="mt-1 font-serif text-lg font-semibold text-primary">{edition.title}</p>
+                    {relatedMeta && <p className="mt-2 text-xs text-muted-foreground">{relatedMeta}</p>}
+                    {edition.description && (
+                      <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                        {edition.description}
+                      </p>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        <div className="mt-7">
           <Link
             to={isCurrentWeek ? "/" : "/archive"}
             className="inline-flex items-center gap-2 font-serif italic text-accent hover:text-primary transition-colors"
