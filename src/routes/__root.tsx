@@ -1,6 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, Search, X } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
@@ -253,9 +253,11 @@ function SiteNav() {
   const isAdmin =
     pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/admin-analytics";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     setMobileOpen(false);
+    setSearchOpen(false);
   }, [pathname]);
 
   if (isAdmin) return null;
@@ -265,6 +267,39 @@ function SiteNav() {
   const activeCls = "text-primary font-semibold";
   const mobileLinkCls =
     "block rounded-lg px-3 py-2.5 font-serif text-base text-primary/90 transition-colors hover:bg-accent/10 hover:text-primary";
+
+  const SearchForm = ({ mobile = false }: { mobile?: boolean }) => (
+    <form
+      action="/archive"
+      method="get"
+      role="search"
+      className={mobile ? "flex gap-2 px-3 pb-2" : "mx-auto flex max-w-xl gap-2 px-1 pb-3"}
+    >
+      <label htmlFor={mobile ? "site-search-mobile" : "site-search-desktop"} className="sr-only">
+        Search Divrei Torah
+      </label>
+      <div className="relative min-w-0 flex-1">
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden="true"
+        />
+        <input
+          id={mobile ? "site-search-mobile" : "site-search-desktop"}
+          name="q"
+          type="search"
+          placeholder="Search publication, description, or Torah topic"
+          className="h-10 w-full rounded-full border border-accent/35 bg-background pl-9 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-accent focus:ring-2 focus:ring-accent/20"
+          autoFocus={!mobile}
+        />
+      </div>
+      <button
+        type="submit"
+        className="inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+      >
+        Search
+      </button>
+    </form>
+  );
 
   return (
     <nav
@@ -277,7 +312,7 @@ function SiteNav() {
             <SiteLogoHorizontal className="[&_img]:h-14 md:[&_img]:h-16" />
           </Link>
 
-          <div className="hidden items-center gap-6 md:flex">
+          <div className="hidden items-center gap-5 md:flex">
             <Link
               to="/"
               activeOptions={{ exact: true }}
@@ -321,6 +356,15 @@ function SiteNav() {
             >
               Contact
             </Link>
+            <button
+              type="button"
+              aria-label={searchOpen ? "Close site search" : "Search Torah for the Table"}
+              aria-expanded={searchOpen}
+              onClick={() => setSearchOpen((open) => !open)}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent/35 text-primary transition-colors hover:bg-accent/10"
+            >
+              {searchOpen ? <X className="h-4 w-4" aria-hidden="true" /> : <Search className="h-4 w-4" aria-hidden="true" />}
+            </button>
           </div>
 
           <button
@@ -339,8 +383,11 @@ function SiteNav() {
           </button>
         </div>
 
+        {searchOpen && <div className="hidden border-t border-accent/15 pt-3 md:block"><SearchForm /></div>}
+
         {mobileOpen && (
           <div id="mobile-navigation" className="border-t border-accent/20 pb-3 pt-2 md:hidden">
+            <SearchForm mobile />
             <div className="grid gap-1">
               <Link
                 to="/"
