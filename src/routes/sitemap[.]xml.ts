@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { publicationSlug } from "@/lib/publication-slug";
+import { readingPagePath } from "@/lib/reading-page";
 
 const SITE_URL = "https://torahforthetable.com";
 
@@ -73,6 +74,8 @@ export const Route = createFileRoute("/sitemap.xml")({
           // not exist in all environments; fall back progressively.
           type PdfRow = {
             id: string;
+            parsha_key: string | null;
+            jewish_year: number | null;
             created_at: string | null;
             week_of?: string | null;
             updated_at?: string | null;
@@ -80,17 +83,17 @@ export const Route = createFileRoute("/sitemap.xml")({
           let rows: PdfRow[] = [];
           const full = await admin
             .from("pdfs")
-            .select("id, created_at, week_of, updated_at")
+            .select("id, parsha_key, jewish_year, created_at, week_of, updated_at")
             .eq("published", true);
           if (full.error) {
             const noUpdated = await admin
               .from("pdfs")
-              .select("id, created_at, week_of")
+              .select("id, parsha_key, jewish_year, created_at, week_of")
               .eq("published", true);
             if (noUpdated.error) {
               const base = await admin
                 .from("pdfs")
-                .select("id, created_at")
+                .select("id, parsha_key, jewish_year, created_at")
                 .eq("published", true);
               if (base.error) {
                 console.error("sitemap pdfs query error", base.error);
@@ -103,6 +106,8 @@ export const Route = createFileRoute("/sitemap.xml")({
           } else {
             rows = (full.data ?? []) as unknown as PdfRow[];
           }
+
+          const collectionPaths = new Set<string>();
           for (const row of rows) {
             const best =
               toLastmod(row.updated_at) ??
@@ -112,6 +117,18 @@ export const Route = createFileRoute("/sitemap.xml")({
               loc: `${SITE_URL}/view/${row.id}`,
               lastmod: best,
               priority: "0.6",
+            });
+
+            if (row.parsha_key && row.jewish_year) {
+              collectionPaths.add(readingPagePath(row.parsha_key, row.jewish_year));
+            }
+          }
+
+          for (const path of collectionPaths) {
+            urls.push({
+              loc: `${SITE_URL}${path}`,
+              lastmod: null,
+              priority: "0.8",
             });
           }
         } catch (e) {
