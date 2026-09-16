@@ -18,6 +18,9 @@ export function SiteFooter() {
         <Link to="/archive" className={linkClass}>
           Archive
         </Link>
+        <Link to="/my-table" className={linkClass}>
+          My Table
+        </Link>
         <Link to="/publications" className={linkClass}>
           Publications
         </Link>
