@@ -7,6 +7,7 @@ import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { SaveToMyTableButton } from "@/components/SaveToMyTableButton";
 import { SiteFooter } from "@/components/SiteFooter";
 
 export const Route = createFileRoute("/publication/$slug")({
@@ -93,7 +94,9 @@ function PublicationPage() {
         : null,
       formatTypeLabel(edition.format_type),
       typeof edition.page_count === "number"
-        ? `${edition.page_count} ${edition.page_count === 1 ? "page" : "pages"}`
+        ? edition.page_count === 1
+          ? "1 page · Quick Pick"
+          : `${edition.page_count} pages`
         : null,
     ]
       .filter(Boolean)
@@ -138,6 +141,22 @@ function PublicationPage() {
             publicationSeries={publication.name}
             parsha={edition.parsha_key}
             filename={buildDownloadFilename(edition.parsha_key, publication.name)}
+            className="w-full px-4 py-2.5"
+          />
+        </div>
+        <div className="mt-2">
+          <SaveToMyTableButton
+            item={{
+              id: edition.id,
+              title: edition.title,
+              publication: publication.name,
+              publisher: publication.publisher,
+              parsha: edition.parsha_key,
+              audience: edition.audience,
+              formatType: edition.format_type,
+              pageCount: edition.page_count,
+              description,
+            }}
             className="w-full px-4 py-2.5"
           />
         </div>
