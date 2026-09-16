@@ -17,6 +17,7 @@ import { buildDownloadFilename } from "@/lib/download-filename";
 import { publicationLabel } from "@/lib/badges";
 import { DownloadToPrintButton, trackDownloadAction } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
+import { SaveToMyTableButton } from "@/components/SaveToMyTableButton";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
@@ -29,9 +30,6 @@ export const Route = createFileRoute("/view/$id")({
     ]);
     if (!r.pdf) throw notFound();
 
-    // Determine whether this publication belongs to the live week, so the
-    // "back" link never claims an archived piece is part of "this week's
-    // collection" (see homepage/short-vorts for the same live-parsha logic).
     let isCurrentWeek = false;
     try {
       let liveKey: string | null = null;
@@ -55,17 +53,14 @@ export const Route = createFileRoute("/view/$id")({
     const title = loaderData?.pdf?.title ?? "View PDF";
     const subtitle = loaderData?.pdf?.subtitle;
 
-    // Parsha comes from the record; never hardcoded, never an empty "Parshas " stub.
     const rawParsha = (loaderData?.pdf?.parsha_key ?? "").trim();
     const parshaLabel = rawParsha
       ? formatReadingLabel(rawParsha.replace(/^(parshas|parashat)\s+/i, "").trim())
       : null;
 
-    // Share cards lead with the publication + parsha; the tab title adds the site name.
     const shareTitle = parshaLabel ? `${title} — ${parshaLabel}` : title;
     const pageTitle = `${shareTitle} | Torah for the Table`;
 
-    // Trim to 160 chars at a word boundary so crawlers get a clean sentence.
     const clamp = (v: string) => {
       if (v.length <= 160) return v;
       const cut = v.slice(0, 159);
@@ -85,7 +80,6 @@ export const Route = createFileRoute("/view/$id")({
     if (rawParsha) ogParams.set("parsha", rawParsha);
     const image = `https://torahforthetable.com/og/image.png?${ogParams.toString()}`;
 
-    // Best available publish/update dates, safely normalized to ISO strings.
     const toIso = (v: string | null | undefined): string | null => {
       if (!v) return null;
       const d = new Date(v);
@@ -164,18 +158,12 @@ function ViewPdf() {
   const pdfOpenTrackedRef = useRef<string | null>(null);
   useEffect(() => setMounted(true), []);
 
-  // Mobile/tablet can't embed the PDF (no iframe onLoad), so record the
-  // canonical pdf_open on page load instead — otherwise phone visits never
-  // count as PDF access in the analytics dashboards.
   useEffect(() => {
     if (mounted && isMobile) trackCanonicalPdfOpen();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, isMobile, pdf.id]);
-  // Mobile browsers (Android Chrome / iOS Safari) can't render PDFs inline —
-  // they show a black frame. Only embed once we know we're on desktop.
   const canEmbed = mounted && !isMobile;
 
-  // Warm the edge cache for this PDF so the Download click is instant.
   usePrewarmDownloads([pdf.id]);
 
   useEffect(() => {
@@ -305,6 +293,19 @@ function ViewPdf() {
             parsha={pdf.parsha_key}
             variant="inline"
           />
+          <SaveToMyTableButton
+            item={{
+              id: pdf.id,
+              title: pdf.title,
+              publication: publication?.name ?? pdf.publication ?? null,
+              publisher: publication?.publisher ?? pdf.publisher ?? null,
+              parsha: pdf.parsha_key ?? null,
+              audience: pdf.audience ?? null,
+              formatType: pdf.format_type ?? null,
+              pageCount: pdf.page_count ?? null,
+              description: standardizeCopy(pdf.description ?? null),
+            }}
+          />
         </div>
 
         <div className="mt-6">
@@ -414,13 +415,16 @@ function ViewPdf() {
           </section>
         )}
 
-        <div className="mt-7">
+        <div className="mt-7 flex flex-wrap items-center gap-4">
           <Link
             to={isCurrentWeek ? "/" : "/archive"}
             className="inline-flex items-center gap-2 font-serif italic text-accent hover:text-primary transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />{" "}
             {isCurrentWeek ? "Back to this week's collection" : "Back to Archive"}
+          </Link>
+          <Link to="/my-table" className="font-serif italic text-accent hover:text-primary transition-colors">
+            Open My Table →
           </Link>
         </div>
 
