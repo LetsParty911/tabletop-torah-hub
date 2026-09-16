@@ -10,6 +10,7 @@ import { formatTypeLabel } from "@/lib/format-labels";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
+import { SaveToMyTableButton } from "@/components/SaveToMyTableButton";
 import { SiteFooter } from "@/components/SiteFooter";
 
 export function ReadingCollectionView({
@@ -73,9 +74,11 @@ export function ReadingCollectionView({
       audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience,
       resourceType(r),
       typeof r.page_count === "number"
-        ? r.page_count >= 20
-          ? `Long Study · ${r.page_count} pages`
-          : `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
+        ? r.page_count === 1
+          ? "1 page · Quick Pick"
+          : r.page_count >= 20
+            ? `Long Study · ${r.page_count} pages`
+            : `${r.page_count} pages`
         : null,
     ]
       .filter(Boolean)
@@ -117,17 +120,20 @@ export function ReadingCollectionView({
         </section>
 
         {quickPicks.length > 0 && (
-          <section className="mt-6">
+          <section className="mt-6 rounded-2xl border border-accent/30 bg-accent/5 px-4 py-5 sm:px-5">
             <p className="text-center font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable">
-              Start here
+              Tonight's Table
             </p>
-            <div className="mx-auto mt-2 grid max-w-3xl gap-3 sm:grid-cols-3">
+            <p className="mt-1 text-center text-sm text-muted-foreground">
+              Three easy places to start if you want to print quickly.
+            </p>
+            <div className="mx-auto mt-3 grid max-w-3xl gap-3 sm:grid-cols-3">
               {quickPicks.map(({ label, resource }) => (
                 <Link
                   key={`${label}-${resource.id}`}
                   to="/view/$id"
                   params={{ id: resource.id }}
-                  className="rounded-xl border border-accent/30 bg-card/30 p-3 text-center transition-colors hover:border-accent/70 hover:bg-card/50"
+                  className="rounded-xl border border-accent/30 bg-background/70 p-3 text-center transition-colors hover:border-accent/70 hover:bg-background"
                 >
                   <p className="font-sans text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-accent-readable">
                     {label}
@@ -245,7 +251,7 @@ export function ReadingCollectionView({
                       <p className="mt-0.5 text-xs text-muted-foreground">{resource.title}</p>
                     )}
                     {resource.publisher && (
-                      <p className="mt-0.5 text-xs text-muted-foreground">By {resource.publisher}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">Published by {resource.publisher}</p>
                     )}
                     {meta && (
                       <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -284,11 +290,27 @@ export function ReadingCollectionView({
                       className="w-full px-4 py-2.5"
                     />
                   </div>
-                  <div className="mt-2 flex justify-center">
-                    <SharePublicationButton
-                      pdfId={resource.id}
-                      title={resource.publication_name || resource.title}
-                      parsha={resource.parsha_key}
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <div className="flex justify-center sm:justify-end">
+                      <SharePublicationButton
+                        pdfId={resource.id}
+                        title={resource.publication_name || resource.title}
+                        parsha={resource.parsha_key}
+                      />
+                    </div>
+                    <SaveToMyTableButton
+                      item={{
+                        id: resource.id,
+                        title: resource.title,
+                        publication: resource.publication_name ?? null,
+                        publisher: resource.publisher ?? null,
+                        parsha: resource.parsha_key ?? null,
+                        audience: resource.audience ?? null,
+                        formatType: resource.format_type ?? resource.content_type ?? null,
+                        pageCount: resource.page_count ?? null,
+                        description: description ?? null,
+                      }}
+                      className="w-full px-3 py-2 text-sm"
                     />
                   </div>
                 </div>
