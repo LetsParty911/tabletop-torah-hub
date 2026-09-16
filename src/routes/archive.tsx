@@ -1,7 +1,8 @@
 import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack/react-router";
 import { FileText, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { listArchive, type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
+import { type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
+import { listArchiveAll } from "@/integrations/supabase/archive-all.functions";
 import { trackEvent } from "@/lib/analytics";
 import { trackSearch } from "@/lib/site-analytics";
 import { trackFp } from "@/lib/first-party-analytics";
@@ -63,16 +64,11 @@ function stripDefaults(s: ResolvedArchiveSearch) {
   return out;
 }
 
-
-
-
 export const Route = createFileRoute("/archive")({
   component: ArchivePage,
-  loader: () => listArchive(),
-  // Filters live in the URL, but they must not re-run the loader.
+  loader: () => listArchiveAll(),
   validateSearch: (search: Record<string, unknown>): ArchiveSearch =>
     parseArchiveSearch(search),
-  // Default values never appear in the URL, so a clean /archive stays clean.
   search: {
     middlewares: [
       stripSearchParams({
@@ -106,8 +102,6 @@ export const Route = createFileRoute("/archive")({
       ? `Printable Divrei Torah for ${parshaLabel}${yearPart} from the Torah for the Table archive — free downloads for children, families, and adults.`
       : "Browse the archive of past weekly Divrei Torah collections for Shabbos and Yom Tov.";
 
-    // Filtered permutations canonicalize to their own parsha/year URL; everything
-    // else points at the bare /archive so indexing doesn't fragment.
     const base = "https://torahforthetable.com/archive";
     const canonicalParams = new URLSearchParams();
     if (parshaLabel) {
@@ -226,8 +220,6 @@ function ArchivePage() {
   const setTypeFilter = (type: string) => setSearch({ type });
   const setPubFilter = (pub: string) => setSearch({ pub });
 
-  // The search box stays instant locally; URL writes are debounced and replace
-  // history so typing doesn't create a back-button entry per keystroke.
   const [queryDraft, setQueryDraft] = useState(query);
   const lastPushedQuery = useRef(query);
   useEffect(() => {
@@ -244,7 +236,6 @@ function ArchivePage() {
     }, 300);
     return () => clearTimeout(t);
   }, [queryDraft, query]);
-
 
   const allParshiyos = useMemo(() => {
     const set = new Set<string>();
@@ -265,7 +256,6 @@ function ArchivePage() {
   const matchesPub = (r: ArchivePdf) =>
     pubFilter === "All" || (r.publication ?? r.title) === pubFilter;
 
-  // Options are derived from everything in the archive so a facet never empties itself.
   const allPdfs = useMemo(
     () => years.flatMap((y) => y.parshiyos.flatMap((p) => p.pdfs)),
     [years],
@@ -299,7 +289,7 @@ function ArchivePage() {
         if (parshaFilter !== "all" && p.parshaKey !== parshaFilter) continue;
         let pdfs = q
           ? p.pdfs.filter((r) =>
-              [r.title, r.subtitle, r.description]
+              [r.title, r.publication, r.publisher, r.subtitle, r.description]
                 .filter(Boolean)
                 .some((v) => (v as string).toLowerCase().includes(q)),
             )
@@ -317,7 +307,6 @@ function ArchivePage() {
     return out;
   }, [years, yearFilter, parshaFilter, query, audienceFilter, lengthFilter, typeFilter, pubFilter]);
 
-  // Warm the edge cache for the first few visible results.
   usePrewarmDownloads(
     useMemo(
       () =>
@@ -328,7 +317,6 @@ function ArchivePage() {
     ),
   );
 
-  // Audience counts reflect the other active filters (year, parsha, search).
   const audienceCounts = useMemo(() => {
     const q = query.trim().toLowerCase();
     const counts: Record<"All" | AudienceKey, number> = {
@@ -344,7 +332,7 @@ function ArchivePage() {
         for (const r of p.pdfs) {
           if (
             q &&
-            ![r.title, r.subtitle, r.description]
+            ![r.title, r.publication, r.publisher, r.subtitle, r.description]
               .filter(Boolean)
               .some((v) => (v as string).toLowerCase().includes(q))
           )
@@ -365,8 +353,6 @@ function ArchivePage() {
     0,
   );
 
-  // Log one search_events row per settled (debounced) search term, with the
-  // number of results it returned. Fails silently.
   const loggedQuery = useRef<string | null>(null);
   useEffect(() => {
     const q = query.trim();
@@ -376,7 +362,6 @@ function ArchivePage() {
     trackSearch(q, totalPdfs);
     trackFp("search", { metadata: { query: q.slice(0, 200), result_count: totalPdfs } });
   }, [query, totalPdfs]);
-
 
   const hasActiveFilters =
     yearFilter !== "all" ||
@@ -390,7 +375,6 @@ function ArchivePage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-5xl px-3 py-5 sm:px-4 sm:py-8 md:px-8 md:py-14 space-y-5 sm:space-y-8 md:space-y-10">
-        {/* Header */}
         <section className="parchment-frame">
           <div className="parchment-panel text-center">
             <h1 className="font-serif text-[2rem] leading-[1.05] sm:text-5xl md:text-6xl font-bold tracking-tight text-primary">
@@ -417,7 +401,6 @@ function ArchivePage() {
           </div>
         </section>
 
-        {/* Filters */}
         {years.length > 0 && (
           <section className="parchment-frame">
             <div className="parchment-panel">
@@ -493,7 +476,7 @@ function ArchivePage() {
                       type="search"
                       value={queryDraft}
                       onChange={(e) => setQueryDraft(e.target.value)}
-                      placeholder="Search publication name or description…"
+                      placeholder="Search publication, publisher, or description…"
                       className="w-full rounded-lg border-2 border-accent/40 bg-background/60 pl-9 pr-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
                     />
                   </div>
@@ -614,8 +597,6 @@ function ArchivePage() {
                 </div>
               )}
 
-
-
               {hasActiveFilters && (
                 <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                   <span>
@@ -637,7 +618,6 @@ function ArchivePage() {
             </div>
           </section>
         )}
-
 
         {years.length === 0 ? (
           <section className="parchment-frame">
@@ -664,7 +644,6 @@ function ArchivePage() {
         ) : (
           <div id="archive-results" className="space-y-5 sm:space-y-8 md:space-y-10">
             {filteredYears.map((y: ArchiveYear) => (
-
               <section key={y.year} className="parchment-frame">
                 <div className="parchment-panel">
                   <div className="flex items-baseline justify-between gap-4 border-b-2 border-accent/30 pb-4 mb-6">
@@ -735,9 +714,11 @@ function ArchivePage() {
                                         audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience,
                                         formatTypeLabel(r.format_type),
                                         typeof r.page_count === "number"
-                                          ? r.page_count >= 20
-                                            ? `Long Study · ${r.page_count} pages`
-                                            : `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
+                                          ? r.page_count === 1
+                                            ? "1 page · Quick Pick"
+                                            : r.page_count >= 20
+                                              ? `Long Study · ${r.page_count} pages`
+                                              : `${r.page_count} pages`
                                           : null,
                                       ].filter(Boolean).join(" · ")}
                                     </p>
@@ -758,7 +739,6 @@ function ArchivePage() {
                                     p.parshaKey,
                                     (r as { publication?: string | null }).publication || r.title,
                                   )}
-
                                   onClick={() => {
                                     trackEvent("pdf_download", {
                                       file_id: r.id,
