@@ -71,7 +71,7 @@ const SERIES: SeriesCard[] = [
       "Source-based questions and answers on the parsha each week, written for learning together at the table. Every set is accompanied by a Kids' Corner page with riddles and picture puzzles so younger children have their own way in.",
     sample: "What to expect: table-ready questions, answers, plus a Kids' Corner.",
     linkTo: "/archive",
-    linkSearch: { q: "Parsha Q&A" },
+    linkSearch: { q: "Questions & Answers" },
     cta: "Browse Parsha Q&A →",
   },
 ];
