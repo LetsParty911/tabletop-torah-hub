@@ -460,9 +460,14 @@ function Index() {
               </a>
             </div>
             {resources.length > 0 && (
-              <div className="mt-3 flex justify-center">
-                <ShareButton className="w-full sm:w-auto" />
-              </div>
+              <>
+                <p className="mt-3 text-center font-sans text-sm text-muted-foreground sm:text-base">
+                  More Divrei Torah will be added Thursday evening — please check back then.
+                </p>
+                <div className="mt-3 flex justify-center">
+                  <ShareButton className="w-full sm:w-auto" />
+                </div>
+              </>
             )}
           </div>
         </section>
