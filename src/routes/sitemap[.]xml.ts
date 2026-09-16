@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
+import { publicationSlug } from "@/lib/publication-slug";
 
 const SITE_URL = "https://torahforthetable.com";
 
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         const urls: Array<{ loc: string; lastmod: string | null; priority: string }> = [
           { loc: `${SITE_URL}/`, lastmod: null, priority: "1.0" },
           { loc: `${SITE_URL}/archive`, lastmod: null, priority: "0.8" },
+          { loc: `${SITE_URL}/publications`, lastmod: null, priority: "0.7" },
           { loc: `${SITE_URL}/short-vorts`, lastmod: null, priority: "0.5" },
           { loc: `${SITE_URL}/resources`, lastmod: null, priority: "0.7" },
           { loc: `${SITE_URL}/about`, lastmod: null, priority: "0.5" },
@@ -36,9 +38,37 @@ export const Route = createFileRoute("/sitemap.xml")({
           { loc: `${SITE_URL}/privacy`, lastmod: null, priority: "0.5" },
         ];
 
-
         try {
           const admin = getSupabaseAdmin();
+
+          const pubs = await admin
+            .from("publications")
+            .select("id, name")
+            .eq("active", true)
+            .order("name", { ascending: true });
+          if (!pubs.error) {
+            const linked = await admin
+              .from("pdfs")
+              .select("publication_id")
+              .eq("published", true)
+              .not("publication_id", "is", null);
+            const linkedIds = new Set(
+              (linked.data ?? [])
+                .map((row) => row.publication_id as string | null)
+                .filter((id): id is string => Boolean(id)),
+            );
+            for (const pub of pubs.data ?? []) {
+              if (!linkedIds.has(pub.id as string)) continue;
+              urls.push({
+                loc: `${SITE_URL}/publication/${publicationSlug(pub.name as string)}`,
+                lastmod: null,
+                priority: "0.7",
+              });
+            }
+          } else {
+            console.error("sitemap publications query error", pubs.error);
+          }
+
           // Prefer updated_at > week_of > created_at. updated_at / week_of may
           // not exist in all environments; fall back progressively.
           type PdfRow = {
@@ -83,22 +113,18 @@ export const Route = createFileRoute("/sitemap.xml")({
               lastmod: best,
               priority: "0.6",
             });
-
           }
         } catch (e) {
-          console.error("sitemap pdfs unexpected error", e);
+          console.error("sitemap unexpected error", e);
         }
 
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls
   .map((u) => {
-    const lastmodTag = u.lastmod
-      ? `\n    <lastmod>${u.lastmod}</lastmod>`
-      : "";
+    const lastmodTag = u.lastmod ? `\n    <lastmod>${u.lastmod}</lastmod>` : "";
     return `  <url>\n    <loc>${escapeXml(u.loc)}</loc>${lastmodTag}\n    <changefreq>weekly</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`;
   })
-
   .join("\n")}
 </urlset>
 `;
