@@ -529,7 +529,7 @@ function Index() {
         )}
 
         <div className="mx-auto max-w-2xl rounded-xl border border-accent/40 bg-card/40 px-4 py-4 sm:px-5">
-          <WeeklyEmailSignup sourceId="homepage" variant="compact" ctaLabel="Get the weekly download reminder" />
+          <WeeklyEmailSignup sourceId="homepage" variant="compact" ctaLabel="Get the new Shabbos collection every Thursday" />
         </div>
 
         <section id="this-weeks-collection" className="scroll-mt-8">
