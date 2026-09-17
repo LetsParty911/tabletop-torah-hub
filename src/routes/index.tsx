@@ -392,6 +392,15 @@ function Index() {
   const upcomingLabel =
     upcomingParsha && upcomingParsha !== displayedParshaKey ? formatReadingLabel(upcomingParsha) : null;
 
+  const isHaazinuWeek = normalizedCurrentKey === "ha'azinu";
+  const haazinuQaTitle = "Parsha Questions & Answers – Haazinu";
+  const displayTitle = (r: Resource) =>
+    isHaazinuWeek && r.title === "Parsha Questions & Answers" ? haazinuQaTitle : r.title;
+  const displayPublicationName = (r: Resource) =>
+    isHaazinuWeek && r.title === "Parsha Questions & Answers"
+      ? haazinuQaTitle
+      : publicationLabel(r.publication || r.title) || r.title;
+
   const clearFilters = () => {
     setAudienceFilter("All");
     setLengthFilter("All");
