@@ -22,6 +22,10 @@ import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 
+// Temporary flag for this week only — hides publication/cover preview images
+// on the public-facing site while keeping image files, DB values, and code intact.
+const HIDE_COVER_IMAGES_THIS_WEEK = true;
+
 export const Route = createFileRoute("/view/$id")({
   loader: async ({ params }) => {
     const [r, publicationContext] = await Promise.all([
