@@ -2479,9 +2479,11 @@ async function getWeeklyEmailContentInternal(): Promise<WeeklyEmailContent> {
   return {
     ready: reason === null,
     reason,
-    parshaKey,
+    // Duplicate-protection / history keys follow the actual displayed
+    // collection; parshaLabel keeps the human-facing (possibly override) text.
+    parshaKey: collectionKey,
     parshaLabel,
-    jewishYear,
+    jewishYear: collectionYear,
     subject,
     intro,
     resources,
