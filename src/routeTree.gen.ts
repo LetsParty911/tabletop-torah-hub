@@ -30,6 +30,7 @@ import { Route as ViewIdRouteImport } from './routes/view.$id'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as PublicationSlugRouteImport } from './routes/publication.$slug'
 import { Route as OgImageDotpngRouteImport } from './routes/og.image[.]png'
+import { Route as ManageTableTokenRouteImport } from './routes/manage-table.$token'
 import { Route as ApiTrackViewRouteImport } from './routes/api/track-view'
 import { Route as ApiTrackSearchRouteImport } from './routes/api/track-search'
 import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
@@ -144,6 +145,11 @@ const OgImageDotpngRoute = OgImageDotpngRouteImport.update({
   path: '/og/image.png',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ManageTableTokenRoute = ManageTableTokenRouteImport.update({
+  id: '/manage-table/$token',
+  path: '/manage-table/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTrackViewRoute = ApiTrackViewRouteImport.update({
   id: '/api/track-view',
   path: '/api/track-view',
@@ -206,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
+  '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
   '/publication/$slug': typeof PublicationSlugRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
@@ -237,6 +244,7 @@ export interface FileRoutesByTo {
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
+  '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
   '/publication/$slug': typeof PublicationSlugRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
@@ -269,6 +277,7 @@ export interface FileRoutesById {
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
+  '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
   '/publication/$slug': typeof PublicationSlugRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
@@ -302,6 +311,7 @@ export interface FileRouteTypes {
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
+    | '/manage-table/$token'
     | '/og/image.png'
     | '/publication/$slug'
     | '/unsubscribe/$token'
@@ -333,6 +343,7 @@ export interface FileRouteTypes {
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
+    | '/manage-table/$token'
     | '/og/image.png'
     | '/publication/$slug'
     | '/unsubscribe/$token'
@@ -364,6 +375,7 @@ export interface FileRouteTypes {
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
+    | '/manage-table/$token'
     | '/og/image.png'
     | '/publication/$slug'
     | '/unsubscribe/$token'
@@ -396,6 +408,7 @@ export interface RootRouteChildren {
   ApiTrackDownloadRoute: typeof ApiTrackDownloadRoute
   ApiTrackSearchRoute: typeof ApiTrackSearchRoute
   ApiTrackViewRoute: typeof ApiTrackViewRoute
+  ManageTableTokenRoute: typeof ManageTableTokenRoute
   OgImageDotpngRoute: typeof OgImageDotpngRoute
   PublicationSlugRoute: typeof PublicationSlugRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
@@ -554,6 +567,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OgImageDotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/manage-table/$token': {
+      id: '/manage-table/$token'
+      path: '/manage-table/$token'
+      fullPath: '/manage-table/$token'
+      preLoaderRoute: typeof ManageTableTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/track-view': {
       id: '/api/track-view'
       path: '/api/track-view'
@@ -647,6 +667,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTrackDownloadRoute: ApiTrackDownloadRoute,
   ApiTrackSearchRoute: ApiTrackSearchRoute,
   ApiTrackViewRoute: ApiTrackViewRoute,
+  ManageTableTokenRoute: ManageTableTokenRoute,
   OgImageDotpngRoute: OgImageDotpngRoute,
   PublicationSlugRoute: PublicationSlugRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
