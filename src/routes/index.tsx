@@ -392,6 +392,15 @@ function Index() {
   const upcomingLabel =
     upcomingParsha && upcomingParsha !== displayedParshaKey ? formatReadingLabel(upcomingParsha) : null;
 
+  const isHaazinuWeek = normalizedCurrentKey === "ha'azinu";
+  const haazinuQaTitle = "Parsha Questions & Answers – Haazinu";
+  const displayTitle = (r: Resource) =>
+    isHaazinuWeek && r.title === "Parsha Questions & Answers" ? haazinuQaTitle : r.title;
+  const displayPublicationName = (r: Resource) =>
+    isHaazinuWeek && r.title === "Parsha Questions & Answers"
+      ? haazinuQaTitle
+      : publicationLabel(r.publication || r.title) || r.title;
+
   const clearFilters = () => {
     setAudienceFilter("All");
     setLengthFilter("All");
@@ -554,7 +563,7 @@ function Index() {
                       className="rounded-xl border border-accent/25 bg-card/30 p-3 text-center transition-colors hover:border-accent/60 hover:bg-card/50"
                     >
                       <p className="font-sans text-[0.62rem] uppercase tracking-[0.14em] text-accent-readable">{label}</p>
-                      <p className="mt-1 font-serif text-base font-bold text-primary leading-snug">{resource.title}</p>
+                      <p className="mt-1 font-serif text-base font-bold text-primary leading-snug">{displayTitle(resource)}</p>
                     </Link>
                   ))}
                 </div>
@@ -589,7 +598,7 @@ function Index() {
                             </span>
                             <h3 className="mt-3 font-serif text-base sm:text-xl font-bold text-primary leading-snug">
                               <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline transition-colors duration-150">
-                                {r.title}
+                                {displayTitle(r)}
                               </Link>
                             </h3>
                             {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
@@ -603,7 +612,7 @@ function Index() {
                               <DownloadToPrintButton
                                 href={`/view/${r.id}/download`}
                                 publicationId={r.id}
-                                publicationName={publicationLabel(r.publication || r.title) || r.title}
+                                publicationName={displayPublicationName(r)}
                                 publicationTitle={r.title}
                                 publisher={r.publisher}
                                 publicationSeries={r.publication}
@@ -826,7 +835,7 @@ function Index() {
                           <div className="flex items-start justify-between gap-2">
                             <h3 className="font-serif text-base sm:text-xl font-bold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
                               <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline transition-colors duration-150">
-                                {r.title}
+                                {displayTitle(r)}
                               </Link>
                             </h3>
                             {r.badge && (
@@ -845,7 +854,7 @@ function Index() {
                           {(r.audience || r.format_type || typeof r.page_count === "number") && (
                             <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                               {[
-                                audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience,
+                                audienceLabel(normalizeAudience(r.audience, displayTitle(r))) ?? r.audience,
                                 formatTypeLabel(r.format_type),
                                 pageCountLabel(r),
                               ]
@@ -860,7 +869,7 @@ function Index() {
                         <DownloadToPrintButton
                           href={`/view/${r.id}/download`}
                           publicationId={r.id}
-                          publicationName={publicationLabel(r.publication || r.title) || r.title}
+                          publicationName={displayPublicationName(r)}
                           publicationTitle={r.title}
                           publisher={r.publisher}
                           publicationSeries={r.publication}

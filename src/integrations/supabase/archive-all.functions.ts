@@ -40,7 +40,7 @@ export const listArchiveAll = createServerFn({ method: "GET" }).handler(async ()
     .from("publications")
     .select("id, name, publisher, sort_order");
 
-  const pubMap = new Map(
+  const pubMap = new Map<string, { name: string; publisher: string | null; sort_order: number }>(
     (pubs ?? []).map((p: any) => [
       p.id as string,
       {

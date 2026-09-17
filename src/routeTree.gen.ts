@@ -13,9 +13,11 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ShortVortsRouteImport } from './routes/short-vorts'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ResourcesRouteImport } from './routes/resources'
+import { Route as PublicationsRouteImport } from './routes/publications'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OriginalsRouteImport } from './routes/originals'
 import { Route as OfflineRouteImport } from './routes/offline'
+import { Route as MyTableRouteImport } from './routes/my-table'
 import { Route as MissionRouteImport } from './routes/mission'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ArchiveRouteImport } from './routes/archive'
@@ -26,13 +28,16 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as UnsubscribeIndexRouteImport } from './routes/unsubscribe.index'
 import { Route as ViewIdRouteImport } from './routes/view.$id'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
+import { Route as PublicationSlugRouteImport } from './routes/publication.$slug'
 import { Route as OgImageDotpngRouteImport } from './routes/og.image[.]png'
 import { Route as ApiTrackViewRouteImport } from './routes/api/track-view'
 import { Route as ApiTrackSearchRouteImport } from './routes/api/track-search'
 import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
 import { Route as ApiEventsRouteImport } from './routes/api/events'
+import { Route as YomTovSlugYearRouteImport } from './routes/yom-tov.$slug.$year'
 import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
+import { Route as ParshaSlugYearRouteImport } from './routes/parsha.$slug.$year'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -54,6 +59,11 @@ const ResourcesRoute = ResourcesRouteImport.update({
   path: '/resources',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PublicationsRoute = PublicationsRouteImport.update({
+  id: '/publications',
+  path: '/publications',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -67,6 +77,11 @@ const OriginalsRoute = OriginalsRouteImport.update({
 const OfflineRoute = OfflineRouteImport.update({
   id: '/offline',
   path: '/offline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyTableRoute = MyTableRouteImport.update({
+  id: '/my-table',
+  path: '/my-table',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MissionRoute = MissionRouteImport.update({
@@ -119,6 +134,11 @@ const UnsubscribeTokenRoute = UnsubscribeTokenRouteImport.update({
   path: '/unsubscribe/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PublicationSlugRoute = PublicationSlugRouteImport.update({
+  id: '/publication/$slug',
+  path: '/publication/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OgImageDotpngRoute = OgImageDotpngRouteImport.update({
   id: '/og/image.png',
   path: '/og/image.png',
@@ -144,6 +164,11 @@ const ApiEventsRoute = ApiEventsRouteImport.update({
   path: '/api/events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const YomTovSlugYearRoute = YomTovSlugYearRouteImport.update({
+  id: '/yom-tov/$slug/$year',
+  path: '/yom-tov/$slug/$year',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ViewIdPdfRoute = ViewIdPdfRouteImport.update({
   id: '/pdf',
   path: '/pdf',
@@ -154,6 +179,11 @@ const ViewIdDownloadRoute = ViewIdDownloadRouteImport.update({
   path: '/download',
   getParentRoute: () => ViewIdRoute,
 } as any)
+const ParshaSlugYearRoute = ParshaSlugYearRouteImport.update({
+  id: '/parsha/$slug/$year',
+  path: '/parsha/$slug/$year',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -163,9 +193,11 @@ export interface FileRoutesByFullPath {
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
   '/mission': typeof MissionRoute
+  '/my-table': typeof MyTableRoute
   '/offline': typeof OfflineRoute
   '/originals': typeof OriginalsRoute
   '/privacy': typeof PrivacyRoute
+  '/publications': typeof PublicationsRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
@@ -175,11 +207,14 @@ export interface FileRoutesByFullPath {
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
   '/og/image.png': typeof OgImageDotpngRoute
+  '/publication/$slug': typeof PublicationSlugRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe/': typeof UnsubscribeIndexRoute
+  '/parsha/$slug/$year': typeof ParshaSlugYearRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/pdf': typeof ViewIdPdfRoute
+  '/yom-tov/$slug/$year': typeof YomTovSlugYearRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -189,9 +224,11 @@ export interface FileRoutesByTo {
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
   '/mission': typeof MissionRoute
+  '/my-table': typeof MyTableRoute
   '/offline': typeof OfflineRoute
   '/originals': typeof OriginalsRoute
   '/privacy': typeof PrivacyRoute
+  '/publications': typeof PublicationsRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
@@ -201,11 +238,14 @@ export interface FileRoutesByTo {
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
   '/og/image.png': typeof OgImageDotpngRoute
+  '/publication/$slug': typeof PublicationSlugRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe': typeof UnsubscribeIndexRoute
+  '/parsha/$slug/$year': typeof ParshaSlugYearRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/pdf': typeof ViewIdPdfRoute
+  '/yom-tov/$slug/$year': typeof YomTovSlugYearRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -216,9 +256,11 @@ export interface FileRoutesById {
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
   '/mission': typeof MissionRoute
+  '/my-table': typeof MyTableRoute
   '/offline': typeof OfflineRoute
   '/originals': typeof OriginalsRoute
   '/privacy': typeof PrivacyRoute
+  '/publications': typeof PublicationsRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
@@ -228,11 +270,14 @@ export interface FileRoutesById {
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
   '/og/image.png': typeof OgImageDotpngRoute
+  '/publication/$slug': typeof PublicationSlugRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe/': typeof UnsubscribeIndexRoute
+  '/parsha/$slug/$year': typeof ParshaSlugYearRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/pdf': typeof ViewIdPdfRoute
+  '/yom-tov/$slug/$year': typeof YomTovSlugYearRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -244,9 +289,11 @@ export interface FileRouteTypes {
     | '/archive'
     | '/contact'
     | '/mission'
+    | '/my-table'
     | '/offline'
     | '/originals'
     | '/privacy'
+    | '/publications'
     | '/resources'
     | '/robots.txt'
     | '/short-vorts'
@@ -256,11 +303,14 @@ export interface FileRouteTypes {
     | '/api/track-search'
     | '/api/track-view'
     | '/og/image.png'
+    | '/publication/$slug'
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe/'
+    | '/parsha/$slug/$year'
     | '/view/$id/download'
     | '/view/$id/pdf'
+    | '/yom-tov/$slug/$year'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -270,9 +320,11 @@ export interface FileRouteTypes {
     | '/archive'
     | '/contact'
     | '/mission'
+    | '/my-table'
     | '/offline'
     | '/originals'
     | '/privacy'
+    | '/publications'
     | '/resources'
     | '/robots.txt'
     | '/short-vorts'
@@ -282,11 +334,14 @@ export interface FileRouteTypes {
     | '/api/track-search'
     | '/api/track-view'
     | '/og/image.png'
+    | '/publication/$slug'
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe'
+    | '/parsha/$slug/$year'
     | '/view/$id/download'
     | '/view/$id/pdf'
+    | '/yom-tov/$slug/$year'
   id:
     | '__root__'
     | '/'
@@ -296,9 +351,11 @@ export interface FileRouteTypes {
     | '/archive'
     | '/contact'
     | '/mission'
+    | '/my-table'
     | '/offline'
     | '/originals'
     | '/privacy'
+    | '/publications'
     | '/resources'
     | '/robots.txt'
     | '/short-vorts'
@@ -308,11 +365,14 @@ export interface FileRouteTypes {
     | '/api/track-search'
     | '/api/track-view'
     | '/og/image.png'
+    | '/publication/$slug'
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe/'
+    | '/parsha/$slug/$year'
     | '/view/$id/download'
     | '/view/$id/pdf'
+    | '/yom-tov/$slug/$year'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -323,9 +383,11 @@ export interface RootRouteChildren {
   ArchiveRoute: typeof ArchiveRoute
   ContactRoute: typeof ContactRoute
   MissionRoute: typeof MissionRoute
+  MyTableRoute: typeof MyTableRoute
   OfflineRoute: typeof OfflineRoute
   OriginalsRoute: typeof OriginalsRoute
   PrivacyRoute: typeof PrivacyRoute
+  PublicationsRoute: typeof PublicationsRoute
   ResourcesRoute: typeof ResourcesRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   ShortVortsRoute: typeof ShortVortsRoute
@@ -335,9 +397,12 @@ export interface RootRouteChildren {
   ApiTrackSearchRoute: typeof ApiTrackSearchRoute
   ApiTrackViewRoute: typeof ApiTrackViewRoute
   OgImageDotpngRoute: typeof OgImageDotpngRoute
+  PublicationSlugRoute: typeof PublicationSlugRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ViewIdRoute: typeof ViewIdRouteWithChildren
   UnsubscribeIndexRoute: typeof UnsubscribeIndexRoute
+  ParshaSlugYearRoute: typeof ParshaSlugYearRoute
+  YomTovSlugYearRoute: typeof YomTovSlugYearRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -370,6 +435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/publications': {
+      id: '/publications'
+      path: '/publications'
+      fullPath: '/publications'
+      preLoaderRoute: typeof PublicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -389,6 +461,13 @@ declare module '@tanstack/react-router' {
       path: '/offline'
       fullPath: '/offline'
       preLoaderRoute: typeof OfflineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-table': {
+      id: '/my-table'
+      path: '/my-table'
+      fullPath: '/my-table'
+      preLoaderRoute: typeof MyTableRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mission': {
@@ -461,6 +540,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UnsubscribeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/publication/$slug': {
+      id: '/publication/$slug'
+      path: '/publication/$slug'
+      fullPath: '/publication/$slug'
+      preLoaderRoute: typeof PublicationSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/og/image.png': {
       id: '/og/image.png'
       path: '/og/image.png'
@@ -496,6 +582,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/yom-tov/$slug/$year': {
+      id: '/yom-tov/$slug/$year'
+      path: '/yom-tov/$slug/$year'
+      fullPath: '/yom-tov/$slug/$year'
+      preLoaderRoute: typeof YomTovSlugYearRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/view/$id/pdf': {
       id: '/view/$id/pdf'
       path: '/pdf'
@@ -509,6 +602,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/view/$id/download'
       preLoaderRoute: typeof ViewIdDownloadRouteImport
       parentRoute: typeof ViewIdRoute
+    }
+    '/parsha/$slug/$year': {
+      id: '/parsha/$slug/$year'
+      path: '/parsha/$slug/$year'
+      fullPath: '/parsha/$slug/$year'
+      preLoaderRoute: typeof ParshaSlugYearRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -534,9 +634,11 @@ const rootRouteChildren: RootRouteChildren = {
   ArchiveRoute: ArchiveRoute,
   ContactRoute: ContactRoute,
   MissionRoute: MissionRoute,
+  MyTableRoute: MyTableRoute,
   OfflineRoute: OfflineRoute,
   OriginalsRoute: OriginalsRoute,
   PrivacyRoute: PrivacyRoute,
+  PublicationsRoute: PublicationsRoute,
   ResourcesRoute: ResourcesRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   ShortVortsRoute: ShortVortsRoute,
@@ -546,9 +648,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTrackSearchRoute: ApiTrackSearchRoute,
   ApiTrackViewRoute: ApiTrackViewRoute,
   OgImageDotpngRoute: OgImageDotpngRoute,
+  PublicationSlugRoute: PublicationSlugRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ViewIdRoute: ViewIdRouteWithChildren,
   UnsubscribeIndexRoute: UnsubscribeIndexRoute,
+  ParshaSlugYearRoute: ParshaSlugYearRoute,
+  YomTovSlugYearRoute: YomTovSlugYearRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

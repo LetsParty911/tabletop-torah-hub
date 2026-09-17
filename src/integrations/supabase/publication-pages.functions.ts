@@ -62,7 +62,7 @@ export const listPublicationPages = createServerFn({ method: "GET" }).handler(
 
     return {
       publications: (pubs ?? [])
-        .map((p) => ({
+        .map((p: any) => ({
           id: p.id as string,
           name: p.name as string,
           slug: publicationSlug(p.name as string),
@@ -72,7 +72,7 @@ export const listPublicationPages = createServerFn({ method: "GET" }).handler(
           default_description: standardizeCopy((p.default_description as string | null) ?? null),
           edition_count: counts.get(p.id as string) ?? 0,
         }))
-        .filter((p) => p.edition_count > 0),
+        .filter((p: any) => p.edition_count > 0),
     };
   },
 );
@@ -94,7 +94,7 @@ export const getPublicationPage = createServerFn({ method: "GET" })
     }
 
     const publication = (pubs ?? []).find(
-      (p) => publicationSlug(p.name as string) === data.slug,
+      (p: any) => publicationSlug(p.name as string) === data.slug,
     );
     if (!publication) {
       return { publication: null, editions: [] as PublicationEdition[] };
@@ -125,7 +125,7 @@ export const getPublicationPage = createServerFn({ method: "GET" })
           (publication.default_description as string | null) ?? null,
         ),
       },
-      editions: (rows ?? []).map((r) => ({
+      editions: (rows ?? []).map((r: any) => ({
         id: r.id as string,
         title: r.title as string,
         subtitle: standardizeCopy((r.subtitle as string | null) ?? null),
