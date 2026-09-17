@@ -177,6 +177,29 @@ export const VORTS: ParshaVorts[] = [
       },
     ],
   },
+  {
+    parshaKey: "Haazinu",
+    vorts: [
+      {
+        id: "haazinu-rain",
+        title: "Torah Is Like Rain",
+        text: "Moshe says his teaching should fall like rain. Rashi explains that Torah gives life to the world just as rain gives life to the world. Torah is not merely information to know; it is something meant to nourish life.",
+        source: "Rashi, Devarim 32:2",
+      },
+      {
+        id: "haazinu-ask",
+        title: "Ask Those Who Remember",
+        text: "\"Ask your father and he will tell you; your elders and they will say to you.\" Rashi explains that \"father\" refers to the prophets and \"elders\" to the sages. When perspective is missing, the Torah's instruction is simple: ask those who carry the memory of what came before.",
+        source: "Devarim 32:7; Rashi",
+      },
+      {
+        id: "haazinu-not-empty",
+        title: "Nothing Empty in Torah",
+        text: "Moshe tells the nation that Torah is \"not an empty thing\" because it is their life. Rashi adds that there is no empty word in Torah; when it is properly studied, meaning and reward are found in it.",
+        source: "Rashi, Devarim 32:47",
+      },
+    ],
+  },
 ];
 
 export function getVortsForParsha(parshaKey: string | null | undefined): Vort[] {
