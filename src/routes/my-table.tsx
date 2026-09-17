@@ -3,6 +3,7 @@ import { Bookmark, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { SiteFooter } from "@/components/SiteFooter";
+import { requestSubscriberPreferenceLink } from "@/integrations/supabase/subscriber-preferences.functions";
 import { audienceLabel, normalizeAudience } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { formatReadingLabel } from "@/lib/parshiyos";
@@ -44,6 +45,8 @@ function itemMeta(item: MyTableItem) {
 
 function MyTablePage() {
   const [items, setItems] = useState<MyTableItem[]>([]);
+  const [email, setEmail] = useState("");
+  const [linkStatus, setLinkStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
   useEffect(() => {
     setItems(readMyTable());
@@ -59,6 +62,18 @@ function MyTablePage() {
     }
     return Array.from(map.entries());
   }, [items]);
+
+  const requestPreferenceLink = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!email.trim()) return;
+    setLinkStatus("sending");
+    try {
+      await requestSubscriberPreferenceLink({ data: { email: email.trim() } });
+      setLinkStatus("sent");
+    } catch {
+      setLinkStatus("error");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -167,6 +182,46 @@ function MyTablePage() {
             </div>
           </>
         )}
+
+        <section className="mt-8 rounded-2xl border border-accent/30 bg-card/35 p-5 text-center sm:p-6">
+          <h2 className="font-serif text-2xl font-semibold text-primary">Personalize your Thursday email</h2>
+          <p className="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            Already subscribed? We can email you a private link to choose what kind of Torah you want each week — children, family stories, quick vorts, questions, halacha, deeper learning, and preferred length.
+          </p>
+          <form onSubmit={requestPreferenceLink} className="mx-auto mt-5 flex max-w-xl flex-col gap-2 sm:flex-row">
+            <label htmlFor="preference-email" className="sr-only">Email address</label>
+            <input
+              id="preference-email"
+              type="email"
+              required
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                if (linkStatus !== "idle") setLinkStatus("idle");
+              }}
+              placeholder="Your subscribed email address"
+              className="h-11 min-w-0 flex-1 rounded-full border border-accent/35 bg-background px-4 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-accent focus:ring-2 focus:ring-accent/20"
+            />
+            <button
+              type="submit"
+              disabled={linkStatus === "sending"}
+              className="h-11 rounded-full bg-primary px-5 font-serif font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {linkStatus === "sending" ? "Sending…" : "Send My Link"}
+            </button>
+          </form>
+          {linkStatus === "sent" && (
+            <p className="mt-3 text-sm text-primary">
+              If that address is subscribed, your private preference link is on its way.
+            </p>
+          )}
+          {linkStatus === "error" && (
+            <p className="mt-3 text-sm text-destructive">Could not send the link right now. Please try again.</p>
+          )}
+          <p className="mx-auto mt-3 max-w-xl text-xs leading-relaxed text-muted-foreground">
+            We show the same confirmation either way so subscription addresses remain private.
+          </p>
+        </section>
       </main>
       <SiteFooter />
     </div>
