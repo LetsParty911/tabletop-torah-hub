@@ -12,7 +12,9 @@ export type MyTableItem = {
 };
 
 const STORAGE_KEY = "tftt_my_table_v1";
+const PACK_STORAGE_KEY = "tftt_table_pack_v1";
 const EVENT_NAME = "tftt:my-table-changed";
+const PACK_EVENT_NAME = "tftt:table-pack-changed";
 
 export function readMyTable(): MyTableItem[] {
   if (typeof window === "undefined") return [];
@@ -47,11 +49,14 @@ export function addToMyTable(item: Omit<MyTableItem, "savedAt">): MyTableItem[] 
 export function removeFromMyTable(id: string): MyTableItem[] {
   const next = readMyTable().filter((item) => item.id !== id);
   writeMyTable(next);
+  const pack = readTablePackIds().filter((savedId) => savedId !== id);
+  writeTablePackIds(pack);
   return next;
 }
 
 export function clearMyTable(): void {
   writeMyTable([]);
+  writeTablePackIds([]);
 }
 
 export function subscribeMyTable(callback: (items: MyTableItem[]) => void): () => void {
@@ -60,6 +65,60 @@ export function subscribeMyTable(callback: (items: MyTableItem[]) => void): () =
   window.addEventListener(EVENT_NAME, handler as EventListener);
   window.addEventListener("storage", handler);
   return () => {
+    window.removeEventListener(EVENT_NAME, handler as EventListener);
+    window.removeEventListener("storage", handler);
+  };
+}
+
+export function readTablePackIds(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(PACK_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const validSavedIds = new Set(readMyTable().map((item) => item.id));
+    return parsed.filter(
+      (id): id is string => typeof id === "string" && validSavedIds.has(id),
+    );
+  } catch {
+    return [];
+  }
+}
+
+function writeTablePackIds(ids: string[]) {
+  if (typeof window === "undefined") return;
+  const validSavedIds = new Set(readMyTable().map((item) => item.id));
+  const clean = Array.from(new Set(ids.filter((id) => validSavedIds.has(id))));
+  window.localStorage.setItem(PACK_STORAGE_KEY, JSON.stringify(clean));
+  window.dispatchEvent(new CustomEvent(PACK_EVENT_NAME, { detail: { count: clean.length } }));
+}
+
+export function setTablePackIds(ids: string[]): string[] {
+  writeTablePackIds(ids);
+  return readTablePackIds();
+}
+
+export function toggleTablePackItem(id: string): string[] {
+  const current = new Set(readTablePackIds());
+  if (current.has(id)) current.delete(id);
+  else current.add(id);
+  writeTablePackIds(Array.from(current));
+  return readTablePackIds();
+}
+
+export function clearTablePack(): void {
+  writeTablePackIds([]);
+}
+
+export function subscribeTablePack(callback: (ids: string[]) => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  const handler = () => callback(readTablePackIds());
+  window.addEventListener(PACK_EVENT_NAME, handler as EventListener);
+  window.addEventListener(EVENT_NAME, handler as EventListener);
+  window.addEventListener("storage", handler);
+  return () => {
+    window.removeEventListener(PACK_EVENT_NAME, handler as EventListener);
     window.removeEventListener(EVENT_NAME, handler as EventListener);
     window.removeEventListener("storage", handler);
   };
