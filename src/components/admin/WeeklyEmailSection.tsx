@@ -204,6 +204,16 @@ export default function WeeklyEmailSection({
             )}
           </div>
 
+          <p className="mt-2 text-xs text-muted-foreground">
+            The test email goes only to your own admin address and never marks the week as sent.
+          </p>
+          {testResult && (
+            <div className="mt-2 rounded-md border border-accent/40 bg-background/50 px-3 py-2 text-sm text-foreground">
+              {testResult}
+            </div>
+          )}
+
+
           {weeklyHistory.length > 0 && (
             <div className="mt-6">
               <h3 className="text-sm font-semibold text-foreground">Recent sends</h3>
