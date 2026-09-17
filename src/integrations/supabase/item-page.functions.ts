@@ -75,7 +75,7 @@ export const getItemPublicationContext = createServerFn({ method: "GET" })
         slug: publicationSlug(publication.name as string),
         publisher: (publication.publisher as string | null) ?? null,
       },
-      related: (rows ?? []).map((row) => ({
+      related: (rows ?? []).map((row: any) => ({
         id: row.id as string,
         title: row.title as string,
         parsha_key: row.parsha_key as string,
