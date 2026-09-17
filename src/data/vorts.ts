@@ -204,9 +204,10 @@ export const VORTS: ParshaVorts[] = [
 
 export function getVortsForParsha(parshaKey: string | null | undefined): Vort[] {
   if (!parshaKey) return [];
-  const needle = parshaKey.replace(/^parshas\s+/i, "").trim().toLowerCase();
-  const match = VORTS.find(
-    (v) => v.parshaKey.toLowerCase() === needle,
-  );
+  const raw = parshaKey.replace(/^parshas\s+/i, "").trim().toLowerCase();
+  // Special combined-week labels may include Shabbos Shuva/Yom Kippur around Haazinu.
+  // Short Vorts are parsha-based, so resolve that composite label to Haazinu.
+  const needle = /ha'?azinu/i.test(raw) ? "haazinu" : raw;
+  const match = VORTS.find((v) => v.parshaKey.toLowerCase() === needle);
   return match?.vorts ?? [];
 }
