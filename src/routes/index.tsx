@@ -533,7 +533,7 @@ function Index() {
           <section className="mx-auto max-w-md rounded-xl border border-accent/40 bg-card/40 px-4 py-4 text-center sm:px-5">
             <h2 className="font-serif text-xl font-bold text-primary sm:text-2xl">Yom Kippur</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Yom Kippur materials are now available.
+              Yom Kippur Divrei Torah are now available.
             </p>
           </section>
         )}
