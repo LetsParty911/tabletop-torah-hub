@@ -424,6 +424,13 @@ export const adminSendPersonalizedWeeklyEmail = createServerFn({ method: "POST" 
       return { ok: false as const, error: "Could not determine the current week." };
     }
 
+    // Display label may be a special-week override; the collection loaded and
+    // claimed must be the one the site actually displays.
+    const collection = await resolveDisplayedCollectionKey(parshaKey, jewishYear);
+    if (!collection.parshaKey) {
+      return { ok: false as const, error: "Could not determine the current collection." };
+    }
+
     const apiKey = process.env.RESEND_API_KEY;
     const rawFromAddress = process.env.EMAIL_FROM_ADDRESS;
     const fromAddress = rawFromAddress?.trim().toLowerCase();
@@ -431,7 +438,7 @@ export const adminSendPersonalizedWeeklyEmail = createServerFn({ method: "POST" 
       return { ok: false as const, error: "Email is not configured." };
     }
 
-    const resources = await loadResources(parshaKey, jewishYear);
+    const resources = await loadResources(collection.parshaKey, collection.jewishYear);
     if (resources.length === 0) {
       return { ok: false as const, error: "No published PDFs for this week yet." };
     }
@@ -441,8 +448,8 @@ export const adminSendPersonalizedWeeklyEmail = createServerFn({ method: "POST" 
     const { data: claim, error: claimErr } = await admin
       .from("weekly_email_sends")
       .insert({
-        parsha_key: parshaKey,
-        jewish_year: jewishYear,
+        parsha_key: collection.parshaKey,
+        jewish_year: collection.jewishYear,
         subject,
         sent_count: 0,
         created_by: userId,
