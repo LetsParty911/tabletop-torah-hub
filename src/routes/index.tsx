@@ -869,7 +869,7 @@ function Index() {
                         <DownloadToPrintButton
                           href={`/view/${r.id}/download`}
                           publicationId={r.id}
-                          publicationName={displayPublicationName(r)
+                          publicationName={displayPublicationName(r)}
                           publicationTitle={r.title}
                           publisher={r.publisher}
                           publicationSeries={r.publication}
