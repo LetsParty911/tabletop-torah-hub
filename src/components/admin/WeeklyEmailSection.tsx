@@ -1,4 +1,8 @@
+import { useState } from "react";
+
+import { useAuth } from "@/hooks/use-auth";
 import { adminGetWeeklyEmailPreview } from "@/integrations/supabase/api.functions";
+import { adminSendPersonalizedWeeklyEmail } from "@/integrations/supabase/personalized-weekly-email.functions";
 
 export type WeeklyPreview = Awaited<ReturnType<typeof adminGetWeeklyEmailPreview>>;
 
@@ -26,16 +30,58 @@ export default function WeeklyEmailSection({
   weeklyLoading,
   weeklySending,
   weeklyHistory,
-  onSend,
 }: WeeklyEmailSectionProps) {
+  const { session } = useAuth();
+  const [personalizedSending, setPersonalizedSending] = useState(false);
+
+  const handlePersonalizedSend = async () => {
+    const accessToken = session?.access_token;
+    if (!accessToken || !weekly?.ready || weekly.alreadySent) return;
+
+    if (
+      !confirm(
+        `Send this week's email to ${weekly.activeSubscriberCount} active subscriber${weekly.activeSubscriberCount === 1 ? "" : "s"}? Subscribers with My Table preferences will receive personalized selections; everyone else will receive the standard collection.`,
+      )
+    ) {
+      return;
+    }
+
+    setPersonalizedSending(true);
+    try {
+      const result = await adminSendPersonalizedWeeklyEmail({ data: { accessToken } });
+      if (!result.ok) {
+        alert(result.error ?? "Could not send this week's email.");
+        return;
+      }
+
+      const parts = [
+        `Sent to ${result.sentCount} subscriber${result.sentCount === 1 ? "" : "s"}.`,
+        `${result.personalizedCount} personalized.`,
+        `${result.standardCount} standard.`,
+        result.fallbackCount
+          ? `${result.fallbackCount} personalized recipient${result.fallbackCount === 1 ? "" : "s"} received closest-match fallback picks.`
+          : null,
+        result.failedCount ? `${result.failedCount} failed.` : null,
+      ].filter(Boolean);
+
+      alert(parts.join(" "));
+      window.location.reload();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Could not send this week's email.");
+    } finally {
+      setPersonalizedSending(false);
+    }
+  };
+
+  const sending = personalizedSending || weeklySending;
+
   return (
     <>
       <h2 className="font-serif text-2xl font-semibold text-primary">
         Weekly Email
       </h2>
       <p className="text-sm text-muted-foreground mt-1">
-        Send this week's Divrei Torah collection to active subscribers.
-        Manual send only — nothing goes out automatically.
+        Send this week's Divrei Torah to active subscribers. Readers who have set My Table preferences receive a curated subset; everyone else receives the standard weekly collection. Manual send only — nothing goes out automatically.
       </p>
 
       {weeklyLoading && !weekly && (
@@ -78,10 +124,10 @@ export default function WeeklyEmailSection({
           <div className="mt-5 rounded-md border-2 border-accent/50 bg-background/40 p-4">
             <div className="text-xs uppercase tracking-wide text-muted-foreground">Subject</div>
             <div className="font-medium text-foreground mt-1">{weekly.subject || "—"}</div>
-            <div className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">Intro</div>
+            <div className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">Standard-email intro</div>
             <p className="text-sm text-foreground mt-1">{weekly.intro}</p>
             <div className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">
-              Items ({weekly.resources.length})
+              Full weekly collection ({weekly.resources.length})
             </div>
             {weekly.resources.length === 0 ? (
               <p className="text-sm text-muted-foreground mt-1">No published PDFs for this week yet.</p>
@@ -98,21 +144,23 @@ export default function WeeklyEmailSection({
                 ))}
               </ul>
             )}
-            <div className="mt-3 text-xs text-muted-foreground">Footer: Homepage · Archive · Unsubscribe</div>
+            <div className="mt-3 text-xs text-muted-foreground">
+              Personalized readers receive only matching selections when available. Footer: Homepage · Archive · Manage My Table · Unsubscribe
+            </div>
           </div>
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <button
               type="button"
-              onClick={onSend}
-              disabled={weeklySending || !weekly.ready || Boolean(weekly.alreadySent)}
+              onClick={handlePersonalizedSend}
+              disabled={sending || !weekly.ready || Boolean(weekly.alreadySent)}
               className="rounded-full bg-primary px-6 py-2 text-primary-foreground disabled:opacity-50"
             >
-              {weeklySending
+              {sending
                 ? "Sending…"
                 : weekly.alreadySent
                   ? "Already Sent"
-                  : "Send This Week's Email"}
+                  : "Send Personalized Weekly Email"}
             </button>
             {!weekly.ready && !weekly.alreadySent && weekly.reason && (
               <span className="text-sm text-muted-foreground">{weekly.reason}</span>
