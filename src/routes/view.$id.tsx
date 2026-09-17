@@ -347,7 +347,7 @@ function ViewPdf() {
                   {pdf.page_count} {pdf.page_count === 1 ? "page" : "pages"} · PDF
                 </p>
               )}
-              {pdf.thumb_url && !thumbFailed ? (
+              {pdf.thumb_url && !thumbFailed && !HIDE_COVER_IMAGES_THIS_WEEK ? (
                 <img
                   src={pdf.thumb_url}
                   alt={`First page preview of ${pdf.title}`}
