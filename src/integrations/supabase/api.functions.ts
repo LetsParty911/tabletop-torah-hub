@@ -2503,6 +2503,75 @@ export const adminGetWeeklyEmailPreview = createServerFn({ method: "POST" })
     return await getWeeklyEmailContentInternal();
   });
 
+// ---------- Admin: send ONE test email to the signed-in admin ----------
+// Never touches subscribers and never writes weekly_email_sends.
+export const adminSendWeeklyEmailTestToSelf = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string }) =>
+    z.object({ accessToken: z.string().min(10) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { email } = await requireAdmin(data.accessToken);
+
+    const content = await getWeeklyEmailContentInternal();
+    if (!content.parshaLabel) {
+      return { ok: false as const, error: "Could not determine the current week." };
+    }
+    if (content.resources.length === 0) {
+      return { ok: false as const, error: "No published PDFs for this week yet." };
+    }
+
+    const apiKey = process.env.RESEND_API_KEY;
+    const rawFromAddress = process.env.EMAIL_FROM_ADDRESS;
+    const fromAddress = rawFromAddress ? rawFromAddress.trim().toLowerCase() : rawFromAddress;
+    if (!apiKey || !fromAddress) {
+      return {
+        ok: false as const,
+        error: "Email is not configured (missing RESEND_API_KEY / EMAIL_FROM_ADDRESS).",
+      };
+    }
+
+    const unsubscribeUrl = `${SITE_URL}/unsubscribe`;
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          from: fromAddress,
+          to: email,
+          subject: `[TEST] ${content.subject}`,
+          html: emailHtml({
+            parshaLabel: content.parshaLabel,
+            intro: content.intro,
+            resources: content.resources,
+            unsubscribeUrl,
+          }),
+          text: emailText({
+            parshaLabel: content.parshaLabel,
+            intro: content.intro,
+            resources: content.resources,
+            unsubscribeUrl,
+          }),
+        }),
+      });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        return { ok: false as const, error: `Resend ${res.status}: ${errText.slice(0, 300)}` };
+      }
+      const json = (await res.json().catch(() => null)) as { id?: string } | null;
+      return { ok: true as const, to: email, messageId: json?.id ?? null };
+    } catch (e) {
+      return {
+        ok: false as const,
+        error: e instanceof Error ? e.message : "Test send failed.",
+      };
+    }
+  });
+
+
+
 // ---------- Admin: list weekly send history ----------
 export const adminListWeeklyEmailSends = createServerFn({ method: "POST" })
   .inputValidator((input: { accessToken: string }) =>
