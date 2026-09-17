@@ -192,7 +192,53 @@ async function loadResources(parshaKey: string, jewishYear: number): Promise<Wee
         sortOrder: order,
       } satisfies WeeklyResource;
     })
-    .sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title));
+    .sort(
+      (a: WeeklyResource, b: WeeklyResource) =>
+        a.sortOrder - b.sortOrder || a.title.localeCompare(b.title),
+    );
+}
+
+// The display label may be a special-week override (e.g. "Shabbos Shuva
+// Parshas Haazinu and Yom Kippur") that is not a stored parsha_key. Resolve
+// the collection the site actually displays: the live key when it has
+// published PDFs, otherwise the most recent published collection.
+async function resolveDisplayedCollectionKey(
+  rawKey: string | null,
+  jewishYear: number,
+): Promise<{ parshaKey: string | null; jewishYear: number }> {
+  const admin = getSupabaseAdmin();
+  const { data: rows } = await admin
+    .from("pdfs")
+    .select("parsha_key, jewish_year, created_at")
+    .eq("published", true)
+    .order("created_at", { ascending: false });
+  const all = (rows ?? []) as any[];
+  if (all.length === 0) return { parshaKey: rawKey, jewishYear };
+
+  if (rawKey) {
+    const target = toParshaComparableKey(rawKey);
+    const matched = all.filter(
+      (r) => toParshaComparableKey(r.parsha_key as string) === target,
+    );
+    if (matched.length > 0) {
+      let latestYear: number | null = null;
+      for (const r of matched) {
+        const y = typeof r.jewish_year === "number" ? r.jewish_year : null;
+        if (y != null && (latestYear == null || y > latestYear)) latestYear = y;
+      }
+      const head = matched.find((r) => r.jewish_year === latestYear) ?? matched[0];
+      return {
+        parshaKey: (head.parsha_key as string) ?? rawKey,
+        jewishYear: latestYear ?? jewishYear,
+      };
+    }
+  }
+
+  const head = all[0];
+  return {
+    parshaKey: (head.parsha_key as string) ?? rawKey,
+    jewishYear: (head.jewish_year as number | null) ?? jewishYear,
+  };
 }
 
 function searchableText(r: WeeklyResource) {
