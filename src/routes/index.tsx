@@ -242,10 +242,9 @@ function Index() {
     .toLowerCase();
   const easternToday = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
   const showYomKippurNotice = easternToday >= "2026-09-15" && easternToday <= "2026-09-20";
-  const isHaazinuYomKippurWeek =
-    isFallback && normalizedCurrentKey === "ha'azinu" && showYomKippurNotice;
+  const isHaazinuYomKippurWeek = isFallback && showYomKippurNotice;
   const shabbatShuvaLabel =
-    isHaazinuYomKippurWeek
+    isFallback && normalizedCurrentKey === "ha'azinu" && showYomKippurNotice
       ? `Shabbat Shuva / ${currentLabel}`
       : currentLabel;
   const heroDateLine = readingDate
