@@ -242,8 +242,10 @@ function Index() {
     .toLowerCase();
   const easternToday = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
   const showYomKippurNotice = easternToday >= "2026-09-15" && easternToday <= "2026-09-20";
+  const isHaazinuYomKippurWeek =
+    isFallback && normalizedCurrentKey === "ha'azinu" && showYomKippurNotice;
   const shabbatShuvaLabel =
-    isFallback && normalizedCurrentKey === "ha'azinu" && showYomKippurNotice
+    isHaazinuYomKippurWeek
       ? `Shabbat Shuva / ${currentLabel}`
       : currentLabel;
   const heroDateLine = readingDate
@@ -428,7 +430,7 @@ function Index() {
                 {heroDateLine}
               </p>
             )}
-            {isFallback && (
+            {isFallback && !isHaazinuYomKippurWeek && (
               <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-accent/50 bg-accent/10 px-4 py-1.5 font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
                 <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
                 Collection in progress
@@ -436,10 +438,19 @@ function Index() {
             )}
             <p className="mx-auto mt-3 max-w-2xl font-serif text-base leading-relaxed text-primary sm:text-lg md:text-xl">
               {isFallback ? (
-                <>
-                  This week&apos;s selections aren&apos;t live yet. More Divrei Torah will be added
-                  Thursday evening.
-                </>
+                isHaazinuYomKippurWeek ? (
+                  <>
+                    <span className="font-semibold">
+                      {resources.length} {resources.length === 1 ? "selection" : "selections"}
+                    </span>{" "}
+                    for {displayedLabel}
+                  </>
+                ) : (
+                  <>
+                    This week&apos;s selections aren&apos;t live yet. More Divrei Torah will be added
+                    Thursday evening.
+                  </>
+                )
               ) : (
                 <>
                   <span className="font-semibold">
@@ -521,10 +532,9 @@ function Index() {
 
         {showYomKippurNotice && (
           <section className="mx-auto max-w-md rounded-xl border border-accent/40 bg-card/40 px-4 py-4 text-center sm:px-5">
-            <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable">Coming next</p>
-            <h2 className="mt-1 font-serif text-xl font-bold text-primary sm:text-2xl">Yom Kippur</h2>
+            <h2 className="font-serif text-xl font-bold text-primary sm:text-2xl">Yom Kippur</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Yom Kippur materials are being prepared now. New PDFs will be posted ahead of Yom Tov.
+              Yom Kippur materials are now available.
             </p>
           </section>
         )}
@@ -532,7 +542,15 @@ function Index() {
         {isFallback && (
           <div className="mx-auto max-w-2xl rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-center">
             <p className="font-serif text-sm text-primary sm:text-base">
-              <span className="font-semibold">{displayedLabel} collection still available</span> — {resources.length} {resources.length === 1 ? "selection" : "selections"}.
+              {isHaazinuYomKippurWeek ? (
+                <>
+                  <span className="font-semibold">{displayedLabel}</span> — {resources.length} {resources.length === 1 ? "selection" : "selections"} available now.
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold">{displayedLabel} collection still available</span> — {resources.length} {resources.length === 1 ? "selection" : "selections"}.
+                </>
+              )}
             </p>
           </div>
         )}
@@ -544,7 +562,11 @@ function Index() {
         <section id="this-weeks-collection" className="scroll-mt-8">
           <div className="px-1 sm:px-2">
             <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
-              {isFallback ? `${displayedLabel} Collection — Still Available` : "This Week's Collection"}
+              {isFallback
+                ? isHaazinuYomKippurWeek
+                  ? `${displayedLabel} Collection`
+                  : `${displayedLabel} Collection — Still Available`
+                : "This Week's Collection"}
             </h2>
 
             {quickPicks.length > 0 && (
