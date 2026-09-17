@@ -563,7 +563,7 @@ function Index() {
                       className="rounded-xl border border-accent/25 bg-card/30 p-3 text-center transition-colors hover:border-accent/60 hover:bg-card/50"
                     >
                       <p className="font-sans text-[0.62rem] uppercase tracking-[0.14em] text-accent-readable">{label}</p>
-                      <p className="mt-1 font-serif text-base font-bold text-primary leading-snug">{resource.title}</p>
+                      <p className="mt-1 font-serif text-base font-bold text-primary leading-snug">{displayTitle(resource)}</p>
                     </Link>
                   ))}
                 </div>
