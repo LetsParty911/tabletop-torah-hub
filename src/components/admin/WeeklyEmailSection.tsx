@@ -191,6 +191,14 @@ export default function WeeklyEmailSection({
                   ? "Already Sent"
                   : "Send Personalized Weekly Email"}
             </button>
+            <button
+              type="button"
+              onClick={handleTestSend}
+              disabled={testSending || weekly.resources.length === 0 || !weekly.emailConfigured}
+              className="rounded-full border-2 border-accent/60 px-6 py-2 text-foreground disabled:opacity-50"
+            >
+              {testSending ? "Sending test…" : "Send Test Email to Me"}
+            </button>
             {!weekly.ready && !weekly.alreadySent && weekly.reason && (
               <span className="text-sm text-muted-foreground">{weekly.reason}</span>
             )}
