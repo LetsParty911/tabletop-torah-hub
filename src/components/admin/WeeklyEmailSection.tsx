@@ -1,7 +1,10 @@
 import { useState } from "react";
 
 import { useAuth } from "@/hooks/use-auth";
-import { adminGetWeeklyEmailPreview } from "@/integrations/supabase/api.functions";
+import {
+  adminGetWeeklyEmailPreview,
+  adminSendWeeklyEmailTestToSelf,
+} from "@/integrations/supabase/api.functions";
 import { adminSendPersonalizedWeeklyEmail } from "@/integrations/supabase/personalized-weekly-email.functions";
 
 export type WeeklyPreview = Awaited<ReturnType<typeof adminGetWeeklyEmailPreview>>;
