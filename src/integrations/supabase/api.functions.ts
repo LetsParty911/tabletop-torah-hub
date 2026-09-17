@@ -2412,7 +2412,18 @@ async function getWeeklyEmailContentInternal(): Promise<WeeklyEmailContent> {
     .eq("active", true);
   const activeSubscriberCount = activeCount ?? 0;
 
-  if (!parshaKey || !parshaLabel || !jewishYear) {
+  // The display label may be a special-week override (e.g. "Shabbos Shuva
+  // Parshas Haazinu and Yom Kippur") that is NOT a stored parsha_key. The PDF
+  // collection must be resolved exactly like the homepage does, so the email
+  // always reflects the collection readers actually see.
+  const displayed = await resolveDisplayedCollection(
+    admin,
+    parshaKey ? toParshaComparableKey(parshaKey) : null,
+  );
+  const collectionKey = displayed.parshaKey;
+  const collectionYear = displayed.jewishYear ?? jewishYear;
+
+  if (!parshaLabel || !collectionKey || !collectionYear) {
     return {
       ready: false,
       reason: "Could not determine the current week's parsha.",
@@ -2428,12 +2439,12 @@ async function getWeeklyEmailContentInternal(): Promise<WeeklyEmailContent> {
     };
   }
 
-  // Already-sent lookup
+  // Already-sent lookup (keyed on the actual collection, not the display label)
   const { data: sentRow } = await admin
     .from("weekly_email_sends")
     .select("sent_at, sent_count, subject")
-    .eq("parsha_key", parshaKey)
-    .eq("jewish_year", jewishYear)
+    .eq("parsha_key", collectionKey)
+    .eq("jewish_year", collectionYear)
     .maybeSingle();
   const alreadySent = sentRow
     ? {
@@ -2443,16 +2454,7 @@ async function getWeeklyEmailContentInternal(): Promise<WeeklyEmailContent> {
       }
     : null;
 
-  // Pull current week's published PDFs (same comparable-key match as homepage)
-  const target = toParshaComparableKey(parshaKey);
-  const { data: rows } = await admin
-    .from("pdfs")
-    .select("id, title, subtitle, parsha_key, jewish_year, created_at")
-    .eq("published", true)
-    .order("created_at", { ascending: false });
-  const matched = (rows ?? []).filter(
-    (r: any) => toParshaComparableKey(r.parsha_key) === target,
-  );
+  const matched = [...displayed.rows];
   const orderMap = await getTitleSortOrderMap(admin);
   const orderFor = (t: string) => {
     const v = orderMap.get(sortTitleKey(t));
