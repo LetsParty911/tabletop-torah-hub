@@ -55,8 +55,8 @@ export const Route = createFileRoute("/sitemap.xml")({
               .not("publication_id", "is", null);
             const linkedIds = new Set(
               (linked.data ?? [])
-                .map((row) => row.publication_id as string | null)
-                .filter((id): id is string => Boolean(id)),
+                .map((row: any) => row.publication_id as string | null)
+                .filter((id: any): id is string => Boolean(id)),
             );
             for (const pub of pubs.data ?? []) {
               if (!linkedIds.has(pub.id as string)) continue;

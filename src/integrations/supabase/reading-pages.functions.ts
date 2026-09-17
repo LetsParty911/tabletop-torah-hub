@@ -104,10 +104,10 @@ export const getReadingCollection = createServerFn({ method: "GET" })
       return { collection: null, resources: [] as ReadingResource[] };
     }
 
-    const parshaKey = [...new Set((candidates ?? []).map((r) => r.parsha_key as string))].find(
-      (key) =>
-        readingSlug(key) === data.slug &&
-        (isYomTovReading(key) ? "yom-tov" : "parsha") === data.kind,
+    const parshaKey = [...new Set((candidates ?? []).map((r: any) => r.parsha_key as string))].find(
+      (key: any) =>
+        readingSlug(key as string) === data.slug &&
+        (isYomTovReading(key as string) ? "yom-tov" : "parsha") === data.kind,
     );
     if (!parshaKey) {
       return { collection: null, resources: [] as ReadingResource[] };
@@ -130,8 +130,8 @@ export const getReadingCollection = createServerFn({ method: "GET" })
 
     const publicationIds = [...new Set(
       (rows ?? [])
-        .map((r) => r.publication_id as string | null)
-        .filter((id): id is string => Boolean(id)),
+        .map((r: any) => r.publication_id as string | null)
+        .filter((id: any): id is string => Boolean(id)),
     )];
 
     const publicationMap = new Map<
@@ -152,7 +152,7 @@ export const getReadingCollection = createServerFn({ method: "GET" })
       }
     }
 
-    const resources: ReadingResource[] = (rows ?? []).map((r) => {
+    const resources: ReadingResource[] = (rows ?? []).map((r: any) => {
       const pubId = (r.publication_id as string | null) ?? null;
       const canonical = pubId ? publicationMap.get(pubId) : undefined;
       const fallbackPublication = (r.publication as string | null) ?? null;
@@ -182,7 +182,7 @@ export const getReadingCollection = createServerFn({ method: "GET" })
         jewish_year: data.year,
         slug: data.slug,
         kind: data.kind,
-        label: formatReadingLabel(parshaKey),
+        label: formatReadingLabel(parshaKey as string),
         count: resources.length,
       } as ReadingCollectionSummary,
       resources,
