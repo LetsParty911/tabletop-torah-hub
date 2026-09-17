@@ -2412,7 +2412,18 @@ async function getWeeklyEmailContentInternal(): Promise<WeeklyEmailContent> {
     .eq("active", true);
   const activeSubscriberCount = activeCount ?? 0;
 
-  if (!parshaKey || !parshaLabel || !jewishYear) {
+  // The display label may be a special-week override (e.g. "Shabbos Shuva
+  // Parshas Haazinu and Yom Kippur") that is NOT a stored parsha_key. The PDF
+  // collection must be resolved exactly like the homepage does, so the email
+  // always reflects the collection readers actually see.
+  const displayed = await resolveDisplayedCollection(
+    admin,
+    parshaKey ? toParshaComparableKey(parshaKey) : null,
+  );
+  const collectionKey = displayed.parshaKey;
+  const collectionYear = displayed.jewishYear ?? jewishYear;
+
+  if (!parshaLabel || !collectionKey || !collectionYear) {
     return {
       ready: false,
       reason: "Could not determine the current week's parsha.",
@@ -2428,12 +2439,12 @@ async function getWeeklyEmailContentInternal(): Promise<WeeklyEmailContent> {
     };
   }
 
-  // Already-sent lookup
+  // Already-sent lookup (keyed on the actual collection, not the display label)
   const { data: sentRow } = await admin
     .from("weekly_email_sends")
     .select("sent_at, sent_count, subject")
-    .eq("parsha_key", parshaKey)
-    .eq("jewish_year", jewishYear)
+    .eq("parsha_key", collectionKey)
+    .eq("jewish_year", collectionYear)
     .maybeSingle();
   const alreadySent = sentRow
     ? {
@@ -2443,16 +2454,7 @@ async function getWeeklyEmailContentInternal(): Promise<WeeklyEmailContent> {
       }
     : null;
 
-  // Pull current week's published PDFs (same comparable-key match as homepage)
-  const target = toParshaComparableKey(parshaKey);
-  const { data: rows } = await admin
-    .from("pdfs")
-    .select("id, title, subtitle, parsha_key, jewish_year, created_at")
-    .eq("published", true)
-    .order("created_at", { ascending: false });
-  const matched = (rows ?? []).filter(
-    (r: any) => toParshaComparableKey(r.parsha_key) === target,
-  );
+  const matched = [...displayed.rows];
   const orderMap = await getTitleSortOrderMap(admin);
   const orderFor = (t: string) => {
     const v = orderMap.get(sortTitleKey(t));
@@ -2477,9 +2479,11 @@ async function getWeeklyEmailContentInternal(): Promise<WeeklyEmailContent> {
   return {
     ready: reason === null,
     reason,
-    parshaKey,
+    // Duplicate-protection / history keys follow the actual displayed
+    // collection; parshaLabel keeps the human-facing (possibly override) text.
+    parshaKey: collectionKey,
     parshaLabel,
-    jewishYear,
+    jewishYear: collectionYear,
     subject,
     intro,
     resources,
@@ -2498,6 +2502,75 @@ export const adminGetWeeklyEmailPreview = createServerFn({ method: "POST" })
     await requireAdmin(data.accessToken);
     return await getWeeklyEmailContentInternal();
   });
+
+// ---------- Admin: send ONE test email to the signed-in admin ----------
+// Never touches subscribers and never writes weekly_email_sends.
+export const adminSendWeeklyEmailTestToSelf = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string }) =>
+    z.object({ accessToken: z.string().min(10) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { email } = await requireAdmin(data.accessToken);
+
+    const content = await getWeeklyEmailContentInternal();
+    if (!content.parshaLabel) {
+      return { ok: false as const, error: "Could not determine the current week." };
+    }
+    if (content.resources.length === 0) {
+      return { ok: false as const, error: "No published PDFs for this week yet." };
+    }
+
+    const apiKey = process.env.RESEND_API_KEY;
+    const rawFromAddress = process.env.EMAIL_FROM_ADDRESS;
+    const fromAddress = rawFromAddress ? rawFromAddress.trim().toLowerCase() : rawFromAddress;
+    if (!apiKey || !fromAddress) {
+      return {
+        ok: false as const,
+        error: "Email is not configured (missing RESEND_API_KEY / EMAIL_FROM_ADDRESS).",
+      };
+    }
+
+    const unsubscribeUrl = `${SITE_URL}/unsubscribe`;
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          from: fromAddress,
+          to: email,
+          subject: `[TEST] ${content.subject}`,
+          html: emailHtml({
+            parshaLabel: content.parshaLabel,
+            intro: content.intro,
+            resources: content.resources,
+            unsubscribeUrl,
+          }),
+          text: emailText({
+            parshaLabel: content.parshaLabel,
+            intro: content.intro,
+            resources: content.resources,
+            unsubscribeUrl,
+          }),
+        }),
+      });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        return { ok: false as const, error: `Resend ${res.status}: ${errText.slice(0, 300)}` };
+      }
+      const json = (await res.json().catch(() => null)) as { id?: string } | null;
+      return { ok: true as const, to: email, messageId: json?.id ?? null };
+    } catch (e) {
+      return {
+        ok: false as const,
+        error: e instanceof Error ? e.message : "Test send failed.",
+      };
+    }
+  });
+
+
 
 // ---------- Admin: list weekly send history ----------
 export const adminListWeeklyEmailSends = createServerFn({ method: "POST" })

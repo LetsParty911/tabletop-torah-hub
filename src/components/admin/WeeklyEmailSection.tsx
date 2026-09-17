@@ -1,7 +1,10 @@
 import { useState } from "react";
 
 import { useAuth } from "@/hooks/use-auth";
-import { adminGetWeeklyEmailPreview } from "@/integrations/supabase/api.functions";
+import {
+  adminGetWeeklyEmailPreview,
+  adminSendWeeklyEmailTestToSelf,
+} from "@/integrations/supabase/api.functions";
 import { adminSendPersonalizedWeeklyEmail } from "@/integrations/supabase/personalized-weekly-email.functions";
 
 export type WeeklyPreview = Awaited<ReturnType<typeof adminGetWeeklyEmailPreview>>;
@@ -33,6 +36,32 @@ export default function WeeklyEmailSection({
 }: WeeklyEmailSectionProps) {
   const { session } = useAuth();
   const [personalizedSending, setPersonalizedSending] = useState(false);
+  const [testSending, setTestSending] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
+
+  // Sends exactly one email to the signed-in admin. Never touches subscribers
+  // and never records the week as sent.
+  const handleTestSend = async () => {
+    const accessToken = session?.access_token;
+    if (!accessToken) return;
+    setTestSending(true);
+    setTestResult(null);
+    try {
+      const result = await adminSendWeeklyEmailTestToSelf({ data: { accessToken } });
+      setTestResult(
+        result.ok
+          ? `Test email sent to ${result.to}${result.messageId ? ` (id ${result.messageId})` : ""}.`
+          : `Test send failed — ${result.error}`,
+      );
+    } catch (error) {
+      setTestResult(
+        `Test send failed — ${error instanceof Error ? error.message : "unknown error"}`,
+      );
+    } finally {
+      setTestSending(false);
+    }
+  };
+
 
   const handlePersonalizedSend = async () => {
     const accessToken = session?.access_token;
@@ -162,10 +191,28 @@ export default function WeeklyEmailSection({
                   ? "Already Sent"
                   : "Send Personalized Weekly Email"}
             </button>
+            <button
+              type="button"
+              onClick={handleTestSend}
+              disabled={testSending || weekly.resources.length === 0 || !weekly.emailConfigured}
+              className="rounded-full border-2 border-accent/60 px-6 py-2 text-foreground disabled:opacity-50"
+            >
+              {testSending ? "Sending test…" : "Send Test Email to Me"}
+            </button>
             {!weekly.ready && !weekly.alreadySent && weekly.reason && (
               <span className="text-sm text-muted-foreground">{weekly.reason}</span>
             )}
           </div>
+
+          <p className="mt-2 text-xs text-muted-foreground">
+            The test email goes only to your own admin address and never marks the week as sent.
+          </p>
+          {testResult && (
+            <div className="mt-2 rounded-md border border-accent/40 bg-background/50 px-3 py-2 text-sm text-foreground">
+              {testResult}
+            </div>
+          )}
+
 
           {weeklyHistory.length > 0 && (
             <div className="mt-6">
