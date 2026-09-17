@@ -36,6 +36,32 @@ export default function WeeklyEmailSection({
 }: WeeklyEmailSectionProps) {
   const { session } = useAuth();
   const [personalizedSending, setPersonalizedSending] = useState(false);
+  const [testSending, setTestSending] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
+
+  // Sends exactly one email to the signed-in admin. Never touches subscribers
+  // and never records the week as sent.
+  const handleTestSend = async () => {
+    const accessToken = session?.access_token;
+    if (!accessToken) return;
+    setTestSending(true);
+    setTestResult(null);
+    try {
+      const result = await adminSendWeeklyEmailTestToSelf({ data: { accessToken } });
+      setTestResult(
+        result.ok
+          ? `Test email sent to ${result.to}${result.messageId ? ` (id ${result.messageId})` : ""}.`
+          : `Test send failed — ${result.error}`,
+      );
+    } catch (error) {
+      setTestResult(
+        `Test send failed — ${error instanceof Error ? error.message : "unknown error"}`,
+      );
+    } finally {
+      setTestSending(false);
+    }
+  };
+
 
   const handlePersonalizedSend = async () => {
     const accessToken = session?.access_token;
