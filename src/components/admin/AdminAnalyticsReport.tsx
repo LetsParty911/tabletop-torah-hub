@@ -49,13 +49,14 @@ function EmptyState() {
   return <div className="border-y border-border py-12 text-center"><h3 className="font-serif text-xl font-semibold text-primary">Not enough activity yet</h3><p className="mt-2 text-sm text-muted-foreground">Choose a longer period, or check back after more readers visit.</p></div>;
 }
 
-function Overview({ data, openDetail }: { data: ReportData; openDetail: (key: DetailKey, title: string, description: string) => void }) {
+function Overview({ data, accessToken, openDetail }: { data: ReportData; accessToken: string; openDetail: (key: DetailKey, title: string, description: string) => void }) {
   const { report, comparison } = data;
   const m = report.metrics;
   const story = m.people === 0 ? "There has not been enough reader activity to summarize this period." : `${m.people} ${m.people === 1 ? "person visited" : "people visited"}; ${m.usedTorah} ${m.usedTorah === 1 ? "used" : "used"} Torah, with ${m.pdfOpens} PDF opens and ${m.downloads} download actions.`;
-  if (m.sessions === 0) return <EmptyState />;
+  if (m.sessions === 0) return <div className="space-y-8"><EmptyState /><ReportsSection accessToken={accessToken} /></div>;
   return <div className="space-y-8">
     <section><p className="font-serif text-xl leading-relaxed text-foreground">{story}</p><p className="mt-2 text-sm text-muted-foreground">Compared with the prior matching period: {comparison.people} people and {comparison.downloads} download actions.</p></section>
+
     <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <MetricButton label="People" value={m.people} note="Distinct browser visitors" onClick={() => openDetail("people", "People", "The distinct browser visitors included in this report.")} />
       <MetricButton label="Used Torah" value={m.usedTorah} note="People who opened, downloaded, shared, or signed up" onClick={() => openDetail("usedTorah", "Used Torah", "Sessions with a qualifying Torah action and the reason each qualified.")} />
