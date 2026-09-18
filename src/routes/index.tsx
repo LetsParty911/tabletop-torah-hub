@@ -591,6 +591,7 @@ function Index() {
               parshaKey={displayedParshaKey}
               displayTitle={(r) => displayTitle(r as Resource)}
               displayPublicationName={(r) => displayPublicationName(r as Resource)}
+              onActiveChooserChange={setActiveChooser}
             />
 
             {!activeChooser && (
