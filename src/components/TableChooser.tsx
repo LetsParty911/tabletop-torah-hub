@@ -28,11 +28,34 @@ type Props = {
 export function TableChooser({ resources, parshaKey, displayTitle, displayPublicationName }: Props) {
   const [selected, setSelected] = useState<ChooserKey | null>(null);
   const lastViewed = useRef<string | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const pendingScrollRef = useRef(false);
 
   const recommendations = useMemo(
     () => (selected ? pickRecommendations(resources, selected, 3) : []),
     [resources, selected],
   );
+
+  const selectedLabel = useMemo(
+    () => CHOOSERS.find((c) => c.key === selected)?.label,
+    [selected],
+  );
+
+  useEffect(() => {
+    if (!selected || recommendations.length === 0 || !resultsRef.current || !pendingScrollRef.current) return;
+    pendingScrollRef.current = false;
+    const el = resultsRef.current;
+    const id = requestAnimationFrame(() => {
+      const rect = el.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const hiddenAbove = rect.bottom < 80;
+      const belowFold = rect.top > viewportHeight * 0.55;
+      if (!hiddenAbove && !belowFold) return;
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [selected, recommendations]);
 
   useEffect(() => {
     if (!selected || recommendations.length === 0) return;
