@@ -7,9 +7,10 @@ import { checkRateLimit } from "@/lib/rate-limit.server";
 // project (see supabase_analytics_events_migration.sql). Legacy
 // page_views / search_events / download_events writes are unaffected.
 //
-// Never stores raw IP addresses or raw user agents. Device type is derived
-// here from the UA header and only the coarse bucket is persisted. Geo is
-// limited to country + region for this table.
+// Captures the raw client IP address and User-Agent header server-side for
+// accepted events. Device type is derived here from the UA header and only the
+// coarse bucket is persisted. Geo is limited to country + region + city +
+// postal_code for this table.
 
 const ALLOWED_EVENTS = new Set([
   "session_start",
@@ -27,9 +28,9 @@ const ALLOWED_EVENTS = new Set([
   "error",
 ]);
 
-// Conservative, privacy-preserving automation check. The raw user agent is
-// never stored or logged — it is only matched against obvious bot/crawler/
-// headless/link-preview markers and then discarded.
+// Conservative automation check. The raw User-Agent header is matched against
+// obvious bot/crawler/headless/link-preview markers before anything is
+// persisted; accepted requests store the header for diagnostics.
 const BOT_UA = new RegExp(
   [
     "bot",
