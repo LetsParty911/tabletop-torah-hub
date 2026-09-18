@@ -11,8 +11,20 @@ type EventRow = {
   path: string | null;
   publication_id: string | null;
   publication_title: string | null;
+  publication_series?: string | null;
+  publisher?: string | null;
   device_type: string | null;
   source_group: string | null;
+  country?: string | null;
+  region?: string | null;
+  city?: string | null;
+  postal_code?: string | null;
+  referrer_host?: string | null;
+  referrer_url?: string | null;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 type WindowDef = { parsha: string; start: string; end: string };
@@ -112,7 +124,7 @@ async function fetchEventsBetween(start: string, end: string): Promise<EventRow[
     const { data, error } = await admin
       .from("analytics_events")
       .select(
-        "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, device_type, source_group",
+        "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, publication_series, publisher, device_type, source_group, country, region, city, postal_code, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign, metadata",
       )
       .gte("occurred_at", start)
       .lt("occurred_at", end)
@@ -124,6 +136,16 @@ async function fetchEventsBetween(start: string, end: string): Promise<EventRow[
     if (page.length < pageSize) break;
   }
   return out;
+}
+
+export type UsedTorahReason = "Opened a PDF" | "Requested a download" | "Shared Torah" | "Signed up";
+
+export function usedTorahQualification(eventNames: string[]): UsedTorahReason | null {
+  if (eventNames.includes("download")) return "Requested a download";
+  if (eventNames.includes("pdf_open")) return "Opened a PDF";
+  if (eventNames.includes("share_click")) return "Shared Torah";
+  if (eventNames.includes("signup")) return "Signed up";
+  return null;
 }
 
 function visitorIds(rows: EventRow[]): string[] {
