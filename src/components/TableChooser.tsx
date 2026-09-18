@@ -34,6 +34,8 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
   const [selected, setSelected] = useState<ChooserKey | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [savedCount, setSavedCount] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
+
   const lastViewed = useRef<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const pendingScrollRef = useRef(false);
@@ -49,9 +51,18 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
   );
 
   useEffect(() => {
+    setMounted(true);
     setSavedCount(readMyTable().length);
     return subscribeMyTable((items) => setSavedCount(items.length));
   }, []);
+
+  // Keep the last page content scrollable above the fixed bar on mobile.
+  useEffect(() => {
+    if (!selected) return;
+    document.body.classList.add("has-chooser-bar");
+    return () => document.body.classList.remove("has-chooser-bar");
+  }, [selected]);
+
 
   useEffect(() => {
     if (!menuOpen) return;
