@@ -1739,6 +1739,9 @@ function AdminPage() {
           </div>
         </section>
           </TabsContent>
+          <TabsContent value="visitor-activity" className="space-y-8 mt-8">
+            <VisitorActivitySection accessToken={accessToken} />
+          </TabsContent>
         </Tabs>
       </div>
       {summaryModal && (
