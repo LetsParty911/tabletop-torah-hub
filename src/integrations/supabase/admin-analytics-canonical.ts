@@ -558,3 +558,379 @@ export const adminDownloadActionsTodayEt = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { count: count ?? 0 };
   });
+
+/* ------------------------------------------------------------------ */
+/* Visitor Activity (admin-only investigation view)                     */
+/* ------------------------------------------------------------------ */
+
+type VisitorEventRow = EventRow & {
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  postal_code: string | null;
+  metadata: Record<string, unknown> | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  referrer_host: string | null;
+  referrer_url: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+};
+
+const VISITOR_SELECT =
+  "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, source_group, device_type, country, region, city, postal_code, metadata, ip_address, user_agent, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign";
+
+const RANGE_HOURS = { "1h": 1, "6h": 6, "24h": 24, "7d": 24 * 7, "30d": 24 * 30 } as const;
+export type VisitorActivityRange = keyof typeof RANGE_HOURS;
+
+const VISITOR_CAP = 100;
+
+async function fetchVisitorEvents(start: string, end: string): Promise<VisitorEventRow[]> {
+  const admin = getSupabaseAdmin();
+  const out: VisitorEventRow[] = [];
+  const pageSize = 1000;
+  const maxRows = 40_000; // hard guard so a wide range cannot run forever
+
+  for (let offset = 0; offset < maxRows; offset += pageSize) {
+    const { data, error } = await admin
+      .from("analytics_events")
+      .select(VISITOR_SELECT)
+      .gte("occurred_at", start)
+      .lt("occurred_at", end)
+      .order("occurred_at", { ascending: false })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw new Error(error.message);
+    const page = (data ?? []) as VisitorEventRow[];
+    out.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return out;
+}
+
+function pushUnique(list: string[], value: string | null | undefined) {
+  const v = value?.trim();
+  if (!v) return;
+  if (!list.includes(v)) list.push(v);
+}
+
+function geoLabel(row: {
+  city: string | null;
+  region: string | null;
+  country: string | null;
+}): string {
+  const parts = [row.city, row.region, row.country].map((p) => p?.trim()).filter(Boolean);
+  return parts.length ? parts.join(", ") : "";
+}
+
+export const adminVisitorActivity = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; range?: string }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        range: z.enum(["1h", "6h", "24h", "7d", "30d"]).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAnalyticsAdmin(data.accessToken);
+
+    const range = (data.range ?? "24h") as VisitorActivityRange;
+    const endMs = Date.now() + 60_000;
+    const startMs = Date.now() - RANGE_HOURS[range] * 60 * 60 * 1000;
+    const start = new Date(startMs).toISOString();
+    const end = new Date(endMs).toISOString();
+
+    const rows = await fetchVisitorEvents(start, end);
+
+    // Reuse the EXISTING canonical session/automation rules — no new bot filter.
+    const sessions = buildSessions(rows);
+    const sessionList = [...sessions.values()];
+    const burstOrHeartbeat = classifyAutomation(sessionList);
+    const knownIncident = classifyKnownIncident(sessionList);
+
+    type SessionDetail = {
+      sessionId: string;
+      startedAt: string;
+      endedAt: string;
+      pageviews: number;
+      suspected: boolean;
+      suspicionReasons: string[];
+      timeline: Array<{
+        at: string;
+        event: string;
+        path: string | null;
+        publication: string | null;
+        detail: string | null;
+      }>;
+    };
+
+    type VisitorAgg = {
+      visitorId: string;
+      firstSeenInRange: string;
+      lastSeenInRange: string;
+      sessionIds: string[];
+      pageviews: number;
+      publicationClicks: number;
+      pdfOpens: number;
+      downloads: number;
+      searches: number;
+      signups: number;
+      shares: number;
+      filterChanges: number;
+      humanSignalSeen: boolean;
+      sources: string[];
+      devices: string[];
+      paths: string[];
+      ips: string[];
+      userAgents: string[];
+      latestIp: string | null;
+      latestUserAgent: string | null;
+      latestDeviceType: string | null;
+      geo: { city: string | null; region: string | null; country: string | null; postalCode: string | null };
+      referrerHost: string | null;
+      referrerUrl: string | null;
+      utmSource: string | null;
+      utmMedium: string | null;
+      utmCampaign: string | null;
+      isNewFlagSeen: boolean;
+      isReturningFlagSeen: boolean;
+      publicationActions: Array<{ at: string; action: string; publication: string }>;
+      searchTerms: Array<{ at: string; term: string }>;
+      filterChangeDetails: Array<{ at: string; detail: string }>;
+      sessionDetails: Map<string, SessionDetail>;
+    };
+
+    const visitors = new Map<string, VisitorAgg>();
+
+    // rows arrive newest-first; walk oldest-first so "latest" wins naturally.
+    const ordered = [...rows].reverse();
+
+    for (const row of ordered) {
+      const vid = row.visitor_id?.trim();
+      if (!vid) continue;
+      const at = row.occurred_at;
+      const name = row.event_name ?? "";
+      const sid = row.session_id?.trim() ?? "";
+
+      let v = visitors.get(vid);
+      if (!v) {
+        v = {
+          visitorId: vid,
+          firstSeenInRange: at,
+          lastSeenInRange: at,
+          sessionIds: [],
+          pageviews: 0,
+          publicationClicks: 0,
+          pdfOpens: 0,
+          downloads: 0,
+          searches: 0,
+          signups: 0,
+          shares: 0,
+          filterChanges: 0,
+          humanSignalSeen: false,
+          sources: [],
+          devices: [],
+          paths: [],
+          ips: [],
+          userAgents: [],
+          latestIp: null,
+          latestUserAgent: null,
+          latestDeviceType: null,
+          geo: { city: null, region: null, country: null, postalCode: null },
+          referrerHost: null,
+          referrerUrl: null,
+          utmSource: null,
+          utmMedium: null,
+          utmCampaign: null,
+          isNewFlagSeen: false,
+          isReturningFlagSeen: false,
+          publicationActions: [],
+          searchTerms: [],
+          filterChangeDetails: [],
+          sessionDetails: new Map(),
+        };
+        visitors.set(vid, v);
+      }
+
+      if (at < v.firstSeenInRange) v.firstSeenInRange = at;
+      if (at > v.lastSeenInRange) v.lastSeenInRange = at;
+
+      pushUnique(v.sessionIds, sid);
+      pushUnique(v.sources, row.source_group);
+      pushUnique(v.devices, row.device_type);
+      pushUnique(v.ips, row.ip_address);
+      pushUnique(v.userAgents, row.user_agent);
+      if (row.ip_address?.trim()) v.latestIp = row.ip_address.trim();
+      if (row.user_agent?.trim()) v.latestUserAgent = row.user_agent.trim();
+      if (row.device_type?.trim()) v.latestDeviceType = row.device_type.trim();
+      if (row.city?.trim()) v.geo.city = row.city.trim();
+      if (row.region?.trim()) v.geo.region = row.region.trim();
+      if (row.country?.trim()) v.geo.country = row.country.trim();
+      if (row.postal_code?.trim()) v.geo.postalCode = row.postal_code.trim();
+      if (row.referrer_host?.trim()) v.referrerHost = row.referrer_host.trim();
+      if (row.referrer_url?.trim()) v.referrerUrl = row.referrer_url.trim();
+      if (row.utm_source?.trim()) v.utmSource = row.utm_source.trim();
+      if (row.utm_medium?.trim()) v.utmMedium = row.utm_medium.trim();
+      if (row.utm_campaign?.trim()) v.utmCampaign = row.utm_campaign.trim();
+      if (row.is_new_visitor === true) v.isNewFlagSeen = true;
+      if (row.is_new_visitor === false) v.isReturningFlagSeen = true;
+
+      const publication = row.publication_title?.trim() || row.publication_id?.trim() || null;
+      const meta = (row.metadata ?? {}) as Record<string, unknown>;
+      const metaString = (key: string) => {
+        const value = meta[key];
+        return typeof value === "string" && value.trim() ? value.trim() : null;
+      };
+
+      if (name === "page_view") {
+        v.pageviews += 1;
+        pushUnique(v.paths, row.path);
+      }
+      if (name === "publication_click") {
+        v.publicationClicks += 1;
+        if (publication) v.publicationActions.push({ at, action: "Clicked", publication });
+      }
+      if (name === "pdf_open") {
+        v.pdfOpens += 1;
+        if (publication) v.publicationActions.push({ at, action: "Opened PDF", publication });
+      }
+      if (name === "download") {
+        v.downloads += 1;
+        if (publication) v.publicationActions.push({ at, action: "Downloaded", publication });
+      }
+      if (name === "search") {
+        v.searches += 1;
+        const term = metaString("query") ?? metaString("term") ?? metaString("q");
+        if (term) v.searchTerms.push({ at, term });
+      }
+      if (name === "signup") v.signups += 1;
+      if (name === "share_click") v.shares += 1;
+      if (name === "filter_change") {
+        v.filterChanges += 1;
+        const detail =
+          metaString("filter") ??
+          metaString("value") ??
+          metaString("label") ??
+          (Object.keys(meta).length ? JSON.stringify(meta).slice(0, 200) : null);
+        if (detail) v.filterChangeDetails.push({ at, detail });
+      }
+      if (name === "human_signal") v.humanSignalSeen = true;
+
+      if (sid) {
+        let detail = v.sessionDetails.get(sid);
+        if (!detail) {
+          const reasons: string[] = [];
+          if (burstOrHeartbeat.has(sid)) reasons.push("Matches canonical high-confidence automation rule");
+          if (knownIncident.has(sid)) reasons.push("Inside known automated traffic incident window");
+          detail = {
+            sessionId: sid,
+            startedAt: at,
+            endedAt: at,
+            pageviews: 0,
+            suspected: reasons.length > 0,
+            suspicionReasons: reasons,
+            timeline: [],
+          };
+          v.sessionDetails.set(sid, detail);
+        }
+        if (at < detail.startedAt) detail.startedAt = at;
+        if (at > detail.endedAt) detail.endedAt = at;
+        if (name === "page_view") detail.pageviews += 1;
+        if (detail.timeline.length < 200) {
+          detail.timeline.push({
+            at,
+            event: name || "unknown",
+            path: row.path?.trim() || null,
+            publication,
+            detail:
+              name === "search"
+                ? (metaString("query") ?? metaString("term") ?? metaString("q"))
+                : name === "filter_change"
+                  ? (metaString("filter") ?? metaString("value") ?? metaString("label"))
+                  : null,
+          });
+        }
+      }
+    }
+
+    const all = [...visitors.values()].sort((a, b) =>
+      b.lastSeenInRange.localeCompare(a.lastSeenInRange),
+    );
+    const capped = all.slice(0, VISITOR_CAP);
+
+    const shaped = capped.map((v) => {
+      const sessionDetails = [...v.sessionDetails.values()].sort((a, b) =>
+        b.startedAt.localeCompare(a.startedAt),
+      );
+      const suspectedSessions = sessionDetails.filter((s) => s.suspected).length;
+      const suspicionReasons = [
+        ...new Set(sessionDetails.flatMap((s) => s.suspicionReasons)),
+      ];
+      const meaningful =
+        v.publicationClicks + v.pdfOpens + v.downloads + v.searches + v.signups + v.shares;
+
+      return {
+        visitorId: v.visitorId,
+        firstSeenInRange: v.firstSeenInRange,
+        lastSeenInRange: v.lastSeenInRange,
+        sessionsInRange: v.sessionIds.length,
+        pageviews: v.pageviews,
+        publicationClicks: v.publicationClicks,
+        pdfOpens: v.pdfOpens,
+        downloads: v.downloads,
+        searches: v.searches,
+        signups: v.signups,
+        shares: v.shares,
+        filterChanges: v.filterChanges,
+        humanSignalSeen: v.humanSignalSeen,
+        meaningfulActionCount: meaningful,
+        sources: v.sources.length ? v.sources : ["Direct"],
+        devices: v.devices.length ? v.devices : ["unknown"],
+        paths: v.paths,
+        geo: { ...v.geo, label: geoLabel(v.geo) },
+        latestIp: v.latestIp,
+        distinctIpCount: v.ips.length,
+        ips: v.ips,
+        latestUserAgent: v.latestUserAgent,
+        distinctUserAgentCount: v.userAgents.length,
+        latestDeviceType: v.latestDeviceType,
+        referrerHost: v.referrerHost,
+        referrerUrl: v.referrerUrl,
+        utmSource: v.utmSource,
+        utmMedium: v.utmMedium,
+        utmCampaign: v.utmCampaign,
+        // Returning when an event explicitly says so, or when more than one
+        // session appeared in range; otherwise treat the new-flag as "new".
+        likelyReturning: v.isReturningFlagSeen || v.sessionIds.length > 1,
+        likelyNew: !v.isReturningFlagSeen && v.isNewFlagSeen && v.sessionIds.length <= 1,
+        suspectedSessions,
+        suspicionReasons,
+        publicationActions: v.publicationActions.slice(-50).reverse(),
+        searchTerms: v.searchTerms.slice(-50).reverse(),
+        filterChangeDetails: v.filterChangeDetails.slice(-50).reverse(),
+        sessions: sessionDetails,
+      };
+    });
+
+    const totals = {
+      visitors: all.length,
+      visitorsShown: shaped.length,
+      sessions: sessions.size,
+      pageviews: rows.filter((r) => r.event_name === "page_view").length,
+      pdfOpens: rows.filter((r) => r.event_name === "pdf_open").length,
+      downloads: rows.filter((r) => r.event_name === "download").length,
+      signups: rows.filter((r) => r.event_name === "signup").length,
+      suspectedSessions: new Set([...burstOrHeartbeat, ...knownIncident]).size,
+      eventsScanned: rows.length,
+    };
+
+    return {
+      range,
+      windowStart: start,
+      windowEnd: end,
+      cap: VISITOR_CAP,
+      totals,
+      visitors: shaped,
+    };
+  });

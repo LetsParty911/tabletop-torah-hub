@@ -11,6 +11,7 @@ import WeeklyChecklistSection from "@/components/admin/WeeklyChecklistSection";
 import ManageChecklistSourcesSection from "@/components/admin/ManageChecklistSourcesSection";
 import PdfListSection from "@/components/admin/PdfListSection";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import VisitorActivitySection from "@/components/admin/VisitorActivitySection";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -1399,6 +1400,7 @@ function AdminPage() {
             <TabsTrigger value="site-content">Site Content</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="subscribers-analytics">Subscribers</TabsTrigger>
+            <TabsTrigger value="visitor-activity">Visitor Activity</TabsTrigger>
           </TabsList>
           <TabsContent value="this-week" className="space-y-8 mt-8">
         <section className="parchment-frame">
@@ -1737,6 +1739,9 @@ function AdminPage() {
             )}
           </div>
         </section>
+          </TabsContent>
+          <TabsContent value="visitor-activity" className="space-y-8 mt-8">
+            <VisitorActivitySection accessToken={accessToken} />
           </TabsContent>
         </Tabs>
       </div>
