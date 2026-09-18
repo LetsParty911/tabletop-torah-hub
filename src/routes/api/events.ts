@@ -7,9 +7,10 @@ import { checkRateLimit } from "@/lib/rate-limit.server";
 // project (see supabase_analytics_events_migration.sql). Legacy
 // page_views / search_events / download_events writes are unaffected.
 //
-// Never stores raw IP addresses or raw user agents. Device type is derived
-// here from the UA header and only the coarse bucket is persisted. Geo is
-// limited to country + region for this table.
+// Captures the raw client IP address and User-Agent header server-side for
+// accepted events. Device type is derived here from the UA header and only the
+// coarse bucket is persisted. Geo is limited to country + region + city +
+// postal_code for this table.
 
 const ALLOWED_EVENTS = new Set([
   "session_start",
@@ -27,9 +28,9 @@ const ALLOWED_EVENTS = new Set([
   "error",
 ]);
 
-// Conservative, privacy-preserving automation check. The raw user agent is
-// never stored or logged — it is only matched against obvious bot/crawler/
-// headless/link-preview markers and then discarded.
+// Conservative automation check. The raw User-Agent header is matched against
+// obvious bot/crawler/headless/link-preview markers before anything is
+// persisted; accepted requests store the header for diagnostics.
 const BOT_UA = new RegExp(
   [
     "bot",
@@ -106,6 +107,33 @@ function isAdminPath(p: string | null | undefined): boolean {
   return p === "/admin" || p.startsWith("/admin/") || p.startsWith("/admin-analytics");
 }
 
+// Prefer edge/proxy headers over the connection's remote address. Trim, strip
+// surrounding whitespace, and cap at 100 characters. Never accept an IP from
+// the JSON event body.
+function getClientIP(request: Request): string | null {
+  const header = (name: string) => {
+    const v = request.headers.get(name);
+    return v && v.trim() ? v.trim() : null;
+  };
+
+  const cf = header("cf-connecting-ip");
+  if (cf) return cf.slice(0, 100);
+
+  const real = header("x-real-ip");
+  if (real) return real.slice(0, 100);
+
+  const forwarded = header("x-forwarded-for");
+  if (forwarded) {
+    const first = forwarded.split(",")[0];
+    if (first) {
+      const trimmed = first.trim();
+      if (trimmed) return trimmed.slice(0, 100);
+    }
+  }
+
+  return null;
+}
+
 export const Route = createFileRoute("/api/events")({
   server: {
     handlers: {
@@ -136,8 +164,10 @@ export const Route = createFileRoute("/api/events")({
           const incoming = Array.isArray(body["events"]) ? (body["events"] as unknown[]) : [];
           if (!incoming.length) return new Response(null, { status: 204 });
 
-          // Approximate, network-derived location only. We never persist the raw IP
-          // address or coordinates — only coarse country/region/city/postal code.
+          // Approximate, network-derived location only. Coarse country/region/city/
+          // postal_code are persisted alongside the raw client IP and User-Agent.
+          const clientIP = getClientIP(request);
+          const rawUserAgent = (request.headers.get("user-agent") ?? "").slice(0, 1000);
           const cf = (request as unknown as { cf?: Record<string, unknown> }).cf ?? {};
           const cfStr = (key: string) => {
             const v = cf[key];
@@ -227,6 +257,8 @@ export const Route = createFileRoute("/api/events")({
               region,
               city,
               postal_code: postalCode,
+              ip_address: clientIP,
+              user_agent: rawUserAgent,
               metadata,
             });
           }

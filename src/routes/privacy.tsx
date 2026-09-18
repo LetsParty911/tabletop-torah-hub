@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 
 const PRIVACY_EMAIL = "hello@torahforthetable.com";
 const ENTITY_NAME = "Torah For The Table";
-const LAST_UPDATED = "September 6, 2026";
+const LAST_UPDATED = "September 17, 2026";
 
 const mailLink = (
   <a
@@ -139,9 +139,15 @@ function PrivacyPage() {
                         normalized traffic-source category; device category; and approximate,
                         network-derived country, state or region, city, and postal code. This
                         location can be inaccurate, for example when a mobile carrier or VPN routes
-                        traffic elsewhere. The canonical analytics table does not retain the
-                        visitor's raw IP address. Event-specific metadata may include the filter
-                        selected, search information, share method, or active-time interval.
+                        traffic elsewhere.
+                      </p>
+                      <p>
+                        For accepted analytics events we also retain the request's IP address and
+                        the raw User-Agent/browser string sent by the browser. These are used for
+                        traffic analysis, security and abuse detection, distinguishing automated
+                        traffic from real visitors, and browser/device diagnostics. The User-Agent
+                        can reveal browser, operating system and device details. Analytics are not
+                        run on the site's administrative pages.
                       </p>
                       <p>
                         We also use Google Tag Manager and Google Analytics to measure site usage,
