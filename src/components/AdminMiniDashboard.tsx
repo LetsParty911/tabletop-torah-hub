@@ -144,6 +144,11 @@ export default function AdminMiniDashboard({
               {canonical.filteredAutomationSessions} suspected automated sessions filtered
             </p>
           )}
+          {canonical && canonical.filteredInternalSessions > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {canonical.filteredInternalSessions} internal/test sessions filtered
+            </p>
+          )}
         </header>
         {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
         {data && canonical && nothingNew && (

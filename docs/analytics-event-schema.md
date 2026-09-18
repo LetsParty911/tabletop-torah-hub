@@ -17,6 +17,7 @@ Legacy `page_views`, `search_events`, `download_events`, and `download_attributi
 - **Session ID:** a first-party session shared across tabs. A new session begins after 30 minutes of inactivity.
 - **New visitor:** the first canonical session created for a new visitor ID.
 - **Returning visitor:** an active visitor with an in-range canonical session known to be non-first, either from observed prior canonical history or the canonical non-first-session flag. A visitor can therefore become returning within the selected reporting range if session 2 occurs in that same range.
+- **IP address is diagnostic evidence only:** it is never used to merge separate visitor IDs into one person, because households, offices, shuls, schools, mobile carriers, VPNs, and proxies can legitimately share a public IP.
 
 Admin routes are excluded on both client and ingest server. `/admin`, `/admin/*`, and `/admin-analytics*` must not emit canonical events.
 
@@ -217,4 +218,4 @@ Canonical events may store hosting-provider, network-derived `country`, `region`
 
 ## Canonical automation handling
 
-Obvious crawler and preview User-Agents are rejected before ingest. Accepted raw rows are preserved. Headline reporting excludes only sessions matching the canonical high-confidence burst or impossible-heartbeat rules, plus the narrowly time-boxed September 18, 2026 incident rule. Any session with meaningful intent or `human_signal` is protected from the general automation classifier, preserving legitimate PDF opens and download actions. Visitor Activity keeps suspected sessions visible and labels the reason.
+Obvious crawler and preview User-Agents are rejected before ingest. Accepted raw rows are preserved. Headline reporting excludes sessions matching the canonical high-confidence burst or impossible-heartbeat rules, plus the narrowly time-boxed September 18, 2026 incident rule. It also excludes Lovable editor/preview test sessions identified by a `lovable.dev` / `lovable.app` referrer or the Lovable app User-Agent. These internal sessions remain in raw analytics for diagnostics and are reported separately from suspected automation. Any session with meaningful intent or `human_signal` is protected from the general automation classifier, preserving legitimate PDF opens and download actions. Visitor Activity keeps suspected sessions visible and labels the reason.

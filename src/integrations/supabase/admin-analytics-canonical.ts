@@ -25,6 +25,7 @@ type EventRow = {
   utm_medium?: string | null;
   utm_campaign?: string | null;
   metadata?: Record<string, unknown> | null;
+  user_agent?: string | null;
 };
 
 type WindowDef = { parsha: string; start: string; end: string };
@@ -44,6 +45,7 @@ type SessionAgg = {
   impressions: number;
   humanSignal: boolean;
   meaningfulIntent: boolean;
+  internalTestTraffic: boolean;
 };
 
 // Events that only a person can realistically produce.
@@ -124,7 +126,7 @@ async function fetchEventsBetween(start: string, end: string): Promise<EventRow[
     const { data, error } = await admin
       .from("analytics_events")
       .select(
-        "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, publication_series, publisher, device_type, source_group, country, region, city, postal_code, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign, metadata",
+        "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, publication_series, publisher, device_type, source_group, country, region, city, postal_code, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign, metadata, user_agent",
       )
       .gte("occurred_at", start)
       .lt("occurred_at", end)
@@ -213,6 +215,7 @@ function buildSessions(rows: EventRow[]): Map<string, SessionAgg> {
         impressions: 0,
         humanSignal: false,
         meaningfulIntent: false,
+        internalTestTraffic: false,
       };
       sessions.set(sid, session);
     }
@@ -222,6 +225,22 @@ function buildSessions(rows: EventRow[]): Map<string, SessionAgg> {
       session.source = row.source_group.trim();
     if (session.device === "unknown" && row.device_type?.trim())
       session.device = row.device_type.trim();
+
+    // Lovable editor/preview traffic is internal testing, not public readership.
+    // Keep it in raw analytics for diagnostics, but mark the session so headline
+    // audience metrics can exclude it without using IP-based identity merging.
+    const referrerHost = row.referrer_host?.trim().toLowerCase() ?? "";
+    const userAgent = row.user_agent?.toLowerCase() ?? "";
+    if (
+      referrerHost === "lovable.dev" ||
+      referrerHost.endsWith(".lovable.dev") ||
+      referrerHost === "lovable.app" ||
+      referrerHost.endsWith(".lovable.app") ||
+      userAgent.includes("lovableapp/")
+    ) {
+      session.internalTestTraffic = true;
+    }
+
     if (time) {
       if (!session.firstAt || time < session.firstAt) session.firstAt = time;
       if (time > session.lastAt) session.lastAt = time;
@@ -313,11 +332,20 @@ function classifyKnownIncident(sessions: SessionAgg[]): Set<string> {
   return automated;
 }
 
+function classifyInternalTestTraffic(sessions: SessionAgg[]): Set<string> {
+  return new Set(
+    sessions.filter((session) => session.internalTestTraffic).map((session) => session.id),
+  );
+}
+
 function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>()) {
   const allSessions = buildSessions(rows);
   const automated = classifyAutomation([...allSessions.values()]);
   const knownIncident = classifyKnownIncident([...allSessions.values()]);
   const allAutomated = new Set([...automated, ...knownIncident]);
+  const internalTest = classifyInternalTestTraffic([...allSessions.values()]);
+  const internalOnly = new Set([...internalTest].filter((id) => !allAutomated.has(id)));
+  const excluded = new Set([...allAutomated, ...internalOnly]);
 
   const rawSessions = allSessions.size;
   const rawVisitors = new Set<string>();
@@ -325,7 +353,7 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
     if (session.visitorId) rawVisitors.add(session.visitorId);
   }
 
-  const kept = [...allSessions.values()].filter((session) => !allAutomated.has(session.id));
+  const kept = [...allSessions.values()].filter((session) => !excluded.has(session.id));
   const keptIds = new Set(kept.map((session) => session.id));
   const keptRows = rows.filter((row) => {
     const sid = row.session_id?.trim();
@@ -387,6 +415,7 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
     rawSessions,
     rawUniqueVisitors: rawVisitors.size,
     filteredAutomationSessions: allAutomated.size,
+    filteredInternalSessions: internalOnly.size,
     returningVisitors: returningVisitors.size,
     engagedSessions,
     pdfAccessingSessions,
@@ -438,7 +467,10 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
     ...classifyAutomation([...allSessions.values()]),
     ...classifyKnownIncident([...allSessions.values()]),
   ]);
-  const keptSessions = [...allSessions.values()].filter((session) => !automation.has(session.id));
+  const internalTest = classifyInternalTestTraffic([...allSessions.values()]);
+  const internalOnly = new Set([...internalTest].filter((id) => !automation.has(id)));
+  const excluded = new Set([...automation, ...internalOnly]);
+  const keptSessions = [...allSessions.values()].filter((session) => !excluded.has(session.id));
   const keptIds = new Set(keptSessions.map((session) => session.id));
   const keptRows = rows.filter((row) => Boolean(row.session_id && keptIds.has(row.session_id.trim())));
   const canonical = summarizeCanonical(rows, priorVisitors);
@@ -582,6 +614,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
     },
     raw: { sessions: canonical.rawSessions, visitors: canonical.rawUniqueVisitors },
     filteredAutomationSessions: canonical.filteredAutomationSessions,
+    filteredInternalSessions: canonical.filteredInternalSessions,
     details: metricDetails,
     sessions: sessionDetails,
     recentActivity: keptRows.slice(-20).reverse().map((row) => detailFor(row)),
