@@ -247,6 +247,77 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
           </a>
         </div>
       </div>
+
+      {selected && (
+        <div className="lg:hidden">
+          {menuOpen && (
+            <button
+              type="button"
+              aria-label="Close category menu"
+              onClick={() => setMenuOpen(false)}
+              className="fixed inset-0 z-40 bg-primary/30"
+            />
+          )}
+          <div
+            className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            style={{ pointerEvents: "none" }}
+          >
+            {menuOpen && (
+              <div
+                role="menu"
+                aria-label="Choose a category"
+                className="mx-auto mb-2 max-w-md overflow-hidden rounded-2xl border border-accent/40 bg-card shadow-lg"
+                style={{ pointerEvents: "auto" }}
+              >
+                {CHOOSERS.map((chooser) => (
+                  <button
+                    key={chooser.key}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={selected === chooser.key}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      if (selected !== chooser.key) selectChooser(chooser.key, chooser.label);
+                      else pendingScrollRef.current = true;
+                    }}
+                    className={`block w-full px-4 py-3 text-left font-serif text-sm font-semibold ${
+                      selected === chooser.key ? "bg-accent/20 text-primary" : "text-primary"
+                    }`}
+                  >
+                    {chooser.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div
+              className="mx-auto flex max-w-md min-w-0 items-center gap-2 rounded-full border border-accent/40 bg-card/95 px-3 py-2 shadow-lg backdrop-blur"
+              style={{ pointerEvents: "auto" }}
+            >
+              <span className="min-w-0 flex-1 truncate font-serif text-xs font-semibold text-primary">
+                {selectedLabel} selected
+              </span>
+              <button
+                type="button"
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
+                onClick={() => setMenuOpen((v) => !v)}
+                className="shrink-0 rounded-full border border-accent/50 px-3 py-1.5 font-serif text-xs font-semibold text-primary"
+              >
+                Change
+              </button>
+              <Link
+                to="/my-table"
+                onClick={() => trackFp("my_table_open", { metadata: { saved_count: savedCount ?? 0 } })}
+                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 font-serif text-xs font-semibold text-primary-foreground"
+              >
+                <BookmarkCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                {savedCount && savedCount > 0 ? `My Table (${savedCount})` : "My Table"}
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
+
   );
 }
