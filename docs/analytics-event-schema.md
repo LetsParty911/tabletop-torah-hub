@@ -218,3 +218,27 @@ Canonical events may store hosting-provider, network-derived `country`, `region`
 ## Canonical automation handling
 
 Obvious crawler and preview User-Agents are rejected before ingest. Accepted raw rows are preserved. Headline reporting excludes only sessions matching the canonical high-confidence burst or impossible-heartbeat rules, plus the narrowly time-boxed September 18, 2026 incident rule. Any session with meaningful intent or `human_signal` is protected from the general automation classifier, preserving legitimate PDF opens and download actions. Visitor Activity keeps suspected sessions visible and labels the reason.
+
+## Reports (admin only)
+
+The Reports tab on `/admin-analytics` renders deterministic, template-based
+summaries from the same canonical filtered analytics used elsewhere. No runtime
+AI is involved; every sentence is a fixed rule over counts.
+
+- **Daily report** — the previous completed local calendar day in
+  `America/New_York`. Day boundaries come from `startOfNewYorkDay` in
+  `src/lib/admin-reports.ts`, which is DST-correct (23- and 25-hour days).
+  The picker offers the last 14 completed days. The comparison baseline is the
+  same weekday one week earlier, and it is only shown when that day has
+  comparable activity.
+- **Collection report** — the most recently *completed* upload-derived
+  collection window (`buildCollectionWindows`), never a generic Monday–Sunday
+  week. The still-open current collection is excluded. The comparison baseline
+  is the prior completed collection.
+- **Small-N rule** — no percentage is shown when the denominator is under 10;
+  counts are shown instead.
+- **Separation** — campaign attribution and approximate network geography are
+  reported separately and never merged. Suspected automated sessions are set
+  aside from headline counts and reported as a data-health figure; no rows are
+  deleted and legitimate PDF/download sessions stay protected by the unchanged
+  canonical intent rules.
