@@ -293,6 +293,9 @@ function Index() {
   const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long">("All");
   const [contentTypeFilter, setContentTypeFilter] = useState<string>("All");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // When a guided-chooser category is active the page enters focused mode and
+  // the full weekly collection (plus its filter controls) is hidden.
+  const [activeChooser, setActiveChooser] = useState<string | null>(null);
 
   const sortedResources = resources;
   usePrewarmDownloads(sortedResources.map((r) => r.id));
