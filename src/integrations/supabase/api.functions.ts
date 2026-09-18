@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { getSupabaseAdmin, getSupabaseForUser } from "@/integrations/supabase/ext.server";
-import { toParshaComparableKey } from "@/lib/parsha-normalize";
+import { toParshaComparableKey, toParshaComparableKeys } from "@/lib/parsha-normalize";
 import { fetchHebcalShabbatData, resolveReadingFromHebcal } from "@/lib/hebcal";
 
 import { standardizeCopy } from "@/lib/standardize-copy";
@@ -429,7 +429,7 @@ export const listHomepageWeek = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }) => {
     const admin = getSupabaseAdmin();
-    const liveComparable = data.parshaKey ? toParshaComparableKey(data.parshaKey) : null;
+    const liveComparable = data.parshaKey ? toParshaComparableKeys(data.parshaKey) : [];
     const displayed = await resolveDisplayedCollection(admin, liveComparable);
     const resources = await buildResources(admin, displayed.rows);
     return {
@@ -542,7 +542,10 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
       rows = fb.data ?? [];
     }
     const current = await resolveCurrentFeatured();
-    const displayed = await resolveDisplayedCollection(admin, current.comparableKey);
+    const displayed = await resolveDisplayedCollection(
+      admin,
+      current.comparableKey ? [current.comparableKey] : [],
+    );
     const orderMap = await getTitleSortOrderMap(admin);
     const canonical = await getCanonicalByPdfId(admin);
     const orderFor = (title: string): number => {
@@ -2427,7 +2430,7 @@ async function getWeeklyEmailContentInternal(): Promise<WeeklyEmailContent> {
   // always reflects the collection readers actually see.
   const displayed = await resolveDisplayedCollection(
     admin,
-    parshaKey ? toParshaComparableKey(parshaKey) : null,
+    parshaKey ? toParshaComparableKeys(parshaKey) : [],
   );
   const collectionKey = displayed.parshaKey;
   const collectionYear = displayed.jewishYear ?? jewishYear;
