@@ -91,7 +91,7 @@ function AdminAnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="admin-analytics-page min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-4 py-8 space-y-6">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div>
