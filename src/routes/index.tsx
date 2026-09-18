@@ -36,6 +36,7 @@ import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { TableChooser } from "@/components/TableChooser";
 import { SaveToMyTableButton } from "@/components/SaveToMyTableButton";
 import { MyTableIndicator } from "@/components/MyTableIndicator";
+import { MobileCollectionControlsBar } from "@/components/MobileCollectionControlsBar";
 import { chooseReason } from "@/lib/table-chooser";
 
 type Resource = {
@@ -683,6 +684,12 @@ function Index() {
               </p>
             ) : (
               <>
+                <MobileCollectionControlsBar
+                  anchorId="filters"
+                  count={resources.length}
+                  activeFilterCount={activeFilterCount}
+                  onOpenFilters={() => setFiltersOpen(true)}
+                />
                 <div id="filters" className="mt-5 sticky top-14 sm:top-20 z-30 -mx-3 bg-background/95 px-3 py-3 backdrop-blur border-y border-accent/20 sm:mx-0 sm:rounded-xl sm:border sm:px-4 sm:shadow-sm scroll-mt-24">
                   <div className="flex items-center justify-between gap-3 sm:hidden">
                     <button
