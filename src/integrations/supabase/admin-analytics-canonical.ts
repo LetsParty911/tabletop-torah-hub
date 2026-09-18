@@ -987,7 +987,69 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       const meaningful =
         v.publicationClicks + v.pdfOpens + v.downloads + v.searches + v.signups + v.shares;
 
+      const visitorFps = v.sessionIds
+        .map((sid) => fingerprints.get(sid))
+        .filter((fp): fp is FingerprintRow => Boolean(fp))
+        .sort((a, b) => (a.captured_at ?? "").localeCompare(b.captured_at ?? ""));
+      const latestFp = visitorFps.length ? visitorFps[visitorFps.length - 1]! : null;
+      const distinctFpHashes = new Set(
+        visitorFps.map((fp) => fp.fingerprint_hash?.trim()).filter(Boolean) as string[],
+      );
+      const fpVisitorIdCount = latestFp?.fingerprint_hash
+        ? (hashToVisitors.get(latestFp.fingerprint_hash.trim())?.size ?? 1)
+        : 0;
+      const ipVisitorIdCount = v.latestIp ? (ipToVisitors.get(v.latestIp)?.size ?? 1) : 0;
+
       return {
+        fingerprint: latestFp
+          ? {
+              capturedAt: latestFp.captured_at,
+              consentMode: latestFp.consent_mode,
+              version: latestFp.fingerprint_version,
+              hash: latestFp.fingerprint_hash,
+              canvasPresent: Boolean(latestFp.canvas_hash),
+              fontPresent: Boolean(latestFp.font_hash),
+              webglPresent: Boolean(latestFp.webgl_hash),
+              audioPresent: Boolean(latestFp.audio_hash),
+              fontCount: latestFp.font_count,
+              webglVendor: latestFp.webgl_vendor,
+              webglRenderer: latestFp.webgl_renderer,
+              hardwareConcurrency: latestFp.hardware_concurrency,
+              deviceMemory: latestFp.device_memory,
+              screenWidth: latestFp.screen_width,
+              screenHeight: latestFp.screen_height,
+              pixelRatio: latestFp.pixel_ratio,
+              colorDepth: latestFp.color_depth,
+              timezone: latestFp.timezone,
+              timezoneOffset: latestFp.timezone_offset,
+              language: latestFp.language,
+              languages: Array.isArray(latestFp.languages)
+                ? (latestFp.languages as unknown[]).map(String)
+                : null,
+              platform: latestFp.platform,
+              maxTouchPoints: latestFp.max_touch_points,
+              connectionEffectiveType: latestFp.connection_effective_type,
+              connectionDownlink: latestFp.connection_downlink,
+              connectionRtt: latestFp.connection_rtt,
+              connectionSaveData: latestFp.connection_save_data,
+              uaChPlatform: latestFp.ua_ch_platform,
+              uaChMobile: latestFp.ua_ch_mobile,
+              uaChBrands: Array.isArray(latestFp.ua_ch_brands) ? latestFp.ua_ch_brands : null,
+              uaHighEntropy:
+                latestFp.ua_high_entropy && typeof latestFp.ua_high_entropy === "object"
+                  ? (latestFp.ua_high_entropy as Record<string, unknown>)
+                  : null,
+            }
+          : null,
+        fingerprintChanged: distinctFpHashes.size > 1,
+        fingerprintVisitorIdCount: fpVisitorIdCount,
+        ipVisitorIdCount,
+        latestAcceptLanguage: v.latestAcceptLanguage,
+        latestSecChUa: v.latestSecChUa,
+        latestSecChPlatform: v.latestSecChPlatform,
+        latestSecChMobile: v.latestSecChMobile,
+        latestAsn: v.latestAsn,
+        latestAsOrganization: v.latestAsOrganization,
         visitorId: v.visitorId,
         firstSeenInRange: v.firstSeenInRange,
         lastSeenInRange: v.lastSeenInRange,
