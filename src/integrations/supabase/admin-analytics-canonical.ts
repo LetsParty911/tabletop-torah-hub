@@ -46,6 +46,13 @@ const MEANINGFUL_INTENT = new Set([
   "human_signal",
 ]);
 
+// One-time cleanup for a known automated traffic spike on 2026-09-18.
+// This is intentionally narrow: it only applies to sessions that started inside
+// the incident window and match every low-confidence signal. It must not be
+// turned into a general "filter all one-page bounces" rule.
+const KNOWN_INCIDENT_START = Date.parse("2026-09-18T00:30:00.000Z");
+const KNOWN_INCIDENT_END = Date.parse("2026-09-18T01:15:00.000Z");
+
 async function requireAnalyticsAdmin(accessToken: string) {
   const { createClient } = await import("@supabase/supabase-js");
   const cloudUrl = process.env.SUPABASE_URL;
