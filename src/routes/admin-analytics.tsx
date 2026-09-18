@@ -105,7 +105,7 @@ function AdminAnalyticsPage() {
           </Link>
         </header>
 
-        <main className="parchment-frame"><div className="parchment-panel"><AdminAnalyticsReport accessToken={accessToken} /></div></main>
+        <main className="parchment-frame"><div className="parchment-panel"><AdminAnalyticsReport accessToken={accessToken ?? ""} /></div></main>
       </div>
     </div>
   );

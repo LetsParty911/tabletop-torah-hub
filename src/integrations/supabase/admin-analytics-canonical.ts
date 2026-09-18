@@ -341,7 +341,8 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
   let downloadActions = 0;
 
   for (const row of keptRows) {
-    const sid = row.session_id!.trim();
+    const sid = row.session_id?.trim();
+    if (!sid) continue;
     const vid = row.visitor_id?.trim() || null;
     if (vid) {
       visitors.add(vid);
