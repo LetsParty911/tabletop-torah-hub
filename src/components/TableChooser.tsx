@@ -136,13 +136,13 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
                 type="button"
                 aria-pressed={active}
                 onClick={() => {
-                  const next = active ? null : chooser.key;
-                  setSelected(next);
-                  if (next) {
-                    pendingScrollRef.current = true;
-                    trackFp("chooser_select", { metadata: { chooser: next, label: chooser.label } });
+                  if (active) {
+                    setSelected(null);
+                    return;
                   }
+                  selectChooser(chooser.key, chooser.label);
                 }}
+
                 className={`min-w-0 rounded-xl border px-4 py-3 text-left transition-colors ${
                   active
                     ? "border-accent bg-accent/15 shadow-sm"
