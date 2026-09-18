@@ -363,7 +363,7 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
     uniqueVisitors: visitors.size,
     rawSessions,
     rawUniqueVisitors: rawVisitors.size,
-    filteredAutomationSessions: automated.size,
+    filteredAutomationSessions: allAutomated.size,
     returningVisitors: returningVisitors.size,
     engagedSessions,
     pdfAccessingSessions,
