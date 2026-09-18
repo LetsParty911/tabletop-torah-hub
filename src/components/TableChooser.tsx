@@ -131,10 +131,15 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
         </div>
 
         {selected && recommendations.length > 0 && (
-          <div className="mt-5 border-t border-accent/25 pt-4">
+          <div ref={resultsRef} className="mt-5 scroll-mt-24 border-t border-accent/25 pt-4">
             <p className="text-center font-sans text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
               Recommended for you this week
             </p>
+            {selectedLabel && (
+              <p className="mt-1 text-center text-xs italic text-muted-foreground">
+                Showing {selectedLabel} picks
+              </p>
+            )}
             <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
               {recommendations.map((r) => (
                 <div
