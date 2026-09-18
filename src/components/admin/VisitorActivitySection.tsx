@@ -86,6 +86,22 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
               Signed up
             </span>
           )}
+          {/* Neutral diagnostics — shared signals, not proof of identity. */}
+          {visitor.fingerprintChanged && (
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+              Fingerprint changed
+            </span>
+          )}
+          {visitor.fingerprintVisitorIdCount > 1 && (
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+              FP seen on {visitor.fingerprintVisitorIdCount} visitor IDs
+            </span>
+          )}
+          {visitor.ipVisitorIdCount > 1 && (
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+              IP seen on {visitor.ipVisitorIdCount} visitor IDs
+            </span>
+          )}
           <span className="ml-auto text-xs text-muted-foreground">{open ? "Hide" : "Details"}</span>
         </div>
         <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
