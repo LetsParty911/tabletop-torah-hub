@@ -425,14 +425,18 @@ function Index() {
                 {heroDateLine}
               </p>
             )}
-            {isFallback && !isHaazinuYomKippurWeek && (
+            {isFallback && !isHaazinuYomKippurWeek && !isCombinedSpecialWeek && (
               <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-accent/50 bg-accent/10 px-4 py-1.5 font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
                 <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
                 Collection in progress
               </p>
             )}
             <p className="mx-auto mt-3 max-w-2xl font-serif text-base leading-relaxed text-primary sm:text-lg md:text-xl">
-              {isFallback ? (
+              {isCombinedSpecialWeek ? (
+                <>
+                  <span className="font-semibold">{resources.length} Divrei Torah</span> available this week
+                </>
+              ) : isFallback ? (
                 isHaazinuYomKippurWeek ? (
                   <>
                     <span className="font-semibold">
@@ -456,7 +460,24 @@ function Index() {
               )}
             </p>
 
-            {isFallback ? (
+            {isCombinedSpecialWeek ? (
+              <div className="mt-5 flex justify-center">
+                <a
+                  href="#weekly-email-signup"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const el = document.getElementById("weekly-email-signup");
+                    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    el?.querySelector<HTMLInputElement>('input[type="email"]')?.focus({
+                      preventScroll: true,
+                    });
+                  }}
+                  className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
+                >
+                  Email me this week&apos;s collection
+                </a>
+              </div>
+            ) : isFallback ? (
               <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <a
                   href="#weekly-email-signup"
@@ -499,7 +520,7 @@ function Index() {
                 </a>
               </div>
             )}
-            {resources.length > 0 && (
+            {resources.length > 0 && !isCombinedSpecialWeek && (
               <>
                 {!isFallback && (
                   <p className="mt-3 text-center font-sans text-sm text-muted-foreground sm:text-base">
