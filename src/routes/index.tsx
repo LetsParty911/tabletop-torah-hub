@@ -33,6 +33,10 @@ import {
 import { trackEvent } from "@/lib/analytics";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
+import { TableChooser } from "@/components/TableChooser";
+import { SaveToMyTableButton } from "@/components/SaveToMyTableButton";
+import { MyTableIndicator } from "@/components/MyTableIndicator";
+import { chooseReason } from "@/lib/table-chooser";
 
 type Resource = {
   id: string;
@@ -288,32 +292,6 @@ function Index() {
   const sortedResources = resources;
   usePrewarmDownloads(sortedResources.map((r) => r.id));
 
-  const quickPickForKids = sortedResources.find(
-    (r) => normalizeAudience(r.audience, r.title) === "Children",
-  );
-  const quickPickForFamily = sortedResources.find(
-    (r) => normalizeAudience(r.audience, r.title) === "Families",
-  );
-  const quickPickQuickRead = sortedResources
-    .filter((r) => typeof r.page_count === "number")
-    .sort((a, b) => (a.page_count as number) - (b.page_count as number))[0];
-  const quickReadLabel = quickPickQuickRead?.page_count
-    ? `Quickest Read · ${quickPickQuickRead.page_count} ${quickPickQuickRead.page_count === 1 ? "page" : "pages"}`
-    : "Quickest Read";
-  const quickPicks = [
-    quickPickForKids && { label: "For Kids", resource: quickPickForKids },
-    quickPickForFamily &&
-      quickPickForFamily.id !== quickPickForKids?.id && {
-        label: "For the Family",
-        resource: quickPickForFamily,
-      },
-    quickPickQuickRead &&
-      quickPickQuickRead.id !== quickPickForKids?.id &&
-      quickPickQuickRead.id !== quickPickForFamily?.id && {
-        label: quickReadLabel,
-        resource: quickPickQuickRead,
-      },
-  ].filter(Boolean) as { label: string; resource: Resource }[];
 
   const matchesAudience = (r: Resource, value = audienceFilter) =>
     value === "All" || normalizeAudience(r.audience, r.title) === value;
@@ -568,28 +546,12 @@ function Index() {
                 : "This Week's Collection"}
             </h2>
 
-            {quickPicks.length > 0 && (
-              <div className="mt-4 max-w-2xl mx-auto">
-                <p className="text-center font-sans text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
-                  Start here
-                </p>
-                <div
-                  className={`mt-2 grid gap-2.5 ${quickPicks.length === 1 ? "grid-cols-1" : quickPicks.length === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-3"}`}
-                >
-                  {quickPicks.map(({ label, resource }) => (
-                    <Link
-                      key={label}
-                      to="/view/$id"
-                      params={{ id: resource.id }}
-                      className="rounded-xl border border-accent/25 bg-card/30 p-3 text-center transition-colors hover:border-accent/60 hover:bg-card/50"
-                    >
-                      <p className="font-sans text-[0.62rem] uppercase tracking-[0.14em] text-accent-readable">{label}</p>
-                      <p className="mt-1 font-serif text-base font-bold text-primary leading-snug">{displayTitle(resource)}</p>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
+            <TableChooser
+              resources={sortedResources}
+              parshaKey={displayedParshaKey}
+              displayTitle={(r) => displayTitle(r as Resource)}
+              displayPublicationName={(r) => displayPublicationName(r as Resource)}
+            />
 
             {featuredPicks.length > 0 && (
               <>
