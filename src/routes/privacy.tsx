@@ -167,15 +167,51 @@ function PrivacyPage() {
                     </div>
                   </Sub>
 
-                  <Sub heading="5. Information stored in your browser">
+                  <Sub heading="5. Enhanced analytics (device and browser characteristics)">
+                    <div className="space-y-3">
+                      <p>
+                        We also operate first-party enhanced analytics that record characteristics
+                        of the browser and device. These may include canvas rendering
+                        characteristics, font measurement characteristics, WebGL graphics details
+                        such as the graphics vendor and renderer, audio-rendering characteristics,
+                        screen size and pixel ratio, colour depth, processor and memory
+                        characteristics reported by the browser, touch support, timezone, language
+                        settings, network connection characteristics, and browser client hints
+                        where available.
+                      </p>
+                      <p>
+                        These values may be combined into a pseudonymous fingerprint hash. We use it
+                        to distinguish automated traffic from real visitors, understand repeat or
+                        duplicate browser activity, protect the site from abuse, and diagnose
+                        browser and device compatibility. It is a probabilistic device and browser
+                        indicator, not an identification of a person, and it is never linked to
+                        subscriber email addresses or shared with third parties.
+                      </p>
+                      <p>
+                        Raw canvas images and the raw list of fonts detected on your device are not
+                        retained — only a hash and, for fonts, a count.
+                      </p>
+                      <p>
+                        Enhanced analytics only runs after you agree to it in regions where our
+                        rules require consent, including the United Kingdom and the EU/EEA. In other
+                        regions it may run without a prompt. If you are asked and decline, you keep
+                        full access to the site and nothing is collected for this purpose in that
+                        browser.
+                      </p>
+                      <EnhancedAnalyticsChoiceReset />
+                    </div>
+                  </Sub>
+
+                  <Sub heading="6. Information stored in your browser">
                     <p>
                       The first-party analytics system stores a visitor identifier in a cookie with
                       a 12-month lifetime that is renewed when the site is used. It also uses
                       browser storage for the visitor identifier, session identifier and session
-                      timing, and first-touch referral and campaign information. The site also
-                      stores values used for features such as remembering dismissed prompts and
-                      supporting faster or offline use. Google Analytics may use its own cookies or
-                      browser storage. These values can be cleared through your browser settings.
+                      timing, first-touch referral and campaign information, and your enhanced
+                      analytics choice where that prompt applies. The site also stores values used
+                      for features such as remembering dismissed prompts and supporting faster or
+                      offline use. Google Analytics may use its own cookies or browser storage.
+                      These values can be cleared through your browser settings.
                     </p>
                   </Sub>
                 </div>
