@@ -546,7 +546,7 @@ function Index() {
           }
         />
 
-        {showYomKippurNotice && (
+        {showYomKippurNotice && !isCombinedSpecialWeek && (
           <section className="mx-auto max-w-md rounded-xl border border-accent/40 bg-card/40 px-4 py-4 text-center sm:px-5">
             <h2 className="font-serif text-xl font-bold text-primary sm:text-2xl">Yom Kippur</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
@@ -555,7 +555,7 @@ function Index() {
           </section>
         )}
 
-        {isFallback && (
+        {isFallback && !isCombinedSpecialWeek && (
           <div className="mx-auto max-w-2xl rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-center">
             <p className="font-serif text-sm text-primary sm:text-base">
               {isHaazinuYomKippurWeek ? (
