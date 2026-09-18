@@ -33,8 +33,9 @@ export function MobileCollectionControlsBar({ anchorId, count, activeFilterCount
         return;
       }
       const rect = anchor.getBoundingClientRect();
-      // In-flow bar is stuck at top-14 (56px) while its section is in view.
-      setShow(rect.top <= 58 && rect.bottom < window.innerHeight * 0.6);
+      // While its section is in view the in-flow bar stays stuck at top-14 (56px).
+      // Once the section ends it scrolls away — that's when we take over.
+      setShow(rect.top < 50);
     };
     update();
     window.addEventListener("scroll", update, { passive: true });
