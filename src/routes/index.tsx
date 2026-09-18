@@ -412,11 +412,13 @@ function Index() {
               Weekly Divrei Torah
             </p>
             <h1 className="mt-2 font-serif text-[2rem] leading-[1.08] sm:text-4xl md:text-5xl font-bold tracking-tight text-primary">
-              {isFallback
-                ? shabbatShuvaLabel
-                : postShabbos
-                  ? `Divrei Torah for ${displayedLabel}`
-                  : `Free Divrei Torah for Your ${isYomTovCollection ? "Yom Tov" : "Shabbos"} Table`}
+              {isCombinedSpecialWeek
+                ? combinedWeekHeadline
+                : isFallback
+                  ? shabbatShuvaLabel
+                  : postShabbos
+                    ? `Divrei Torah for ${displayedLabel}`
+                    : `Free Divrei Torah for Your ${isYomTovCollection ? "Yom Tov" : "Shabbos"} Table`}
             </h1>
             {heroDateLine && (
               <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-sm">
