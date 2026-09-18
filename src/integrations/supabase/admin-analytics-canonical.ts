@@ -761,6 +761,12 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       latestIp: string | null;
       latestUserAgent: string | null;
       latestDeviceType: string | null;
+      latestAcceptLanguage: string | null;
+      latestSecChUa: string | null;
+      latestSecChPlatform: string | null;
+      latestSecChMobile: string | null;
+      latestAsn: number | null;
+      latestAsOrganization: string | null;
       geo: { city: string | null; region: string | null; country: string | null; postalCode: string | null };
       referrerHost: string | null;
       referrerUrl: string | null;
