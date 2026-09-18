@@ -28,11 +28,34 @@ type Props = {
 export function TableChooser({ resources, parshaKey, displayTitle, displayPublicationName }: Props) {
   const [selected, setSelected] = useState<ChooserKey | null>(null);
   const lastViewed = useRef<string | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const pendingScrollRef = useRef(false);
 
   const recommendations = useMemo(
     () => (selected ? pickRecommendations(resources, selected, 3) : []),
     [resources, selected],
   );
+
+  const selectedLabel = useMemo(
+    () => CHOOSERS.find((c) => c.key === selected)?.label,
+    [selected],
+  );
+
+  useEffect(() => {
+    if (!selected || recommendations.length === 0 || !resultsRef.current || !pendingScrollRef.current) return;
+    pendingScrollRef.current = false;
+    const el = resultsRef.current;
+    const id = requestAnimationFrame(() => {
+      const rect = el.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const hiddenAbove = rect.bottom < 80;
+      const belowFold = rect.top > viewportHeight * 0.55;
+      if (!hiddenAbove && !belowFold) return;
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [selected, recommendations]);
 
   useEffect(() => {
     if (!selected || recommendations.length === 0) return;
@@ -89,7 +112,10 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
                 onClick={() => {
                   const next = active ? null : chooser.key;
                   setSelected(next);
-                  if (next) trackFp("chooser_select", { metadata: { chooser: next, label: chooser.label } });
+                  if (next) {
+                    pendingScrollRef.current = true;
+                    trackFp("chooser_select", { metadata: { chooser: next, label: chooser.label } });
+                  }
                 }}
                 className={`min-w-0 rounded-xl border px-4 py-3 text-left transition-colors ${
                   active
@@ -105,10 +131,15 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
         </div>
 
         {selected && recommendations.length > 0 && (
-          <div className="mt-5 border-t border-accent/25 pt-4">
+          <div ref={resultsRef} className="mt-5 scroll-mt-24 border-t border-accent/25 pt-4">
             <p className="text-center font-sans text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
               Recommended for you this week
             </p>
+            {selectedLabel && (
+              <p className="mt-1 text-center text-xs italic text-muted-foreground">
+                Showing {selectedLabel} picks
+              </p>
+            )}
             <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
               {recommendations.map((r) => (
                 <div
