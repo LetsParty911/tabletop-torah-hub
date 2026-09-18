@@ -349,7 +349,7 @@ async function buildResources(
 // (parsha_key, jewish_year) group (fallback).
 async function resolveDisplayedCollection(
   admin: ReturnType<typeof getSupabaseAdmin>,
-  liveComparableKey: string | null,
+  liveComparableKeys: string[],
 ): Promise<{
   comparableKey: string | null;
   parshaKey: string | null;
@@ -358,9 +358,10 @@ async function resolveDisplayedCollection(
   isFallback: boolean;
 }> {
   const allRows = await fetchAllPublishedRows(admin);
-  if (liveComparableKey) {
-    const liveRows = allRows.filter(
-      (r: any) => toParshaComparableKey(r.parsha_key) === liveComparableKey,
+  if (liveComparableKeys.length > 0) {
+    const wanted = new Set(liveComparableKeys);
+    const liveRows = allRows.filter((r: any) =>
+      wanted.has(toParshaComparableKey(r.parsha_key)),
     );
     if (liveRows.length > 0) {
       let latestYear: number | null = null;
@@ -369,11 +370,19 @@ async function resolveDisplayedCollection(
         if (y == null) continue;
         if (latestYear == null || y > latestYear) latestYear = y;
       }
-      const groupRows = latestYear
+      const yearRows = latestYear
         ? liveRows.filter((r: any) => r.jewish_year === latestYear)
         : liveRows;
+      // De-duplicate by id: a combined week unions more than one collection.
+      const seen = new Set<string>();
+      const groupRows = yearRows.filter((r: any) => {
+        const id = String(r.id);
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
       return {
-        comparableKey: liveComparableKey,
+        comparableKey: liveComparableKeys[0] ?? null,
         parshaKey: (groupRows[0]?.parsha_key as string) ?? null,
         jewishYear: latestYear,
         rows: groupRows,
