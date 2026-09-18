@@ -316,8 +316,10 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
               </Link>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
+
     </section>
 
   );
