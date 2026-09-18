@@ -453,6 +453,7 @@ function RootComponent() {
       <GoogleAnalytics />
       <PageViewTracker />
       <PwaRegistrar />
+      <EnhancedAnalyticsConsent />
       <SiteNav />
       <Outlet />
     </>
