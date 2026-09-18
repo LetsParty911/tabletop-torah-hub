@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { BookmarkCheck } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+
 
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { MyTableIndicator } from "@/components/MyTableIndicator";
@@ -32,6 +34,8 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
   const [selected, setSelected] = useState<ChooserKey | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [savedCount, setSavedCount] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
+
   const lastViewed = useRef<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const pendingScrollRef = useRef(false);
@@ -47,9 +51,18 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
   );
 
   useEffect(() => {
+    setMounted(true);
     setSavedCount(readMyTable().length);
     return subscribeMyTable((items) => setSavedCount(items.length));
   }, []);
+
+  // Keep the last page content scrollable above the fixed bar on mobile.
+  useEffect(() => {
+    if (!selected) return;
+    document.body.classList.add("has-chooser-bar");
+    return () => document.body.classList.remove("has-chooser-bar");
+  }, [selected]);
+
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -248,18 +261,19 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
         </div>
       </div>
 
-      {selected && (
-        <div className="lg:hidden">
+      {selected && mounted && createPortal(
+        <div className="tftt-chooser-bar lg:hidden">
+
           {menuOpen && (
             <button
               type="button"
               aria-label="Close category menu"
               onClick={() => setMenuOpen(false)}
-              className="fixed inset-0 z-40 bg-primary/30"
+              className="fixed inset-0 z-[80] bg-primary/30"
             />
           )}
           <div
-            className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            className="fixed inset-x-0 bottom-0 z-[90] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
             style={{ pointerEvents: "none" }}
           >
             {menuOpen && (
@@ -315,8 +329,10 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
               </Link>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
+
     </section>
 
   );
