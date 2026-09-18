@@ -32,7 +32,7 @@ type Props = {
   onActiveChooserChange?: (key: ChooserKey | null) => void;
 };
 
-export function TableChooser({ resources, parshaKey, displayTitle, displayPublicationName }: Props) {
+export function TableChooser({ resources, parshaKey, displayTitle, displayPublicationName, onActiveChooserChange }: Props) {
   const [selected, setSelected] = useState<ChooserKey | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [savedCount, setSavedCount] = useState<number | null>(null);
@@ -51,6 +51,10 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
     () => CHOOSERS.find((c) => c.key === selected)?.label,
     [selected],
   );
+
+  useEffect(() => {
+    onActiveChooserChange?.(selected);
+  }, [selected, onActiveChooserChange]);
 
   useEffect(() => {
     setMounted(true);
@@ -79,6 +83,20 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
     setSelected(key);
     pendingScrollRef.current = true;
     trackFp("chooser_select", { metadata: { chooser: key, label } });
+  };
+
+  /** Leave focused mode and bring the full weekly collection back into view. */
+  const clearSelection = (scrollToCollection = false) => {
+    setSelected(null);
+    setMenuOpen(false);
+    pendingScrollRef.current = false;
+    if (!scrollToCollection) return;
+    requestAnimationFrame(() => {
+      const el = document.getElementById("filters");
+      if (!el) return;
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    });
   };
 
 
@@ -152,7 +170,7 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
                 aria-pressed={active}
                 onClick={() => {
                   if (active) {
-                    setSelected(null);
+                    clearSelection();
                     return;
                   }
                   selectChooser(chooser.key, chooser.label);
@@ -254,12 +272,13 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
         )}
 
         <div className="mt-4 text-center">
-          <a
-            href="#filters"
+          <button
+            type="button"
+            onClick={() => clearSelection(true)}
             className="font-serif text-sm font-semibold text-accent-readable underline-offset-4 hover:text-primary hover:underline"
           >
-            Browse all {resources.length} {resources.length === 1 ? "selection" : "selections"}
-          </a>
+            Show all {resources.length} {resources.length === 1 ? "selection" : "selections"}
+          </button>
         </div>
       </div>
 
