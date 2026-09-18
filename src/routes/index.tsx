@@ -33,6 +33,10 @@ import {
 import { trackEvent } from "@/lib/analytics";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
+import { TableChooser } from "@/components/TableChooser";
+import { SaveToMyTableButton } from "@/components/SaveToMyTableButton";
+import { MyTableIndicator } from "@/components/MyTableIndicator";
+import { chooseReason } from "@/lib/table-chooser";
 
 type Resource = {
   id: string;
@@ -288,32 +292,6 @@ function Index() {
   const sortedResources = resources;
   usePrewarmDownloads(sortedResources.map((r) => r.id));
 
-  const quickPickForKids = sortedResources.find(
-    (r) => normalizeAudience(r.audience, r.title) === "Children",
-  );
-  const quickPickForFamily = sortedResources.find(
-    (r) => normalizeAudience(r.audience, r.title) === "Families",
-  );
-  const quickPickQuickRead = sortedResources
-    .filter((r) => typeof r.page_count === "number")
-    .sort((a, b) => (a.page_count as number) - (b.page_count as number))[0];
-  const quickReadLabel = quickPickQuickRead?.page_count
-    ? `Quickest Read · ${quickPickQuickRead.page_count} ${quickPickQuickRead.page_count === 1 ? "page" : "pages"}`
-    : "Quickest Read";
-  const quickPicks = [
-    quickPickForKids && { label: "For Kids", resource: quickPickForKids },
-    quickPickForFamily &&
-      quickPickForFamily.id !== quickPickForKids?.id && {
-        label: "For the Family",
-        resource: quickPickForFamily,
-      },
-    quickPickQuickRead &&
-      quickPickQuickRead.id !== quickPickForKids?.id &&
-      quickPickQuickRead.id !== quickPickForFamily?.id && {
-        label: quickReadLabel,
-        resource: quickPickQuickRead,
-      },
-  ].filter(Boolean) as { label: string; resource: Resource }[];
 
   const matchesAudience = (r: Resource, value = audienceFilter) =>
     value === "All" || normalizeAudience(r.audience, r.title) === value;
@@ -355,6 +333,18 @@ function Index() {
     ...slot,
     resource: resources.find((r) => (r.featured_slot ?? "").trim().toLowerCase() === slot.key),
   })).filter((p) => !!p.resource);
+
+  const myTableItem = (r: Resource) => ({
+    id: r.id,
+    title: displayTitle(r),
+    publication: r.publication,
+    publisher: r.publisher,
+    parsha: (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
+    audience: normalizeAudience(r.audience, r.title) ?? r.audience,
+    formatType: formatTypeLabel(r.format_type) ?? formatTypeLabel(r.content_type),
+    pageCount: r.page_count,
+    description: r.summary_quick || r.description || r.subtitle,
+  });
 
   const pdfParams = (r: Resource) => ({
     file_id: r.id,
@@ -568,28 +558,12 @@ function Index() {
                 : "This Week's Collection"}
             </h2>
 
-            {quickPicks.length > 0 && (
-              <div className="mt-4 max-w-2xl mx-auto">
-                <p className="text-center font-sans text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
-                  Start here
-                </p>
-                <div
-                  className={`mt-2 grid gap-2.5 ${quickPicks.length === 1 ? "grid-cols-1" : quickPicks.length === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-3"}`}
-                >
-                  {quickPicks.map(({ label, resource }) => (
-                    <Link
-                      key={label}
-                      to="/view/$id"
-                      params={{ id: resource.id }}
-                      className="rounded-xl border border-accent/25 bg-card/30 p-3 text-center transition-colors hover:border-accent/60 hover:bg-card/50"
-                    >
-                      <p className="font-sans text-[0.62rem] uppercase tracking-[0.14em] text-accent-readable">{label}</p>
-                      <p className="mt-1 font-serif text-base font-bold text-primary leading-snug">{displayTitle(resource)}</p>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
+            <TableChooser
+              resources={sortedResources}
+              parshaKey={displayedParshaKey}
+              displayTitle={(r) => displayTitle(r as Resource)}
+              displayPublicationName={(r) => displayPublicationName(r as Resource)}
+            />
 
             {featuredPicks.length > 0 && (
               <>
@@ -623,7 +597,7 @@ function Index() {
                               </Link>
                             </h3>
                             {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
-                            {r.subtitle && <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-3">{standardizeCopy(r.subtitle)}</p>}
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-3">{standardizeCopy(r.subtitle || chooseReason(r))}</p>
                             {pageCountLabel(r) && (
                               <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                 {pageCountLabel(r)}
@@ -650,13 +624,18 @@ function Index() {
                                 }}
                                 className="w-full px-3 py-2.5 lg:py-2"
                               />
-                              <div className="mt-2 flex justify-center">
-                                <SharePublicationButton
-                                  pdfId={r.id}
-                                  title={r.title}
-                                  parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
-                                />
-                              </div>
+                               <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                                 <SaveToMyTableButton
+                                   item={myTableItem(r)}
+                                   size="sm"
+                                   analyticsContext={{ surface: "featured" }}
+                                 />
+                                 <SharePublicationButton
+                                   pdfId={r.id}
+                                   title={r.title}
+                                   parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
+                                 />
+                               </div>
                             </div>
                           </PublicationCardTracker>
                         );
@@ -696,6 +675,10 @@ function Index() {
                         Clear
                       </button>
                     )}
+                  </div>
+
+                  <div className="mt-2 flex justify-center sm:mt-0 sm:justify-end">
+                    <MyTableIndicator />
                   </div>
 
                   <div className={`${filtersOpen ? "block" : "hidden"} mt-3 space-y-3 sm:mt-0 sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:space-y-0`}>
@@ -907,7 +890,12 @@ function Index() {
                           }}
                           className="w-full px-3 py-2.5 lg:py-2"
                         />
-                        <div className="mt-2 flex justify-center">
+                        <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                          <SaveToMyTableButton
+                            item={myTableItem(r)}
+                            size="sm"
+                            analyticsContext={{ surface: "collection" }}
+                          />
                           <SharePublicationButton
                             pdfId={r.id}
                             title={r.title}

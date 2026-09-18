@@ -22,6 +22,12 @@ export type FpEventName =
   | "signup"
   | "heartbeat"
   | "human_signal"
+  | "chooser_select"
+  | "recommendation_view"
+  | "recommendation_click"
+  | "my_table_add"
+  | "my_table_remove"
+  | "my_table_open"
   | "error";
 
 export type PublicationContext = {
