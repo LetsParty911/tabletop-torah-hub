@@ -46,6 +46,13 @@ const MEANINGFUL_INTENT = new Set([
   "human_signal",
 ]);
 
+// One-time cleanup for a known automated traffic spike on 2026-09-18.
+// This is intentionally narrow: it only applies to sessions that started inside
+// the incident window and match every low-confidence signal. It must not be
+// turned into a general "filter all one-page bounces" rule.
+const KNOWN_INCIDENT_START = Date.parse("2026-09-18T00:30:00.000Z");
+const KNOWN_INCIDENT_END = Date.parse("2026-09-18T01:15:00.000Z");
+
 async function requireAnalyticsAdmin(accessToken: string) {
   const { createClient } = await import("@supabase/supabase-js");
   const cloudUrl = process.env.SUPABASE_URL;
@@ -257,9 +264,38 @@ function classifyAutomation(sessions: SessionAgg[]): Set<string> {
   return automated;
 }
 
+/**
+ * One-time cleanup for a known automation incident.
+ *
+ * On 2026-09-18 a crawler/bot produced many Direct/desktop sessions, each with
+ * a single pageview, no meaningful intent events, no human_signal, no
+ * publication impressions, and no heartbeats. Because they were spread across
+ * many minutes they did not trigger the 10-second burst rule. This helper
+ * removes only those sessions that started inside the known incident window and
+ * match every low-confidence signal. It is intentionally not a general rule.
+ */
+function classifyKnownIncident(sessions: SessionAgg[]): Set<string> {
+  const automated = new Set<string>();
+  for (const session of sessions) {
+    if (session.firstAt < KNOWN_INCIDENT_START || session.firstAt >= KNOWN_INCIDENT_END)
+      continue;
+    if (session.source !== "Direct") continue;
+    if (session.device !== "desktop") continue;
+    if (session.meaningfulIntent) continue;
+    if (session.humanSignal) continue;
+    if (session.pageviews > 1) continue;
+    if (session.impressions !== 0) continue;
+    if (session.heartbeats > 1) continue;
+    automated.add(session.id);
+  }
+  return automated;
+}
+
 function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>()) {
   const allSessions = buildSessions(rows);
   const automated = classifyAutomation([...allSessions.values()]);
+  const knownIncident = classifyKnownIncident([...allSessions.values()]);
+  const allAutomated = new Set([...automated, ...knownIncident]);
 
   const rawSessions = allSessions.size;
   const rawVisitors = new Set<string>();
@@ -267,7 +303,7 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
     if (session.visitorId) rawVisitors.add(session.visitorId);
   }
 
-  const kept = [...allSessions.values()].filter((session) => !automated.has(session.id));
+  const kept = [...allSessions.values()].filter((session) => !allAutomated.has(session.id));
   const keptIds = new Set(kept.map((session) => session.id));
   const keptRows = rows.filter((row) => {
     const sid = row.session_id?.trim();
@@ -327,7 +363,7 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
     uniqueVisitors: visitors.size,
     rawSessions,
     rawUniqueVisitors: rawVisitors.size,
-    filteredAutomationSessions: automated.size,
+    filteredAutomationSessions: allAutomated.size,
     returningVisitors: returningVisitors.size,
     engagedSessions,
     pdfAccessingSessions,
