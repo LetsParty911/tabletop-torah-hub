@@ -1034,10 +1034,19 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
               connectionSaveData: latestFp.connection_save_data,
               uaChPlatform: latestFp.ua_ch_platform,
               uaChMobile: latestFp.ua_ch_mobile,
-              uaChBrands: Array.isArray(latestFp.ua_ch_brands) ? latestFp.ua_ch_brands : null,
+              // Flattened to plain strings so the payload stays serializable.
+              uaChBrands: Array.isArray(latestFp.ua_ch_brands)
+                ? (latestFp.ua_ch_brands as unknown[]).map((b) =>
+                    typeof b === "string" ? b : JSON.stringify(b),
+                  )
+                : null,
               uaHighEntropy:
                 latestFp.ua_high_entropy && typeof latestFp.ua_high_entropy === "object"
-                  ? (latestFp.ua_high_entropy as Record<string, unknown>)
+                  ? Object.fromEntries(
+                      Object.entries(latestFp.ua_high_entropy as Record<string, unknown>).map(
+                        ([k, val]) => [k, typeof val === "string" ? val : JSON.stringify(val)],
+                      ),
+                    )
                   : null,
             }
           : null,
