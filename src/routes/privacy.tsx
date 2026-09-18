@@ -143,12 +143,15 @@ function PrivacyPage() {
                         traffic elsewhere.
                       </p>
                       <p>
-                        For accepted analytics events we also retain the request's IP address and
-                        the raw User-Agent/browser string sent by the browser. These are used for
-                        traffic analysis, security and abuse detection, distinguishing automated
-                        traffic from real visitors, and browser/device diagnostics. The User-Agent
-                        can reveal browser, operating system and device details. Analytics are not
-                        run on the site's administrative pages.
+                        For accepted analytics events we also retain the request's IP address, the
+                        raw User-Agent/browser string sent by the browser, the language preferences
+                        your browser sends, the browser client-hint headers, and the network
+                        operator identifier (ASN) and organization name when our hosting provider
+                        reports them. These are used for traffic analysis, security and abuse
+                        detection, distinguishing automated traffic from real visitors, and
+                        browser/device diagnostics. The User-Agent can reveal browser, operating
+                        system and device details. Analytics are not run on the site's
+                        administrative pages.
                       </p>
                       <p>
                         We also use Google Tag Manager and Google Analytics to measure site usage,
