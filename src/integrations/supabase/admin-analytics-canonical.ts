@@ -946,6 +946,31 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       }
     }
 
+    // Enhanced fingerprint snapshots for the sessions in this window, plus
+    // neutral cross-visitor diagnostics. These are shared-signal indicators for
+    // investigating traffic — never proof that two visitors are the same person.
+    const fingerprints = await fetchFingerprints([...sessions.keys()]);
+    const hashToVisitors = new Map<string, Set<string>>();
+    const ipToVisitors = new Map<string, Set<string>>();
+    for (const row of rows) {
+      const vid = row.visitor_id?.trim();
+      if (!vid) continue;
+      const ip = row.ip_address?.trim();
+      if (ip) {
+        const set = ipToVisitors.get(ip) ?? new Set<string>();
+        set.add(vid);
+        ipToVisitors.set(ip, set);
+      }
+    }
+    for (const fp of fingerprints.values()) {
+      const vid = fp.visitor_id?.trim();
+      const hash = fp.fingerprint_hash?.trim();
+      if (!vid || !hash) continue;
+      const set = hashToVisitors.get(hash) ?? new Set<string>();
+      set.add(vid);
+      hashToVisitors.set(hash, set);
+    }
+
     const all = [...visitors.values()].sort((a, b) =>
       b.lastSeenInRange.localeCompare(a.lastSeenInRange),
     );
