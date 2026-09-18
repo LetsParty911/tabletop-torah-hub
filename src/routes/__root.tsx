@@ -6,7 +6,12 @@ import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPwa } from "@/pwa-register";
 import { captureAttribution, trackPageView } from "@/lib/site-analytics";
-import { startHeartbeat, trackFp, trackRouteView } from "@/lib/first-party-analytics";
+import {
+  startHeartbeat,
+  startHumanSignalWatcher,
+  trackFp,
+  trackRouteView,
+} from "@/lib/first-party-analytics";
 
 import { SiteLogoHorizontal } from "@/components/SiteLogo";
 import { getSafePostLoginRedirect, POST_LOGIN_REDIRECT_KEY } from "@/lib/auth-redirect";
@@ -244,6 +249,7 @@ function PageViewTracker() {
   }, [pathname]);
 
   useEffect(() => startHeartbeat(), []);
+  useEffect(() => startHumanSignalWatcher(), []);
 
   return null;
 }

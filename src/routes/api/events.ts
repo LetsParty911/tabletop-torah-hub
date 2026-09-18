@@ -23,8 +23,63 @@ const ALLOWED_EVENTS = new Set([
   "share_click",
   "signup",
   "heartbeat",
+  "human_signal",
   "error",
 ]);
+
+// Conservative, privacy-preserving automation check. The raw user agent is
+// never stored or logged — it is only matched against obvious bot/crawler/
+// headless/link-preview markers and then discarded.
+const BOT_UA = new RegExp(
+  [
+    "bot",
+    "crawler",
+    "spider",
+    "crawling",
+    "headless",
+    "puppeteer",
+    "playwright",
+    "phantomjs",
+    "selenium",
+    "lighthouse",
+    "pagespeed",
+    "curl/",
+    "wget",
+    "python-requests",
+    "axios/",
+    "node-fetch",
+    "go-http-client",
+    "java/",
+    "okhttp",
+    "libwww-perl",
+    "httpclient",
+    "monitoring",
+    "uptime",
+    "preview",
+    "facebookexternalhit",
+    "whatsapp",
+    "telegrambot",
+    "slackbot",
+    "discordbot",
+    "twitterbot",
+    "linkedinbot",
+    "embedly",
+    "quora link preview",
+    "skypeuripreview",
+    "vkshare",
+    "redditbot",
+    "applebot",
+    "bingpreview",
+    "google-inspectiontool",
+    "chrome-lighthouse",
+  ].join("|"),
+  "i",
+);
+
+function isAutomatedAgent(ua: string): boolean {
+  if (!ua.trim()) return true; // no UA at all is never a normal browser
+  return BOT_UA.test(ua);
+}
 
 function deviceTypeFrom(ua: string): string {
   const s = ua.toLowerCase();
@@ -57,6 +112,11 @@ export const Route = createFileRoute("/api/events")({
       POST: async ({ request }) => {
         try {
           if (!(await checkRateLimit(request, "events", "TRACKING_RATE_LIMITER"))) {
+            return new Response(null, { status: 204 });
+          }
+
+          // Drop obvious automated traffic before anything is persisted.
+          if (isAutomatedAgent(request.headers.get("user-agent") ?? "")) {
             return new Response(null, { status: 204 });
           }
 
