@@ -571,6 +571,12 @@ type VisitorEventRow = EventRow & {
   metadata: Record<string, unknown> | null;
   ip_address: string | null;
   user_agent: string | null;
+  accept_language: string | null;
+  sec_ch_ua: string | null;
+  sec_ch_platform: string | null;
+  sec_ch_mobile: string | null;
+  asn: number | null;
+  as_organization: string | null;
   referrer_host: string | null;
   referrer_url: string | null;
   utm_source: string | null;
@@ -579,7 +585,75 @@ type VisitorEventRow = EventRow & {
 };
 
 const VISITOR_SELECT =
-  "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, source_group, device_type, country, region, city, postal_code, metadata, ip_address, user_agent, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign";
+  "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, source_group, device_type, country, region, city, postal_code, metadata, ip_address, user_agent, accept_language, sec_ch_ua, sec_ch_platform, sec_ch_mobile, asn, as_organization, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign";
+
+/** Admin-only view of the enhanced fingerprint snapshot for a session. */
+export type FingerprintRow = {
+  session_id: string;
+  visitor_id: string | null;
+  captured_at: string | null;
+  consent_mode: string | null;
+  fingerprint_version: string | null;
+  fingerprint_hash: string | null;
+  canvas_hash: string | null;
+  font_hash: string | null;
+  font_count: number | null;
+  webgl_hash: string | null;
+  webgl_vendor: string | null;
+  webgl_renderer: string | null;
+  audio_hash: string | null;
+  hardware_concurrency: number | null;
+  device_memory: number | null;
+  screen_width: number | null;
+  screen_height: number | null;
+  pixel_ratio: number | null;
+  color_depth: number | null;
+  timezone: string | null;
+  timezone_offset: number | null;
+  language: string | null;
+  languages: unknown;
+  platform: string | null;
+  max_touch_points: number | null;
+  connection_effective_type: string | null;
+  connection_downlink: number | null;
+  connection_rtt: number | null;
+  connection_save_data: boolean | null;
+  ua_ch_platform: string | null;
+  ua_ch_mobile: boolean | null;
+  ua_ch_brands: unknown;
+  ua_high_entropy: unknown;
+  asn: number | null;
+  as_organization: string | null;
+};
+
+const FINGERPRINT_SELECT =
+  "session_id, visitor_id, captured_at, consent_mode, fingerprint_version, fingerprint_hash, canvas_hash, font_hash, font_count, webgl_hash, webgl_vendor, webgl_renderer, audio_hash, hardware_concurrency, device_memory, screen_width, screen_height, pixel_ratio, color_depth, timezone, timezone_offset, language, languages, platform, max_touch_points, connection_effective_type, connection_downlink, connection_rtt, connection_save_data, ua_ch_platform, ua_ch_mobile, ua_ch_brands, ua_high_entropy, asn, as_organization";
+
+/**
+ * Fingerprint snapshots for the sessions seen in the range. Missing rows are
+ * normal: historical sessions predate the feature, and visitors who declined
+ * enhanced analytics never have one.
+ */
+async function fetchFingerprints(sessionIds: string[]): Promise<Map<string, FingerprintRow>> {
+  const out = new Map<string, FingerprintRow>();
+  if (!sessionIds.length) return out;
+  const admin = getSupabaseAdmin();
+  const chunkSize = 400;
+  for (let i = 0; i < sessionIds.length; i += chunkSize) {
+    const chunk = sessionIds.slice(i, i + chunkSize);
+    const { data, error } = await admin
+      .from("visitor_fingerprints")
+      .select(FINGERPRINT_SELECT)
+      .in("session_id", chunk);
+    // Never let a fingerprint lookup break the whole visitor view.
+    if (error) {
+      console.error("[adminVisitorActivity] fingerprint lookup failed", error.message);
+      return out;
+    }
+    for (const row of (data ?? []) as FingerprintRow[]) out.set(row.session_id, row);
+  }
+  return out;
+}
 
 const RANGE_HOURS = { "1h": 1, "6h": 6, "24h": 24, "7d": 24 * 7, "30d": 24 * 30 } as const;
 export type VisitorActivityRange = keyof typeof RANGE_HOURS;
