@@ -269,11 +269,11 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
               type="button"
               aria-label="Close category menu"
               onClick={() => setMenuOpen(false)}
-              className="fixed inset-0 z-40 bg-primary/30"
+              className="fixed inset-0 z-[80] bg-primary/30"
             />
           )}
           <div
-            className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            className="fixed inset-x-0 bottom-0 z-[90] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
             style={{ pointerEvents: "none" }}
           >
             {menuOpen && (

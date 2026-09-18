@@ -221,3 +221,10 @@
     padding: 0;
   }
 }
+
+/* Space for the mobile guided-chooser sticky bar so footer content clears it. */
+@media (max-width: 1023px) {
+  body.has-chooser-bar {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+}
