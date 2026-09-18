@@ -36,6 +36,7 @@ import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { TableChooser } from "@/components/TableChooser";
 import { SaveToMyTableButton } from "@/components/SaveToMyTableButton";
 import { MyTableIndicator } from "@/components/MyTableIndicator";
+import { MobileCollectionControlsBar } from "@/components/MobileCollectionControlsBar";
 import { chooseReason } from "@/lib/table-chooser";
 
 type Resource = {
