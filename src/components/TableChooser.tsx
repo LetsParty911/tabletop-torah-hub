@@ -248,8 +248,9 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
         </div>
       </div>
 
-      {selected && (
-        <div className="lg:hidden">
+      {selected && mounted && createPortal(
+        <div className="tftt-chooser-bar lg:hidden">
+
           {menuOpen && (
             <button
               type="button"
