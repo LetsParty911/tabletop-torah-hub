@@ -677,6 +677,10 @@ function Index() {
                     )}
                   </div>
 
+                  <div className="mt-2 flex justify-center sm:mt-0 sm:justify-end">
+                    <MyTableIndicator />
+                  </div>
+
                   <div className={`${filtersOpen ? "block" : "hidden"} mt-3 space-y-3 sm:mt-0 sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:space-y-0`}>
                     {activeFilterCount > 0 && (
                       <div className="hidden justify-end sm:col-span-3 sm:flex">
