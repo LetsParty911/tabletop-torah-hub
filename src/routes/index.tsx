@@ -593,6 +593,8 @@ function Index() {
               displayPublicationName={(r) => displayPublicationName(r as Resource)}
             />
 
+            {!activeChooser && (
+            <>
             {featuredPicks.length > 0 && (
               <>
                 <section className="parchment-frame">
