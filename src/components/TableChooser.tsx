@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { BookmarkCheck } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
@@ -8,7 +9,9 @@ import { normalizeAudience } from "@/lib/audience";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { trackFp } from "@/lib/first-party-analytics";
 import { formatTypeLabel } from "@/lib/format-labels";
+import { readMyTable, subscribeMyTable } from "@/lib/my-table";
 import { standardizeCopy } from "@/lib/standardize-copy";
+
 import {
   CHOOSERS,
   chooseReason,
@@ -27,6 +30,8 @@ type Props = {
 
 export function TableChooser({ resources, parshaKey, displayTitle, displayPublicationName }: Props) {
   const [selected, setSelected] = useState<ChooserKey | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [savedCount, setSavedCount] = useState<number | null>(null);
   const lastViewed = useRef<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const pendingScrollRef = useRef(false);
@@ -40,6 +45,27 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
     () => CHOOSERS.find((c) => c.key === selected)?.label,
     [selected],
   );
+
+  useEffect(() => {
+    setSavedCount(readMyTable().length);
+    return subscribeMyTable((items) => setSavedCount(items.length));
+  }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
+  const selectChooser = (key: ChooserKey, label: string) => {
+    setSelected(key);
+    pendingScrollRef.current = true;
+    trackFp("chooser_select", { metadata: { chooser: key, label } });
+  };
+
 
   useEffect(() => {
     if (!selected || recommendations.length === 0 || !resultsRef.current || !pendingScrollRef.current) return;
