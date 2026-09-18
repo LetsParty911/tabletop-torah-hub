@@ -153,20 +153,20 @@ async function fetchPriorVisitors(ids: string[], before: string): Promise<Set<st
   return prior;
 }
 
-function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>()) {
+/**
+ * Builds per-session stats from the raw canonical event rows.
+ * No filtering happens here — classification is a separate step.
+ */
+function buildSessions(rows: EventRow[]): Map<string, SessionAgg> {
   const sessions = new Map<string, SessionAgg>();
-  const visitors = new Set<string>();
-  const returningVisitors = new Set<string>();
-  const sourceSessions = new Map<string, Set<string>>();
-  const deviceSessions = new Map<string, Set<string>>();
-  const pageMap = new Map<string, { pageviews: number; sessions: Set<string> }>();
-  const uniquePdfDownloads = new Set<string>();
-  let downloadActions = 0;
 
   for (const row of rows) {
     const sid = row.session_id?.trim();
     if (!sid) continue;
     const vid = row.visitor_id?.trim() || null;
+    const at = Date.parse(row.occurred_at);
+    const time = Number.isNaN(at) ? 0 : at;
+
     let session = sessions.get(sid);
     if (!session) {
       session = {
@@ -178,6 +178,12 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
         engaged: false,
         accessedPdf: false,
         downloaded: false,
+        firstAt: time,
+        lastAt: time,
+        heartbeats: 0,
+        impressions: 0,
+        humanSignal: false,
+        meaningfulIntent: false,
       };
       sessions.set(sid, session);
     }
@@ -187,7 +193,98 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
       session.source = row.source_group.trim();
     if (session.device === "unknown" && row.device_type?.trim())
       session.device = row.device_type.trim();
+    if (time) {
+      if (!session.firstAt || time < session.firstAt) session.firstAt = time;
+      if (time > session.lastAt) session.lastAt = time;
+    }
 
+    const name = row.event_name ?? "";
+    if (name === "page_view") session.pageviews += 1;
+    if (name === "heartbeat") session.heartbeats += 1;
+    if (name === "publication_impression") session.impressions += 1;
+    if (name === "human_signal") session.humanSignal = true;
+    if (MEANINGFUL_INTENT.has(name)) session.meaningfulIntent = true;
+    // A heartbeat alone is never engagement.
+    if (MEANINGFUL_INTENT.has(name)) session.engaged = true;
+    if (name === "pdf_open" || name === "download") session.accessedPdf = true;
+    if (name === "download") session.downloaded = true;
+  }
+
+  return sessions;
+}
+
+/**
+ * High-confidence automation only. Any session showing real intent (download,
+ * pdf_open, publication_click, filter, search, share, signup, human_signal) is
+ * never classified as automated.
+ */
+function classifyAutomation(sessions: SessionAgg[]): Set<string> {
+  const automated = new Set<string>();
+  const oneHitCandidates: SessionAgg[] = [];
+
+  for (const session of sessions) {
+    if (session.meaningfulIntent || session.humanSignal) continue;
+    const isDirectDesktop = session.source === "Direct" && session.device === "desktop";
+    if (!isDirectDesktop) continue;
+
+    const durationMs = Math.max(0, session.lastAt - session.firstAt);
+
+    // (b) Impossible heartbeat cadence — the client beats every 15 seconds,
+    // so 10+ beats inside a minute cannot be a real browser.
+    if (durationMs <= 60_000 && session.heartbeats >= 10) {
+      automated.add(session.id);
+      continue;
+    }
+
+    // (a) Instant one-hit session — only counted when it arrives in a burst.
+    if (durationMs <= 2_000 && session.pageviews <= 1) {
+      oneHitCandidates.push(session);
+    }
+  }
+
+  const buckets = new Map<number, SessionAgg[]>();
+  for (const session of oneHitCandidates) {
+    const bucket = Math.floor(session.firstAt / 10_000);
+    const list = buckets.get(bucket) ?? [];
+    list.push(session);
+    buckets.set(bucket, list);
+  }
+  for (const list of buckets.values()) {
+    if (list.length < 8) continue; // isolated instant bounces stay counted
+    for (const session of list) automated.add(session.id);
+  }
+
+  return automated;
+}
+
+function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>()) {
+  const allSessions = buildSessions(rows);
+  const automated = classifyAutomation([...allSessions.values()]);
+
+  const rawSessions = allSessions.size;
+  const rawVisitors = new Set<string>();
+  for (const session of allSessions.values()) {
+    if (session.visitorId) rawVisitors.add(session.visitorId);
+  }
+
+  const kept = [...allSessions.values()].filter((session) => !automated.has(session.id));
+  const keptIds = new Set(kept.map((session) => session.id));
+  const keptRows = rows.filter((row) => {
+    const sid = row.session_id?.trim();
+    return sid ? keptIds.has(sid) : false;
+  });
+
+  const visitors = new Set<string>();
+  const returningVisitors = new Set<string>();
+  const sourceSessions = new Map<string, Set<string>>();
+  const deviceSessions = new Map<string, Set<string>>();
+  const pageMap = new Map<string, { pageviews: number; sessions: Set<string> }>();
+  const uniquePdfDownloads = new Set<string>();
+  let downloadActions = 0;
+
+  for (const row of keptRows) {
+    const sid = row.session_id!.trim();
+    const vid = row.visitor_id?.trim() || null;
     if (vid) {
       visitors.add(vid);
       if (priorVisitors.has(vid) || row.is_new_visitor === false) returningVisitors.add(vid);
@@ -195,37 +292,20 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
 
     const name = row.event_name ?? "";
     if (name === "page_view") {
-      session.pageviews += 1;
       const path = row.path?.trim() || "/";
       const page = pageMap.get(path) ?? { pageviews: 0, sessions: new Set<string>() };
       page.pageviews += 1;
       page.sessions.add(sid);
       pageMap.set(path, page);
     }
-    if (
-      [
-        "publication_click",
-        "pdf_open",
-        "download",
-        "filter_change",
-        "search",
-        "share_click",
-        "signup",
-        "heartbeat",
-      ].includes(name)
-    ) {
-      session.engaged = true;
-    }
-    if (name === "pdf_open" || name === "download") session.accessedPdf = true;
     if (name === "download") {
-      session.downloaded = true;
       downloadActions += 1;
       const publication = row.publication_id?.trim() || row.publication_title?.trim() || "unknown";
       uniquePdfDownloads.add(`${sid}::${publication}`);
     }
   }
 
-  for (const session of sessions.values()) {
+  for (const session of kept) {
     const sourceSet = sourceSessions.get(session.source) ?? new Set<string>();
     sourceSet.add(session.id);
     sourceSessions.set(session.source, sourceSet);
@@ -235,24 +315,26 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
     deviceSessions.set(session.device, deviceSet);
   }
 
-  const sessionList = [...sessions.values()];
-  const downloadingSessions = sessionList.filter((session) => session.downloaded).length;
-  const pdfAccessingSessions = sessionList.filter((session) => session.accessedPdf).length;
-  const engagedSessions = sessionList.filter(
+  const downloadingSessions = kept.filter((session) => session.downloaded).length;
+  const pdfAccessingSessions = kept.filter((session) => session.accessedPdf).length;
+  const engagedSessions = kept.filter(
     (session) => session.engaged || session.pageviews >= 2,
   ).length;
 
   return {
-    pageviews: rows.filter((row) => row.event_name === "page_view").length,
-    sessions: sessions.size,
+    pageviews: keptRows.filter((row) => row.event_name === "page_view").length,
+    sessions: kept.length,
     uniqueVisitors: visitors.size,
+    rawSessions,
+    rawUniqueVisitors: rawVisitors.size,
+    filteredAutomationSessions: automated.size,
     returningVisitors: returningVisitors.size,
     engagedSessions,
     pdfAccessingSessions,
     downloadingSessions,
     uniquePdfDownloads: uniquePdfDownloads.size,
     downloadActions,
-    downloadConversion: sessions.size ? downloadingSessions / sessions.size : 0,
+    downloadConversion: kept.length ? downloadingSessions / kept.length : 0,
     sources: [...sourceSessions.entries()]
       .map(([label, set]) => ({ label, sessions: set.size }))
       .sort((a, b) => b.sessions - a.sessions),
