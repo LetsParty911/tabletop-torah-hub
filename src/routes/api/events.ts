@@ -1,5 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { checkRateLimit } from "@/lib/rate-limit.server";
+import {
+  getRequestTelemetry,
+  isAdminPath,
+  isAutomatedAgent,
+} from "@/lib/request-telemetry.server";
 
 // Canonical first-party event ingest for the Phase 1 stream.
 //
@@ -7,10 +12,12 @@ import { checkRateLimit } from "@/lib/rate-limit.server";
 // project (see supabase_analytics_events_migration.sql). Legacy
 // page_views / search_events / download_events writes are unaffected.
 //
-// Captures the raw client IP address and User-Agent header server-side for
-// accepted events. Device type is derived here from the UA header and only the
-// coarse bucket is persisted. Geo is limited to country + region + city +
-// postal_code for this table.
+// Captures the raw client IP address, User-Agent, Accept-Language and
+// low-entropy UA client hints server-side for accepted events, plus ASN /
+// network organization when the edge runtime exposes them. Device type is
+// derived here from the UA header and only the coarse bucket is persisted.
+// Geo is limited to country + region + city + postal_code for this table.
+// None of these values are ever read from the JSON request body.
 
 const ALLOWED_EVENTS = new Set([
   "session_start",
@@ -28,110 +35,11 @@ const ALLOWED_EVENTS = new Set([
   "error",
 ]);
 
-// Conservative automation check. The raw User-Agent header is matched against
-// obvious bot/crawler/headless/link-preview markers before anything is
-// persisted; accepted requests store the header for diagnostics.
-const BOT_UA = new RegExp(
-  [
-    "bot",
-    "crawler",
-    "spider",
-    "crawling",
-    "headless",
-    "puppeteer",
-    "playwright",
-    "phantomjs",
-    "selenium",
-    "lighthouse",
-    "pagespeed",
-    "curl/",
-    "wget",
-    "python-requests",
-    "axios/",
-    "node-fetch",
-    "go-http-client",
-    "java/",
-    "okhttp",
-    "libwww-perl",
-    "httpclient",
-    "monitoring",
-    "uptime",
-    "preview",
-    "facebookexternalhit",
-    "whatsapp",
-    "telegrambot",
-    "slackbot",
-    "discordbot",
-    "twitterbot",
-    "linkedinbot",
-    "embedly",
-    "quora link preview",
-    "skypeuripreview",
-    "vkshare",
-    "redditbot",
-    "applebot",
-    "bingpreview",
-    "google-inspectiontool",
-    "chrome-lighthouse",
-  ].join("|"),
-  "i",
-);
-
-function isAutomatedAgent(ua: string): boolean {
-  if (!ua.trim()) return true; // no UA at all is never a normal browser
-  return BOT_UA.test(ua);
-}
-
 function deviceTypeFrom(ua: string): string {
   const s = ua.toLowerCase();
   if (/ipad|tablet|playbook|silk|(android(?!.*mobile))/.test(s)) return "tablet";
   if (/mobi|iphone|ipod|android|blackberry|windows phone/.test(s)) return "mobile";
   return "desktop";
-}
-
-// Vercel geo headers are RFC3986-encoded and can be malformed; never throw here.
-function decodeGeo(value: string | null): string | null {
-  if (!value) return null;
-  let out = value;
-  try {
-    out = decodeURIComponent(value);
-  } catch {
-    out = value;
-  }
-  const trimmed = out.trim().slice(0, 120);
-  return trimmed ? trimmed : null;
-}
-
-function isAdminPath(p: string | null | undefined): boolean {
-  if (!p) return false;
-  return p === "/admin" || p.startsWith("/admin/") || p.startsWith("/admin-analytics");
-}
-
-// Prefer edge/proxy headers over the connection's remote address. Trim, strip
-// surrounding whitespace, and cap at 100 characters. Never accept an IP from
-// the JSON event body.
-function getClientIP(request: Request): string | null {
-  const header = (name: string) => {
-    const v = request.headers.get(name);
-    return v && v.trim() ? v.trim() : null;
-  };
-
-  const cf = header("cf-connecting-ip");
-  if (cf) return cf.slice(0, 100);
-
-  const real = header("x-real-ip");
-  if (real) return real.slice(0, 100);
-
-  const forwarded = header("x-forwarded-for");
-  if (forwarded) {
-    const first = forwarded.split(",")[0];
-    if (first) {
-      const trimmed = first.trim();
-      if (trimmed) return trimmed.slice(0, 100);
-    }
-  }
-
-  return null;
 }
 
 export const Route = createFileRoute("/api/events")({
@@ -164,27 +72,10 @@ export const Route = createFileRoute("/api/events")({
           const incoming = Array.isArray(body["events"]) ? (body["events"] as unknown[]) : [];
           if (!incoming.length) return new Response(null, { status: 204 });
 
-          // Approximate, network-derived location only. Coarse country/region/city/
-          // postal_code are persisted alongside the raw client IP and User-Agent.
-          const clientIP = getClientIP(request);
-          const rawUserAgent = (request.headers.get("user-agent") ?? "").slice(0, 1000);
-          const cf = (request as unknown as { cf?: Record<string, unknown> }).cf ?? {};
-          const cfStr = (key: string) => {
-            const v = cf[key];
-            return typeof v === "string" && v.trim() ? v.trim() : null;
-          };
-          const header = (name: string) => {
-            const v = request.headers.get(name);
-            return v && v.trim() ? v.trim() : null;
-          };
-          const country =
-            header("x-vercel-ip-country") ?? cfStr("country") ?? header("cf-ipcountry") ?? null;
-          const region =
-            header("x-vercel-ip-country-region") ?? cfStr("region") ?? cfStr("regionCode") ?? null;
-          const city = decodeGeo(header("x-vercel-ip-city")) ?? cfStr("city") ?? null;
-          const postalCode =
-            decodeGeo(header("x-vercel-ip-postal-code")) ?? cfStr("postalCode") ?? null;
-          const deviceType = deviceTypeFrom(request.headers.get("user-agent") ?? "");
+          // Approximate, network-derived location only, alongside the raw
+          // client IP, User-Agent and request header telemetry.
+          const t = getRequestTelemetry(request);
+          const deviceType = deviceTypeFrom(t.userAgent);
 
           const rows: Array<Record<string, unknown>> = [];
 
@@ -253,12 +144,18 @@ export const Route = createFileRoute("/api/events")({
               utm_medium: str("utm_medium", 120),
               utm_campaign: str("utm_campaign", 200),
               source_group: str("source_group", 40) ?? "Direct",
-              country,
-              region,
-              city,
-              postal_code: postalCode,
-              ip_address: clientIP,
-              user_agent: rawUserAgent,
+              country: t.country,
+              region: t.region,
+              city: t.city,
+              postal_code: t.postalCode,
+              ip_address: t.ipAddress,
+              user_agent: t.userAgent,
+              accept_language: t.acceptLanguage,
+              sec_ch_ua: t.secChUa,
+              sec_ch_platform: t.secChPlatform,
+              sec_ch_mobile: t.secChMobile,
+              asn: t.asn,
+              as_organization: t.asOrganization,
               metadata,
             });
           }

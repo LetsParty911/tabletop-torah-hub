@@ -34,7 +34,9 @@ import { Route as ManageTableTokenRouteImport } from './routes/manage-table.$tok
 import { Route as ApiTrackViewRouteImport } from './routes/api/track-view'
 import { Route as ApiTrackSearchRouteImport } from './routes/api/track-search'
 import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
+import { Route as ApiPrivacyRegionRouteImport } from './routes/api/privacy-region'
 import { Route as ApiEventsRouteImport } from './routes/api/events'
+import { Route as ApiEnhancedFingerprintRouteImport } from './routes/api/enhanced-fingerprint'
 import { Route as YomTovSlugYearRouteImport } from './routes/yom-tov.$slug.$year'
 import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
@@ -165,9 +167,19 @@ const ApiTrackDownloadRoute = ApiTrackDownloadRouteImport.update({
   path: '/api/track-download',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPrivacyRegionRoute = ApiPrivacyRegionRouteImport.update({
+  id: '/api/privacy-region',
+  path: '/api/privacy-region',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiEventsRoute = ApiEventsRouteImport.update({
   id: '/api/events',
   path: '/api/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEnhancedFingerprintRoute = ApiEnhancedFingerprintRouteImport.update({
+  id: '/api/enhanced-fingerprint',
+  path: '/api/enhanced-fingerprint',
   getParentRoute: () => rootRouteImport,
 } as any)
 const YomTovSlugYearRoute = YomTovSlugYearRouteImport.update({
@@ -208,7 +220,9 @@ export interface FileRoutesByFullPath {
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
@@ -240,7 +254,9 @@ export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
@@ -273,7 +289,9 @@ export interface FileRoutesById {
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
@@ -307,7 +325,9 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/short-vorts'
     | '/sitemap.xml'
+    | '/api/enhanced-fingerprint'
     | '/api/events'
+    | '/api/privacy-region'
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
@@ -339,7 +359,9 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/short-vorts'
     | '/sitemap.xml'
+    | '/api/enhanced-fingerprint'
     | '/api/events'
+    | '/api/privacy-region'
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
@@ -371,7 +393,9 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/short-vorts'
     | '/sitemap.xml'
+    | '/api/enhanced-fingerprint'
     | '/api/events'
+    | '/api/privacy-region'
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
@@ -404,7 +428,9 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   ShortVortsRoute: typeof ShortVortsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiEnhancedFingerprintRoute: typeof ApiEnhancedFingerprintRoute
   ApiEventsRoute: typeof ApiEventsRoute
+  ApiPrivacyRegionRoute: typeof ApiPrivacyRegionRoute
   ApiTrackDownloadRoute: typeof ApiTrackDownloadRoute
   ApiTrackSearchRoute: typeof ApiTrackSearchRoute
   ApiTrackViewRoute: typeof ApiTrackViewRoute
@@ -595,11 +621,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTrackDownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/privacy-region': {
+      id: '/api/privacy-region'
+      path: '/api/privacy-region'
+      fullPath: '/api/privacy-region'
+      preLoaderRoute: typeof ApiPrivacyRegionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/events': {
       id: '/api/events'
       path: '/api/events'
       fullPath: '/api/events'
       preLoaderRoute: typeof ApiEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/enhanced-fingerprint': {
+      id: '/api/enhanced-fingerprint'
+      path: '/api/enhanced-fingerprint'
+      fullPath: '/api/enhanced-fingerprint'
+      preLoaderRoute: typeof ApiEnhancedFingerprintRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/yom-tov/$slug/$year': {
@@ -663,7 +703,9 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   ShortVortsRoute: ShortVortsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiEnhancedFingerprintRoute: ApiEnhancedFingerprintRoute,
   ApiEventsRoute: ApiEventsRoute,
+  ApiPrivacyRegionRoute: ApiPrivacyRegionRoute,
   ApiTrackDownloadRoute: ApiTrackDownloadRoute,
   ApiTrackSearchRoute: ApiTrackSearchRoute,
   ApiTrackViewRoute: ApiTrackViewRoute,

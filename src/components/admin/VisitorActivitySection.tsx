@@ -86,6 +86,22 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
               Signed up
             </span>
           )}
+          {/* Neutral diagnostics — shared signals, not proof of identity. */}
+          {visitor.fingerprintChanged && (
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+              Fingerprint changed
+            </span>
+          )}
+          {visitor.fingerprintVisitorIdCount > 1 && (
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+              FP seen on {visitor.fingerprintVisitorIdCount} visitor IDs
+            </span>
+          )}
+          {visitor.ipVisitorIdCount > 1 && (
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+              IP seen on {visitor.ipVisitorIdCount} visitor IDs
+            </span>
+          )}
           <span className="ml-auto text-xs text-muted-foreground">{open ? "Hide" : "Details"}</span>
         </div>
         <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -147,6 +163,142 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
                   .join(" / ") || "None"
               }
             />
+            <Field label="Accept-Language" value={visitor.latestAcceptLanguage ?? NOT_CAPTURED} />
+            <Field
+              label="Client hints (header)"
+              value={
+                [
+                  visitor.latestSecChUa,
+                  visitor.latestSecChPlatform,
+                  visitor.latestSecChMobile ? `mobile ${visitor.latestSecChMobile}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || NOT_CAPTURED
+              }
+            />
+            <Field
+              label="Network (ASN)"
+              value={
+                visitor.latestAsn || visitor.latestAsOrganization
+                  ? `${visitor.latestAsn ?? "?"} ${visitor.latestAsOrganization ?? ""}`.trim()
+                  : NOT_CAPTURED
+              }
+            />
+          </div>
+
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              Device fingerprint
+            </div>
+            {visitor.fingerprint ? (
+              <div className="mt-1 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field
+                  label="Fingerprint hash"
+                  value={<code className="text-[11px]">{visitor.fingerprint.hash ?? "—"}</code>}
+                />
+                <Field
+                  label="Consent / captured"
+                  value={`${visitor.fingerprint.consentMode ?? "—"} · ${
+                    visitor.fingerprint.capturedAt
+                      ? timeLabel(visitor.fingerprint.capturedAt)
+                      : "—"
+                  } · ${visitor.fingerprint.version ?? "—"}`}
+                />
+                <Field
+                  label="Signals present"
+                  value={[
+                    visitor.fingerprint.canvasPresent ? "canvas" : null,
+                    visitor.fingerprint.fontPresent
+                      ? `fonts (${visitor.fingerprint.fontCount ?? "?"})`
+                      : null,
+                    visitor.fingerprint.webglPresent ? "webgl" : null,
+                    visitor.fingerprint.audioPresent ? "audio" : null,
+                  ]
+                    .filter(Boolean)
+                    .join(", ") || "None"}
+                />
+                <Field
+                  label="WebGL"
+                  value={
+                    [visitor.fingerprint.webglVendor, visitor.fingerprint.webglRenderer]
+                      .filter(Boolean)
+                      .join(" · ") || "—"
+                  }
+                />
+                <Field
+                  label="Hardware"
+                  value={`${visitor.fingerprint.hardwareConcurrency ?? "?"} cores · ${
+                    visitor.fingerprint.deviceMemory ?? "?"
+                  } GB · ${visitor.fingerprint.maxTouchPoints ?? "?"} touch points`}
+                />
+                <Field
+                  label="Screen"
+                  value={`${visitor.fingerprint.screenWidth ?? "?"}×${
+                    visitor.fingerprint.screenHeight ?? "?"
+                  } · ${visitor.fingerprint.pixelRatio ?? "?"}x · ${
+                    visitor.fingerprint.colorDepth ?? "?"
+                  }-bit`}
+                />
+                <Field
+                  label="Timezone / language"
+                  value={`${visitor.fingerprint.timezone ?? "—"} (${
+                    visitor.fingerprint.timezoneOffset ?? "?"
+                  }) · ${
+                    visitor.fingerprint.languages?.join(", ") ??
+                    visitor.fingerprint.language ??
+                    "—"
+                  }`}
+                />
+                <Field label="Platform" value={visitor.fingerprint.platform ?? "—"} />
+                <Field
+                  label="Connection"
+                  value={
+                    [
+                      visitor.fingerprint.connectionEffectiveType,
+                      visitor.fingerprint.connectionDownlink != null
+                        ? `${visitor.fingerprint.connectionDownlink} Mbps`
+                        : null,
+                      visitor.fingerprint.connectionRtt != null
+                        ? `${visitor.fingerprint.connectionRtt} ms`
+                        : null,
+                      visitor.fingerprint.connectionSaveData ? "save-data" : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || "—"
+                  }
+                />
+                <Field
+                  label="UA client hints"
+                  value={
+                    [
+                      visitor.fingerprint.uaChPlatform,
+                      visitor.fingerprint.uaChMobile != null
+                        ? `mobile: ${visitor.fingerprint.uaChMobile}`
+                        : null,
+                      visitor.fingerprint.uaChBrands?.join(" | "),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || "—"
+                  }
+                />
+                {visitor.fingerprint.uaHighEntropy && (
+                  <Field
+                    label="High-entropy hints"
+                    value={
+                      <code className="text-[11px] leading-snug">
+                        {Object.entries(visitor.fingerprint.uaHighEntropy)
+                          .map(([k, val]) => `${k}: ${val}`)
+                          .join(" · ")}
+                      </code>
+                    }
+                  />
+                )}
+              </div>
+            ) : (
+              <p className="mt-1 text-sm text-muted-foreground">
+                {NOT_CAPTURED} — this visit predates enhanced analytics, or the visitor declined it.
+              </p>
+            )}
           </div>
 
           {visitor.suspicionReasons.length > 0 && (
