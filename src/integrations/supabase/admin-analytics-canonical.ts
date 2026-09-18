@@ -69,6 +69,13 @@ const MEANINGFUL_INTENT = new Set([
   "share_click",
   "signup",
   "human_signal",
+  // Deliberate homepage choices. recommendation_view is intentionally absent:
+  // it is a render-time impression, not an act of human intent.
+  "chooser_select",
+  "recommendation_click",
+  "my_table_add",
+  "my_table_remove",
+  "my_table_open",
 ]);
 
 // One-time cleanup for a known automated traffic spike on 2026-09-18.

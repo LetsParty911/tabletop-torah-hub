@@ -1,6 +1,7 @@
 import { Bookmark, BookmarkCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { trackFp } from "@/lib/first-party-analytics";
 import {
   addToMyTable,
   isInMyTable,
@@ -12,9 +13,18 @@ import {
 type Props = {
   item: Omit<MyTableItem, "savedAt">;
   className?: string;
+  /** Optional compact styling for dense card layouts. */
+  size?: "default" | "sm";
+  /** Optional analytics context, e.g. the chooser that surfaced this item. */
+  analyticsContext?: Record<string, unknown>;
 };
 
-export function SaveToMyTableButton({ item, className = "" }: Props) {
+export function SaveToMyTableButton({
+  item,
+  className = "",
+  size = "default",
+  analyticsContext,
+}: Props) {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -23,12 +33,22 @@ export function SaveToMyTableButton({ item, className = "" }: Props) {
   }, [item.id]);
 
   const toggle = () => {
+    const context = {
+      publication_id: item.id,
+      publication_title: item.title,
+      publication_series: item.publication,
+      publisher: item.publisher,
+      parsha: item.parsha,
+      metadata: analyticsContext ?? {},
+    };
     if (saved) {
       removeFromMyTable(item.id);
       setSaved(false);
+      trackFp("my_table_remove", context);
     } else {
       addToMyTable(item);
       setSaved(true);
+      trackFp("my_table_add", context);
     }
   };
 
@@ -37,7 +57,9 @@ export function SaveToMyTableButton({ item, className = "" }: Props) {
       type="button"
       onClick={toggle}
       aria-pressed={saved}
-      className={`inline-flex items-center justify-center gap-2 rounded-full border px-5 py-2.5 font-serif font-semibold transition-colors ${
+      className={`inline-flex items-center justify-center gap-2 rounded-full border font-serif font-semibold transition-colors ${
+        size === "sm" ? "px-3 py-1.5 text-xs" : "px-5 py-2.5"
+      } ${
         saved
           ? "border-accent bg-accent/15 text-primary"
           : "border-accent/50 bg-background text-primary hover:bg-accent hover:text-accent-foreground"
