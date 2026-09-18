@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { getSupabaseAdmin, getSupabaseForUser } from "@/integrations/supabase/ext.server";
-import { toParshaComparableKey } from "@/lib/parsha-normalize";
+import { toParshaComparableKey, toParshaComparableKeys } from "@/lib/parsha-normalize";
 import { fetchHebcalShabbatData, resolveReadingFromHebcal } from "@/lib/hebcal";
 
 import { standardizeCopy } from "@/lib/standardize-copy";
@@ -349,7 +349,7 @@ async function buildResources(
 // (parsha_key, jewish_year) group (fallback).
 async function resolveDisplayedCollection(
   admin: ReturnType<typeof getSupabaseAdmin>,
-  liveComparableKey: string | null,
+  liveComparableKeys: string[],
 ): Promise<{
   comparableKey: string | null;
   parshaKey: string | null;
@@ -358,9 +358,10 @@ async function resolveDisplayedCollection(
   isFallback: boolean;
 }> {
   const allRows = await fetchAllPublishedRows(admin);
-  if (liveComparableKey) {
-    const liveRows = allRows.filter(
-      (r: any) => toParshaComparableKey(r.parsha_key) === liveComparableKey,
+  if (liveComparableKeys.length > 0) {
+    const wanted = new Set(liveComparableKeys);
+    const liveRows = allRows.filter((r: any) =>
+      wanted.has(toParshaComparableKey(r.parsha_key)),
     );
     if (liveRows.length > 0) {
       let latestYear: number | null = null;
@@ -369,11 +370,19 @@ async function resolveDisplayedCollection(
         if (y == null) continue;
         if (latestYear == null || y > latestYear) latestYear = y;
       }
-      const groupRows = latestYear
+      const yearRows = latestYear
         ? liveRows.filter((r: any) => r.jewish_year === latestYear)
         : liveRows;
+      // De-duplicate by id: a combined week unions more than one collection.
+      const seen = new Set<string>();
+      const groupRows = yearRows.filter((r: any) => {
+        const id = String(r.id);
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
       return {
-        comparableKey: liveComparableKey,
+        comparableKey: liveComparableKeys[0] ?? null,
         parshaKey: (groupRows[0]?.parsha_key as string) ?? null,
         jewishYear: latestYear,
         rows: groupRows,
@@ -420,7 +429,7 @@ export const listHomepageWeek = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }) => {
     const admin = getSupabaseAdmin();
-    const liveComparable = data.parshaKey ? toParshaComparableKey(data.parshaKey) : null;
+    const liveComparable = data.parshaKey ? toParshaComparableKeys(data.parshaKey) : [];
     const displayed = await resolveDisplayedCollection(admin, liveComparable);
     const resources = await buildResources(admin, displayed.rows);
     return {
@@ -533,7 +542,10 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
       rows = fb.data ?? [];
     }
     const current = await resolveCurrentFeatured();
-    const displayed = await resolveDisplayedCollection(admin, current.comparableKey);
+    const displayed = await resolveDisplayedCollection(
+      admin,
+      current.comparableKey ? [current.comparableKey] : [],
+    );
     const orderMap = await getTitleSortOrderMap(admin);
     const canonical = await getCanonicalByPdfId(admin);
     const orderFor = (title: string): number => {
@@ -2418,7 +2430,7 @@ async function getWeeklyEmailContentInternal(): Promise<WeeklyEmailContent> {
   // always reflects the collection readers actually see.
   const displayed = await resolveDisplayedCollection(
     admin,
-    parshaKey ? toParshaComparableKey(parshaKey) : null,
+    parshaKey ? toParshaComparableKeys(parshaKey) : [],
   );
   const collectionKey = displayed.parshaKey;
   const collectionYear = displayed.jewishYear ?? jewishYear;
