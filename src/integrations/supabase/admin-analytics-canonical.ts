@@ -850,6 +850,12 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       if (row.ip_address?.trim()) v.latestIp = row.ip_address.trim();
       if (row.user_agent?.trim()) v.latestUserAgent = row.user_agent.trim();
       if (row.device_type?.trim()) v.latestDeviceType = row.device_type.trim();
+      if (row.accept_language?.trim()) v.latestAcceptLanguage = row.accept_language.trim();
+      if (row.sec_ch_ua?.trim()) v.latestSecChUa = row.sec_ch_ua.trim();
+      if (row.sec_ch_platform?.trim()) v.latestSecChPlatform = row.sec_ch_platform.trim();
+      if (row.sec_ch_mobile?.trim()) v.latestSecChMobile = row.sec_ch_mobile.trim();
+      if (typeof row.asn === "number") v.latestAsn = row.asn;
+      if (row.as_organization?.trim()) v.latestAsOrganization = row.as_organization.trim();
       if (row.city?.trim()) v.geo.city = row.city.trim();
       if (row.region?.trim()) v.geo.region = row.region.trim();
       if (row.country?.trim()) v.geo.country = row.country.trim();
