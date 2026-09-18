@@ -91,12 +91,19 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
     setMenuOpen(false);
     pendingScrollRef.current = false;
     if (!scrollToCollection) return;
-    requestAnimationFrame(() => {
+    // The collection is re-mounted by the page one render later; wait for the
+    // controls to exist before scrolling, otherwise we land on stale layout.
+    let attempts = 0;
+    const tryScroll = () => {
       const el = document.getElementById("filters");
-      if (!el) return;
+      if (!el) {
+        if (attempts++ < 20) requestAnimationFrame(tryScroll);
+        return;
+      }
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
-    });
+    };
+    requestAnimationFrame(tryScroll);
   };
 
 
