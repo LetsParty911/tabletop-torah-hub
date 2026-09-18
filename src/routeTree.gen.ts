@@ -36,6 +36,7 @@ import { Route as ApiTrackSearchRouteImport } from './routes/api/track-search'
 import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
 import { Route as ApiPrivacyRegionRouteImport } from './routes/api/privacy-region'
 import { Route as ApiEventsRouteImport } from './routes/api/events'
+import { Route as ApiEnhancedFingerprintRouteImport } from './routes/api/enhanced-fingerprint'
 import { Route as YomTovSlugYearRouteImport } from './routes/yom-tov.$slug.$year'
 import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
@@ -176,6 +177,11 @@ const ApiEventsRoute = ApiEventsRouteImport.update({
   path: '/api/events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiEnhancedFingerprintRoute = ApiEnhancedFingerprintRouteImport.update({
+  id: '/api/enhanced-fingerprint',
+  path: '/api/enhanced-fingerprint',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const YomTovSlugYearRoute = YomTovSlugYearRouteImport.update({
   id: '/yom-tov/$slug/$year',
   path: '/yom-tov/$slug/$year',
@@ -214,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
@@ -247,6 +254,7 @@ export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
@@ -281,6 +289,7 @@ export interface FileRoutesById {
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
@@ -316,6 +325,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/short-vorts'
     | '/sitemap.xml'
+    | '/api/enhanced-fingerprint'
     | '/api/events'
     | '/api/privacy-region'
     | '/api/track-download'
@@ -349,6 +359,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/short-vorts'
     | '/sitemap.xml'
+    | '/api/enhanced-fingerprint'
     | '/api/events'
     | '/api/privacy-region'
     | '/api/track-download'
@@ -382,6 +393,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/short-vorts'
     | '/sitemap.xml'
+    | '/api/enhanced-fingerprint'
     | '/api/events'
     | '/api/privacy-region'
     | '/api/track-download'
@@ -416,6 +428,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   ShortVortsRoute: typeof ShortVortsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiEnhancedFingerprintRoute: typeof ApiEnhancedFingerprintRoute
   ApiEventsRoute: typeof ApiEventsRoute
   ApiPrivacyRegionRoute: typeof ApiPrivacyRegionRoute
   ApiTrackDownloadRoute: typeof ApiTrackDownloadRoute
@@ -622,6 +635,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/enhanced-fingerprint': {
+      id: '/api/enhanced-fingerprint'
+      path: '/api/enhanced-fingerprint'
+      fullPath: '/api/enhanced-fingerprint'
+      preLoaderRoute: typeof ApiEnhancedFingerprintRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/yom-tov/$slug/$year': {
       id: '/yom-tov/$slug/$year'
       path: '/yom-tov/$slug/$year'
@@ -683,6 +703,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   ShortVortsRoute: ShortVortsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiEnhancedFingerprintRoute: ApiEnhancedFingerprintRoute,
   ApiEventsRoute: ApiEventsRoute,
   ApiPrivacyRegionRoute: ApiPrivacyRegionRoute,
   ApiTrackDownloadRoute: ApiTrackDownloadRoute,
