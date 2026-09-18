@@ -26,7 +26,25 @@ type SessionAgg = {
   engaged: boolean;
   accessedPdf: boolean;
   downloaded: boolean;
+  firstAt: number;
+  lastAt: number;
+  heartbeats: number;
+  impressions: number;
+  humanSignal: boolean;
+  meaningfulIntent: boolean;
 };
+
+// Events that only a person can realistically produce.
+const MEANINGFUL_INTENT = new Set([
+  "download",
+  "pdf_open",
+  "publication_click",
+  "filter_change",
+  "search",
+  "share_click",
+  "signup",
+  "human_signal",
+]);
 
 async function requireAnalyticsAdmin(accessToken: string) {
   const { createClient } = await import("@supabase/supabase-js");
