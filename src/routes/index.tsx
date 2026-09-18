@@ -247,6 +247,10 @@ function Index() {
   const easternToday = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
   const showYomKippurNotice = easternToday >= "2026-09-15" && easternToday <= "2026-09-20";
   const isHaazinuYomKippurWeek = isFallback && showYomKippurNotice;
+  const combinedOverrideSource = `${currentParshaKey ?? ""} ${currentLabel}`.toLowerCase();
+  const isCombinedSpecialWeek =
+    /ha'?azinu/.test(combinedOverrideSource) && /yom kippur/.test(combinedOverrideSource);
+  const combinedWeekHeadline = "Shabbos Shuva · Parshas Haazinu · Yom Kippur";
   const shabbatShuvaLabel =
     isFallback && normalizedCurrentKey === "ha'azinu" && showYomKippurNotice
       ? `Shabbat Shuva / ${currentLabel}`
