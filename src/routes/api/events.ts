@@ -115,6 +115,11 @@ export const Route = createFileRoute("/api/events")({
             return new Response(null, { status: 204 });
           }
 
+          // Drop obvious automated traffic before anything is persisted.
+          if (isAutomatedAgent(request.headers.get("user-agent") ?? "")) {
+            return new Response(null, { status: 204 });
+          }
+
           // Never record admin activity, even if the payload claims otherwise.
           const referer = request.headers.get("referer") ?? "";
           if (referer) {
