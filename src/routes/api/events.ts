@@ -257,6 +257,8 @@ export const Route = createFileRoute("/api/events")({
               region,
               city,
               postal_code: postalCode,
+              ip_address: clientIP,
+              user_agent: rawUserAgent,
               metadata,
             });
           }
