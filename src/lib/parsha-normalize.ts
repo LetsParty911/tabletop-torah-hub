@@ -42,3 +42,41 @@ export function toParshaComparableKey(value: string): string {
 
   return normalized.replace(/[\s-]+/g, "");
 }
+
+// ---------------------------------------------------------------------------
+// Combined special weeks (e.g. "Shabbos Shuva Parshas Haazinu and Yom Kippur")
+// ---------------------------------------------------------------------------
+// Some weeks are announced with a single combined label that covers more than
+// one stored collection. The homepage pool for such a week is the union of the
+// component collections. This never unions arbitrary collections: only the
+// parts explicitly named in the active label.
+
+const COMBINED_SEPARATOR_RE = /\s+(?:and|&|\+|\/)\s+|,\s*/i;
+// Descriptive Shabbos names that prefix a parsha rather than naming a
+// collection of their own.
+const SHABBOS_QUALIFIER_RE =
+  /^(shabbos|shabbat)\s+(shuva|shuvah|teshuva|teshuvah|chazon|nachamu|hagadol|hagodol|shira|shirah|zachor|parah|hachodesh|mevorchim|rosh\s+chodesh)\s+/i;
+
+/**
+ * Expands a reading label into the comparable collection keys it covers.
+ * Ordinary labels return a single key, so normal weeks are unchanged.
+ */
+export function toParshaComparableKeys(value: string): string[] {
+  const keys: string[] = [];
+  const push = (k: string) => {
+    if (k && !keys.includes(k)) keys.push(k);
+  };
+
+  push(toParshaComparableKey(value));
+
+  const parts = value.split(COMBINED_SEPARATOR_RE).filter((p) => p.trim().length > 0);
+  if (parts.length > 1) {
+    for (const part of parts) {
+      const cleaned = part.trim().replace(SHABBOS_QUALIFIER_RE, "").trim();
+      if (cleaned) push(toParshaComparableKey(cleaned));
+      push(toParshaComparableKey(part.trim()));
+    }
+  }
+
+  return keys.filter((k) => k.length > 0);
+}
