@@ -49,6 +49,15 @@ function EmptyState() {
   return <div className="border-y border-border py-12 text-center"><h3 className="font-serif text-xl font-semibold text-primary">Not enough activity yet</h3><p className="mt-2 text-sm text-muted-foreground">Choose a longer period, or check back after more readers visit.</p></div>;
 }
 
+function ReportsSection({ accessToken }: { accessToken: string }) {
+  return <details className="border-t border-border pt-4 print:open">
+    <summary className="cursor-pointer font-serif text-lg font-semibold text-primary print:hidden">Reports · daily and collection</summary>
+    <p className="mt-1 text-xs text-muted-foreground print:hidden">Plain-English, printable summaries built from the same canonical filtered analytics.</p>
+    <div className="mt-5"><AdminReports accessToken={accessToken} /></div>
+  </details>;
+}
+
+
 function Overview({ data, accessToken, openDetail }: { data: ReportData; accessToken: string; openDetail: (key: DetailKey, title: string, description: string) => void }) {
   const { report, comparison } = data;
   const m = report.metrics;
