@@ -219,3 +219,22 @@ Canonical events may store hosting-provider, network-derived `country`, `region`
 ## Canonical automation handling
 
 Obvious crawler and preview User-Agents are rejected before ingest. Accepted raw rows are preserved. Headline reporting excludes sessions matching the canonical high-confidence burst or impossible-heartbeat rules, plus the narrowly time-boxed September 18, 2026 incident rule. It also excludes Lovable editor/preview test sessions identified by a `lovable.dev` / `lovable.app` referrer or the Lovable app User-Agent. These internal sessions remain in raw analytics for diagnostics and are reported separately from suspected automation. Any session with meaningful intent or `human_signal` is protected from the general automation classifier, preserving legitimate PDF opens and download actions. Visitor Activity keeps suspected sessions visible and labels the reason.
+
+
+## Reports (admin only)
+
+Found inside `/admin-analytics` → Overview → "Reports · daily and collection" (the five-item
+navigation is unchanged).
+
+- **Daily report** — one completed America/New_York calendar day (DST-correct 23/25-hour days),
+  selectable across the last 14 completed days, compared with the same weekday one week earlier
+  when that baseline has activity.
+- **Collection report** — the most recently completed upload-derived collection window (the still
+  open current window is excluded), compared with the prior completed collection.
+- Both reuse `buildAnalyticsReport` from `admin-analytics-canonical.ts`; no competing metric
+  definitions, no database change, and the canonical automation filter is untouched. Suspected
+  automated sessions are reported as set aside, never deleted.
+- Percentages are suppressed when a denominator is under 10; observations and "what changed" lines
+  come from deterministic rules in `src/lib/admin-reports.ts`.
+- "Copy report" writes a plain-text version to the clipboard; "Print" uses the `.report-print-area`
+  print stylesheet. No email is sent from the site.
