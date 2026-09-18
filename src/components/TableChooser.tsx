@@ -28,6 +28,8 @@ type Props = {
   parshaKey: string | null;
   displayTitle: (r: ChooserResource) => string;
   displayPublicationName: (r: ChooserResource) => string;
+  /** Notifies the page which category is active, so it can hide the full collection. */
+  onActiveChooserChange?: (key: ChooserKey | null) => void;
 };
 
 export function TableChooser({ resources, parshaKey, displayTitle, displayPublicationName }: Props) {
