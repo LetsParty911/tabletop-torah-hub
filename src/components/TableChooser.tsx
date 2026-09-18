@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { BookmarkCheck } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
@@ -8,7 +9,9 @@ import { normalizeAudience } from "@/lib/audience";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { trackFp } from "@/lib/first-party-analytics";
 import { formatTypeLabel } from "@/lib/format-labels";
+import { readMyTable, subscribeMyTable } from "@/lib/my-table";
 import { standardizeCopy } from "@/lib/standardize-copy";
+
 import {
   CHOOSERS,
   chooseReason,
@@ -27,6 +30,8 @@ type Props = {
 
 export function TableChooser({ resources, parshaKey, displayTitle, displayPublicationName }: Props) {
   const [selected, setSelected] = useState<ChooserKey | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [savedCount, setSavedCount] = useState<number | null>(null);
   const lastViewed = useRef<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const pendingScrollRef = useRef(false);
@@ -40,6 +45,27 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
     () => CHOOSERS.find((c) => c.key === selected)?.label,
     [selected],
   );
+
+  useEffect(() => {
+    setSavedCount(readMyTable().length);
+    return subscribeMyTable((items) => setSavedCount(items.length));
+  }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
+  const selectChooser = (key: ChooserKey, label: string) => {
+    setSelected(key);
+    pendingScrollRef.current = true;
+    trackFp("chooser_select", { metadata: { chooser: key, label } });
+  };
+
 
   useEffect(() => {
     if (!selected || recommendations.length === 0 || !resultsRef.current || !pendingScrollRef.current) return;
@@ -110,13 +136,13 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
                 type="button"
                 aria-pressed={active}
                 onClick={() => {
-                  const next = active ? null : chooser.key;
-                  setSelected(next);
-                  if (next) {
-                    pendingScrollRef.current = true;
-                    trackFp("chooser_select", { metadata: { chooser: next, label: chooser.label } });
+                  if (active) {
+                    setSelected(null);
+                    return;
                   }
+                  selectChooser(chooser.key, chooser.label);
                 }}
+
                 className={`min-w-0 rounded-xl border px-4 py-3 text-left transition-colors ${
                   active
                     ? "border-accent bg-accent/15 shadow-sm"
@@ -221,6 +247,77 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
           </a>
         </div>
       </div>
+
+      {selected && (
+        <div className="lg:hidden">
+          {menuOpen && (
+            <button
+              type="button"
+              aria-label="Close category menu"
+              onClick={() => setMenuOpen(false)}
+              className="fixed inset-0 z-40 bg-primary/30"
+            />
+          )}
+          <div
+            className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            style={{ pointerEvents: "none" }}
+          >
+            {menuOpen && (
+              <div
+                role="menu"
+                aria-label="Choose a category"
+                className="mx-auto mb-2 max-w-md overflow-hidden rounded-2xl border border-accent/40 bg-card shadow-lg"
+                style={{ pointerEvents: "auto" }}
+              >
+                {CHOOSERS.map((chooser) => (
+                  <button
+                    key={chooser.key}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={selected === chooser.key}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      if (selected !== chooser.key) selectChooser(chooser.key, chooser.label);
+                      else pendingScrollRef.current = true;
+                    }}
+                    className={`block w-full px-4 py-3 text-left font-serif text-sm font-semibold ${
+                      selected === chooser.key ? "bg-accent/20 text-primary" : "text-primary"
+                    }`}
+                  >
+                    {chooser.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div
+              className="mx-auto flex max-w-md min-w-0 items-center gap-2 rounded-full border border-accent/40 bg-card/95 px-3 py-2 shadow-lg backdrop-blur"
+              style={{ pointerEvents: "auto" }}
+            >
+              <span className="min-w-0 flex-1 truncate font-serif text-xs font-semibold text-primary">
+                {selectedLabel} selected
+              </span>
+              <button
+                type="button"
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
+                onClick={() => setMenuOpen((v) => !v)}
+                className="shrink-0 rounded-full border border-accent/50 px-3 py-1.5 font-serif text-xs font-semibold text-primary"
+              >
+                Change
+              </button>
+              <Link
+                to="/my-table"
+                onClick={() => trackFp("my_table_open", { metadata: { saved_count: savedCount ?? 0 } })}
+                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 font-serif text-xs font-semibold text-primary-foreground"
+              >
+                <BookmarkCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                {savedCount && savedCount > 0 ? `My Table (${savedCount})` : "My Table"}
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
+
   );
 }
