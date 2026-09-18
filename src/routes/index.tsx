@@ -293,6 +293,9 @@ function Index() {
   const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long">("All");
   const [contentTypeFilter, setContentTypeFilter] = useState<string>("All");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // When a guided-chooser category is active the page enters focused mode and
+  // the full weekly collection (plus its filter controls) is hidden.
+  const [activeChooser, setActiveChooser] = useState<string | null>(null);
 
   const sortedResources = resources;
   usePrewarmDownloads(sortedResources.map((r) => r.id));
@@ -591,8 +594,11 @@ function Index() {
               parshaKey={displayedParshaKey}
               displayTitle={(r) => displayTitle(r as Resource)}
               displayPublicationName={(r) => displayPublicationName(r as Resource)}
+              onActiveChooserChange={setActiveChooser}
             />
 
+            {!activeChooser && (
+            <>
             {featuredPicks.length > 0 && (
               <>
                 <section className="parchment-frame">
@@ -948,6 +954,9 @@ function Index() {
                 )}
               </>
             )}
+            </>
+            )}
+
 
             <p className="mt-7 mx-auto max-w-2xl px-2 text-center text-xs sm:text-sm text-muted-foreground/80 leading-relaxed">
               Torah For The Table is a 501(c)(3) nonprofit organization providing free, carefully selected Torah resources for children, families, and adults. Each week, we make meaningful Divrei Torah, Parsha questions, and original educational content easy to find, print, and share at the Shabbos table.{" "}
