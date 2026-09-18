@@ -406,6 +406,237 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
   };
 }
 
+export type AnalyticsReportRange = "1h" | "today" | "collection" | "7d";
+
+type ReportDetail = {
+  sessionId: string;
+  visitorId: string | null;
+  at: string;
+  event: string;
+  path: string | null;
+  publication: string | null;
+  source: string;
+  reason: string | null;
+};
+
+function reportWindow(range: AnalyticsReportRange, collection: WindowDef | null) {
+  const end = new Date(Date.now() + 60_000).toISOString();
+  if (range === "collection" && collection) return { start: collection.start, end, label: collection.parsha };
+  if (range === "today") return { start: startOfTodayNewYork(), end, label: "Today" };
+  const hours = range === "1h" ? 1 : 24 * 7;
+  return {
+    start: new Date(Date.now() - hours * 60 * 60 * 1000).toISOString(),
+    end,
+    label: range === "1h" ? "Last hour" : "Last 7 days",
+  };
+}
+
+function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
+  const allSessions = buildSessions(rows);
+  const automation = new Set([
+    ...classifyAutomation([...allSessions.values()]),
+    ...classifyKnownIncident([...allSessions.values()]),
+  ]);
+  const keptSessions = [...allSessions.values()].filter((session) => !automation.has(session.id));
+  const keptIds = new Set(keptSessions.map((session) => session.id));
+  const keptRows = rows.filter((row) => Boolean(row.session_id && keptIds.has(row.session_id.trim())));
+  const canonical = summarizeCanonical(rows, priorVisitors);
+  const rowsBySession = new Map<string, EventRow[]>();
+  for (const row of keptRows) {
+    const sid = row.session_id?.trim();
+    if (!sid) continue;
+    const list = rowsBySession.get(sid) ?? [];
+    list.push(row);
+    rowsBySession.set(sid, list);
+  }
+
+  const detailFor = (row: EventRow, reason: string | null = null): ReportDetail => ({
+    sessionId: row.session_id?.trim() ?? "",
+    visitorId: row.visitor_id?.trim() || null,
+    at: row.occurred_at,
+    event: row.event_name ?? "unknown",
+    path: row.path,
+    publication: row.publication_title?.trim() || row.publication_id?.trim() || null,
+    source: row.source_group?.trim() || "Direct",
+    reason,
+  });
+
+  const sessionDetails = keptSessions.map((session) => {
+    const events = rowsBySession.get(session.id) ?? [];
+    const reason = usedTorahQualification(events.map((row) => row.event_name ?? ""));
+    return {
+      sessionId: session.id,
+      visitorId: session.visitorId,
+      startedAt: new Date(session.firstAt).toISOString(),
+      source: session.source,
+      device: session.device,
+      pageviews: session.pageviews,
+      engaged: session.engaged || session.pageviews >= 2,
+      usedTorah: Boolean(reason),
+      usedTorahReason: reason,
+      events: events.map((row) => detailFor(row, reason)),
+    };
+  });
+  const usedSessions = sessionDetails.filter((session) => session.usedTorah);
+  const usedVisitors = new Set(usedSessions.map((session) => session.visitorId).filter(Boolean));
+  const returning = new Set<string>();
+  for (const row of keptRows) {
+    const vid = row.visitor_id?.trim();
+    if (vid && (priorVisitors.has(vid) || row.is_new_visitor === false)) returning.add(vid);
+  }
+
+  type PublicationAgg = {
+    title: string;
+    impressions: Set<string>;
+    clicks: Set<string>;
+    readers: Set<string>;
+    opens: number;
+    downloads: number;
+    downloadPairs: Set<string>;
+    accessPairs: Set<string>;
+    sources: Map<string, Set<string>>;
+  };
+  const publications = new Map<string, PublicationAgg>();
+  const campaigns = new Map<string, Set<string>>();
+  const locations = new Map<string, Set<string>>();
+  const searches: Array<{ term: string; at: string; sessionId: string; ledToContent: boolean }> = [];
+
+  for (const row of keptRows) {
+    const sid = row.session_id?.trim();
+    if (!sid) continue;
+    const title = row.publication_title?.trim() || row.publication_id?.trim();
+    if (title) {
+      const publication = publications.get(title) ?? {
+        title,
+        impressions: new Set<string>(), clicks: new Set<string>(), readers: new Set<string>(),
+        opens: 0, downloads: 0, downloadPairs: new Set<string>(), accessPairs: new Set<string>(),
+        sources: new Map<string, Set<string>>(),
+      };
+      const pair = `${sid}::${title}`;
+      if (row.event_name === "publication_impression") publication.impressions.add(pair);
+      if (row.event_name === "publication_click") publication.clicks.add(pair);
+      if (row.event_name === "pdf_open") {
+        publication.opens += 1;
+        publication.accessPairs.add(pair);
+        if (row.visitor_id) publication.readers.add(row.visitor_id);
+      }
+      if (row.event_name === "download") {
+        publication.downloads += 1;
+        publication.downloadPairs.add(pair);
+        publication.accessPairs.add(pair);
+        if (row.visitor_id) publication.readers.add(row.visitor_id);
+      }
+      const source = row.source_group?.trim() || "Direct";
+      const sourceSet = publication.sources.get(source) ?? new Set<string>();
+      sourceSet.add(sid);
+      publication.sources.set(source, sourceSet);
+      publications.set(title, publication);
+    }
+
+    const campaignParts = [row.utm_source, row.utm_medium, row.utm_campaign]
+      .map((part) => part?.trim()).filter(Boolean);
+    if (campaignParts.length) {
+      const label = campaignParts.join(" / ");
+      const set = campaigns.get(label) ?? new Set<string>();
+      set.add(sid);
+      campaigns.set(label, set);
+    }
+    const location = [row.city, row.region, row.country].map((part) => part?.trim()).filter(Boolean).join(", ");
+    if (location) {
+      const set = locations.get(location) ?? new Set<string>();
+      set.add(sid);
+      locations.set(location, set);
+    }
+    if (row.event_name === "search") {
+      const metadata = row.metadata ?? {};
+      const value = metadata["query"] ?? metadata["term"] ?? metadata["q"];
+      if (typeof value === "string" && value.trim()) {
+        const laterContent = (rowsBySession.get(sid) ?? []).some(
+          (event) => event.occurred_at >= row.occurred_at && ["publication_click", "pdf_open", "download"].includes(event.event_name ?? ""),
+        );
+        searches.push({ term: value.trim(), at: row.occurred_at, sessionId: sid, ledToContent: laterContent });
+      }
+    }
+  }
+
+  const metricDetails = {
+    people: keptRows.filter((row, index, list) => row.visitor_id && list.findIndex((other) => other.visitor_id === row.visitor_id) === index).map((row) => detailFor(row)),
+    usedTorah: usedSessions.flatMap((session) => session.events.filter((event) => ["pdf_open", "download", "share_click", "signup"].includes(event.event))),
+    pdfOpens: keptRows.filter((row) => row.event_name === "pdf_open").map((row) => detailFor(row)),
+    downloads: keptRows.filter((row) => row.event_name === "download").map((row) => detailFor(row)),
+    returning: keptRows.filter((row, index, list) => row.visitor_id && returning.has(row.visitor_id) && list.findIndex((other) => other.visitor_id === row.visitor_id) === index).map((row) => detailFor(row)),
+    engaged: sessionDetails.filter((session) => session.engaged).flatMap((session) => session.events.slice(0, 1)),
+  };
+
+  return {
+    metrics: {
+      people: canonical.uniqueVisitors,
+      usedTorah: usedVisitors.size,
+      pdfOpens: metricDetails.pdfOpens.length,
+      downloads: canonical.downloadActions,
+      sessions: canonical.sessions,
+      engagedSessions: canonical.engagedSessions,
+      returningReaders: returning.size,
+      signups: keptRows.filter((row) => row.event_name === "signup").length,
+    },
+    raw: { sessions: canonical.rawSessions, visitors: canonical.rawUniqueVisitors },
+    filteredAutomationSessions: canonical.filteredAutomationSessions,
+    details: metricDetails,
+    sessions: sessionDetails,
+    recentActivity: keptRows.slice(-20).reverse().map((row) => detailFor(row)),
+    sources: canonical.sources,
+    devices: canonical.devices,
+    publications: [...publications.values()].map((publication) => ({
+      title: publication.title,
+      impressions: publication.impressions.size,
+      clicks: publication.clicks.size,
+      uniqueReaders: publication.readers.size,
+      pdfOpens: publication.opens,
+      downloadActions: publication.downloads,
+      clickNumerator: publication.clicks.size,
+      clickDenominator: publication.impressions.size,
+      downloadNumerator: publication.downloadPairs.size,
+      downloadDenominator: publication.accessPairs.size,
+      sources: [...publication.sources.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
+    })).sort((a, b) => b.pdfOpens + b.downloadActions - (a.pdfOpens + a.downloadActions)),
+    campaigns: [...campaigns.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
+    locations: [...locations.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions).slice(0, 20),
+    searches: searches.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 50),
+  };
+}
+
+export const adminAnalyticsReport = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; range?: AnalyticsReportRange }) =>
+    z.object({ accessToken: z.string().min(10), range: z.enum(["1h", "today", "collection", "7d"]).optional() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAnalyticsAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const pdfResult = await admin.from("pdfs").select("parsha_key, created_at");
+    if (pdfResult.error) throw new Error(pdfResult.error.message);
+    const windows = buildCollectionWindows((pdfResult.data ?? []) as Array<{ parsha_key: string | null; created_at: string | null }>);
+    const range = data.range ?? "collection";
+    const window = reportWindow(range, windows[0] ?? null);
+    const duration = Date.parse(window.end) - Date.parse(window.start);
+    const priorWindow = { start: new Date(Date.parse(window.start) - duration).toISOString(), end: window.start };
+    const [rows, priorRows] = await Promise.all([
+      fetchEventsBetween(window.start, window.end),
+      fetchEventsBetween(priorWindow.start, priorWindow.end),
+    ]);
+    const [priorVisitors, comparisonPriorVisitors] = await Promise.all([
+      fetchPriorVisitors(visitorIds(rows), window.start),
+      fetchPriorVisitors(visitorIds(priorRows), priorWindow.start),
+    ]);
+    return {
+      range,
+      rangeLabel: window.label,
+      windowStart: window.start,
+      windowEnd: window.end,
+      report: buildAnalyticsReport(rows, priorVisitors),
+      comparison: buildAnalyticsReport(priorRows, comparisonPriorVisitors).metrics,
+    };
+  });
+
 export const adminCanonicalCollectionTraffic = createServerFn({ method: "POST" })
   .inputValidator((input: { accessToken: string; parsha?: string | null }) =>
     z
