@@ -536,3 +536,53 @@ export function startHeartbeat(): () => void {
     flushEvents();
   };
 }
+
+// ---------------------------------------------------------------------------
+// Human signal — one event per session on the first genuine interaction
+// ---------------------------------------------------------------------------
+
+const HUMAN_SIGNAL_STORAGE_KEY = "tftt:fp-human-signal";
+
+/**
+ * Emits `human_signal` at most once per session when a real person interacts
+ * with the page. No fingerprinting: we only look at whether a trusted browser
+ * interaction event happened.
+ */
+export function startHumanSignalWatcher(): () => void {
+  if (typeof window === "undefined") return () => {};
+
+  const events = ["pointerdown", "touchstart", "keydown", "wheel", "scroll"] as const;
+  let done = false;
+
+  const cleanup = () => {
+    for (const name of events) {
+      window.removeEventListener(name, onInteract, true);
+    }
+  };
+
+  function onInteract(event: Event) {
+    if (done) return;
+    // Prefer genuine, user-generated events where the browser tells us.
+    if ("isTrusted" in event && event.isTrusted === false) return;
+    if (isAdminPath(window.location.pathname)) return;
+
+    const { sessionId } = touchSession();
+    if (!sessionId) return;
+    if (lsGet(HUMAN_SIGNAL_STORAGE_KEY) === sessionId) {
+      done = true;
+      cleanup();
+      return;
+    }
+
+    done = true;
+    lsSet(HUMAN_SIGNAL_STORAGE_KEY, sessionId);
+    cleanup();
+    trackFp("human_signal");
+  }
+
+  for (const name of events) {
+    window.addEventListener(name, onInteract, { capture: true, passive: true });
+  }
+
+  return cleanup;
+}
