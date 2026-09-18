@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { adminVisitorActivity } from "@/integrations/supabase/admin-analytics-canonical";
 import { formatUaSummary, parseUserAgent } from "@/lib/ua-parse";
+import { Button } from "@/components/ui/button";
 
 type VisitorActivityData = Awaited<ReturnType<typeof adminVisitorActivity>>;
 type Visitor = VisitorActivityData["visitors"][number];
@@ -39,6 +40,13 @@ function shortId(id: string): string {
   return id.length > 10 ? `${id.slice(0, 8)}…${id.slice(-4)}` : id;
 }
 
+function maskedIp(ip: string | null): string {
+  if (!ip) return NOT_CAPTURED;
+  if (ip.includes(".")) return ip.split(".").map((part, index) => index > 1 ? "•" : part).join(".");
+  const parts = ip.split(":");
+  return `${parts.slice(0, 2).join(":")}:•••`;
+}
+
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded-md border border-border/60 bg-background/40 px-3 py-2">
@@ -74,7 +82,7 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="font-medium text-foreground">{timeLabel(visitor.lastSeenInRange)}</span>
           <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] text-primary">
-            {visitor.likelyReturning ? "Returning" : visitor.likelyNew ? "New" : "Unknown"}
+            {visitor.likelyReturning ? "Likely returning" : visitor.likelyNew ? "Likely new" : "Unclear"}
           </span>
           {visitor.suspectedSessions > 0 && (
             <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[11px] text-destructive">
@@ -109,7 +117,7 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
           <span>{visitor.devices.join(", ")}</span>
           <span>{formatUaSummary(parsed)}</span>
           <span>{visitor.geo.label || "Unknown location"}</span>
-          <span>IP {visitor.latestIp ?? NOT_CAPTURED}</span>
+          <span>IP {maskedIp(visitor.latestIp)}</span>
         </div>
         <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-foreground/80">
           <span>{visitor.sessionsInRange} sessions</span>
@@ -122,7 +130,10 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
 
       {open && (
         <div className="space-y-4 border-t border-border/60 px-3 py-3">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <p className="text-xs text-muted-foreground">Continuity signals are probabilistic and are not proof of identity.</p>
+          <details className="border-t border-border/60 pt-3">
+            <summary className="cursor-pointer text-sm font-semibold text-primary">Technical details</summary>
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Visitor ID" value={<code className="text-xs">{visitor.visitorId}</code>} />
             <Field
               label="First / last activity"
@@ -186,7 +197,7 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
             />
           </div>
 
-          <div>
+          <div className="mt-4">
             <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
               Device fingerprint
             </div>
@@ -300,6 +311,7 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
               </p>
             )}
           </div>
+          </details>
 
           {visitor.suspicionReasons.length > 0 && (
             <div>
@@ -407,7 +419,7 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
   );
 }
 
-export default function VisitorActivitySection({ accessToken }: { accessToken: string | null }) {
+export default function VisitorActivitySection({ accessToken, embedded = false }: { accessToken: string | null; embedded?: boolean }) {
   const [range, setRange] = useState<RangeKey>("24h");
   const [data, setData] = useState<VisitorActivityData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -438,18 +450,18 @@ export default function VisitorActivitySection({ accessToken }: { accessToken: s
 
   const totals = data?.totals;
 
-  return (
-    <section className="parchment-frame">
-      <div className="parchment-panel">
+  const content = (
+    <>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="font-serif text-2xl font-semibold text-primary">Visitor Activity</h2>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => void load(range)}
             disabled={loading}
-            className="rounded-md border border-border px-3 py-1 text-sm text-foreground disabled:opacity-50"
           >
             {loading ? "Loading…" : "Refresh"}
-          </button>
+          </Button>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
           Individual visitor sessions for investigating traffic. Suspected automated sessions are
@@ -458,17 +470,14 @@ export default function VisitorActivitySection({ accessToken }: { accessToken: s
 
         <div className="mt-3 flex flex-wrap gap-1">
           {RANGES.map((r) => (
-            <button
+            <Button
               key={r}
+              size="sm"
+              variant={r === range ? "default" : "ghost"}
               onClick={() => setRange(r)}
-              className={`rounded-md border px-3 py-1 text-sm ${
-                r === range
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground"
-              }`}
             >
               {r}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -501,7 +510,8 @@ export default function VisitorActivitySection({ accessToken }: { accessToken: s
             {data?.visitors.map((v) => <VisitorRow key={v.visitorId} visitor={v} />)}
           </ul>
         )}
-      </div>
-    </section>
+    </>
   );
+  if (embedded) return content;
+  return <section className="parchment-frame"><div className="parchment-panel">{content}</div></section>;
 }

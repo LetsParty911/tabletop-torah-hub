@@ -2,16 +2,19 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { checkIsAdmin } from "@/integrations/supabase/api.functions";
-import DownloadsDashboard from "@/components/DownloadsDashboard";
-import Phase1Funnel from "@/components/Phase1Funnel";
-import Phase2ReturningAnalytics from "@/components/Phase2ReturningAnalytics";
-import TrafficAnalytics from "@/components/TrafficAnalytics";
+import AdminAnalyticsReport from "@/components/admin/AdminAnalyticsReport";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin-analytics")({
   component: AdminAnalyticsPage,
   head: () => ({
     meta: [
       { title: "Site Analytics — Torah for the Table" },
+      { name: "description", content: "Private site analytics report for Torah for the Table administrators." },
+      { property: "og:title", content: "Site Analytics — Torah for the Table" },
+      { property: "og:description", content: "Private site analytics report for Torah for the Table administrators." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -54,12 +57,9 @@ function AdminAnalyticsPage() {
             <p className="mt-3 text-muted-foreground">
               Sign in with Google to view site analytics.
             </p>
-            <button
-              onClick={signInWithGoogle}
-              className="mt-6 inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
+            <Button onClick={signInWithGoogle} className="mt-6">
               Sign in with Google
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -74,9 +74,9 @@ function AdminAnalyticsPage() {
           <p className="mt-3 text-muted-foreground">
             Your account ({session.user.email}) is not an admin.
           </p>
-          <button onClick={signOut} className="mt-6 underline text-primary">
+          <Button onClick={signOut} variant="link" className="mt-6">
             Sign out
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -98,43 +98,14 @@ function AdminAnalyticsPage() {
             <h1 className="font-serif text-3xl md:text-4xl font-bold text-primary">
               Site Analytics
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Canonical first-party analytics is the primary source for audience, conversion,
-              source, device, location, publication, and returning-visitor metrics. Legacy/raw
-              download data is retained only for audit and troubleshooting.
-            </p>
+            <p className="mt-1 text-sm text-muted-foreground">A readable account of who came, what Torah they used, and how they found it.</p>
           </div>
           <Link to="/admin" className="text-sm underline text-primary">
             ← Back to Admin
           </Link>
         </header>
 
-        <section className="parchment-frame">
-          <div className="parchment-panel">
-            <Phase1Funnel accessToken={accessToken ?? ""} />
-          </div>
-        </section>
-
-        <section className="parchment-frame">
-          <div className="parchment-panel">
-            <TrafficAnalytics accessToken={accessToken ?? ""} />
-          </div>
-        </section>
-
-        <section className="parchment-frame">
-          <div className="parchment-panel">
-            <Phase2ReturningAnalytics accessToken={accessToken ?? ""} />
-          </div>
-        </section>
-
-        <details className="parchment-frame">
-          <summary className="parchment-panel cursor-pointer font-serif text-xl font-bold text-primary">
-            Advanced · raw download audit
-          </summary>
-          <div className="parchment-panel border-t border-border/60">
-            <DownloadsDashboard accessToken={accessToken ?? ""} />
-          </div>
-        </details>
+        <main className="parchment-frame"><div className="parchment-panel"><AdminAnalyticsReport accessToken={accessToken} /></div></main>
       </div>
     </div>
   );
