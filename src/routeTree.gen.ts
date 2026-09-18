@@ -34,6 +34,7 @@ import { Route as ManageTableTokenRouteImport } from './routes/manage-table.$tok
 import { Route as ApiTrackViewRouteImport } from './routes/api/track-view'
 import { Route as ApiTrackSearchRouteImport } from './routes/api/track-search'
 import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
+import { Route as ApiPrivacyRegionRouteImport } from './routes/api/privacy-region'
 import { Route as ApiEventsRouteImport } from './routes/api/events'
 import { Route as YomTovSlugYearRouteImport } from './routes/yom-tov.$slug.$year'
 import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
@@ -165,6 +166,11 @@ const ApiTrackDownloadRoute = ApiTrackDownloadRouteImport.update({
   path: '/api/track-download',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPrivacyRegionRoute = ApiPrivacyRegionRouteImport.update({
+  id: '/api/privacy-region',
+  path: '/api/privacy-region',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiEventsRoute = ApiEventsRouteImport.update({
   id: '/api/events',
   path: '/api/events',
@@ -209,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
@@ -241,6 +248,7 @@ export interface FileRoutesByTo {
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
@@ -274,6 +282,7 @@ export interface FileRoutesById {
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
@@ -308,6 +317,7 @@ export interface FileRouteTypes {
     | '/short-vorts'
     | '/sitemap.xml'
     | '/api/events'
+    | '/api/privacy-region'
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
@@ -340,6 +350,7 @@ export interface FileRouteTypes {
     | '/short-vorts'
     | '/sitemap.xml'
     | '/api/events'
+    | '/api/privacy-region'
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
@@ -372,6 +383,7 @@ export interface FileRouteTypes {
     | '/short-vorts'
     | '/sitemap.xml'
     | '/api/events'
+    | '/api/privacy-region'
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
@@ -405,6 +417,7 @@ export interface RootRouteChildren {
   ShortVortsRoute: typeof ShortVortsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiEventsRoute: typeof ApiEventsRoute
+  ApiPrivacyRegionRoute: typeof ApiPrivacyRegionRoute
   ApiTrackDownloadRoute: typeof ApiTrackDownloadRoute
   ApiTrackSearchRoute: typeof ApiTrackSearchRoute
   ApiTrackViewRoute: typeof ApiTrackViewRoute
@@ -595,6 +608,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTrackDownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/privacy-region': {
+      id: '/api/privacy-region'
+      path: '/api/privacy-region'
+      fullPath: '/api/privacy-region'
+      preLoaderRoute: typeof ApiPrivacyRegionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/events': {
       id: '/api/events'
       path: '/api/events'
@@ -664,6 +684,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShortVortsRoute: ShortVortsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiEventsRoute: ApiEventsRoute,
+  ApiPrivacyRegionRoute: ApiPrivacyRegionRoute,
   ApiTrackDownloadRoute: ApiTrackDownloadRoute,
   ApiTrackSearchRoute: ApiTrackSearchRoute,
   ApiTrackViewRoute: ApiTrackViewRoute,
