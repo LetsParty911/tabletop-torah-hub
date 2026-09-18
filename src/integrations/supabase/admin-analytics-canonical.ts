@@ -1,6 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
+import {
+  buildChangeObservations,
+  buildObservations,
+  formatDayLabel,
+  formatWindowLabel,
+  hasComparableBaseline,
+  newYorkDayWindow,
+  priorWeekDayKey,
+  recentCompletedDayKeys,
+  selectCollectionReportWindows,
+} from "@/lib/admin-reports";
 
 type EventRow = {
   event_name: string | null;
@@ -1407,5 +1418,167 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       cap: VISITOR_CAP,
       totals,
       visitors: shaped,
+    };
+  });
+
+/* ------------------------------------------------------------------ *
+ * Deterministic reports (daily + collection). These reuse the canonical
+ * report builder above; no separate metric definitions are introduced.
+ * ------------------------------------------------------------------ */
+
+type BuiltReport = ReturnType<typeof buildAnalyticsReport>;
+
+async function reportForWindow(start: string, end: string): Promise<BuiltReport> {
+  const rows = await fetchEventsBetween(start, end);
+  const priorVisitors = await fetchPriorVisitors(visitorIds(rows), start);
+  return buildAnalyticsReport(rows, priorVisitors);
+}
+
+function downloadsBySource(report: BuiltReport) {
+  const totals = new Map<string, number>();
+  for (const detail of report.details.downloads) {
+    totals.set(detail.source, (totals.get(detail.source) ?? 0) + 1);
+  }
+  const top = [...totals.entries()].sort((a, b) => b[1] - a[1])[0];
+  return {
+    breakdown: [...totals.entries()].map(([label, downloads]) => ({ label, downloads })).sort((a, b) => b.downloads - a.downloads),
+    top: top ? { label: top[0], downloads: top[1] } : null,
+  };
+}
+
+function shapeReport(report: BuiltReport, limit: number) {
+  const searches = report.searches;
+  const failedSearches = searches.filter((search) => !search.ledToContent);
+  const sources = downloadsBySource(report);
+  const topPublication = report.publications[0] ?? null;
+  const observations = buildObservations({
+    people: report.metrics.people,
+    usedTorah: report.metrics.usedTorah,
+    pdfOpens: report.metrics.pdfOpens,
+    downloads: report.metrics.downloads,
+    signups: report.metrics.signups,
+    returningReaders: report.metrics.returningReaders,
+    topPublication: topPublication
+      ? { title: topPublication.title, downloadActions: topPublication.downloadActions, pdfOpens: topPublication.pdfOpens }
+      : null,
+    topSourceDownloads: sources.top,
+    searchesWithoutContent: failedSearches.length,
+    searchesTotal: searches.length,
+    suspectedSessions: report.filteredAutomationSessions,
+  });
+
+  return {
+    metrics: report.metrics,
+    raw: report.raw,
+    suspectedAutomatedSessions: report.filteredAutomationSessions,
+    internalSessions: report.filteredInternalSessions,
+    publications: report.publications.slice(0, limit),
+    sources: report.sources.slice(0, limit),
+    downloadSources: sources.breakdown.slice(0, limit),
+    campaigns: report.campaigns.slice(0, limit),
+    locations: report.locations.slice(0, limit),
+    searches: searches.slice(0, limit * 2),
+    failedSearches: failedSearches.slice(0, limit * 2),
+    lastEventAt: report.recentActivity[0]?.at ?? null,
+    observations,
+  };
+}
+
+function changeLines(current: BuiltReport, previous: BuiltReport | null) {
+  if (!previous || !hasComparableBaseline({ people: previous.metrics.people, sessions: previous.metrics.sessions })) {
+    return [] as string[];
+  }
+  return buildChangeObservations([
+    { label: "People", current: current.metrics.people, previous: previous.metrics.people },
+    { label: "Used Torah", current: current.metrics.usedTorah, previous: previous.metrics.usedTorah },
+    { label: "Download actions", current: current.metrics.downloads, previous: previous.metrics.downloads },
+  ]);
+}
+
+export const adminDailyReport = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; dayKey?: string | null }) =>
+    z.object({ accessToken: z.string().min(10), dayKey: z.string().nullable().optional() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAnalyticsAdmin(data.accessToken);
+    const availableDays = recentCompletedDayKeys(14);
+    const dayKey = data.dayKey && availableDays.includes(data.dayKey) ? data.dayKey : availableDays[0]!;
+    const window = newYorkDayWindow(dayKey);
+    const comparisonDayKey = priorWeekDayKey(dayKey);
+    const comparisonWindow = newYorkDayWindow(comparisonDayKey);
+
+    const [current, comparison] = await Promise.all([
+      reportForWindow(window.start, window.end),
+      reportForWindow(comparisonWindow.start, comparisonWindow.end),
+    ]);
+    const comparable = hasComparableBaseline({
+      people: comparison.metrics.people,
+      sessions: comparison.metrics.sessions,
+    });
+
+    return {
+      kind: "daily" as const,
+      dayKey,
+      availableDays,
+      title: `Daily report — ${formatDayLabel(dayKey)}`,
+      windowLabel: formatWindowLabel(window.start, window.end),
+      windowStart: window.start,
+      windowEnd: window.end,
+      comparisonLabel: `${formatDayLabel(comparisonDayKey)} (same weekday, one week earlier)`,
+      comparable,
+      comparisonMetrics: comparable ? comparison.metrics : null,
+      changes: changeLines(current, comparison),
+      generatedAt: new Date().toISOString(),
+      ...shapeReport(current, 5),
+    };
+  });
+
+export const adminCollectionReport = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; parsha?: string | null }) =>
+    z.object({ accessToken: z.string().min(10), parsha: z.string().nullable().optional() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAnalyticsAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const pdfResult = await admin.from("pdfs").select("parsha_key, created_at");
+    if (pdfResult.error) throw new Error(pdfResult.error.message);
+    const windows = buildCollectionWindows(
+      (pdfResult.data ?? []) as Array<{ parsha_key: string | null; created_at: string | null }>,
+    );
+    const selection = selectCollectionReportWindows(windows, data.parsha ?? null);
+    if (!selection.current) {
+      return {
+        kind: "collection" as const,
+        empty: true as const,
+        parsha: null,
+        available: selection.available,
+        title: "No completed collection yet",
+        generatedAt: new Date().toISOString(),
+      };
+    }
+
+    const current = await reportForWindow(selection.current.start, selection.current.end);
+    const previous = selection.previous
+      ? await reportForWindow(selection.previous.start, selection.previous.end)
+      : null;
+    const comparable = Boolean(
+      previous && hasComparableBaseline({ people: previous.metrics.people, sessions: previous.metrics.sessions }),
+    );
+
+    return {
+      kind: "collection" as const,
+      empty: false as const,
+      parsha: selection.current.parsha,
+      available: selection.available,
+      title: `Collection report — ${selection.current.parsha}`,
+      windowLabel: formatWindowLabel(selection.current.start, selection.current.end),
+      windowStart: selection.current.start,
+      windowEnd: selection.current.end,
+      comparisonLabel: selection.previous ? `Previous collection: ${selection.previous.parsha}` : null,
+      comparable,
+      comparisonMetrics: comparable && previous ? previous.metrics : null,
+      changes: comparable ? changeLines(current, previous) : [],
+      generatedAt: new Date().toISOString(),
+      ...shapeReport(current, 8),
     };
   });
