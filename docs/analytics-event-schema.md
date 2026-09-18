@@ -35,18 +35,19 @@ Admin routes are excluded on both client and ingest server. `/admin`, `/admin/*`
 | `share_click`            | Share action                                                                                            |
 | `signup`                 | Successful weekly-email subscription; email address is not stored in analytics_events                   |
 | `heartbeat`              | Active-time sample while visible and focused                                                            |
+| `human_signal`           | First trusted pointer, keyboard, touch, or scroll interaction in the session                              |
 | `error`                  | Sanitized meaningful site error                                                                         |
 
 A canonical `download` event confirms that the user initiated a download request. Browser telemetry does not reliably prove that the transfer completed, so the dashboards deliberately use **download action** rather than “completed download” language.
 
 ## Stored canonical fields
 
-`event_id`, `event_name`, `occurred_at`, `visitor_id`, `session_id`, `is_new_visitor`, `path`, `landing_path`, `source_path`, `publication_id`, `publication_title`, `publication_series`, `publisher`, `parsha`, `jewish_year`, `device_type`, `referrer_host`, `referrer_url`, `utm_source`, `utm_medium`, `utm_campaign`, `source_group`, `country`, `region`, `city`, `postal_code`, `metadata`.
+`event_id`, `event_name`, `occurred_at`, `visitor_id`, `session_id`, `is_new_visitor`, `path`, `landing_path`, `source_path`, `publication_id`, `publication_title`, `publication_series`, `publisher`, `parsha`, `jewish_year`, `device_type`, `referrer_host`, `referrer_url`, `utm_source`, `utm_medium`, `utm_campaign`, `source_group`, `country`, `region`, `city`, `postal_code`, `ip_address`, `user_agent`, `accept_language`, low-entropy browser client hints, edge-provided ASN/network organization, and `metadata`.
 
 Privacy rules:
 
-- No raw IP address is stored.
-- No raw user-agent string is stored. Only the coarse derived `device_type` bucket is persisted.
+- Accepted events store the server-observed IP address and raw User-Agent for traffic analysis, abuse detection, and diagnostics. These values are visible only to administrators.
+- Enhanced analytics may store a pseudonymous fingerprint hash and hashed rendering signals after the applicable region and consent checks. Raw canvas images and raw font lists are not retained. This evidence is probabilistic continuity evidence, never identity proof.
 - No subscriber email address is stored in `analytics_events`.
 - Canonical event writes use an `event_id` uniqueness key so a retried beacon is deduplicated.
 - Low-confidence sessions are retained; they are identified, not silently discarded.
@@ -76,7 +77,11 @@ One distinct canonical `visitor_id` active in the reporting interval.
 
 ### Engaged session
 
-A session with at least one positive interaction, a heartbeat, two or more page views, or at least 10 seconds of tracked active time. Low-confidence sessions remain included in total-session denominators.
+A session with a meaningful intent event (`download`, `pdf_open`, `publication_click`, `filter_change`, `search`, `share_click`, `signup`, or `human_signal`) or at least two page views. A heartbeat alone is not engagement.
+
+### Used Torah
+
+A separate owner-facing measure of distinct visitors with a session containing a `pdf_open`, `download`, `share_click`, or `signup`. It does not redefine historical engaged sessions. Search, filter, and publication-click events alone remain engagement signals but do not qualify as Used Torah without a later qualifying action.
 
 ### PDF-accessing session
 
@@ -150,9 +155,9 @@ Audience and download activity are canonical and show:
 
 Subscriber and contact-message counts still come from their authoritative application tables. The legacy collection-to-collection raw download comparison is retained only as an explicitly labeled supplemental/audit statistic.
 
-## Funnel analytics (`/admin-analytics`)
+## Readable report (`/admin-analytics`)
 
-The funnel defaults to **All collections** and reports:
+The primary report offers **Last Hour**, **Today** (America/New_York), **This Collection**, and **7 Days**. This Collection uses the latest upload-derived collection window. It reports:
 
 - unique visitors
 - sessions
@@ -164,11 +169,15 @@ The funnel defaults to **All collections** and reports:
 - raw download actions
 - session download conversion
 - low-confidence sessions
-- average tracked active time
+- Used Torah
 
 By-source and by-device download rates use **downloading sessions / sessions**. They do not divide downloaded-PDF counts by sessions.
 
 Publication performance uses the CTR and access-to-download definitions above.
+
+Every headline number opens its contributing sessions or events. Percentages are withheld when the denominator is below 10; the interface shows numerator and denominator counts instead. Quiet periods show a neutral insufficient-activity state rather than a trend claim.
+
+Acquisition source, explicit UTM campaign attribution, and approximate network geography are separate dimensions. The report never infers a campaign from a location.
 
 ## Returning behavior (`/admin-analytics`)
 
@@ -204,4 +213,8 @@ GTM/dataLayer events may still exist for external analytics and marketing measur
 
 ### Approximate location
 
-Canonical events may store hosting-provider, network-derived `country`, `region`, `city`, and `postal_code`. These values are approximate and can be wrong because of mobile-carrier routing, VPNs, proxies, or ISP topology. The canonical analytics table does **not** retain the visitor's raw IP address or latitude/longitude. Location rankings are aggregated at the session level rather than counting every event as a separate location observation. Historical canonical rows recorded before the richer-location enhancement may have only country/region or may have no city/postal value.
+Canonical events may store hosting-provider, network-derived `country`, `region`, `city`, and `postal_code`. These values are approximate and can be wrong because of mobile-carrier routing, VPNs, proxies, or ISP topology. The canonical analytics table retains the server-observed IP address for the limited purposes described above, but does not retain latitude/longitude. Location rankings are aggregated at the session level rather than counting every event as a separate location observation. Historical canonical rows recorded before the richer-location enhancement may have only country/region or may have no city/postal value.
+
+## Canonical automation handling
+
+Obvious crawler and preview User-Agents are rejected before ingest. Accepted raw rows are preserved. Headline reporting excludes only sessions matching the canonical high-confidence burst or impossible-heartbeat rules, plus the narrowly time-boxed September 18, 2026 incident rule. Any session with meaningful intent or `human_signal` is protected from the general automation classifier, preserving legitimate PDF opens and download actions. Visitor Activity keeps suspected sessions visible and labels the reason.

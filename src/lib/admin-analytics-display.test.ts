@@ -5,6 +5,7 @@ import {
   normalizeTrackingValue,
   shouldShowRate,
 } from "./admin-analytics-display";
+import { usedTorahQualification } from "@/integrations/supabase/admin-analytics-canonical";
 
 describe("admin analytics presentation rules", () => {
   it("uses counts for small samples", () => {
@@ -30,5 +31,11 @@ describe("admin analytics presentation rules", () => {
     expect(
       buildTrackingUrl({ baseUrl: "not a url", source: "a", medium: "b", campaign: "c" }),
     ).toBeNull();
+  });
+
+  it("keeps Used Torah separate from ordinary engagement", () => {
+    expect(usedTorahQualification(["page_view", "publication_click"])).toBeNull();
+    expect(usedTorahQualification(["page_view", "pdf_open"])).toBe("Opened a PDF");
+    expect(usedTorahQualification(["share_click", "download"])).toBe("Requested a download");
   });
 });
