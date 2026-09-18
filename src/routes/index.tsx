@@ -247,6 +247,10 @@ function Index() {
   const easternToday = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
   const showYomKippurNotice = easternToday >= "2026-09-15" && easternToday <= "2026-09-20";
   const isHaazinuYomKippurWeek = isFallback && showYomKippurNotice;
+  const combinedOverrideSource = `${currentParshaKey ?? ""} ${currentLabel}`.toLowerCase();
+  const isCombinedSpecialWeek =
+    /ha'?azinu/.test(combinedOverrideSource) && /yom kippur/.test(combinedOverrideSource);
+  const combinedWeekHeadline = "Shabbos Shuva · Parshas Haazinu · Yom Kippur";
   const shabbatShuvaLabel =
     isFallback && normalizedCurrentKey === "ha'azinu" && showYomKippurNotice
       ? `Shabbat Shuva / ${currentLabel}`
@@ -408,25 +412,31 @@ function Index() {
               Weekly Divrei Torah
             </p>
             <h1 className="mt-2 font-serif text-[2rem] leading-[1.08] sm:text-4xl md:text-5xl font-bold tracking-tight text-primary">
-              {isFallback
-                ? shabbatShuvaLabel
-                : postShabbos
-                  ? `Divrei Torah for ${displayedLabel}`
-                  : `Free Divrei Torah for Your ${isYomTovCollection ? "Yom Tov" : "Shabbos"} Table`}
+              {isCombinedSpecialWeek
+                ? combinedWeekHeadline
+                : isFallback
+                  ? shabbatShuvaLabel
+                  : postShabbos
+                    ? `Divrei Torah for ${displayedLabel}`
+                    : `Free Divrei Torah for Your ${isYomTovCollection ? "Yom Tov" : "Shabbos"} Table`}
             </h1>
             {heroDateLine && (
               <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-sm">
                 {heroDateLine}
               </p>
             )}
-            {isFallback && !isHaazinuYomKippurWeek && (
+            {isFallback && !isHaazinuYomKippurWeek && !isCombinedSpecialWeek && (
               <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-accent/50 bg-accent/10 px-4 py-1.5 font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
                 <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
                 Collection in progress
               </p>
             )}
             <p className="mx-auto mt-3 max-w-2xl font-serif text-base leading-relaxed text-primary sm:text-lg md:text-xl">
-              {isFallback ? (
+              {isCombinedSpecialWeek ? (
+                <>
+                  <span className="font-semibold">{resources.length} Divrei Torah</span> available this week
+                </>
+              ) : isFallback ? (
                 isHaazinuYomKippurWeek ? (
                   <>
                     <span className="font-semibold">
@@ -450,7 +460,24 @@ function Index() {
               )}
             </p>
 
-            {isFallback ? (
+            {isCombinedSpecialWeek ? (
+              <div className="mt-5 flex justify-center">
+                <a
+                  href="#weekly-email-signup"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const el = document.getElementById("weekly-email-signup");
+                    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    el?.querySelector<HTMLInputElement>('input[type="email"]')?.focus({
+                      preventScroll: true,
+                    });
+                  }}
+                  className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
+                >
+                  Email me this week&apos;s collection
+                </a>
+              </div>
+            ) : isFallback ? (
               <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <a
                   href="#weekly-email-signup"
@@ -493,7 +520,7 @@ function Index() {
                 </a>
               </div>
             )}
-            {resources.length > 0 && (
+            {resources.length > 0 && !isCombinedSpecialWeek && (
               <>
                 {!isFallback && (
                   <p className="mt-3 text-center font-sans text-sm text-muted-foreground sm:text-base">
@@ -519,7 +546,7 @@ function Index() {
           }
         />
 
-        {showYomKippurNotice && (
+        {showYomKippurNotice && !isCombinedSpecialWeek && (
           <section className="mx-auto max-w-md rounded-xl border border-accent/40 bg-card/40 px-4 py-4 text-center sm:px-5">
             <h2 className="font-serif text-xl font-bold text-primary sm:text-2xl">Yom Kippur</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
@@ -528,7 +555,7 @@ function Index() {
           </section>
         )}
 
-        {isFallback && (
+        {isFallback && !isCombinedSpecialWeek && (
           <div className="mx-auto max-w-2xl rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-center">
             <p className="font-serif text-sm text-primary sm:text-base">
               {isHaazinuYomKippurWeek ? (
