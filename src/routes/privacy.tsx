@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/SiteFooter";
+import { EnhancedAnalyticsChoiceReset } from "@/components/EnhancedAnalyticsChoiceReset";
 
 const PRIVACY_EMAIL = "hello@torahforthetable.com";
 const ENTITY_NAME = "Torah For The Table";
