@@ -206,14 +206,14 @@
 }
 
 @media print {
-  body * {
+  .admin-analytics-page * {
     visibility: hidden;
   }
-  .report-print-area,
-  .report-print-area * {
+  .admin-analytics-page .report-print-area,
+  .admin-analytics-page .report-print-area * {
     visibility: visible;
   }
-  .report-print-area {
+  .admin-analytics-page .report-print-area {
     position: absolute;
     inset: 0 auto auto 0;
     width: 100%;
