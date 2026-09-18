@@ -21,6 +21,7 @@ export type FpEventName =
   | "share_click"
   | "signup"
   | "heartbeat"
+  | "human_signal"
   | "error";
 
 export type PublicationContext = {
