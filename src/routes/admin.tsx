@@ -11,6 +11,7 @@ import WeeklyChecklistSection from "@/components/admin/WeeklyChecklistSection";
 import ManageChecklistSourcesSection from "@/components/admin/ManageChecklistSourcesSection";
 import PdfListSection from "@/components/admin/PdfListSection";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import VisitorActivitySection from "@/components/admin/VisitorActivitySection";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import {
