@@ -334,6 +334,18 @@ function Index() {
     resource: resources.find((r) => (r.featured_slot ?? "").trim().toLowerCase() === slot.key),
   })).filter((p) => !!p.resource);
 
+  const myTableItem = (r: Resource) => ({
+    id: r.id,
+    title: displayTitle(r),
+    publication: r.publication,
+    publisher: r.publisher,
+    parsha: (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
+    audience: normalizeAudience(r.audience, r.title) ?? r.audience,
+    formatType: formatTypeLabel(r.format_type) ?? formatTypeLabel(r.content_type),
+    pageCount: r.page_count,
+    description: r.summary_quick || r.description || r.subtitle,
+  });
+
   const pdfParams = (r: Resource) => ({
     file_id: r.id,
     file_title: r.title,
@@ -585,7 +597,7 @@ function Index() {
                               </Link>
                             </h3>
                             {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
-                            {r.subtitle && <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-3">{standardizeCopy(r.subtitle)}</p>}
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-3">{standardizeCopy(r.subtitle || chooseReason(r))}</p>
                             {pageCountLabel(r) && (
                               <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                 {pageCountLabel(r)}
@@ -612,13 +624,18 @@ function Index() {
                                 }}
                                 className="w-full px-3 py-2.5 lg:py-2"
                               />
-                              <div className="mt-2 flex justify-center">
-                                <SharePublicationButton
-                                  pdfId={r.id}
-                                  title={r.title}
-                                  parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
-                                />
-                              </div>
+                               <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                                 <SaveToMyTableButton
+                                   item={myTableItem(r)}
+                                   size="sm"
+                                   analyticsContext={{ surface: "featured" }}
+                                 />
+                                 <SharePublicationButton
+                                   pdfId={r.id}
+                                   title={r.title}
+                                   parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
+                                 />
+                               </div>
                             </div>
                           </PublicationCardTracker>
                         );
@@ -869,7 +886,12 @@ function Index() {
                           }}
                           className="w-full px-3 py-2.5 lg:py-2"
                         />
-                        <div className="mt-2 flex justify-center">
+                        <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                          <SaveToMyTableButton
+                            item={myTableItem(r)}
+                            size="sm"
+                            analyticsContext={{ surface: "collection" }}
+                          />
                           <SharePublicationButton
                             pdfId={r.id}
                             title={r.title}
