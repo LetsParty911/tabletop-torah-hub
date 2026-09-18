@@ -112,7 +112,10 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
                 onClick={() => {
                   const next = active ? null : chooser.key;
                   setSelected(next);
-                  if (next) trackFp("chooser_select", { metadata: { chooser: next, label: chooser.label } });
+                  if (next) {
+                    pendingScrollRef.current = true;
+                    trackFp("chooser_select", { metadata: { chooser: next, label: chooser.label } });
+                  }
                 }}
                 className={`min-w-0 rounded-xl border px-4 py-3 text-left transition-colors ${
                   active
