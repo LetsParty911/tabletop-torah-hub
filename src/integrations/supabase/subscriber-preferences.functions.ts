@@ -174,12 +174,15 @@ export const requestSubscriberPreferenceLink = createServerFn({ method: "POST" }
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          from: fromAddress,
+          from: `Torah For The Table <${fromAddress}>`,
           to: email,
           subject,
           html,
           text,
-          headers: { "List-Unsubscribe": `<${unsubscribeUrl}>` },
+          headers: {
+            "List-Unsubscribe": `<${SITE_URL}/api/unsubscribe/${token}>`,
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+          },
         }),
       });
 
