@@ -993,11 +993,14 @@ async function sendWelcomeEmailSafe(
 </body></html>`;
 
   const headers: Record<string, string> = {};
-  if (unsubscribeUrl) headers["List-Unsubscribe"] = `<${unsubscribeUrl}>`;
+  if (unsubscribeToken) {
+    headers["List-Unsubscribe"] = `<${SITE_URL}/api/unsubscribe/${unsubscribeToken}>`;
+    headers["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
+  }
 
   try {
     const resendPayload = {
-      from: configuredFromAddress,
+      from: `Torah For The Table <${configuredFromAddress}>`,
       to: email,
       subject,
       html,
@@ -2588,7 +2591,7 @@ export const adminSendWeeklyEmailTestToSelf = createServerFn({ method: "POST" })
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          from: fromAddress,
+          from: `Torah For The Table <${fromAddress}>`,
           to: email,
           subject: `[TEST] ${content.subject}`,
           html: emailHtml({
@@ -2710,7 +2713,7 @@ export const adminSendWeeklyEmail = createServerFn({ method: "POST" })
     const buildEmailPayload = (r: { email: string; unsubscribe_token: string }) => {
       const unsubscribeUrl = `${SITE_URL}/unsubscribe/${r.unsubscribe_token}`;
       return {
-        from: fromAddress,
+        from: `Torah For The Table <${fromAddress}>`,
         to: r.email,
         subject: content.subject,
         html: emailHtml({
@@ -2725,7 +2728,10 @@ export const adminSendWeeklyEmail = createServerFn({ method: "POST" })
           resources: content.resources,
           unsubscribeUrl,
         }),
-        headers: { "List-Unsubscribe": `<${unsubscribeUrl}>` },
+        headers: {
+          "List-Unsubscribe": `<${SITE_URL}/api/unsubscribe/${r.unsubscribe_token}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
       };
     };
 
