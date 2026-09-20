@@ -133,7 +133,7 @@ async function loadCurrentWeek(): Promise<LoaderData> {
   return {
     label,
     parshaKey,
-    resources,
+    resources: initialResources,
     isFallback,
     fallbackParshaLabel,
     fallbackParshaKey,
@@ -272,6 +272,27 @@ function Index() {
   const upcomingParsha = isFallback
     ? (currentParshaKey ?? nextParshaAfter(displayedParshaKey) ?? upcomingAfterYomTovKey)
     : (nextParshaAfter(displayedParshaKey) ?? upcomingAfterYomTovKey);
+
+  // Keep the current collection fresh after hydration. The homepage is time-sensitive,
+  // and a platform/CDN can occasionally serve older SSR HTML even after the database
+  // has newer published PDFs. A client-side server-function refresh ensures readers
+  // see the current published collection without requiring a hard refresh.
+  const [resources, setResources] = useState<Resource[]>(initialResources);
+  useEffect(() => {
+    let cancelled = false;
+    const refreshCurrentCollection = async () => {
+      try {
+        const latest = await listHomepageWeek({ data: { parshaKey: currentParshaKey } });
+        if (!cancelled) setResources(latest.resources as Resource[]);
+      } catch (error) {
+        console.error("Failed to refresh current collection", error);
+      }
+    };
+    void refreshCurrentCollection();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentParshaKey]);
 
   const [postShabbos, setPostShabbos] = useState(false);
   useEffect(() => {
