@@ -108,7 +108,7 @@ function MyTablePage() {
             </div>
             <h1 className="mt-3 font-serif text-3xl font-bold text-primary sm:text-4xl">My Table</h1>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Save Divrei Torah as you browse, then choose what actually belongs in tonight's Table Pack.
+              Save Divrei Torah as you browse, then choose what actually belongs in My Pack.
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
               Saved on this device only. No account is required.
