@@ -180,7 +180,7 @@ function MyTablePage() {
 
               {packItems.length === 0 ? (
                 <p className="mt-4 rounded-xl border border-dashed border-accent/35 px-4 py-4 text-sm text-muted-foreground">
-                  Check <strong>Tonight's pack</strong> on any saved item below to build your print list.
+                  Check <strong>My pack</strong> on any saved item below to build your print list.
                 </p>
               ) : (
                 <div className="mt-5">
