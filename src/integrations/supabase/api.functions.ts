@@ -2624,6 +2624,103 @@ export const adminSendWeeklyEmailTestToSelf = createServerFn({ method: "POST" })
 
 
 
+
+// ---------- Admin: send ONE deliverability test email to a designated test subscriber ----------
+// Never touches weekly_email_sends and is restricted to subscribers explicitly tagged
+// as admin-deliverability-test.
+export const adminSendWeeklyEmailTestToAddress = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string; email: string }) =>
+    z.object({
+      accessToken: z.string().min(10),
+      email: z.string().trim().email().max(254),
+    }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const email = data.email.trim().toLowerCase();
+
+    const { data: testRecipient, error: recipientErr } = await admin
+      .from("subscribers")
+      .select("email, unsubscribe_token, source, active")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (
+      recipientErr ||
+      !testRecipient ||
+      !testRecipient.active ||
+      testRecipient.source !== "admin-deliverability-test"
+    ) {
+      return { ok: false as const, error: "That address is not an approved deliverability test recipient." };
+    }
+
+    const content = await getWeeklyEmailContentInternal();
+    if (!content.parshaLabel) {
+      return { ok: false as const, error: "Could not determine the current week." };
+    }
+    if (content.resources.length === 0) {
+      return { ok: false as const, error: "No published PDFs for this week yet." };
+    }
+
+    const apiKey = process.env.RESEND_API_KEY;
+    const rawFromAddress = process.env.EMAIL_FROM_ADDRESS;
+    const fromAddress = rawFromAddress ? rawFromAddress.trim().toLowerCase() : rawFromAddress;
+    if (!apiKey || !fromAddress) {
+      return {
+        ok: false as const,
+        error: "Email is not configured (missing RESEND_API_KEY / EMAIL_FROM_ADDRESS).",
+      };
+    }
+
+    const unsubscribeUrl = `${SITE_URL}/unsubscribe/${testRecipient.unsubscribe_token}`;
+    const oneClickUrl = `${SITE_URL}/api/unsubscribe/${testRecipient.unsubscribe_token}`;
+
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          from: `Torah For The Table <${fromAddress}>`,
+          to: email,
+          subject: `[TEST] ${content.subject}`,
+          html: emailHtml({
+            parshaLabel: content.parshaLabel,
+            intro: content.intro,
+            resources: content.resources,
+            unsubscribeUrl,
+          }),
+          text: emailText({
+            parshaLabel: content.parshaLabel,
+            intro: content.intro,
+            resources: content.resources,
+            unsubscribeUrl,
+          }),
+          headers: {
+            "List-Unsubscribe": `<${oneClickUrl}>`,
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+          },
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        return { ok: false as const, error: `Resend ${res.status}: ${errText.slice(0, 300)}` };
+      }
+
+      const json = (await res.json().catch(() => null)) as { id?: string } | null;
+      return { ok: true as const, to: email, messageId: json?.id ?? null };
+    } catch (e) {
+      return {
+        ok: false as const,
+        error: e instanceof Error ? e.message : "Test send failed.",
+      };
+    }
+  });
+
 // ---------- Admin: list weekly send history ----------
 export const adminListWeeklyEmailSends = createServerFn({ method: "POST" })
   .inputValidator((input: { accessToken: string }) =>
