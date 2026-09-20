@@ -930,11 +930,6 @@ function Index() {
             </>
             )}
 
-
-            <p className="mt-7 mx-auto max-w-2xl px-2 text-center text-xs sm:text-sm text-muted-foreground/80 leading-relaxed">
-              Torah For The Table is a 501(c)(3) nonprofit organization providing free, carefully selected Torah resources for children, families, and adults. Each week, we make meaningful Divrei Torah, Parsha questions, and original educational content easy to find, print, and share at the Shabbos table.{" "}
-              <Link to="/about" className="text-accent hover:text-primary underline">Our mission and programs</Link>
-            </p>
           </div>
         </section>
 
