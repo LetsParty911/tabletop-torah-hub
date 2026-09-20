@@ -231,7 +231,7 @@ function Index() {
   const {
     label: currentLabel,
     parshaKey: currentParshaKey,
-    resources,
+    resources: initialResources,
     isFallback,
     fallbackParshaLabel,
     fallbackParshaKey,
