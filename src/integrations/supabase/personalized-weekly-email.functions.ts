@@ -521,12 +521,15 @@ export const adminSendPersonalizedWeeklyEmail = createServerFn({ method: "POST" 
       const unsubscribeUrl = `${SITE_URL}/unsubscribe/${r.unsubscribe_token}`;
       const manageUrl = `${SITE_URL}/manage-table/${r.unsubscribe_token}`;
       return {
-        from: fromAddress,
+        from: `Torah For The Table <${fromAddress}>`,
         to: r.email,
         subject,
         html: emailHtml({ parshaLabel, intro, resources: selected, manageUrl, unsubscribeUrl }),
         text: emailText({ parshaLabel, intro, resources: selected, manageUrl, unsubscribeUrl }),
-        headers: { "List-Unsubscribe": `<${unsubscribeUrl}>` },
+        headers: {
+          "List-Unsubscribe": `<${SITE_URL}/api/unsubscribe/${r.unsubscribe_token}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
       };
     };
 
