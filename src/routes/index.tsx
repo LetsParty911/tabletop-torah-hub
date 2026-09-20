@@ -485,7 +485,7 @@ function Index() {
                   }}
                   className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
                 >
-                  See this week&apos;s PDFs
+                  {isCurrentYomKippur ? "Explore Yom Kippur selections" : "See this week&apos;s PDFs"}
                 </a>
               </div>
             )}
@@ -524,7 +524,11 @@ function Index() {
         )}
 
         <div className="mx-auto max-w-2xl rounded-xl border border-accent/40 bg-card/40 px-4 py-4 sm:px-5">
-          <WeeklyEmailSignup sourceId="homepage" variant="compact" ctaLabel="Get the new Shabbos collection every Thursday" />
+          <WeeklyEmailSignup
+            sourceId="homepage"
+            variant="compact"
+            ctaLabel={isCurrentYomKippur ? "Get Yom Kippur updates" : "Get the new Shabbos collection every Thursday"}
+          />
         </div>
 
         <section id="this-weeks-collection" className="scroll-mt-8">
