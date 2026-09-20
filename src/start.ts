@@ -54,8 +54,17 @@ const cacheControl = createMiddleware().server(async ({ next, request }) => {
       return result;
     }
 
-    // HTML documents: no shared/edge cache retention (we have no way to purge
-    // the platform edge), and the browser must revalidate on every visit.
+    // The homepage is driven by the current live collection. Never retain its
+    // SSR response in a browser or shared edge cache after publication data changes.
+    if (path === "/" && contentType.includes("text/html")) {
+      response.headers.set("Cache-Control", "private, no-store, max-age=0");
+      response.headers.set("Pragma", "no-cache");
+      response.headers.set("Expires", "0");
+      return result;
+    }
+
+    // Other HTML documents: no shared/edge cache retention (we have no way to
+    // purge the platform edge), and the browser must revalidate on every visit.
     if (contentType.includes("text/html")) {
       response.headers.set(
         "Cache-Control",
