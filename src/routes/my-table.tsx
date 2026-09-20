@@ -143,7 +143,7 @@ function MyTablePage() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent-readable">Ready for tonight</p>
-                  <h2 className="mt-1 font-serif text-2xl font-bold text-primary">Tonight's Table Pack</h2>
+                  <h2 className="mt-1 font-serif text-2xl font-bold text-primary">My Pack</h2>
                   <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                     Choose only what you actually plan to print. We keep each publisher's PDF unchanged and give you one compact checklist to work through.
                   </p>
