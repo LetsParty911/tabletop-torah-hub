@@ -146,21 +146,27 @@ async function fetchCurrentShabbosDate(): Promise<string | null> {
 }
 
 
-// An override is "for the current week" if it was last updated on or after
-// the Sunday before the upcoming Shabbos (i.e. within the same Hebcal week).
+// An override is "for the current week" if its New York calendar date is on or
+// after the Sunday before the upcoming Shabbos and no later than that Shabbos.
 // If the override is older than that, it's considered stale and ignored so
 // Hebcal automatically takes over.
 function isOverrideCurrent(updatedAt: string | null, shabbosDate: string | null): boolean {
   if (!updatedAt || !shabbosDate) return false;
-  // Window start: Sunday on/before shabbosDate. Shabbos is Saturday, so the
-  // Sunday that opens the week is shabbosDate - 6 days (UTC math is fine,
-  // we only compare calendar dates).
+  const updated = new Date(updatedAt);
+  if (Number.isNaN(updated.getTime())) return false;
+
+  // Compare calendar dates in the site's local timezone. A Saturday-evening
+  // edit can already be Sunday in UTC and must still belong to that Shabbos.
+  const updatedLocalDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(updated);
   const shabbos = new Date(`${shabbosDate}T00:00:00Z`);
   const windowStart = new Date(shabbos.getTime() - 6 * 24 * 60 * 60 * 1000);
-  // Window end: end of Shabbos day.
-  const windowEnd = new Date(shabbos.getTime() + 24 * 60 * 60 * 1000 - 1);
-  const updated = new Date(updatedAt);
-  return updated >= windowStart && updated <= windowEnd;
+  const windowStartDate = windowStart.toISOString().slice(0, 10);
+  return updatedLocalDate >= windowStartDate && updatedLocalDate <= shabbosDate;
 }
 
 // Read the parsha override only if it is still active for the current week.

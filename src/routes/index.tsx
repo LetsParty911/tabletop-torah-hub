@@ -428,7 +428,7 @@ function Index() {
             <p className="mx-auto mt-3 max-w-2xl font-serif text-base leading-relaxed text-primary sm:text-lg md:text-xl">
               {isCurrentYomKippur ? (
                 <>
-                  <span className="block font-semibold">Yom Kippur Divrei Torah &amp; Preparation</span>
+                  <span className="block font-semibold">Yom Kippur Divrei Torah and preparation.</span>
                   <span className="mt-1 block">Explore this week&apos;s Yom Kippur selections.</span>
                 </>
               ) : isFallback ? (
@@ -535,7 +535,7 @@ function Index() {
           <div className="px-1 sm:px-2">
             <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
               {isCurrentYomKippur
-                ? "Yom Kippur Divrei Torah & Preparation"
+                ? "Yom Kippur Divrei Torah and preparation"
                 : isFallback
                   ? `${displayedLabel} Collection — Still Available`
                   : "This Week's Collection"}
