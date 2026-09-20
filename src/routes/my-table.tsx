@@ -108,7 +108,7 @@ function MyTablePage() {
             </div>
             <h1 className="mt-3 font-serif text-3xl font-bold text-primary sm:text-4xl">My Table</h1>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Save Divrei Torah as you browse, then choose what actually belongs in tonight's Table Pack.
+              Save Divrei Torah as you browse, then choose what actually belongs in My Pack.
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
               Saved on this device only. No account is required.
@@ -143,7 +143,7 @@ function MyTablePage() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent-readable">Ready for tonight</p>
-                  <h2 className="mt-1 font-serif text-2xl font-bold text-primary">Tonight's Table Pack</h2>
+                  <h2 className="mt-1 font-serif text-2xl font-bold text-primary">My Pack</h2>
                   <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                     Choose only what you actually plan to print. We keep each publisher's PDF unchanged and give you one compact checklist to work through.
                   </p>
@@ -180,7 +180,7 @@ function MyTablePage() {
 
               {packItems.length === 0 ? (
                 <p className="mt-4 rounded-xl border border-dashed border-accent/35 px-4 py-4 text-sm text-muted-foreground">
-                  Check <strong>Tonight's pack</strong> on any saved item below to build your print list.
+                  Check <strong>My pack</strong> on any saved item below to build your print list.
                 </p>
               ) : (
                 <div className="mt-5">
@@ -248,7 +248,7 @@ function MyTablePage() {
                                 onChange={() => toggleTablePackItem(item.id)}
                                 className="h-4 w-4 rounded border-accent/50 accent-[hsl(var(--primary))]"
                               />
-                              Tonight's pack
+                              My pack
                             </label>
                             <h3 className="font-serif text-lg font-bold leading-snug text-primary">
                               <Link to="/view/$id" params={{ id: item.id }} className="hover:text-accent hover:underline">
