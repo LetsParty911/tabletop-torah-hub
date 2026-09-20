@@ -167,7 +167,7 @@ export const requestSubscriberPreferenceLink = createServerFn({ method: "POST" }
     const html = `<!doctype html><html><body style="margin:0;padding:0;background:#ffffff;font-family:Georgia,'Times New Roman',serif;color:#2c2418;"><div style="max-width:560px;margin:0 auto;padding:32px 24px;line-height:1.55;"><h1 style="font-size:22px;margin:0 0 16px;color:#2c2418;">Manage My Table</h1><p style="margin:0 0 16px;">Use your private link to choose the kinds of Divrei Torah you want in your weekly Torah for the Table email.</p><p style="margin:0 0 22px;"><a href="${manageUrl}" style="display:inline-block;background:#1A365D;color:#ffffff;text-decoration:none;padding:11px 18px;border-radius:999px;font-weight:600;">Manage My Table</a></p><p style="font-size:12px;color:#6b6358;margin:0;">This link is private to your subscription. You can also <a href="${unsubscribeUrl}" style="color:#5a3a1f;">unsubscribe</a> at any time.</p></div></body></html>`;
 
     try {
-      await fetch("https://api.resend.com/emails", {
+      const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -182,6 +182,15 @@ export const requestSubscriberPreferenceLink = createServerFn({ method: "POST" }
           headers: { "List-Unsubscribe": `<${unsubscribeUrl}>` },
         }),
       });
+
+      if (!response.ok) {
+        const errorBody = await response.text().catch(() => "");
+        console.error(
+          "requestSubscriberPreferenceLink Resend error",
+          response.status,
+          errorBody,
+        );
+      }
     } catch (error) {
       console.error("requestSubscriberPreferenceLink send error", error);
     }
