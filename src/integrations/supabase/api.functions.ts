@@ -387,6 +387,19 @@ async function resolveDisplayedCollection(
         seen.add(id);
         return true;
       });
+      // TEMPORARY compatibility fallback: a production data-source mismatch
+      // left 12 Yom Kippur records tagged with the previous parsha key.
+      // Only applies when the current homepage key is Yom Kippur.
+      if (wanted.has("yom kippur")) {
+        for (const r of allRows as any[]) {
+          const id = String(r.id);
+          if (seen.has(id)) continue;
+          if (!YOM_KIPPUR_COMPAT_IDS.has(id)) continue;
+          if (latestYear != null && r.jewish_year !== latestYear) continue;
+          seen.add(id);
+          groupRows.push(r);
+        }
+      }
       return {
         comparableKey: liveComparableKeys[0] ?? null,
         parshaKey: (groupRows[0]?.parsha_key as string) ?? null,
