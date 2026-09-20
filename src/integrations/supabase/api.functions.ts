@@ -350,6 +350,24 @@ async function buildResources(
   );
 }
 
+// TEMPORARY: IDs of Yom Kippur publications still tagged under the previous
+// parsha key in the production data source. Used only for the Yom Kippur
+// current-week collection; remove once the source data is corrected.
+const YOM_KIPPUR_COMPAT_IDS = new Set<string>([
+  "8af1846a-abd8-43ad-8af1-b031d2c08eb6",
+  "f83f3e36-73bb-4c56-b3ce-a6bc16000061",
+  "ff76b563-6a07-4b48-ab2b-5ea0497233f2",
+  "fcfc91ac-1380-44da-91c6-c884d47be089",
+  "5831ccbb-d054-4748-9a83-578290dd230a",
+  "89bdb29d-05fc-4dda-b36f-b3227c500c60",
+  "5e2ad02c-72f3-4229-bc9d-438e553c40ca",
+  "e8466a10-8681-4a39-a80d-68011061149a",
+  "04227a75-fda7-4179-b4f1-57acb91b8b1d",
+  "26f8ee23-4470-4f4a-8cc1-658dab2e44bf",
+  "791a4ae0-5090-48da-afe6-bddb6c5510c7",
+  "6170d735-449d-4d86-8e7d-3aaa4b708d01",
+]);
+
 // Determines which (parsha_key, jewish_year) collection the homepage displays:
 // live parsha if it has published PDFs, otherwise the most recent published
 // (parsha_key, jewish_year) group (fallback).
