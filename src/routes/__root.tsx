@@ -14,7 +14,6 @@ import {
 } from "@/lib/first-party-analytics";
 
 import { SiteLogoHorizontal } from "@/components/SiteLogo";
-import { EnhancedAnalyticsConsent } from "@/components/EnhancedAnalyticsConsent";
 import { getSafePostLoginRedirect, POST_LOGIN_REDIRECT_KEY } from "@/lib/auth-redirect";
 
 // GTM is now the sole analytics path. GA4 is loaded via GTM (container GTM-WMVV6CJ7).
@@ -454,7 +453,6 @@ function RootComponent() {
       <GoogleAnalytics />
       <PageViewTracker />
       <PwaRegistrar />
-      <EnhancedAnalyticsConsent />
       <SiteNav />
       <Outlet />
     </>
