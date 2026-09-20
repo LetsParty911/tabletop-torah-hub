@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import {
   adminGetWeeklyEmailPreview,
   adminSendWeeklyEmailTestToSelf,
+  adminSendWeeklyEmailTestToAddress,
 } from "@/integrations/supabase/api.functions";
 import { adminSendPersonalizedWeeklyEmail } from "@/integrations/supabase/personalized-weekly-email.functions";
 
@@ -38,6 +39,7 @@ export default function WeeklyEmailSection({
   const [personalizedSending, setPersonalizedSending] = useState(false);
   const [testSending, setTestSending] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
+  const [deliverabilitySending, setDeliverabilitySending] = useState<string | null>(null);
 
   // Sends exactly one email to the signed-in admin. Never touches subscribers
   // and never records the week as sent.
@@ -62,6 +64,27 @@ export default function WeeklyEmailSection({
     }
   };
 
+
+  const handleDeliverabilityTest = async (email: string) => {
+    const accessToken = session?.access_token;
+    if (!accessToken) return;
+    setDeliverabilitySending(email);
+    setTestResult(null);
+    try {
+      const result = await adminSendWeeklyEmailTestToAddress({ data: { accessToken, email } });
+      setTestResult(
+        result.ok
+          ? `Deliverability test sent to ${result.to}${result.messageId ? ` (id ${result.messageId})` : ""}.`
+          : `Deliverability test failed — ${result.error}`,
+      );
+    } catch (error) {
+      setTestResult(
+        `Deliverability test failed — ${error instanceof Error ? error.message : "unknown error"}`,
+      );
+    } finally {
+      setDeliverabilitySending(null);
+    }
+  };
 
   const handlePersonalizedSend = async () => {
     const accessToken = session?.access_token;
@@ -204,8 +227,26 @@ export default function WeeklyEmailSection({
             )}
           </div>
 
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleDeliverabilityTest("info@torahforthetable.com")}
+              disabled={Boolean(deliverabilitySending)}
+              className="rounded-full border border-accent/50 px-4 py-2 text-sm text-foreground disabled:opacity-50"
+            >
+              {deliverabilitySending === "info@torahforthetable.com" ? "Sending…" : "Test info@torahforthetable.com"}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDeliverabilityTest("itisallverysimple@gmail.com")}
+              disabled={Boolean(deliverabilitySending)}
+              className="rounded-full border border-accent/50 px-4 py-2 text-sm text-foreground disabled:opacity-50"
+            >
+              {deliverabilitySending === "itisallverysimple@gmail.com" ? "Sending…" : "Test itisallverysimple@gmail.com"}
+            </button>
+          </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            The test email goes only to your own admin address and never marks the week as sent.
+            Test buttons send only to the specified test address and never mark the week as sent.
           </p>
           {testResult && (
             <div className="mt-2 rounded-md border border-accent/40 bg-background/50 px-3 py-2 text-sm text-foreground">
