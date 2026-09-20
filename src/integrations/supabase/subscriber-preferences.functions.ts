@@ -132,12 +132,11 @@ export const requestSubscriberPreferenceLink = createServerFn({ method: "POST" }
     const admin = getSupabaseAdmin();
     const { data: subscriber } = await admin
       .from("subscribers")
-      .select("id, unsubscribe_token")
+      .select("unsubscribe_token")
       .eq("email", email)
       .eq("active", true)
       .maybeSingle();
 
-    const subscriberId = (subscriber?.id as string | null) ?? null;
     const token = (subscriber?.unsubscribe_token as string | null) ?? null;
     if (!token) {
       return { ok: true as const };
@@ -191,31 +190,9 @@ export const requestSubscriberPreferenceLink = createServerFn({ method: "POST" }
           response.status,
           errorBody,
         );
-        await admin.from("preference_link_send_log").insert({
-          subscriber_id: subscriberId,
-          recipient: email,
-          ok: false,
-          status_code: response.status,
-          error: errorBody.slice(0, 1000),
-        });
-      } else {
-        const responseJson = (await response.json().catch(() => null)) as { id?: string } | null;
-        await admin.from("preference_link_send_log").insert({
-          subscriber_id: subscriberId,
-          recipient: email,
-          ok: true,
-          status_code: response.status,
-          provider_message_id: responseJson?.id ?? null,
-        });
       }
     } catch (error) {
       console.error("requestSubscriberPreferenceLink send error", error);
-      await admin.from("preference_link_send_log").insert({
-        subscriber_id: subscriberId,
-        recipient: email,
-        ok: false,
-        error: error instanceof Error ? error.message : "Unknown send error",
-      });
     }
 
     return { ok: true as const };
