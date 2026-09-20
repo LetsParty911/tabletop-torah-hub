@@ -133,7 +133,7 @@ async function loadCurrentWeek(): Promise<LoaderData> {
   return {
     label,
     parshaKey,
-    resources: initialResources,
+    resources,
     isFallback,
     fallbackParshaLabel,
     fallbackParshaKey,
