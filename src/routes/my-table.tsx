@@ -248,7 +248,7 @@ function MyTablePage() {
                                 onChange={() => toggleTablePackItem(item.id)}
                                 className="h-4 w-4 rounded border-accent/50 accent-[hsl(var(--primary))]"
                               />
-                              Tonight's pack
+                              My pack
                             </label>
                             <h3 className="font-serif text-lg font-bold leading-snug text-primary">
                               <Link to="/view/$id" params={{ id: item.id }} className="hover:text-accent hover:underline">
