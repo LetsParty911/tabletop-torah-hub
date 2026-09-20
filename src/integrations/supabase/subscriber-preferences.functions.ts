@@ -190,9 +190,28 @@ export const requestSubscriberPreferenceLink = createServerFn({ method: "POST" }
           response.status,
           errorBody,
         );
+        await admin.from("preference_link_send_log").insert({
+          recipient: email,
+          ok: false,
+          status_code: response.status,
+          error: errorBody.slice(0, 1000),
+        });
+      } else {
+        const responseJson = (await response.json().catch(() => null)) as { id?: string } | null;
+        await admin.from("preference_link_send_log").insert({
+          recipient: email,
+          ok: true,
+          status_code: response.status,
+          provider_message_id: responseJson?.id ?? null,
+        });
       }
     } catch (error) {
       console.error("requestSubscriberPreferenceLink send error", error);
+      await admin.from("preference_link_send_log").insert({
+        recipient: email,
+        ok: false,
+        error: error instanceof Error ? error.message : "Unknown send error",
+      });
     }
 
     return { ok: true as const };
