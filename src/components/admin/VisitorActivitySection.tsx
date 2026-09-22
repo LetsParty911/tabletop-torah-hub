@@ -116,7 +116,12 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
           <span>{visitor.sources.join(", ")}</span>
           <span>{visitor.devices.join(", ")}</span>
           <span>{formatUaSummary(parsed)}</span>
-          <span>{visitor.geo.label || "Unknown location"}</span>
+          <span>{visitor.geo.label || "Location unresolved"}</span>
+          {visitor.geo.reliability === "low" && (
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+              Low reliability
+            </span>
+          )}
           <span>IP {maskedIp(visitor.latestIp)}</span>
         </div>
         <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-foreground/80">
@@ -156,10 +161,18 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
               }
             />
             <Field
-              label="Location"
+              label="Approximate network location"
               value={
-                [visitor.geo.label, visitor.geo.postalCode].filter(Boolean).join(" · ") ||
-                "Unknown"
+                [
+                  visitor.geo.label,
+                  visitor.geo.postalCode,
+                  visitor.geo.networkType && visitor.geo.networkType !== "unknown"
+                    ? `network: ${visitor.geo.networkType}`
+                    : null,
+                  visitor.geo.provider ? `source: ${visitor.geo.provider}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || "Location unresolved"
               }
             />
             <Field
