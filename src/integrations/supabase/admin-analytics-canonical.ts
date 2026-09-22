@@ -13,6 +13,7 @@ import {
   computeWeeklyLoyalty,
   type VisitorTimeline,
 } from "@/lib/retention-cohorts";
+import { aggregatePublications } from "@/lib/publication-funnel";
 import {
   buildChangeObservations,
   buildObservations,
