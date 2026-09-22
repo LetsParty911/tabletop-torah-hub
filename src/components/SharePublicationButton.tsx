@@ -42,8 +42,15 @@ export function SharePublicationButton({
     parsha: parsha ?? null,
   };
 
+  // Shared links carry attribution; copied links stay canonical and untagged.
+  const shareUrl = withUtm(viewUrl, {
+    source: "whatsapp",
+    medium: "share",
+    campaign: "publication-share",
+  });
+
   const handleShare = () => {
-    const message = `${title}${parshaLabel ? ` — ${parshaLabel}` : ""}, free to download and print: ${viewUrl}`;
+    const message = `${title}${parshaLabel ? ` — ${parshaLabel}` : ""}, free to download and print: ${shareUrl}`;
     trackEvent("share_whatsapp", {
       file_id: pdfId,
       file_title: title,

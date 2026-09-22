@@ -379,7 +379,12 @@ function Index() {
     return r.page_count >= 20 ? `Long Study · ${pages}` : pages;
   };
 
-  const shareText = `${resources.length} free, handpicked Divrei Torah for ${displayedLabel} — ready to download and print: ${SITE_URL}/`;
+  const shareLink = withUtm(`${SITE_URL}/`, {
+    source: "whatsapp",
+    medium: "share",
+    campaign: "weekly-share",
+  });
+  const shareText = `${resources.length} free, handpicked Divrei Torah for ${displayedLabel} — ready to download and print: ${shareLink}`;
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
   const ShareButton = ({ className }: { className?: string }) => (
