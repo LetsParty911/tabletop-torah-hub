@@ -9,6 +9,7 @@ import { PublicationCardTracker } from "@/components/PublicationCardTracker";
 import { trackFp } from "@/lib/first-party-analytics";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { SITE_URL } from "@/lib/site-url";
+import { withUtm } from "@/lib/utm";
 
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -379,7 +380,12 @@ function Index() {
     return r.page_count >= 20 ? `Long Study · ${pages}` : pages;
   };
 
-  const shareText = `${resources.length} free, handpicked Divrei Torah for ${displayedLabel} — ready to download and print: ${SITE_URL}/`;
+  const shareLink = withUtm(`${SITE_URL}/`, {
+    source: "whatsapp",
+    medium: "share",
+    campaign: "weekly-share",
+  });
+  const shareText = `${resources.length} free, handpicked Divrei Torah for ${displayedLabel} — ready to download and print: ${shareLink}`;
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
   const ShareButton = ({ className }: { className?: string }) => (

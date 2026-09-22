@@ -1,3 +1,5 @@
+import { normalizeUtmValue, withUtm } from "@/lib/utm";
+
 export function shouldShowRate(denominator: number): boolean {
   return denominator >= 10;
 }
@@ -7,14 +9,7 @@ export function formatCountRate(numerator: number, denominator: number): string 
   return `${Math.round((numerator / denominator) * 100)}% · ${numerator} of ${denominator}`;
 }
 
-export function normalizeTrackingValue(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
-}
+export const normalizeTrackingValue = normalizeUtmValue;
 
 export function buildTrackingUrl(input: {
   baseUrl: string;
@@ -23,16 +18,20 @@ export function buildTrackingUrl(input: {
   campaign: string;
 }): string | null {
   try {
-    const url = new URL(input.baseUrl);
-    const source = normalizeTrackingValue(input.source);
-    const medium = normalizeTrackingValue(input.medium);
-    const campaign = normalizeTrackingValue(input.campaign);
-    if (!source || !medium || !campaign) return null;
-    url.searchParams.set("utm_source", source);
-    url.searchParams.set("utm_medium", medium);
-    url.searchParams.set("utm_campaign", campaign);
-    return url.toString();
+    // Validate the base URL before tagging it.
+    new URL(input.baseUrl);
   } catch {
     return null;
   }
+  if (
+    !normalizeUtmValue(input.source) ||
+    !normalizeUtmValue(input.medium) ||
+    !normalizeUtmValue(input.campaign)
+  )
+    return null;
+  return withUtm(
+    input.baseUrl,
+    { source: input.source, medium: input.medium, campaign: input.campaign },
+    { replace: true },
+  );
 }
