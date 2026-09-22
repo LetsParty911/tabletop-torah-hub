@@ -82,6 +82,9 @@ export const Route = createFileRoute("/api/events")({
           // client IP, User-Agent and request header telemetry.
           const t = getRequestTelemetry(request);
           const deviceType = deviceTypeFrom(t.userAgent);
+          // One resolution per request (cached per IP for 7 days) — never per event.
+          const { resolveApproximateGeo } = await import("@/lib/ip-geo.server");
+          const geo = await resolveApproximateGeo(t);
 
           const rows: Array<Record<string, unknown>> = [];
 
@@ -150,10 +153,11 @@ export const Route = createFileRoute("/api/events")({
               utm_medium: str("utm_medium", 120),
               utm_campaign: str("utm_campaign", 200),
               source_group: str("source_group", 40) ?? "Direct",
-              country: t.country,
-              region: t.region,
-              city: t.city,
-              postal_code: t.postalCode,
+              country: geo.country,
+              region: geo.region,
+              city: geo.city,
+              postal_code: geo.postalCode,
+              geo_source: geo.geoSource,
               ip_address: t.ipAddress,
               user_agent: t.userAgent,
               accept_language: t.acceptLanguage,
