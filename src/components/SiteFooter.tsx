@@ -51,6 +51,27 @@ export function SiteFooter() {
           Torah For The Table is a registered 501(c)(3) nonprofit organization.
         </Link>
       </p>
+      <p className="text-center text-xs text-muted-foreground/80">
+        This product includes GeoLite Data created by{" "}
+        <a
+          href="https://www.maxmind.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-primary hover:underline transition-colors duration-150"
+        >
+          MaxMind
+        </a>
+        , available from{" "}
+        <a
+          href="https://www.maxmind.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-primary hover:underline transition-colors duration-150"
+        >
+          https://www.maxmind.com
+        </a>
+        .
+      </p>
     </footer>
   );
 }
