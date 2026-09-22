@@ -115,7 +115,6 @@ function AboutPage() {
                 <h2 className="font-serif text-2xl font-bold text-primary">Contact</h2>
                 <div className="mt-2 font-serif text-base text-foreground leading-relaxed space-y-1">
                   <p>Torah For The Table</p>
-                  <p>New Jersey, United States</p>
                   <p>
                     Email:{" "}
                     <a
