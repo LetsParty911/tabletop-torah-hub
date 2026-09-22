@@ -52,3 +52,31 @@ describe("sender.net preset", () => {
     ).toBe("https://torahforthetable.com/?utm_source=sender&utm_medium=email&utm_campaign=yom-kippur");
   });
 });
+
+describe("utm_content", () => {
+  it("is omitted when not supplied, keeping existing callers unchanged", () => {
+    expect(withUtm("https://torahforthetable.com/", params)).not.toContain("utm_content");
+  });
+
+  it("is added and normalized when supplied", () => {
+    const url = withUtm("https://torahforthetable.com/", { ...params, content: "Message A" });
+    expect(url).toContain("utm_content=message-a");
+  });
+
+  it("leaves an inbound utm_content alone unless replacement is requested", () => {
+    const url = withUtm("https://torahforthetable.com/?utm_content=inbound", {
+      ...params,
+      content: "message-a",
+    });
+    expect(url).toContain("utm_content=inbound");
+    expect(
+      withUtm("https://torahforthetable.com/?utm_content=inbound", { ...params, content: "message-a" }, { replace: true }),
+    ).toContain("utm_content=message-a");
+  });
+
+  it("preserves other query parameters and the hash with content set", () => {
+    const url = withUtm("https://torahforthetable.com/?filter=kids#list", { ...params, content: "qr-a" });
+    expect(url).toContain("filter=kids");
+    expect(url.endsWith("#list")).toBe(true);
+  });
+});
