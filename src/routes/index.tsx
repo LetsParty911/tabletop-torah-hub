@@ -507,7 +507,7 @@ function Index() {
                   }}
                   className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
                 >
-                  {isCurrentYomKippur ? "Explore Yom Kippur selections" : "See this week&apos;s PDFs"}
+                  {isCurrentYomKippur ? "Explore Yom Kippur selections" : "See this week’s PDFs"}
                 </a>
               </div>
             )}
