@@ -79,26 +79,6 @@ function AboutPage() {
                 </p>
               </section>
 
-              <section>
-                <h2 className="font-serif text-2xl font-bold text-primary">Leadership</h2>
-                <ul className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 font-serif text-base text-foreground">
-                  <li>
-                    <span className="font-semibold text-primary">Daniel Kaplan</span> — President
-                  </li>
-                  <li>
-                    <span className="font-semibold text-primary">Simcha Kaplan</span> — Vice
-                    President
-                  </li>
-                  <li>
-                    <span className="font-semibold text-primary">Dovid Nisson Shonek</span> —
-                    Secretary
-                  </li>
-                  <li>
-                    <span className="font-semibold text-primary">Yosef Chaim Borenstein</span> —
-                    Treasurer
-                  </li>
-                </ul>
-              </section>
 
               <section>
                 <h2 className="font-serif text-2xl font-bold text-primary">Our Activities</h2>
