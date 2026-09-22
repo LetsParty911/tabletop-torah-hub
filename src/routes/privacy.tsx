@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 
 const PRIVACY_EMAIL = "hello@torahforthetable.com";
 const ENTITY_NAME = "Torah For The Table";
-const LAST_UPDATED = "September 17, 2026";
+const LAST_UPDATED = "September 22, 2026";
 
 const mailLink = (
   <a

@@ -13,6 +13,7 @@ import {
   computeWeeklyLoyalty,
   type VisitorTimeline,
 } from "@/lib/retention-cohorts";
+import { aggregatePublications } from "@/lib/publication-funnel";
 import {
   buildChangeObservations,
   buildObservations,
@@ -617,22 +618,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
     if (vid && (priorVisitors.has(vid) || row.is_new_visitor === false)) returning.add(vid);
   }
 
-  type PublicationAgg = {
-    title: string;
-    impressions: Set<string>;
-    clicks: Set<string>;
-    readers: Set<string>;
-    opens: number;
-    downloads: number;
-    served: number;
-    newVisitorSessions: Set<string>;
-    returningSessions: Set<string>;
-    devices: Map<string, Set<string>>;
-    downloadPairs: Set<string>;
-    accessPairs: Set<string>;
-    sources: Map<string, Set<string>>;
-  };
-  const publications = new Map<string, PublicationAgg>();
+  const publications = aggregatePublications(keptRows, priorVisitors);
   const campaigns = new Map<string, { sessions: Set<string>; variants: Map<string, Set<string>> }>();
   const utmSources = new Map<string, Set<string>>();
   const locations = new Map<string, Set<string>>();
@@ -641,50 +627,6 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
   for (const row of keptRows) {
     const sid = row.session_id?.trim();
     if (!sid) continue;
-    const title = row.publication_title?.trim() || row.publication_id?.trim();
-    if (title) {
-      const publication = publications.get(title) ?? {
-        title,
-        impressions: new Set<string>(), clicks: new Set<string>(), readers: new Set<string>(),
-        opens: 0, downloads: 0, served: 0,
-        newVisitorSessions: new Set<string>(), returningSessions: new Set<string>(),
-        devices: new Map<string, Set<string>>(),
-        downloadPairs: new Set<string>(), accessPairs: new Set<string>(),
-        sources: new Map<string, Set<string>>(),
-      };
-      const pair = `${sid}::${title}`;
-      if (row.event_name === "publication_impression") publication.impressions.add(pair);
-      if (row.event_name === "publication_click") publication.clicks.add(pair);
-      if (row.event_name === "pdf_open") {
-        publication.opens += 1;
-        publication.accessPairs.add(pair);
-        if (row.visitor_id) publication.readers.add(row.visitor_id);
-      }
-      if (row.event_name === "download_served") {
-        publication.served += 1;
-      }
-      if (row.event_name === "download") {
-        publication.downloads += 1;
-        publication.downloadPairs.add(pair);
-        publication.accessPairs.add(pair);
-        if (row.visitor_id) publication.readers.add(row.visitor_id);
-      }
-      const source = row.source_group?.trim() || "Direct";
-      const sourceSet = publication.sources.get(source) ?? new Set<string>();
-      sourceSet.add(sid);
-      publication.sources.set(source, sourceSet);
-
-      const device = row.device_type?.trim() || "unknown";
-      const deviceSet = publication.devices.get(device) ?? new Set<string>();
-      deviceSet.add(sid);
-      publication.devices.set(device, deviceSet);
-
-      const vid = row.visitor_id?.trim();
-      if (vid && (priorVisitors.has(vid) || row.is_new_visitor === false)) publication.returningSessions.add(sid);
-      else if (row.is_new_visitor === true) publication.newVisitorSessions.add(sid);
-
-      publications.set(title, publication);
-    }
 
     const utmSource = row.utm_source?.trim().toLowerCase();
     if (utmSource) {
@@ -815,23 +757,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
     recentActivity: keptRows.slice(-20).reverse().map((row) => detailFor(row)),
     sources: canonical.sources,
     devices: canonical.devices,
-    publications: [...publications.values()].map((publication) => ({
-      title: publication.title,
-      impressions: publication.impressions.size,
-      clicks: publication.clicks.size,
-      uniqueReaders: publication.readers.size,
-      pdfOpens: publication.opens,
-      downloadActions: publication.downloads,
-      downloadsServed: publication.served,
-      newVisitorSessions: publication.newVisitorSessions.size,
-      returningSessions: publication.returningSessions.size,
-      devices: [...publication.devices.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
-      clickNumerator: publication.clicks.size,
-      clickDenominator: publication.impressions.size,
-      downloadNumerator: publication.downloadPairs.size,
-      downloadDenominator: publication.accessPairs.size,
-      sources: [...publication.sources.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
-    })).sort((a, b) => b.pdfOpens + b.downloadActions - (a.pdfOpens + a.downloadActions)),
+    publications,
     utmSources: [...utmSources.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
     campaigns: [...campaigns.entries()]
       .map(([label, entry]) => ({
@@ -1849,7 +1775,12 @@ export const adminCollectionReport = createServerFn({ method: "POST" })
 // Retention cohorts
 // ---------------------------------------------------------------------------
 
-type TimelineRow = { visitor_id: string | null; occurred_at: string; is_internal?: boolean | null };
+type TimelineRow = {
+  visitor_id: string | null;
+  session_id: string | null;
+  occurred_at: string;
+  is_internal?: boolean | null;
+};
 
 async function fetchTimelineRows(sinceIso: string): Promise<TimelineRow[]> {
   const admin = getSupabaseAdmin();
@@ -1857,8 +1788,8 @@ async function fetchTimelineRows(sinceIso: string): Promise<TimelineRow[]> {
   const pageSize = 1000;
   const maxRows = 60_000;
   const columns = (await eventColumns()).includes("is_internal")
-    ? "visitor_id, occurred_at, is_internal"
-    : "visitor_id, occurred_at";
+    ? "visitor_id, session_id, occurred_at, is_internal"
+    : "visitor_id, session_id, occurred_at";
 
   for (let offset = 0; offset < maxRows; offset += pageSize) {
     const { data, error } = await admin
@@ -1883,33 +1814,50 @@ export const adminRetentionCohorts = createServerFn({ method: "POST" })
     await requireAnalyticsAdmin(data.accessToken);
 
     const lookbackDays = 120;
-    const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString();
-    const rows = (await fetchTimelineRows(since)).filter((row) => row.is_internal !== true);
+    const observationStartIso = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString();
+    const rows = (await fetchTimelineRows(observationStartIso)).filter((row) => row.is_internal !== true);
 
-    const byVisitor = new Map<string, VisitorTimeline>();
+    // Distinct session starts per visitor. Repeat events inside one session
+    // collapse to that session's earliest timestamp, so a heartbeat or a
+    // second pageview can never register as a return.
+    const sessionFirstAt = new Map<string, { visitorId: string; at: number }>();
     for (const row of rows) {
       const vid = row.visitor_id?.trim();
-      if (!vid) continue;
+      const sid = row.session_id?.trim();
+      if (!vid || !sid) continue;
       const at = Date.parse(row.occurred_at);
       if (Number.isNaN(at)) continue;
-      const entry = byVisitor.get(vid) ?? { visitorId: vid, firstSeen: at, activeAt: [] };
-      if (at < entry.firstSeen) entry.firstSeen = at;
-      entry.activeAt.push(at);
-      byVisitor.set(vid, entry);
+      const key = `${vid}::${sid}`;
+      const existing = sessionFirstAt.get(key);
+      if (!existing || at < existing.at) sessionFirstAt.set(key, { visitorId: vid, at });
     }
 
-    const timelines = [...byVisitor.values()];
-    // Someone already active on the first observed day may have older history
-    // we cannot see, so day 0 is only trusted from one day after the data starts.
-    const earliest = timelines.length ? Math.min(...timelines.map((t) => t.firstSeen)) : Date.now();
-    const observationStart = earliest + 24 * 60 * 60 * 1000;
+    const byVisitor = new Map<string, VisitorTimeline>();
+    for (const { visitorId, at } of sessionFirstAt.values()) {
+      const entry = byVisitor.get(visitorId) ?? { visitorId, firstSession: at, sessionStarts: [] };
+      if (at < entry.firstSession) entry.firstSession = at;
+      entry.sessionStarts.push(at);
+      byVisitor.set(visitorId, entry);
+    }
+
+    // Left-censoring: any visitor with canonical history before the
+    // observation period cannot be trusted to have their real day 0 here.
+    const priorVisitors = await fetchPriorVisitors([...byVisitor.keys()], observationStartIso);
+    const timelines = [...byVisitor.values()].map((timeline) => ({
+      ...timeline,
+      sessionStarts: timeline.sessionStarts.sort((a, b) => a - b),
+      hasPriorHistory: priorVisitors.has(timeline.visitorId),
+    }));
+
+    const observationStart = Date.parse(observationStartIso);
 
     return {
       lookbackDays,
-      observationStart: new Date(observationStart).toISOString(),
+      observationStart: observationStartIso,
       visitorsObserved: timelines.length,
+      leftCensoredVisitors: timelines.filter((timeline) => timeline.hasPriorHistory).length,
       cohorts: computeCohorts(timelines, observationStart),
-      loyalty: computeWeeklyLoyalty(timelines),
+      loyalty: computeWeeklyLoyalty(timelines.filter((timeline) => !timeline.hasPriorHistory)),
     };
   });
 
@@ -1983,13 +1931,32 @@ export const adminAnalyticsHealth = createServerFn({ method: "POST" })
           : `${duplicates} rows share a session, event name and timestamp. Distinct event_ids kept them, so they are separate events, not retries.`,
     });
 
-    // 4. Geo enrichment
-    const withCity = rows.filter((row) => row.city?.trim()).length;
-    const lowReliability = rows.filter((row) => row.geo_reliability === "low").length;
+    // 4. Geo enrichment — measured per recent SESSION, not per event row.
+    // Geo enrichment was rolled out mid-window and not every event row needs
+    // a location, so an event-level ratio produced a misleading warning.
+    const recentCutoff = Date.now() - 24 * 60 * 60 * 1000;
+    const recentSessions = new Set<string>();
+    const recentSessionsWithGeo = new Set<string>();
+    const recentSessionsLowReliability = new Set<string>();
+    const recentSessionsWithNetwork = new Set<string>();
+    for (const row of rows) {
+      const sid = row.session_id?.trim();
+      if (!sid) continue;
+      if (Date.parse(row.occurred_at) < recentCutoff) continue;
+      recentSessions.add(sid);
+      if (row.country?.trim() || row.region?.trim() || row.city?.trim()) recentSessionsWithGeo.add(sid);
+      if (row.geo_reliability === "low") recentSessionsLowReliability.add(sid);
+      if (row.network_type?.trim() && row.network_type.trim() !== "unknown") recentSessionsWithNetwork.add(sid);
+    }
     checks.push({
       name: "Location enrichment",
-      status: total < 10 ? "not_enough_data" : withCity / Math.max(1, total) >= 0.5 ? "healthy" : "warning",
-      detail: `${withCity} of ${total} events carry an approximate city; ${lowReliability} are flagged low reliability (carrier, VPN or hosting network).`,
+      status:
+        recentSessions.size < 10
+          ? "not_enough_data"
+          : recentSessionsWithGeo.size / recentSessions.size >= 0.5
+            ? "healthy"
+            : "warning",
+      detail: `${recentSessionsWithGeo.size} of ${recentSessions.size} sessions in the last 24 hours carry an approximate country, region or city; ${recentSessionsLowReliability.size} flagged low reliability and ${recentSessionsWithNetwork.size} carry network context (carrier, VPN or hosting). Older events from before geo enrichment rolled out are not counted.`,
     });
 
     // 5. Human signal
@@ -2000,13 +1967,22 @@ export const adminAnalyticsHealth = createServerFn({ method: "POST" })
       detail: `${humanSignals} human_signal events across ${sessions.size} sessions.`,
     });
 
-    // 6. Campaign coverage
-    const tagged = rows.filter((row) => row.utm_source?.trim()).length;
-    const withContent = rows.filter((row) => row.utm_content?.trim()).length;
+    // 6. Campaign coverage — no tagged sessions is "nothing to judge", not healthy.
+    const taggedSessions = new Set<string>();
+    const contentSessions = new Set<string>();
+    for (const row of rows) {
+      const sid = row.session_id?.trim();
+      if (!sid) continue;
+      if (row.utm_source?.trim()) taggedSessions.add(sid);
+      if (row.utm_content?.trim()) contentSessions.add(sid);
+    }
     checks.push({
       name: "Campaign fields",
-      status: total < 10 ? "not_enough_data" : "healthy",
-      detail: `${tagged} of ${total} events carry a utm_source; ${withContent} also carry a utm_content variant.`,
+      status: total < 10 || taggedSessions.size === 0 ? "not_enough_data" : "healthy",
+      detail:
+        taggedSessions.size === 0
+          ? `No campaign-tagged sessions in this window, so campaign capture cannot be judged. ${sessions.size} sessions seen.`
+          : `${taggedSessions.size} of ${sessions.size} sessions carry a utm_source; ${contentSessions.size} also carry a utm_content variant.`,
     });
 
     // 7. Download action -> served matching
