@@ -158,14 +158,17 @@ export const Route = createFileRoute("/api/events")({
               city: geo.city,
               postal_code: geo.postalCode,
               geo_source: geo.geoSource,
+              geo_provider: geo.provider,
+              geo_reliability: geo.reliability,
+              network_type: geo.networkType,
               ip_address: t.ipAddress,
               user_agent: t.userAgent,
               accept_language: t.acceptLanguage,
               sec_ch_ua: t.secChUa,
               sec_ch_platform: t.secChPlatform,
               sec_ch_mobile: t.secChMobile,
-              asn: t.asn,
-              as_organization: t.asOrganization,
+              asn: geo.asn ?? t.asn,
+              as_organization: geo.asOrganization ?? t.asOrganization,
               metadata,
             });
           }
@@ -181,13 +184,24 @@ export const Route = createFileRoute("/api/events")({
             .upsert(rows, { onConflict: "event_id", ignoreDuplicates: true });
           if (error) {
             console.error("[api/events] insert failed", error.message);
-            // The geo_source column may not exist yet — never lose the event.
-            if (/geo_source/.test(error.message)) {
-              const legacy = rows.map(({ geo_source: _drop, ...rest }) => rest);
+            // Geo/network columns may not exist yet — never lose the event.
+            // Drop only the columns the database actually reports as missing,
+            // retrying while the error keeps naming one of them.
+            const OPTIONAL = ["geo_source", "geo_provider", "geo_reliability", "network_type"];
+            let payload = rows;
+            let message = error.message;
+            for (let attempt = 0; attempt < OPTIONAL.length; attempt += 1) {
+              const missing = OPTIONAL.find((c) => message.includes(c));
+              if (!missing) break;
+              payload = payload.map(({ [missing]: _drop, ...rest }) => rest);
               const retry = await supabase
                 .from("analytics_events")
-                .upsert(legacy, { onConflict: "event_id", ignoreDuplicates: true });
-              if (retry.error) console.error("[api/events] retry failed", retry.error.message);
+                .upsert(payload, { onConflict: "event_id", ignoreDuplicates: true });
+              if (!retry.error) break;
+              message = retry.error.message;
+              if (attempt === OPTIONAL.length - 1) {
+                console.error("[api/events] retry failed", message);
+              }
             }
           }
 

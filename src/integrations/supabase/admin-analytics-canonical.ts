@@ -887,10 +887,17 @@ type VisitorEventRow = EventRow & {
   utm_source: string | null;
   utm_medium: string | null;
   utm_campaign: string | null;
+  geo_provider?: string | null;
+  geo_reliability?: string | null;
+  network_type?: string | null;
 };
 
-const VISITOR_SELECT =
+const VISITOR_SELECT_BASE =
   "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, source_group, device_type, country, region, city, postal_code, metadata, ip_address, user_agent, accept_language, sec_ch_ua, sec_ch_platform, sec_ch_mobile, asn, as_organization, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign";
+
+// Extended geo columns may not exist yet in the analytics project; the fetcher
+// falls back to the base projection when they are missing.
+const VISITOR_SELECT = `${VISITOR_SELECT_BASE}, geo_provider, geo_reliability, network_type`;
 
 /** Admin-only view of the enhanced fingerprint snapshot for a session. */
 export type FingerprintRow = {
@@ -971,16 +978,25 @@ async function fetchVisitorEvents(start: string, end: string): Promise<VisitorEv
   const pageSize = 1000;
   const maxRows = 40_000; // hard guard so a wide range cannot run forever
 
+  let projection = VISITOR_SELECT;
+
   for (let offset = 0; offset < maxRows; offset += pageSize) {
-    const { data, error } = await admin
-      .from("analytics_events")
-      .select(VISITOR_SELECT)
-      .gte("occurred_at", start)
-      .lt("occurred_at", end)
-      .order("occurred_at", { ascending: false })
-      .range(offset, offset + pageSize - 1);
+    const run = (select: string) =>
+      admin
+        .from("analytics_events")
+        .select(select)
+        .gte("occurred_at", start)
+        .lt("occurred_at", end)
+        .order("occurred_at", { ascending: false })
+        .range(offset, offset + pageSize - 1);
+
+    let { data, error } = await run(projection);
+    if (error && /geo_provider|geo_reliability|network_type/.test(error.message)) {
+      projection = VISITOR_SELECT_BASE;
+      ({ data, error } = await run(projection));
+    }
     if (error) throw new Error(error.message);
-    const page = (data ?? []) as VisitorEventRow[];
+    const page = (data ?? []) as unknown as VisitorEventRow[];
     out.push(...page);
     if (page.length < pageSize) break;
   }
@@ -993,13 +1009,43 @@ function pushUnique(list: string[], value: string | null | undefined) {
   if (!list.includes(v)) list.push(v);
 }
 
-function geoLabel(row: {
+function geoPlace(row: {
   city: string | null;
   region: string | null;
   country: string | null;
 }): string {
   const parts = [row.city, row.region, row.country].map((p) => p?.trim()).filter(Boolean);
   return parts.length ? parts.join(", ") : "";
+}
+
+const NETWORK_WORD: Record<string, string> = {
+  mobile: "mobile",
+  vpn: "VPN",
+  proxy: "proxy",
+  tor: "Tor",
+  hosting: "datacenter",
+  relay: "private relay",
+};
+
+/**
+ * Admin-facing location wording. IP-derived places are never presented as an
+ * exact physical address, and a network is only described as mobile/VPN/etc.
+ * when the provider gave an explicit signal.
+ */
+function geoLabel(row: {
+  city: string | null;
+  region: string | null;
+  country: string | null;
+  reliability?: string | null;
+  networkType?: string | null;
+}): string {
+  const place = geoPlace(row);
+  if (!place) return row.networkType && row.networkType !== "unknown" ? "Network location only" : "";
+  const word = row.networkType ? NETWORK_WORD[row.networkType] : undefined;
+  if (row.reliability === "low") {
+    return `${place} — ${word ? `${word}/network location` : "network location"}, low reliability`;
+  }
+  return `${place} — approximate network location`;
 }
 
 export const adminVisitorActivity = createServerFn({ method: "POST" })
@@ -1072,7 +1118,15 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       latestSecChMobile: string | null;
       latestAsn: number | null;
       latestAsOrganization: string | null;
-      geo: { city: string | null; region: string | null; country: string | null; postalCode: string | null };
+      geo: {
+        city: string | null;
+        region: string | null;
+        country: string | null;
+        postalCode: string | null;
+        provider: string | null;
+        reliability: string | null;
+        networkType: string | null;
+      };
       referrerHost: string | null;
       referrerUrl: string | null;
       utmSource: string | null;
@@ -1128,7 +1182,15 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
           latestSecChMobile: null,
           latestAsn: null,
           latestAsOrganization: null,
-          geo: { city: null, region: null, country: null, postalCode: null },
+          geo: {
+            city: null,
+            region: null,
+            country: null,
+            postalCode: null,
+            provider: null,
+            reliability: null,
+            networkType: null,
+          },
           referrerHost: null,
           referrerUrl: null,
           utmSource: null,
@@ -1165,6 +1227,9 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       if (row.region?.trim()) v.geo.region = row.region.trim();
       if (row.country?.trim()) v.geo.country = row.country.trim();
       if (row.postal_code?.trim()) v.geo.postalCode = row.postal_code.trim();
+      if (row.geo_provider?.trim()) v.geo.provider = row.geo_provider.trim();
+      if (row.geo_reliability?.trim()) v.geo.reliability = row.geo_reliability.trim();
+      if (row.network_type?.trim()) v.geo.networkType = row.network_type.trim();
       if (row.referrer_host?.trim()) v.referrerHost = row.referrer_host.trim();
       if (row.referrer_url?.trim()) v.referrerUrl = row.referrer_url.trim();
       if (row.utm_source?.trim()) v.utmSource = row.utm_source.trim();
