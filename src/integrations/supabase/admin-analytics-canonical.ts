@@ -537,6 +537,25 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
   const excluded = new Set([...automation, ...internalOnly]);
   const keptSessions = [...allSessions.values()].filter((session) => !excluded.has(session.id));
   const keptIds = new Set(keptSessions.map((session) => session.id));
+
+  // Reporting-only confidence classification. Nothing is written back to the
+  // stored rows: this is how we describe the traffic, not a verdict on it.
+  const confidenceBySession = new Map<string, TrafficConfidence>();
+  const confidenceCounts = emptyConfidenceCounts();
+  for (const session of allSessions.values()) {
+    const label = classifySession({
+      internal: session.internalTestTraffic,
+      flaggedAutomation: automation.has(session.id),
+      humanSignal: session.humanSignal,
+      meaningfulIntent: session.meaningfulIntent,
+      pageviews: session.pageviews,
+      impressions: session.impressions,
+      durationMs: Math.max(0, session.lastAt - session.firstAt),
+    });
+    confidenceBySession.set(session.id, label);
+    confidenceCounts[label] += 1;
+  }
+  const markedInternalSessions = [...allSessions.values()].filter((s) => s.markedInternal).length;
   const keptRows = rows.filter((row) => Boolean(row.session_id && keptIds.has(row.session_id.trim())));
   const canonical = summarizeCanonical(rows, priorVisitors);
   const rowsBySession = new Map<string, EventRow[]>();
@@ -590,12 +609,16 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
     readers: Set<string>;
     opens: number;
     downloads: number;
+    served: number;
+    newVisitorSessions: Set<string>;
+    returningSessions: Set<string>;
+    devices: Map<string, Set<string>>;
     downloadPairs: Set<string>;
     accessPairs: Set<string>;
     sources: Map<string, Set<string>>;
   };
   const publications = new Map<string, PublicationAgg>();
-  const campaigns = new Map<string, Set<string>>();
+  const campaigns = new Map<string, { sessions: Set<string>; variants: Map<string, Set<string>> }>();
   const utmSources = new Map<string, Set<string>>();
   const locations = new Map<string, Set<string>>();
   const searches: Array<{ term: string; at: string; sessionId: string; ledToContent: boolean }> = [];
@@ -608,7 +631,10 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
       const publication = publications.get(title) ?? {
         title,
         impressions: new Set<string>(), clicks: new Set<string>(), readers: new Set<string>(),
-        opens: 0, downloads: 0, downloadPairs: new Set<string>(), accessPairs: new Set<string>(),
+        opens: 0, downloads: 0, served: 0,
+        newVisitorSessions: new Set<string>(), returningSessions: new Set<string>(),
+        devices: new Map<string, Set<string>>(),
+        downloadPairs: new Set<string>(), accessPairs: new Set<string>(),
         sources: new Map<string, Set<string>>(),
       };
       const pair = `${sid}::${title}`;
@@ -618,6 +644,9 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
         publication.opens += 1;
         publication.accessPairs.add(pair);
         if (row.visitor_id) publication.readers.add(row.visitor_id);
+      }
+      if (row.event_name === "download_served") {
+        publication.served += 1;
       }
       if (row.event_name === "download") {
         publication.downloads += 1;
@@ -629,6 +658,16 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
       const sourceSet = publication.sources.get(source) ?? new Set<string>();
       sourceSet.add(sid);
       publication.sources.set(source, sourceSet);
+
+      const device = row.device_type?.trim() || "unknown";
+      const deviceSet = publication.devices.get(device) ?? new Set<string>();
+      deviceSet.add(sid);
+      publication.devices.set(device, deviceSet);
+
+      const vid = row.visitor_id?.trim();
+      if (vid && (priorVisitors.has(vid) || row.is_new_visitor === false)) publication.returningSessions.add(sid);
+      else if (row.is_new_visitor === true) publication.newVisitorSessions.add(sid);
+
       publications.set(title, publication);
     }
 
@@ -642,16 +681,25 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
       utmSources.set(label, set);
     }
 
+    // Same source/medium/campaign always groups together; utm_content is kept
+    // as a variant breakdown underneath it, never as a separate campaign.
     const campaignParts = [row.utm_source, row.utm_medium, row.utm_campaign]
       .map((part) => part?.trim()).filter(Boolean);
     if (campaignParts.length) {
       const label = campaignParts.join(" / ");
-      const set = campaigns.get(label) ?? new Set<string>();
-      set.add(sid);
-      campaigns.set(label, set);
+      const entry = campaigns.get(label) ?? { sessions: new Set<string>(), variants: new Map<string, Set<string>>() };
+      entry.sessions.add(sid);
+      const variant = row.utm_content?.trim();
+      if (variant) {
+        const variantSet = entry.variants.get(variant) ?? new Set<string>();
+        variantSet.add(sid);
+        entry.variants.set(variant, variantSet);
+      }
+      campaigns.set(label, entry);
     }
-    const location = [row.city, row.region, row.country].map((part) => part?.trim()).filter(Boolean).join(", ");
-    if (location) {
+    const place = [row.city, row.region, row.country].map((part) => part?.trim()).filter(Boolean).join(", ");
+    if (place) {
+      const location = describeLocation(place, row);
       const set = locations.get(location) ?? new Set<string>();
       set.add(sid);
       locations.set(location, set);
@@ -703,6 +751,10 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
       uniqueReaders: publication.readers.size,
       pdfOpens: publication.opens,
       downloadActions: publication.downloads,
+      downloadsServed: publication.served,
+      newVisitorSessions: publication.newVisitorSessions.size,
+      returningSessions: publication.returningSessions.size,
+      devices: [...publication.devices.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
       clickNumerator: publication.clicks.size,
       clickDenominator: publication.impressions.size,
       downloadNumerator: publication.downloadPairs.size,
@@ -710,7 +762,15 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
       sources: [...publication.sources.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
     })).sort((a, b) => b.pdfOpens + b.downloadActions - (a.pdfOpens + a.downloadActions)),
     utmSources: [...utmSources.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
-    campaigns: [...campaigns.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
+    campaigns: [...campaigns.entries()]
+      .map(([label, entry]) => ({
+        label,
+        sessions: entry.sessions.size,
+        variants: [...entry.variants.entries()]
+          .map(([content, set]) => ({ content, sessions: set.size }))
+          .sort((a, b) => b.sessions - a.sessions),
+      }))
+      .sort((a, b) => b.sessions - a.sessions),
     locations: [...locations.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions).slice(0, 20),
     searches: searches.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 50),
   };
