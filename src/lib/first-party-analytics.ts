@@ -314,6 +314,7 @@ export type FpAttribution = {
   utm_source: string | null;
   utm_medium: string | null;
   utm_campaign: string | null;
+  utm_content: string | null;
   landing_path: string | null;
   source_group: string;
 };
@@ -353,6 +354,7 @@ export function captureFirstTouch(path: string): FpAttribution {
     utm_source: null,
     utm_medium: null,
     utm_campaign: null,
+    utm_content: null,
     landing_path: null,
     source_group: "Direct",
   };
@@ -385,6 +387,7 @@ export function captureFirstTouch(path: string): FpAttribution {
     utm_source: params.get("utm_source"),
     utm_medium: params.get("utm_medium"),
     utm_campaign: params.get("utm_campaign"),
+    utm_content: params.get("utm_content"),
   };
 
   const attribution: FpAttribution = {
@@ -512,6 +515,7 @@ export function trackFp(name: FpEventName, input: FpEventInput = {}): void {
       utm_source: attribution.utm_source,
       utm_medium: attribution.utm_medium,
       utm_campaign: attribution.utm_campaign,
+      utm_content: attribution.utm_content,
       source_group: attribution.source_group,
       metadata: input.metadata ?? {},
     };
@@ -540,6 +544,7 @@ function emitSessionStart(path: string, visitorId: string, sessionId: string): v
       utm_source: attribution.utm_source,
       utm_medium: attribution.utm_medium,
       utm_campaign: attribution.utm_campaign,
+      utm_content: attribution.utm_content,
       source_group: attribution.source_group,
       metadata: {},
     },
