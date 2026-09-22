@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { checkRateLimit } from "@/lib/rate-limit.server";
+import { getRequestTelemetry } from "@/lib/request-telemetry.server";
 
 // Coarse device bucket derived from the user agent. The raw UA string is
 // never stored — only "mobile" | "tablet" | "desktop".
@@ -50,8 +51,12 @@ export const Route = createFileRoute("/api/track-view")({
           const visitorId = str("visitor_id", 80);
           if (!sessionId || !visitorId) return new Response(null, { status: 204 });
 
+          const telemetry = getRequestTelemetry(request);
           const cf = (request as unknown as { cf?: Record<string, unknown> }).cf ?? {};
-          const ua = request.headers.get("user-agent") ?? "";
+          const cfTimezone =
+            typeof cf["timezone"] === "string" && cf["timezone"].trim()
+              ? cf["timezone"].trim()
+              : null;
 
           const { getSupabaseAdmin } = await import("@/integrations/supabase/ext.server");
           const supabase = getSupabaseAdmin();
@@ -66,11 +71,11 @@ export const Route = createFileRoute("/api/track-view")({
             session_id: sessionId,
             visitor_id: visitorId,
             is_new_visitor: body["is_new_visitor"] === true,
-            device_type: deviceTypeFrom(ua),
-            city: (cf.city as string | undefined) ?? null,
-            region: (cf.region as string | undefined) ?? null,
-            country: (cf.country as string | undefined) ?? null,
-            timezone: (cf.timezone as string | undefined) ?? null,
+            device_type: deviceTypeFrom(telemetry.userAgent),
+            city: telemetry.city,
+            region: telemetry.region,
+            country: telemetry.country,
+            timezone: cfTimezone,
           });
 
           return new Response(null, { status: 204 });
