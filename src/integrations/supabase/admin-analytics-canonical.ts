@@ -1849,7 +1849,12 @@ export const adminCollectionReport = createServerFn({ method: "POST" })
 // Retention cohorts
 // ---------------------------------------------------------------------------
 
-type TimelineRow = { visitor_id: string | null; occurred_at: string; is_internal?: boolean | null };
+type TimelineRow = {
+  visitor_id: string | null;
+  session_id: string | null;
+  occurred_at: string;
+  is_internal?: boolean | null;
+};
 
 async function fetchTimelineRows(sinceIso: string): Promise<TimelineRow[]> {
   const admin = getSupabaseAdmin();
@@ -1857,8 +1862,8 @@ async function fetchTimelineRows(sinceIso: string): Promise<TimelineRow[]> {
   const pageSize = 1000;
   const maxRows = 60_000;
   const columns = (await eventColumns()).includes("is_internal")
-    ? "visitor_id, occurred_at, is_internal"
-    : "visitor_id, occurred_at";
+    ? "visitor_id, session_id, occurred_at, is_internal"
+    : "visitor_id, session_id, occurred_at";
 
   for (let offset = 0; offset < maxRows; offset += pageSize) {
     const { data, error } = await admin
@@ -1883,33 +1888,50 @@ export const adminRetentionCohorts = createServerFn({ method: "POST" })
     await requireAnalyticsAdmin(data.accessToken);
 
     const lookbackDays = 120;
-    const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString();
-    const rows = (await fetchTimelineRows(since)).filter((row) => row.is_internal !== true);
+    const observationStartIso = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString();
+    const rows = (await fetchTimelineRows(observationStartIso)).filter((row) => row.is_internal !== true);
 
-    const byVisitor = new Map<string, VisitorTimeline>();
+    // Distinct session starts per visitor. Repeat events inside one session
+    // collapse to that session's earliest timestamp, so a heartbeat or a
+    // second pageview can never register as a return.
+    const sessionFirstAt = new Map<string, { visitorId: string; at: number }>();
     for (const row of rows) {
       const vid = row.visitor_id?.trim();
-      if (!vid) continue;
+      const sid = row.session_id?.trim();
+      if (!vid || !sid) continue;
       const at = Date.parse(row.occurred_at);
       if (Number.isNaN(at)) continue;
-      const entry = byVisitor.get(vid) ?? { visitorId: vid, firstSeen: at, activeAt: [] };
-      if (at < entry.firstSeen) entry.firstSeen = at;
-      entry.activeAt.push(at);
-      byVisitor.set(vid, entry);
+      const key = `${vid}::${sid}`;
+      const existing = sessionFirstAt.get(key);
+      if (!existing || at < existing.at) sessionFirstAt.set(key, { visitorId: vid, at });
     }
 
-    const timelines = [...byVisitor.values()];
-    // Someone already active on the first observed day may have older history
-    // we cannot see, so day 0 is only trusted from one day after the data starts.
-    const earliest = timelines.length ? Math.min(...timelines.map((t) => t.firstSeen)) : Date.now();
-    const observationStart = earliest + 24 * 60 * 60 * 1000;
+    const byVisitor = new Map<string, VisitorTimeline>();
+    for (const { visitorId, at } of sessionFirstAt.values()) {
+      const entry = byVisitor.get(visitorId) ?? { visitorId, firstSession: at, sessionStarts: [] };
+      if (at < entry.firstSession) entry.firstSession = at;
+      entry.sessionStarts.push(at);
+      byVisitor.set(visitorId, entry);
+    }
+
+    // Left-censoring: any visitor with canonical history before the
+    // observation period cannot be trusted to have their real day 0 here.
+    const priorVisitors = await fetchPriorVisitors([...byVisitor.keys()], observationStartIso);
+    const timelines = [...byVisitor.values()].map((timeline) => ({
+      ...timeline,
+      sessionStarts: timeline.sessionStarts.sort((a, b) => a - b),
+      hasPriorHistory: priorVisitors.has(timeline.visitorId),
+    }));
+
+    const observationStart = Date.parse(observationStartIso);
 
     return {
       lookbackDays,
-      observationStart: new Date(observationStart).toISOString(),
+      observationStart: observationStartIso,
       visitorsObserved: timelines.length,
+      leftCensoredVisitors: timelines.filter((timeline) => timeline.hasPriorHistory).length,
       cohorts: computeCohorts(timelines, observationStart),
-      loyalty: computeWeeklyLoyalty(timelines),
+      loyalty: computeWeeklyLoyalty(timelines.filter((timeline) => !timeline.hasPriorHistory)),
     };
   });
 
