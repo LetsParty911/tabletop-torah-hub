@@ -90,13 +90,22 @@ export function getRequestTelemetry(request: Request): RequestTelemetry {
     secChMobile: headerValue(request, "sec-ch-ua-mobile")?.slice(0, 20) ?? null,
     country: country ? country.slice(0, 10) : null,
     region:
-      headerValue(request, "x-vercel-ip-country-region") ??
+      decodeGeo(headerValue(request, "x-vercel-ip-country-region")) ??
+      decodeGeo(headerValue(request, "cf-region")) ??
+      decodeGeo(headerValue(request, "cf-region-code")) ??
       cfStr("region") ??
       cfStr("regionCode") ??
       null,
-    city: decodeGeo(headerValue(request, "x-vercel-ip-city")) ?? cfStr("city") ?? null,
+    city:
+      decodeGeo(headerValue(request, "x-vercel-ip-city")) ??
+      decodeGeo(headerValue(request, "cf-ipcity")) ??
+      cfStr("city") ??
+      null,
     postalCode:
-      decodeGeo(headerValue(request, "x-vercel-ip-postal-code")) ?? cfStr("postalCode") ?? null,
+      decodeGeo(headerValue(request, "x-vercel-ip-postal-code")) ??
+      decodeGeo(headerValue(request, "cf-postal-code")) ??
+      cfStr("postalCode") ??
+      null,
     asn: asnNumber,
     asOrganization: cfStr("asOrganization")?.slice(0, 200) ?? null,
   };
