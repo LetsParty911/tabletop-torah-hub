@@ -185,20 +185,23 @@ export const Route = createFileRoute("/api/events")({
           if (error) {
             console.error("[api/events] insert failed", error.message);
             // Geo/network columns may not exist yet — never lose the event.
-            if (/geo_source|geo_provider|geo_reliability|network_type/.test(error.message)) {
-              const legacy = rows.map(
-                ({
-                  geo_source: _g,
-                  geo_provider: _p,
-                  geo_reliability: _r,
-                  network_type: _n,
-                  ...rest
-                }) => rest,
-              );
+            // Drop only the columns the database actually reports as missing,
+            // retrying while the error keeps naming one of them.
+            const OPTIONAL = ["geo_source", "geo_provider", "geo_reliability", "network_type"];
+            let payload = rows;
+            let message = error.message;
+            for (let attempt = 0; attempt < OPTIONAL.length; attempt += 1) {
+              const missing = OPTIONAL.find((c) => message.includes(c));
+              if (!missing) break;
+              payload = payload.map(({ [missing]: _drop, ...rest }) => rest);
               const retry = await supabase
                 .from("analytics_events")
-                .upsert(legacy, { onConflict: "event_id", ignoreDuplicates: true });
-              if (retry.error) console.error("[api/events] retry failed", retry.error.message);
+                .upsert(payload, { onConflict: "event_id", ignoreDuplicates: true });
+              if (!retry.error) break;
+              message = retry.error.message;
+              if (attempt === OPTIONAL.length - 1) {
+                console.error("[api/events] retry failed", message);
+              }
             }
           }
 
