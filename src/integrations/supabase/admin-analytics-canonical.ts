@@ -1118,7 +1118,15 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       latestSecChMobile: string | null;
       latestAsn: number | null;
       latestAsOrganization: string | null;
-      geo: { city: string | null; region: string | null; country: string | null; postalCode: string | null };
+      geo: {
+        city: string | null;
+        region: string | null;
+        country: string | null;
+        postalCode: string | null;
+        provider: string | null;
+        reliability: string | null;
+        networkType: string | null;
+      };
       referrerHost: string | null;
       referrerUrl: string | null;
       utmSource: string | null;
@@ -1174,7 +1182,15 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
           latestSecChMobile: null,
           latestAsn: null,
           latestAsOrganization: null,
-          geo: { city: null, region: null, country: null, postalCode: null },
+          geo: {
+            city: null,
+            region: null,
+            country: null,
+            postalCode: null,
+            provider: null,
+            reliability: null,
+            networkType: null,
+          },
           referrerHost: null,
           referrerUrl: null,
           utmSource: null,
@@ -1211,6 +1227,9 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       if (row.region?.trim()) v.geo.region = row.region.trim();
       if (row.country?.trim()) v.geo.country = row.country.trim();
       if (row.postal_code?.trim()) v.geo.postalCode = row.postal_code.trim();
+      if (row.geo_provider?.trim()) v.geo.provider = row.geo_provider.trim();
+      if (row.geo_reliability?.trim()) v.geo.reliability = row.geo_reliability.trim();
+      if (row.network_type?.trim()) v.geo.networkType = row.network_type.trim();
       if (row.referrer_host?.trim()) v.referrerHost = row.referrer_host.trim();
       if (row.referrer_url?.trim()) v.referrerUrl = row.referrer_url.trim();
       if (row.utm_source?.trim()) v.utmSource = row.utm_source.trim();
