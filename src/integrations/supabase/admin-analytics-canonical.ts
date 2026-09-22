@@ -1844,3 +1844,192 @@ export const adminCollectionReport = createServerFn({ method: "POST" })
       ...shapeReport(current, 8),
     };
   });
+
+// ---------------------------------------------------------------------------
+// Retention cohorts
+// ---------------------------------------------------------------------------
+
+type TimelineRow = { visitor_id: string | null; occurred_at: string; is_internal?: boolean | null };
+
+async function fetchTimelineRows(sinceIso: string): Promise<TimelineRow[]> {
+  const admin = getSupabaseAdmin();
+  const out: TimelineRow[] = [];
+  const pageSize = 1000;
+  const maxRows = 60_000;
+  const columns = (await eventColumns()).includes("is_internal")
+    ? "visitor_id, occurred_at, is_internal"
+    : "visitor_id, occurred_at";
+
+  for (let offset = 0; offset < maxRows; offset += pageSize) {
+    const { data, error } = await admin
+      .from("analytics_events")
+      .select(columns)
+      .gte("occurred_at", sinceIso)
+      .order("occurred_at", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw new Error(error.message);
+    const page = (data ?? []) as TimelineRow[];
+    out.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return out;
+}
+
+export const adminRetentionCohorts = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string }) =>
+    z.object({ accessToken: z.string().min(10) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAnalyticsAdmin(data.accessToken);
+
+    const lookbackDays = 120;
+    const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString();
+    const rows = (await fetchTimelineRows(since)).filter((row) => row.is_internal !== true);
+
+    const byVisitor = new Map<string, VisitorTimeline>();
+    for (const row of rows) {
+      const vid = row.visitor_id?.trim();
+      if (!vid) continue;
+      const at = Date.parse(row.occurred_at);
+      if (Number.isNaN(at)) continue;
+      const entry = byVisitor.get(vid) ?? { visitorId: vid, firstSeen: at, activeAt: [] };
+      if (at < entry.firstSeen) entry.firstSeen = at;
+      entry.activeAt.push(at);
+      byVisitor.set(vid, entry);
+    }
+
+    const timelines = [...byVisitor.values()];
+    // Someone already active on the first observed day may have older history
+    // we cannot see, so day 0 is only trusted from one day after the data starts.
+    const earliest = timelines.length ? Math.min(...timelines.map((t) => t.firstSeen)) : Date.now();
+    const observationStart = earliest + 24 * 60 * 60 * 1000;
+
+    return {
+      lookbackDays,
+      observationStart: new Date(observationStart).toISOString(),
+      visitorsObserved: timelines.length,
+      cohorts: computeCohorts(timelines, observationStart),
+      loyalty: computeWeeklyLoyalty(timelines),
+    };
+  });
+
+// ---------------------------------------------------------------------------
+// Analytics health — evidence-based checks over real recent data
+// ---------------------------------------------------------------------------
+
+export type HealthStatus = "healthy" | "warning" | "not_enough_data";
+export type HealthCheck = { name: string; status: HealthStatus; detail: string };
+
+export const adminAnalyticsHealth = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string }) =>
+    z.object({ accessToken: z.string().min(10) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAnalyticsAdmin(data.accessToken);
+
+    const end = new Date(Date.now() + 60_000).toISOString();
+    const start = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const rows = await fetchEventsBetween(start, end);
+    const checks: HealthCheck[] = [];
+    const total = rows.length;
+
+    // 1. Ingestion recency
+    const latest = rows.length ? rows[rows.length - 1]!.occurred_at : null;
+    const minutesSince = latest ? Math.round((Date.now() - Date.parse(latest)) / 60_000) : null;
+    checks.push({
+      name: "Event ingestion",
+      status: minutesSince === null ? "not_enough_data" : minutesSince <= 180 ? "healthy" : "warning",
+      detail:
+        minutesSince === null
+          ? "No events recorded in the last 7 days."
+          : `${total} events in 7 days; most recent ${minutesSince} minutes ago.`,
+    });
+
+    // 2. session_start consistency
+    const sessions = new Set<string>();
+    const sessionsWithStart = new Set<string>();
+    for (const row of rows) {
+      const sid = row.session_id?.trim();
+      if (!sid) continue;
+      sessions.add(sid);
+      if (row.event_name === "session_start") sessionsWithStart.add(sid);
+    }
+    const missingStart = sessions.size - sessionsWithStart.size;
+    checks.push({
+      name: "Session consistency",
+      status:
+        sessions.size < 10
+          ? "not_enough_data"
+          : missingStart / Math.max(1, sessions.size) <= 0.15
+            ? "healthy"
+            : "warning",
+      detail: `${sessions.size} sessions; ${missingStart} without a session_start event (sessions that began before this window count here).`,
+    });
+
+    // 3. Duplicate protection
+    const seen = new Set<string>();
+    let duplicates = 0;
+    for (const row of rows) {
+      const key = `${row.session_id}|${row.event_name}|${row.occurred_at}`;
+      if (seen.has(key)) duplicates += 1;
+      seen.add(key);
+    }
+    checks.push({
+      name: "Duplicate protection",
+      status: total < 10 ? "not_enough_data" : duplicates === 0 ? "healthy" : "warning",
+      detail:
+        duplicates === 0
+          ? "No identical session/event/timestamp rows observed; event_id uniqueness is collapsing retries."
+          : `${duplicates} rows share a session, event name and timestamp. Distinct event_ids kept them, so they are separate events, not retries.`,
+    });
+
+    // 4. Geo enrichment
+    const withCity = rows.filter((row) => row.city?.trim()).length;
+    const lowReliability = rows.filter((row) => row.geo_reliability === "low").length;
+    checks.push({
+      name: "Location enrichment",
+      status: total < 10 ? "not_enough_data" : withCity / Math.max(1, total) >= 0.5 ? "healthy" : "warning",
+      detail: `${withCity} of ${total} events carry an approximate city; ${lowReliability} are flagged low reliability (carrier, VPN or hosting network).`,
+    });
+
+    // 5. Human signal
+    const humanSignals = rows.filter((row) => row.event_name === "human_signal").length;
+    checks.push({
+      name: "Human interaction signal",
+      status: sessions.size < 10 ? "not_enough_data" : humanSignals > 0 ? "healthy" : "warning",
+      detail: `${humanSignals} human_signal events across ${sessions.size} sessions.`,
+    });
+
+    // 6. Campaign coverage
+    const tagged = rows.filter((row) => row.utm_source?.trim()).length;
+    const withContent = rows.filter((row) => row.utm_content?.trim()).length;
+    checks.push({
+      name: "Campaign fields",
+      status: total < 10 ? "not_enough_data" : "healthy",
+      detail: `${tagged} of ${total} events carry a utm_source; ${withContent} also carry a utm_content variant.`,
+    });
+
+    // 7. Download action -> served matching
+    const actions = new Set<string>();
+    const served = new Set<string>();
+    for (const row of rows) {
+      const value = (row.metadata ?? {})["action_id"];
+      const id = typeof value === "string" && value.trim() ? value.trim() : null;
+      if (!id) continue;
+      if (row.event_name === "download") actions.add(id);
+      if (row.event_name === "download_served") served.add(id);
+    }
+    const matched = [...actions].filter((id) => served.has(id)).length;
+    checks.push({
+      name: "Download request matching",
+      status:
+        actions.size < 10
+          ? "not_enough_data"
+          : matched / Math.max(1, actions.size) >= 0.7
+            ? "healthy"
+            : "warning",
+      detail: `${matched} of ${actions.size} tagged download actions have a matching served request. A served request means the file redirect was issued, not that the download completed.`,
+    });
+
+    return { windowStart: start, windowEnd: end, events: total, checks };
+  });
