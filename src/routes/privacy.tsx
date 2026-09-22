@@ -89,9 +89,8 @@ function PrivacyPage() {
               <Section heading="Who we are">
                 <p>
                   Torah for the Table is operated by {ENTITY_NAME}, a nonprofit corporation
-                  organized in New Jersey and recognized by the IRS as a tax-exempt organization
-                  under Section 501(c)(3). You can reach us about anything in this policy at{" "}
-                  {mailLink}.
+                  recognized by the IRS as a tax-exempt organization under Section 501(c)(3). You
+                  can reach us about anything in this policy at {mailLink}.
                 </p>
               </Section>
 
