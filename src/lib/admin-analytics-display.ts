@@ -16,6 +16,8 @@ export function buildTrackingUrl(input: {
   source: string;
   medium: string;
   campaign: string;
+  /** Optional variant label (utm_content), e.g. two different WhatsApp messages. */
+  content?: string;
 }): string | null {
   try {
     // Validate the base URL before tagging it.
@@ -31,7 +33,12 @@ export function buildTrackingUrl(input: {
     return null;
   return withUtm(
     input.baseUrl,
-    { source: input.source, medium: input.medium, campaign: input.campaign },
+    {
+      source: input.source,
+      medium: input.medium,
+      campaign: input.campaign,
+      content: input.content ?? "",
+    },
     { replace: true },
   );
 }

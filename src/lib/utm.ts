@@ -12,6 +12,11 @@ export type UtmParams = {
   source: string;
   medium: string;
   campaign: string;
+  /**
+   * Optional creative/message variant inside one campaign (utm_content).
+   * Existing callers can omit it; when omitted nothing is added or removed.
+   */
+  content?: string;
 };
 
 export function normalizeUtmValue(value: string): string {
@@ -25,7 +30,10 @@ export function normalizeUtmValue(value: string): string {
 
 /**
  * Returns the url with UTM parameters applied, or the original string when the
- * url cannot be parsed or the normalized values are empty.
+ * url cannot be parsed or the normalized required values are empty.
+ *
+ * utm_content is optional: an empty or missing value leaves the url's own
+ * utm_content untouched.
  */
 export function withUtm(
   url: string,
@@ -45,6 +53,9 @@ export function withUtm(
     ["utm_campaign", normalizeUtmValue(params.campaign)],
   ];
   if (values.some(([, value]) => !value)) return url;
+
+  const content = normalizeUtmValue(params.content ?? "");
+  if (content) values.push(["utm_content", content]);
 
   for (const [key, value] of values) {
     const existing = parsed.searchParams.get(key);
