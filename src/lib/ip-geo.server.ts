@@ -81,6 +81,39 @@ async function writeCache(supabase: any, ip: string, row: Omit<CacheRow, "fetche
   }
 }
 
+function isUsable(r: Omit<CacheRow, "fetched_at"> | null): boolean {
+  return !!r && (!!r.city || !!r.region);
+}
+
+// MaxMind GeoLite City web service (HTTPS, Basic auth). Server-only.
+// Only country / region / city / postal are read — never latitude/longitude.
+async function lookupMaxMind(ip: string): Promise<Omit<CacheRow, "fetched_at"> | null> {
+  const accountId = process.env["MAXMIND_ACCOUNT_ID"];
+  const licenseKey = process.env["MAXMIND_LICENSE_KEY"];
+  if (!accountId || !licenseKey) return null;
+  try {
+    const res = await fetch(`https://geolite.info/geoip/v2.1/city/${encodeURIComponent(ip)}`, {
+      headers: {
+        Authorization: `Basic ${btoa(`${accountId}:${licenseKey}`)}`,
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS),
+    });
+    if (!res.ok) return null;
+    const j = (await res.json()) as Record<string, any>;
+    const sub = Array.isArray(j["subdivisions"]) ? j["subdivisions"][0] : null;
+    return {
+      country: clean(j["country"]?.["iso_code"], 10),
+      region: clean(sub?.["names"]?.["en"] ?? sub?.["iso_code"], 120),
+      city: clean(j["city"]?.["names"]?.["en"], 120),
+      postal_code: clean(j["postal"]?.["code"], 20),
+      lookup_ok: true,
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function lookupIpWhoIs(ip: string): Promise<Omit<CacheRow, "fetched_at"> | null> {
   try {
     const res = await fetch(
