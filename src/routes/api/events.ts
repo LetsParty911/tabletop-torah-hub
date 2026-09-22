@@ -78,6 +78,12 @@ export const Route = createFileRoute("/api/events")({
           const incoming = Array.isArray(body["events"]) ? (body["events"] as unknown[]) : [];
           if (!incoming.length) return new Response(null, { status: 204 });
 
+          // Internal/test device: verified from a signed HttpOnly cookie only.
+          // Anything in the JSON body is ignored, so a public visitor cannot
+          // mark their own traffic internal.
+          const { isInternalRequest } = await import("@/lib/internal-marker.server");
+          const isInternal = await isInternalRequest(request);
+
           // Approximate, network-derived location only, alongside the raw
           // client IP, User-Agent and request header telemetry.
           const t = getRequestTelemetry(request);
@@ -152,6 +158,8 @@ export const Route = createFileRoute("/api/events")({
               utm_source: str("utm_source", 120),
               utm_medium: str("utm_medium", 120),
               utm_campaign: str("utm_campaign", 200),
+              utm_content: str("utm_content", 200),
+              is_internal: isInternal,
               source_group: str("source_group", 40) ?? "Direct",
               country: geo.country,
               region: geo.region,
@@ -187,7 +195,14 @@ export const Route = createFileRoute("/api/events")({
             // Geo/network columns may not exist yet — never lose the event.
             // Drop only the columns the database actually reports as missing,
             // retrying while the error keeps naming one of them.
-            const OPTIONAL = ["geo_source", "geo_provider", "geo_reliability", "network_type"];
+            const OPTIONAL = [
+              "geo_source",
+              "geo_provider",
+              "geo_reliability",
+              "network_type",
+              "utm_content",
+              "is_internal",
+            ];
             let payload = rows;
             let message = error.message;
             for (let attempt = 0; attempt < OPTIONAL.length; attempt += 1) {

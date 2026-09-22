@@ -35,6 +35,7 @@ import { Route as ApiTrackViewRouteImport } from './routes/api/track-view'
 import { Route as ApiTrackSearchRouteImport } from './routes/api/track-search'
 import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
 import { Route as ApiPrivacyRegionRouteImport } from './routes/api/privacy-region'
+import { Route as ApiInternalDeviceRouteImport } from './routes/api/internal-device'
 import { Route as ApiEventsRouteImport } from './routes/api/events'
 import { Route as ApiEnhancedFingerprintRouteImport } from './routes/api/enhanced-fingerprint'
 import { Route as YomTovSlugYearRouteImport } from './routes/yom-tov.$slug.$year'
@@ -173,6 +174,11 @@ const ApiPrivacyRegionRoute = ApiPrivacyRegionRouteImport.update({
   path: '/api/privacy-region',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInternalDeviceRoute = ApiInternalDeviceRouteImport.update({
+  id: '/api/internal-device',
+  path: '/api/internal-device',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiEventsRoute = ApiEventsRouteImport.update({
   id: '/api/events',
   path: '/api/events',
@@ -228,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/internal-device': typeof ApiInternalDeviceRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
@@ -263,6 +270,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/internal-device': typeof ApiInternalDeviceRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
@@ -299,6 +307,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/internal-device': typeof ApiInternalDeviceRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
@@ -336,6 +345,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/api/enhanced-fingerprint'
     | '/api/events'
+    | '/api/internal-device'
     | '/api/privacy-region'
     | '/api/track-download'
     | '/api/track-search'
@@ -371,6 +381,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/api/enhanced-fingerprint'
     | '/api/events'
+    | '/api/internal-device'
     | '/api/privacy-region'
     | '/api/track-download'
     | '/api/track-search'
@@ -406,6 +417,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/api/enhanced-fingerprint'
     | '/api/events'
+    | '/api/internal-device'
     | '/api/privacy-region'
     | '/api/track-download'
     | '/api/track-search'
@@ -442,6 +454,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiEnhancedFingerprintRoute: typeof ApiEnhancedFingerprintRoute
   ApiEventsRoute: typeof ApiEventsRoute
+  ApiInternalDeviceRoute: typeof ApiInternalDeviceRoute
   ApiPrivacyRegionRoute: typeof ApiPrivacyRegionRoute
   ApiTrackDownloadRoute: typeof ApiTrackDownloadRoute
   ApiTrackSearchRoute: typeof ApiTrackSearchRoute
@@ -641,6 +654,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPrivacyRegionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal-device': {
+      id: '/api/internal-device'
+      path: '/api/internal-device'
+      fullPath: '/api/internal-device'
+      preLoaderRoute: typeof ApiInternalDeviceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/events': {
       id: '/api/events'
       path: '/api/events'
@@ -725,6 +745,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiEnhancedFingerprintRoute: ApiEnhancedFingerprintRoute,
   ApiEventsRoute: ApiEventsRoute,
+  ApiInternalDeviceRoute: ApiInternalDeviceRoute,
   ApiPrivacyRegionRoute: ApiPrivacyRegionRoute,
   ApiTrackDownloadRoute: ApiTrackDownloadRoute,
   ApiTrackSearchRoute: ApiTrackSearchRoute,

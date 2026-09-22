@@ -1,5 +1,5 @@
 import { getAttribution, getSessionId } from "@/lib/site-analytics";
-import { trackFp } from "@/lib/first-party-analytics";
+import { getSessionId as getFpSessionId, getVisitorId, newActionId, trackFp } from "@/lib/first-party-analytics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { AlertCircle, Download, Loader2 } from "lucide-react";
@@ -12,6 +12,8 @@ type DownloadTrackingContext = {
   jewishYear?: number | null;
   publisher?: string | null;
   publicationSeries?: string | null;
+  /** Correlates this action with the server's `download_served` event. */
+  actionId?: string | null;
 };
 
 export function trackDownloadAction({
@@ -22,6 +24,7 @@ export function trackDownloadAction({
   jewishYear,
   publisher,
   publicationSeries,
+  actionId,
 }: DownloadTrackingContext) {
   if (typeof window === "undefined") return;
 
@@ -65,7 +68,26 @@ export function trackDownloadAction({
     publisher: publisher ?? null,
     parsha: parsha ?? null,
     jewish_year: jewishYear ?? null,
+    metadata: actionId ? { action_id: actionId } : {},
   });
+}
+
+/**
+ * Adds the correlation ids to a download link. The server validates every
+ * value; nothing here is trusted as-is.
+ */
+export function downloadHrefWithAction(href: string, actionId: string): string {
+  try {
+    const url = new URL(href, window.location.origin);
+    url.searchParams.set("a", actionId);
+    const session = getFpSessionId();
+    const visitor = getVisitorId();
+    if (session) url.searchParams.set("s", session);
+    if (visitor) url.searchParams.set("v", visitor);
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return href;
+  }
 }
 
 type DownloadToPrintButtonProps = {
@@ -141,8 +163,9 @@ export function DownloadToPrintButton({
     }
   }, [href]);
 
-  const trackDownload = useCallback(() => {
+  const trackDownload = useCallback((actionId: string) => {
     trackDownloadAction({
+      actionId,
       publicationId,
       publicationName,
       publicationTitle,
@@ -168,7 +191,15 @@ export function DownloadToPrintButton({
         return;
       }
       onClick?.();
-      trackDownload();
+      const actionId = newActionId();
+      trackDownload(actionId);
+      // Tag the outgoing request so the server can record that it successfully
+      // served the file request (not that the download completed).
+      try {
+        e.currentTarget.href = downloadHrefWithAction(href, actionId);
+      } catch {
+        /* keep the plain link */
+      }
       if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
 
       // Let the browser stream the file straight to disk (single pass).
@@ -186,7 +217,7 @@ export function DownloadToPrintButton({
       flushSync(() => setPhase("starting"));
       statusTimerRef.current = setTimeout(() => setPhase("idle"), 1200);
     },
-    [onClick, busy, trackDownload],
+    [onClick, busy, trackDownload, href],
   );
 
   return (

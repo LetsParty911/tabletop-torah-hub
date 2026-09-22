@@ -178,6 +178,73 @@ function writeSession(s: StoredSession): void {
   lsSet(SESSION_STORAGE_KEY, JSON.stringify(s));
 }
 
+// --- Cross-tab session coordination ------------------------------------------
+//
+// Two tabs opened at nearly the same moment both read "no session" and both
+// mint one. Three safeguards, all optional and all degrading to the previous
+// behaviour when the browser lacks the API:
+//
+// 1. Re-read storage immediately before writing, so a session another tab wrote
+//    microseconds ago is adopted instead of replaced.
+// 2. BroadcastChannel: tabs announce a freshly minted session, and when two
+//    sessions are minted within the same few seconds both tabs deterministically
+//    adopt the lexicographically smaller id, so they converge on one.
+// 3. navigator.locks: the same reconciliation is repeated inside an exclusive
+//    lock, which removes the race entirely where it is supported.
+//
+// Visitor IDs are never merged — this only affects session minting in one
+// browser profile.
+
+const SESSION_CHANNEL = "tftt-session";
+const RACE_WINDOW_MS = 5_000;
+
+let channel: BroadcastChannel | null = null;
+
+function sessionChannel(): BroadcastChannel | null {
+  if (channel !== null) return channel;
+  try {
+    if (typeof BroadcastChannel === "undefined") return null;
+    channel = new BroadcastChannel(SESSION_CHANNEL);
+    channel.addEventListener("message", (event: MessageEvent) => {
+      const incoming = event.data as StoredSession | null;
+      if (!incoming?.id) return;
+      adoptEarlier(incoming);
+    });
+    return channel;
+  } catch {
+    return null;
+  }
+}
+
+/** Deterministic convergence: when two sessions race, the smaller id wins. */
+function adoptEarlier(incoming: StoredSession): void {
+  const mine = readSession();
+  if (!mine || mine.id === incoming.id) return;
+  if (Math.abs((mine.started ?? 0) - (incoming.started ?? 0)) > RACE_WINDOW_MS) return;
+  if (incoming.id < mine.id) {
+    writeSession({ ...incoming, last: Math.max(mine.last, incoming.last) });
+    if (lsGet(NEW_VISITOR_SESSION_KEY) === mine.id) lsSet(NEW_VISITOR_SESSION_KEY, incoming.id);
+  }
+}
+
+function announceSession(session: StoredSession): void {
+  try {
+    sessionChannel()?.postMessage(session);
+  } catch {
+    /* ignore */
+  }
+  try {
+    const locks = (navigator as Navigator & { locks?: LockManager }).locks;
+    if (!locks?.request) return;
+    void locks.request(SESSION_CHANNEL, () => {
+      const current = readSession();
+      if (current) adoptEarlier(current);
+    });
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * Returns the current session id, creating a new one when the previous
  * session has been idle for 30 minutes or more. `isNew` is true only for the
@@ -199,6 +266,14 @@ export function touchSession(): { sessionId: string; isNew: boolean } {
     }
   }
 
+  // Last-moment re-read: another tab may have minted a session between our
+  // read above and this write.
+  const raced = readSession();
+  if (!visitorWasCreated && raced && raced.id !== existing?.id && now - raced.last < SESSION_IDLE_MS) {
+    writeSession({ ...raced, last: now });
+    return { sessionId: raced.id, isNew: false };
+  }
+
   const fresh: StoredSession = { id: randomId(), started: now, last: now };
   writeSession(fresh);
   if (visitorWasCreated) {
@@ -213,11 +288,20 @@ export function touchSession(): { sessionId: string; isNew: boolean } {
   } catch {
     /* ignore */
   }
+  announceSession(fresh);
   return { sessionId: fresh.id, isNew: true };
 }
 
 export function getSessionId(): string {
   return touchSession().sessionId;
+}
+
+/**
+ * A unique id for one user-initiated download action, used to correlate the
+ * canonical `download` event with the server's `download_served` event.
+ */
+export function newActionId(): string {
+  return randomId().replace(/[^A-Za-z0-9_-]/g, "").slice(0, 64);
 }
 
 // ---------------------------------------------------------------------------
@@ -230,6 +314,7 @@ export type FpAttribution = {
   utm_source: string | null;
   utm_medium: string | null;
   utm_campaign: string | null;
+  utm_content: string | null;
   landing_path: string | null;
   source_group: string;
 };
@@ -269,6 +354,7 @@ export function captureFirstTouch(path: string): FpAttribution {
     utm_source: null,
     utm_medium: null,
     utm_campaign: null,
+    utm_content: null,
     landing_path: null,
     source_group: "Direct",
   };
@@ -301,6 +387,7 @@ export function captureFirstTouch(path: string): FpAttribution {
     utm_source: params.get("utm_source"),
     utm_medium: params.get("utm_medium"),
     utm_campaign: params.get("utm_campaign"),
+    utm_content: params.get("utm_content"),
   };
 
   const attribution: FpAttribution = {
@@ -428,6 +515,7 @@ export function trackFp(name: FpEventName, input: FpEventInput = {}): void {
       utm_source: attribution.utm_source,
       utm_medium: attribution.utm_medium,
       utm_campaign: attribution.utm_campaign,
+      utm_content: attribution.utm_content,
       source_group: attribution.source_group,
       metadata: input.metadata ?? {},
     };
@@ -456,6 +544,7 @@ function emitSessionStart(path: string, visitorId: string, sessionId: string): v
       utm_source: attribution.utm_source,
       utm_medium: attribution.utm_medium,
       utm_campaign: attribution.utm_campaign,
+      utm_content: attribution.utm_content,
       source_group: attribution.source_group,
       metadata: {},
     },

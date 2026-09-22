@@ -2,6 +2,18 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import {
+  CONFIDENCE_EXPLANATIONS,
+  CONFIDENCE_LABELS,
+  classifySession,
+  emptyConfidenceCounts,
+  type TrafficConfidence,
+} from "@/lib/traffic-confidence";
+import {
+  computeCohorts,
+  computeWeeklyLoyalty,
+  type VisitorTimeline,
+} from "@/lib/retention-cohorts";
+import {
   buildChangeObservations,
   buildObservations,
   formatDayLabel,
@@ -35,6 +47,13 @@ type EventRow = {
   utm_source?: string | null;
   utm_medium?: string | null;
   utm_campaign?: string | null;
+  utm_content?: string | null;
+  is_internal?: boolean | null;
+  geo_source?: string | null;
+  geo_provider?: string | null;
+  geo_reliability?: string | null;
+  network_type?: string | null;
+  as_organization?: string | null;
   metadata?: Record<string, unknown> | null;
   user_agent?: string | null;
 };
@@ -57,6 +76,7 @@ type SessionAgg = {
   humanSignal: boolean;
   meaningfulIntent: boolean;
   internalTestTraffic: boolean;
+  markedInternal: boolean;
 };
 
 // Events that only a person can realistically produce.
@@ -135,17 +155,37 @@ function buildCollectionWindows(
   return windows;
 }
 
+const BASE_COLUMNS =
+  "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, publication_series, publisher, device_type, source_group, country, region, city, postal_code, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign, metadata, user_agent";
+
+// Newer columns. Some environments may not have every one of them yet, so the
+// first query probes once and the answer is cached for the worker instance.
+const EXTRA_COLUMNS =
+  "utm_content, is_internal, geo_source, geo_provider, geo_reliability, network_type, as_organization";
+
+let cachedColumns: string | null = null;
+
+async function eventColumns(): Promise<string> {
+  if (cachedColumns) return cachedColumns;
+  const admin = getSupabaseAdmin();
+  const probe = await admin
+    .from("analytics_events")
+    .select(`${BASE_COLUMNS}, ${EXTRA_COLUMNS}`)
+    .limit(1);
+  cachedColumns = probe.error ? BASE_COLUMNS : `${BASE_COLUMNS}, ${EXTRA_COLUMNS}`;
+  return cachedColumns;
+}
+
 async function fetchEventsBetween(start: string, end: string): Promise<EventRow[]> {
   const admin = getSupabaseAdmin();
   const out: EventRow[] = [];
   const pageSize = 1000;
+  const columns = await eventColumns();
 
   for (let offset = 0; ; offset += pageSize) {
     const { data, error } = await admin
       .from("analytics_events")
-      .select(
-        "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, publication_series, publisher, device_type, source_group, country, region, city, postal_code, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign, metadata, user_agent",
-      )
+      .select(columns)
       .gte("occurred_at", start)
       .lt("occurred_at", end)
       .order("occurred_at", { ascending: true })
@@ -234,6 +274,7 @@ function buildSessions(rows: EventRow[]): Map<string, SessionAgg> {
         humanSignal: false,
         meaningfulIntent: false,
         internalTestTraffic: false,
+        markedInternal: false,
       };
       sessions.set(sid, session);
     }
@@ -247,6 +288,12 @@ function buildSessions(rows: EventRow[]): Map<string, SessionAgg> {
     // Lovable editor/preview traffic is internal testing, not public readership.
     // Keep it in raw analytics for diagnostics, but mark the session so headline
     // audience metrics can exclude it without using IP-based identity merging.
+    // Server-verified internal/test device marker (signed HttpOnly cookie).
+    if (row.is_internal === true) {
+      session.internalTestTraffic = true;
+      session.markedInternal = true;
+    }
+
     const referrerHost = row.referrer_host?.trim().toLowerCase() ?? "";
     const userAgent = row.user_agent?.toLowerCase() ?? "";
     if (
@@ -479,6 +526,21 @@ function reportWindow(range: AnalyticsReportRange, collection: WindowDef | null)
   };
 }
 
+/**
+ * Approximate, network-derived location wording. Never presented as an exact
+ * address: a carrier, VPN or datacentre exit produces a plausible-looking city
+ * that is not where the reader is sitting.
+ */
+export function describeLocation(place: string, row: Pick<EventRow, "geo_reliability" | "network_type" | "geo_source">): string {
+  const network = row.network_type?.trim().toLowerCase() ?? "";
+  const reliability = row.geo_reliability?.trim().toLowerCase() ?? "";
+  if (network && network !== "standard" && network !== "unknown")
+    return `${place} — ${network} network location, low reliability`;
+  if (reliability === "low") return `${place} — network location, low reliability`;
+  if (row.geo_source === "country_only") return `${place} — country only`;
+  return `${place} — approximate network location`;
+}
+
 function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
   const allSessions = buildSessions(rows);
   const automation = new Set([
@@ -490,6 +552,25 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
   const excluded = new Set([...automation, ...internalOnly]);
   const keptSessions = [...allSessions.values()].filter((session) => !excluded.has(session.id));
   const keptIds = new Set(keptSessions.map((session) => session.id));
+
+  // Reporting-only confidence classification. Nothing is written back to the
+  // stored rows: this is how we describe the traffic, not a verdict on it.
+  const confidenceBySession = new Map<string, TrafficConfidence>();
+  const confidenceCounts = emptyConfidenceCounts();
+  for (const session of allSessions.values()) {
+    const label = classifySession({
+      internal: session.internalTestTraffic,
+      flaggedAutomation: automation.has(session.id),
+      humanSignal: session.humanSignal,
+      meaningfulIntent: session.meaningfulIntent,
+      pageviews: session.pageviews,
+      impressions: session.impressions,
+      durationMs: Math.max(0, session.lastAt - session.firstAt),
+    });
+    confidenceBySession.set(session.id, label);
+    confidenceCounts[label] += 1;
+  }
+  const markedInternalSessions = [...allSessions.values()].filter((s) => s.markedInternal).length;
   const keptRows = rows.filter((row) => Boolean(row.session_id && keptIds.has(row.session_id.trim())));
   const canonical = summarizeCanonical(rows, priorVisitors);
   const rowsBySession = new Map<string, EventRow[]>();
@@ -543,12 +624,16 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
     readers: Set<string>;
     opens: number;
     downloads: number;
+    served: number;
+    newVisitorSessions: Set<string>;
+    returningSessions: Set<string>;
+    devices: Map<string, Set<string>>;
     downloadPairs: Set<string>;
     accessPairs: Set<string>;
     sources: Map<string, Set<string>>;
   };
   const publications = new Map<string, PublicationAgg>();
-  const campaigns = new Map<string, Set<string>>();
+  const campaigns = new Map<string, { sessions: Set<string>; variants: Map<string, Set<string>> }>();
   const utmSources = new Map<string, Set<string>>();
   const locations = new Map<string, Set<string>>();
   const searches: Array<{ term: string; at: string; sessionId: string; ledToContent: boolean }> = [];
@@ -561,7 +646,10 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
       const publication = publications.get(title) ?? {
         title,
         impressions: new Set<string>(), clicks: new Set<string>(), readers: new Set<string>(),
-        opens: 0, downloads: 0, downloadPairs: new Set<string>(), accessPairs: new Set<string>(),
+        opens: 0, downloads: 0, served: 0,
+        newVisitorSessions: new Set<string>(), returningSessions: new Set<string>(),
+        devices: new Map<string, Set<string>>(),
+        downloadPairs: new Set<string>(), accessPairs: new Set<string>(),
         sources: new Map<string, Set<string>>(),
       };
       const pair = `${sid}::${title}`;
@@ -571,6 +659,9 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
         publication.opens += 1;
         publication.accessPairs.add(pair);
         if (row.visitor_id) publication.readers.add(row.visitor_id);
+      }
+      if (row.event_name === "download_served") {
+        publication.served += 1;
       }
       if (row.event_name === "download") {
         publication.downloads += 1;
@@ -582,6 +673,16 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
       const sourceSet = publication.sources.get(source) ?? new Set<string>();
       sourceSet.add(sid);
       publication.sources.set(source, sourceSet);
+
+      const device = row.device_type?.trim() || "unknown";
+      const deviceSet = publication.devices.get(device) ?? new Set<string>();
+      deviceSet.add(sid);
+      publication.devices.set(device, deviceSet);
+
+      const vid = row.visitor_id?.trim();
+      if (vid && (priorVisitors.has(vid) || row.is_new_visitor === false)) publication.returningSessions.add(sid);
+      else if (row.is_new_visitor === true) publication.newVisitorSessions.add(sid);
+
       publications.set(title, publication);
     }
 
@@ -595,16 +696,25 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
       utmSources.set(label, set);
     }
 
+    // Same source/medium/campaign always groups together; utm_content is kept
+    // as a variant breakdown underneath it, never as a separate campaign.
     const campaignParts = [row.utm_source, row.utm_medium, row.utm_campaign]
       .map((part) => part?.trim()).filter(Boolean);
     if (campaignParts.length) {
       const label = campaignParts.join(" / ");
-      const set = campaigns.get(label) ?? new Set<string>();
-      set.add(sid);
-      campaigns.set(label, set);
+      const entry = campaigns.get(label) ?? { sessions: new Set<string>(), variants: new Map<string, Set<string>>() };
+      entry.sessions.add(sid);
+      const variant = row.utm_content?.trim();
+      if (variant) {
+        const variantSet = entry.variants.get(variant) ?? new Set<string>();
+        variantSet.add(sid);
+        entry.variants.set(variant, variantSet);
+      }
+      campaigns.set(label, entry);
     }
-    const location = [row.city, row.region, row.country].map((part) => part?.trim()).filter(Boolean).join(", ");
-    if (location) {
+    const place = [row.city, row.region, row.country].map((part) => part?.trim()).filter(Boolean).join(", ");
+    if (place) {
+      const location = describeLocation(place, row);
       const set = locations.get(location) ?? new Set<string>();
       set.add(sid);
       locations.set(location, set);
@@ -621,6 +731,43 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
     }
   }
 
+  // Correlate user-initiated download actions with served download requests.
+  const actionId = (row: EventRow): string | null => {
+    const value = (row.metadata ?? {})["action_id"];
+    return typeof value === "string" && value.trim() ? value.trim() : null;
+  };
+  const actionIds = new Set<string>();
+  const servedActions = new Set<string>();
+  for (const row of keptRows) {
+    const id = actionId(row);
+    if (!id) continue;
+    if (row.event_name === "download") actionIds.add(id);
+    if (row.event_name === "download_served") servedActions.add(id);
+  }
+  const matchedActions = new Set([...actionIds].filter((id) => servedActions.has(id)));
+
+  // Plain-English, factual sentences about recent meaningful visits.
+  const recentStories = sessionDetails
+    .filter((session) => session.usedTorah || session.engaged)
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+    .slice(0, 8)
+    .map((session) => {
+      const events = session.events;
+      const titles = [...new Set(events.map((event) => event.publication).filter(Boolean))].slice(0, 2);
+      const opened = events.some((event) => event.event === "pdf_open");
+      const downloaded = events.some((event) => event.event === "download");
+      const did = downloaded
+        ? "requested a download"
+        : opened
+          ? "opened a PDF"
+          : `viewed ${session.pageviews} ${session.pageviews === 1 ? "page" : "pages"}`;
+      const confidenceLabel = CONFIDENCE_LABELS[confidenceBySession.get(session.sessionId) ?? "uncertain"];
+      return {
+        at: session.startedAt,
+        text: `A ${session.device} visitor arriving from ${session.source} ${did}${titles.length ? ` (${titles.join(", ")})` : ""}. Classified ${confidenceLabel.toLowerCase()}.`,
+      };
+    });
+
   const metricDetails = {
     people: keptRows.filter((row, index, list) => row.visitor_id && list.findIndex((other) => other.visitor_id === row.visitor_id) === index).map((row) => detailFor(row)),
     usedTorah: usedSessions.flatMap((session) => session.events.filter((event) => ["pdf_open", "download", "share_click", "signup"].includes(event.event))),
@@ -628,6 +775,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
     downloads: keptRows.filter((row) => row.event_name === "download").map((row) => detailFor(row)),
     returning: keptRows.filter((row, index, list) => row.visitor_id && returning.has(row.visitor_id) && list.findIndex((other) => other.visitor_id === row.visitor_id) === index).map((row) => detailFor(row)),
     engaged: sessionDetails.filter((session) => session.engaged).flatMap((session) => session.events.slice(0, 1)),
+    downloadsServed: keptRows.filter((row) => row.event_name === "download_served").map((row) => detailFor(row, "Application validated the file and issued the redirect")),
   };
 
   return {
@@ -640,7 +788,25 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
       engagedSessions: canonical.engagedSessions,
       returningReaders: returning.size,
       signups: keptRows.filter((row) => row.event_name === "signup").length,
+      newVisitors: new Set(keptRows.filter((row) => row.is_new_visitor === true && row.visitor_id).map((row) => row.visitor_id)).size,
+      // A served download request means the application validated the
+      // publication and issued the redirect. It is not proof the file finished.
+      downloadsServed: servedActions.size,
+      downloadActionsMatched: matchedActions.size,
+      downloadActionsUnmatched: Math.max(0, actionIds.size - matchedActions.size),
+      servedWithoutAction: [...servedActions].filter((id) => !actionIds.has(id)).length,
+      chooserSelections: keptRows.filter((row) => row.event_name === "chooser_select").length,
+      recommendationClicks: keptRows.filter((row) => row.event_name === "recommendation_click").length,
+      myTableAdds: keptRows.filter((row) => row.event_name === "my_table_add").length,
+      myTableOpens: keptRows.filter((row) => row.event_name === "my_table_open").length,
     },
+    confidence: {
+      counts: confidenceCounts,
+      labels: CONFIDENCE_LABELS,
+      explanations: CONFIDENCE_EXPLANATIONS,
+      markedInternalSessions,
+    },
+    recentStories,
     raw: { sessions: canonical.rawSessions, visitors: canonical.rawUniqueVisitors },
     filteredAutomationSessions: canonical.filteredAutomationSessions,
     filteredInternalSessions: canonical.filteredInternalSessions,
@@ -656,6 +822,10 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
       uniqueReaders: publication.readers.size,
       pdfOpens: publication.opens,
       downloadActions: publication.downloads,
+      downloadsServed: publication.served,
+      newVisitorSessions: publication.newVisitorSessions.size,
+      returningSessions: publication.returningSessions.size,
+      devices: [...publication.devices.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
       clickNumerator: publication.clicks.size,
       clickDenominator: publication.impressions.size,
       downloadNumerator: publication.downloadPairs.size,
@@ -663,7 +833,15 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
       sources: [...publication.sources.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
     })).sort((a, b) => b.pdfOpens + b.downloadActions - (a.pdfOpens + a.downloadActions)),
     utmSources: [...utmSources.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
-    campaigns: [...campaigns.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
+    campaigns: [...campaigns.entries()]
+      .map(([label, entry]) => ({
+        label,
+        sessions: entry.sessions.size,
+        variants: [...entry.variants.entries()]
+          .map(([content, set]) => ({ content, sessions: set.size }))
+          .sort((a, b) => b.sessions - a.sessions),
+      }))
+      .sort((a, b) => b.sessions - a.sessions),
     locations: [...locations.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions).slice(0, 20),
     searches: searches.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 50),
   };
@@ -1665,4 +1843,193 @@ export const adminCollectionReport = createServerFn({ method: "POST" })
       generatedAt: new Date().toISOString(),
       ...shapeReport(current, 8),
     };
+  });
+
+// ---------------------------------------------------------------------------
+// Retention cohorts
+// ---------------------------------------------------------------------------
+
+type TimelineRow = { visitor_id: string | null; occurred_at: string; is_internal?: boolean | null };
+
+async function fetchTimelineRows(sinceIso: string): Promise<TimelineRow[]> {
+  const admin = getSupabaseAdmin();
+  const out: TimelineRow[] = [];
+  const pageSize = 1000;
+  const maxRows = 60_000;
+  const columns = (await eventColumns()).includes("is_internal")
+    ? "visitor_id, occurred_at, is_internal"
+    : "visitor_id, occurred_at";
+
+  for (let offset = 0; offset < maxRows; offset += pageSize) {
+    const { data, error } = await admin
+      .from("analytics_events")
+      .select(columns)
+      .gte("occurred_at", sinceIso)
+      .order("occurred_at", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw new Error(error.message);
+    const page = (data ?? []) as TimelineRow[];
+    out.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return out;
+}
+
+export const adminRetentionCohorts = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string }) =>
+    z.object({ accessToken: z.string().min(10) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAnalyticsAdmin(data.accessToken);
+
+    const lookbackDays = 120;
+    const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString();
+    const rows = (await fetchTimelineRows(since)).filter((row) => row.is_internal !== true);
+
+    const byVisitor = new Map<string, VisitorTimeline>();
+    for (const row of rows) {
+      const vid = row.visitor_id?.trim();
+      if (!vid) continue;
+      const at = Date.parse(row.occurred_at);
+      if (Number.isNaN(at)) continue;
+      const entry = byVisitor.get(vid) ?? { visitorId: vid, firstSeen: at, activeAt: [] };
+      if (at < entry.firstSeen) entry.firstSeen = at;
+      entry.activeAt.push(at);
+      byVisitor.set(vid, entry);
+    }
+
+    const timelines = [...byVisitor.values()];
+    // Someone already active on the first observed day may have older history
+    // we cannot see, so day 0 is only trusted from one day after the data starts.
+    const earliest = timelines.length ? Math.min(...timelines.map((t) => t.firstSeen)) : Date.now();
+    const observationStart = earliest + 24 * 60 * 60 * 1000;
+
+    return {
+      lookbackDays,
+      observationStart: new Date(observationStart).toISOString(),
+      visitorsObserved: timelines.length,
+      cohorts: computeCohorts(timelines, observationStart),
+      loyalty: computeWeeklyLoyalty(timelines),
+    };
+  });
+
+// ---------------------------------------------------------------------------
+// Analytics health — evidence-based checks over real recent data
+// ---------------------------------------------------------------------------
+
+export type HealthStatus = "healthy" | "warning" | "not_enough_data";
+export type HealthCheck = { name: string; status: HealthStatus; detail: string };
+
+export const adminAnalyticsHealth = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string }) =>
+    z.object({ accessToken: z.string().min(10) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAnalyticsAdmin(data.accessToken);
+
+    const end = new Date(Date.now() + 60_000).toISOString();
+    const start = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const rows = await fetchEventsBetween(start, end);
+    const checks: HealthCheck[] = [];
+    const total = rows.length;
+
+    // 1. Ingestion recency
+    const latest = rows.length ? rows[rows.length - 1]!.occurred_at : null;
+    const minutesSince = latest ? Math.round((Date.now() - Date.parse(latest)) / 60_000) : null;
+    checks.push({
+      name: "Event ingestion",
+      status: minutesSince === null ? "not_enough_data" : minutesSince <= 180 ? "healthy" : "warning",
+      detail:
+        minutesSince === null
+          ? "No events recorded in the last 7 days."
+          : `${total} events in 7 days; most recent ${minutesSince} minutes ago.`,
+    });
+
+    // 2. session_start consistency
+    const sessions = new Set<string>();
+    const sessionsWithStart = new Set<string>();
+    for (const row of rows) {
+      const sid = row.session_id?.trim();
+      if (!sid) continue;
+      sessions.add(sid);
+      if (row.event_name === "session_start") sessionsWithStart.add(sid);
+    }
+    const missingStart = sessions.size - sessionsWithStart.size;
+    checks.push({
+      name: "Session consistency",
+      status:
+        sessions.size < 10
+          ? "not_enough_data"
+          : missingStart / Math.max(1, sessions.size) <= 0.15
+            ? "healthy"
+            : "warning",
+      detail: `${sessions.size} sessions; ${missingStart} without a session_start event (sessions that began before this window count here).`,
+    });
+
+    // 3. Duplicate protection
+    const seen = new Set<string>();
+    let duplicates = 0;
+    for (const row of rows) {
+      const key = `${row.session_id}|${row.event_name}|${row.occurred_at}`;
+      if (seen.has(key)) duplicates += 1;
+      seen.add(key);
+    }
+    checks.push({
+      name: "Duplicate protection",
+      status: total < 10 ? "not_enough_data" : duplicates === 0 ? "healthy" : "warning",
+      detail:
+        duplicates === 0
+          ? "No identical session/event/timestamp rows observed; event_id uniqueness is collapsing retries."
+          : `${duplicates} rows share a session, event name and timestamp. Distinct event_ids kept them, so they are separate events, not retries.`,
+    });
+
+    // 4. Geo enrichment
+    const withCity = rows.filter((row) => row.city?.trim()).length;
+    const lowReliability = rows.filter((row) => row.geo_reliability === "low").length;
+    checks.push({
+      name: "Location enrichment",
+      status: total < 10 ? "not_enough_data" : withCity / Math.max(1, total) >= 0.5 ? "healthy" : "warning",
+      detail: `${withCity} of ${total} events carry an approximate city; ${lowReliability} are flagged low reliability (carrier, VPN or hosting network).`,
+    });
+
+    // 5. Human signal
+    const humanSignals = rows.filter((row) => row.event_name === "human_signal").length;
+    checks.push({
+      name: "Human interaction signal",
+      status: sessions.size < 10 ? "not_enough_data" : humanSignals > 0 ? "healthy" : "warning",
+      detail: `${humanSignals} human_signal events across ${sessions.size} sessions.`,
+    });
+
+    // 6. Campaign coverage
+    const tagged = rows.filter((row) => row.utm_source?.trim()).length;
+    const withContent = rows.filter((row) => row.utm_content?.trim()).length;
+    checks.push({
+      name: "Campaign fields",
+      status: total < 10 ? "not_enough_data" : "healthy",
+      detail: `${tagged} of ${total} events carry a utm_source; ${withContent} also carry a utm_content variant.`,
+    });
+
+    // 7. Download action -> served matching
+    const actions = new Set<string>();
+    const served = new Set<string>();
+    for (const row of rows) {
+      const value = (row.metadata ?? {})["action_id"];
+      const id = typeof value === "string" && value.trim() ? value.trim() : null;
+      if (!id) continue;
+      if (row.event_name === "download") actions.add(id);
+      if (row.event_name === "download_served") served.add(id);
+    }
+    const matched = [...actions].filter((id) => served.has(id)).length;
+    checks.push({
+      name: "Download request matching",
+      status:
+        actions.size < 10
+          ? "not_enough_data"
+          : matched / Math.max(1, actions.size) >= 0.7
+            ? "healthy"
+            : "warning",
+      detail: `${matched} of ${actions.size} tagged download actions have a matching served request. A served request means the file redirect was issued, not that the download completed.`,
+    });
+
+    return { windowStart: start, windowEnd: end, events: total, checks };
   });
