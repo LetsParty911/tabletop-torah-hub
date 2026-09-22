@@ -44,3 +44,11 @@ describe("withUtm", () => {
     expect(withUtm(url, { ...params, campaign: "  " })).toBe(url);
   });
 });
+
+describe("sender.net preset", () => {
+  it("produces the expected tracking link", () => {
+    expect(
+      withUtm("https://torahforthetable.com/", { source: "sender", medium: "email", campaign: "Yom Kippur" }, { replace: true }),
+    ).toBe("https://torahforthetable.com/?utm_source=sender&utm_medium=email&utm_campaign=yom-kippur");
+  });
+});
