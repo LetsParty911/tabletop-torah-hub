@@ -2,6 +2,18 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import {
+  CONFIDENCE_EXPLANATIONS,
+  CONFIDENCE_LABELS,
+  classifySession,
+  emptyConfidenceCounts,
+  type TrafficConfidence,
+} from "@/lib/traffic-confidence";
+import {
+  computeCohorts,
+  computeWeeklyLoyalty,
+  type VisitorTimeline,
+} from "@/lib/retention-cohorts";
+import {
   buildChangeObservations,
   buildObservations,
   formatDayLabel,
@@ -35,6 +47,13 @@ type EventRow = {
   utm_source?: string | null;
   utm_medium?: string | null;
   utm_campaign?: string | null;
+  utm_content?: string | null;
+  is_internal?: boolean | null;
+  geo_source?: string | null;
+  geo_provider?: string | null;
+  geo_reliability?: string | null;
+  network_type?: string | null;
+  as_organization?: string | null;
   metadata?: Record<string, unknown> | null;
   user_agent?: string | null;
 };
@@ -57,6 +76,7 @@ type SessionAgg = {
   humanSignal: boolean;
   meaningfulIntent: boolean;
   internalTestTraffic: boolean;
+  markedInternal: boolean;
 };
 
 // Events that only a person can realistically produce.
@@ -135,17 +155,37 @@ function buildCollectionWindows(
   return windows;
 }
 
+const BASE_COLUMNS =
+  "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, publication_series, publisher, device_type, source_group, country, region, city, postal_code, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign, metadata, user_agent";
+
+// Newer columns. Some environments may not have every one of them yet, so the
+// first query probes once and the answer is cached for the worker instance.
+const EXTRA_COLUMNS =
+  "utm_content, is_internal, geo_source, geo_provider, geo_reliability, network_type, as_organization";
+
+let cachedColumns: string | null = null;
+
+async function eventColumns(): Promise<string> {
+  if (cachedColumns) return cachedColumns;
+  const admin = getSupabaseAdmin();
+  const probe = await admin
+    .from("analytics_events")
+    .select(`${BASE_COLUMNS}, ${EXTRA_COLUMNS}`)
+    .limit(1);
+  cachedColumns = probe.error ? BASE_COLUMNS : `${BASE_COLUMNS}, ${EXTRA_COLUMNS}`;
+  return cachedColumns;
+}
+
 async function fetchEventsBetween(start: string, end: string): Promise<EventRow[]> {
   const admin = getSupabaseAdmin();
   const out: EventRow[] = [];
   const pageSize = 1000;
+  const columns = await eventColumns();
 
   for (let offset = 0; ; offset += pageSize) {
     const { data, error } = await admin
       .from("analytics_events")
-      .select(
-        "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, publication_series, publisher, device_type, source_group, country, region, city, postal_code, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign, metadata, user_agent",
-      )
+      .select(columns)
       .gte("occurred_at", start)
       .lt("occurred_at", end)
       .order("occurred_at", { ascending: true })
@@ -234,6 +274,7 @@ function buildSessions(rows: EventRow[]): Map<string, SessionAgg> {
         humanSignal: false,
         meaningfulIntent: false,
         internalTestTraffic: false,
+        markedInternal: false,
       };
       sessions.set(sid, session);
     }
@@ -247,6 +288,12 @@ function buildSessions(rows: EventRow[]): Map<string, SessionAgg> {
     // Lovable editor/preview traffic is internal testing, not public readership.
     // Keep it in raw analytics for diagnostics, but mark the session so headline
     // audience metrics can exclude it without using IP-based identity merging.
+    // Server-verified internal/test device marker (signed HttpOnly cookie).
+    if (row.is_internal === true) {
+      session.internalTestTraffic = true;
+      session.markedInternal = true;
+    }
+
     const referrerHost = row.referrer_host?.trim().toLowerCase() ?? "";
     const userAgent = row.user_agent?.toLowerCase() ?? "";
     if (
