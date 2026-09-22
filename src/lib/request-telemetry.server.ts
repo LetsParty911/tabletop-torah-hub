@@ -3,6 +3,24 @@
 // Everything here comes from headers set by the hosting edge or from the
 // Cloudflare request object. Nothing is ever accepted from a JSON request body,
 // and no external IP/geo lookup service is called.
+//
+// PLATFORM NOTE (verified in production, 2026-09-22):
+// The published site runs on Cloudflare workerd, but the worker is invoked as a
+// subrequest from the hosting layer's router. Verified live on
+// torahforthetable.com: the request is a real workerd Request (its prototype
+// exposes `cf`), yet `request.cf` is `undefined`, and the only inbound headers
+// are accept, accept-encoding, cf-connecting-ip, cf-ipcountry, cf-ray,
+// cf-visitor, connection, host, user-agent, x-forwarded-proto, x-real-ip.
+// srvx exposes `request.runtime.cloudflare` with only { env, context } — no
+// original request — so there is no platform path to the cf geo object.
+//
+// Consequence: country (cf-ipcountry) and client IP (cf-connecting-ip) are the
+// only location signals the runtime provides. City, region, postal code, ASN
+// and network organization require either the "Add visitor location headers"
+// managed transform on the hosting zone (owned by Lovable, not this project) or
+// an external IP-geolocation service, which is deliberately NOT used here.
+// The lookups below are kept so those fields populate automatically if the
+// hosting layer ever starts forwarding them.
 
 export type RequestTelemetry = {
   ipAddress: string | null;
