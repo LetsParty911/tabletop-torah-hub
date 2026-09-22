@@ -526,6 +526,21 @@ function reportWindow(range: AnalyticsReportRange, collection: WindowDef | null)
   };
 }
 
+/**
+ * Approximate, network-derived location wording. Never presented as an exact
+ * address: a carrier, VPN or datacentre exit produces a plausible-looking city
+ * that is not where the reader is sitting.
+ */
+export function describeLocation(place: string, row: Pick<EventRow, "geo_reliability" | "network_type" | "geo_source">): string {
+  const network = row.network_type?.trim().toLowerCase() ?? "";
+  const reliability = row.geo_reliability?.trim().toLowerCase() ?? "";
+  if (network && network !== "standard" && network !== "unknown")
+    return `${place} — ${network} network location, low reliability`;
+  if (reliability === "low") return `${place} — network location, low reliability`;
+  if (row.geo_source === "country_only") return `${place} — country only`;
+  return `${place} — approximate network location`;
+}
+
 function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
   const allSessions = buildSessions(rows);
   const automation = new Set([
@@ -716,6 +731,43 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
     }
   }
 
+  // Correlate user-initiated download actions with served download requests.
+  const actionId = (row: EventRow): string | null => {
+    const value = (row.metadata ?? {})["action_id"];
+    return typeof value === "string" && value.trim() ? value.trim() : null;
+  };
+  const actionIds = new Set<string>();
+  const servedActions = new Set<string>();
+  for (const row of keptRows) {
+    const id = actionId(row);
+    if (!id) continue;
+    if (row.event_name === "download") actionIds.add(id);
+    if (row.event_name === "download_served") servedActions.add(id);
+  }
+  const matchedActions = new Set([...actionIds].filter((id) => servedActions.has(id)));
+
+  // Plain-English, factual sentences about recent meaningful visits.
+  const recentStories = sessionDetails
+    .filter((session) => session.usedTorah || session.engaged)
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+    .slice(0, 8)
+    .map((session) => {
+      const events = session.events;
+      const titles = [...new Set(events.map((event) => event.publication).filter(Boolean))].slice(0, 2);
+      const opened = events.some((event) => event.event === "pdf_open");
+      const downloaded = events.some((event) => event.event === "download");
+      const did = downloaded
+        ? "requested a download"
+        : opened
+          ? "opened a PDF"
+          : `viewed ${session.pageviews} ${session.pageviews === 1 ? "page" : "pages"}`;
+      const confidenceLabel = CONFIDENCE_LABELS[confidenceBySession.get(session.sessionId) ?? "uncertain"];
+      return {
+        at: session.startedAt,
+        text: `A ${session.device} visitor arriving from ${session.source} ${did}${titles.length ? ` (${titles.join(", ")})` : ""}. Classified ${confidenceLabel.toLowerCase()}.`,
+      };
+    });
+
   const metricDetails = {
     people: keptRows.filter((row, index, list) => row.visitor_id && list.findIndex((other) => other.visitor_id === row.visitor_id) === index).map((row) => detailFor(row)),
     usedTorah: usedSessions.flatMap((session) => session.events.filter((event) => ["pdf_open", "download", "share_click", "signup"].includes(event.event))),
@@ -723,6 +775,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
     downloads: keptRows.filter((row) => row.event_name === "download").map((row) => detailFor(row)),
     returning: keptRows.filter((row, index, list) => row.visitor_id && returning.has(row.visitor_id) && list.findIndex((other) => other.visitor_id === row.visitor_id) === index).map((row) => detailFor(row)),
     engaged: sessionDetails.filter((session) => session.engaged).flatMap((session) => session.events.slice(0, 1)),
+    downloadsServed: keptRows.filter((row) => row.event_name === "download_served").map((row) => detailFor(row, "Application validated the file and issued the redirect")),
   };
 
   return {
@@ -735,7 +788,25 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
       engagedSessions: canonical.engagedSessions,
       returningReaders: returning.size,
       signups: keptRows.filter((row) => row.event_name === "signup").length,
+      newVisitors: new Set(keptRows.filter((row) => row.is_new_visitor === true && row.visitor_id).map((row) => row.visitor_id)).size,
+      // A served download request means the application validated the
+      // publication and issued the redirect. It is not proof the file finished.
+      downloadsServed: servedActions.size,
+      downloadActionsMatched: matchedActions.size,
+      downloadActionsUnmatched: Math.max(0, actionIds.size - matchedActions.size),
+      servedWithoutAction: [...servedActions].filter((id) => !actionIds.has(id)).length,
+      chooserSelections: keptRows.filter((row) => row.event_name === "chooser_select").length,
+      recommendationClicks: keptRows.filter((row) => row.event_name === "recommendation_click").length,
+      myTableAdds: keptRows.filter((row) => row.event_name === "my_table_add").length,
+      myTableOpens: keptRows.filter((row) => row.event_name === "my_table_open").length,
     },
+    confidence: {
+      counts: confidenceCounts,
+      labels: CONFIDENCE_LABELS,
+      explanations: CONFIDENCE_EXPLANATIONS,
+      markedInternalSessions,
+    },
+    recentStories,
     raw: { sessions: canonical.rawSessions, visitors: canonical.rawUniqueVisitors },
     filteredAutomationSessions: canonical.filteredAutomationSessions,
     filteredInternalSessions: canonical.filteredInternalSessions,
