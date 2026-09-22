@@ -1,30 +1,40 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getRequest } from "@tanstack/react-start/server";
 
-// TEMPORARY diagnostic. Returns only the NAMES of request headers and the
-// KEYS of any Cloudflare request context — never any values, so no IP or
-// location data is exposed to the browser. Remove once geo capture is fixed.
+// TEMPORARY diagnostic. Returns only type/shape information — never any
+// header values, IPs or location data. Remove once geo capture is settled.
+
+function describe(v: unknown) {
+  if (v === null) return "null";
+  if (v === undefined) return "undefined";
+  if (typeof v !== "object") return typeof v;
+  return `object:${Object.keys(v as Record<string, unknown>).sort().join(",")}`;
+}
 
 export const Route = createFileRoute("/api/public/geo-debug")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const headerNames = [...request.headers.keys()].sort();
-
-        const anyReq = request as unknown as {
-          cf?: unknown;
-          runtime?: { name?: string; cloudflare?: { env?: unknown; context?: unknown } };
-          _request?: { cf?: unknown };
-        };
-
-        const keysOf = (v: unknown) =>
-          v && typeof v === "object" ? Object.keys(v as Record<string, unknown>).sort() : null;
+        const a = request as unknown as Record<string, unknown>;
+        let outer: Record<string, unknown> = {};
+        try {
+          const r = getRequest() as unknown as Record<string, unknown>;
+          outer = {
+            outerCf: describe(r?.["cf"]),
+            outerHeaderNames: r?.["headers"]
+              ? [...(r["headers"] as Headers).keys()].sort()
+              : null,
+          };
+        } catch (e) {
+          outer = { outerError: String(e).slice(0, 200) };
+        }
 
         return Response.json({
-          headerNames,
-          runtimeName: anyReq.runtime?.name ?? null,
-          hasRuntimeCloudflare: Boolean(anyReq.runtime?.cloudflare),
-          cfKeys: keysOf(anyReq.cf),
-          innerCfKeys: keysOf(anyReq._request?.cf),
+          handlerCf: describe(a["cf"]),
+          hasCfProp: "cf" in request,
+          ownProps: Object.getOwnPropertyNames(request).sort(),
+          protoProps: Object.getOwnPropertyNames(Object.getPrototypeOf(request)).sort(),
+          ...outer,
         });
       },
     },
