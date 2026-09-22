@@ -228,16 +228,17 @@ const FEATURED_SLOTS = [
 ] as const;
 
 function Index() {
-  const {
-    label: currentLabel,
-    parshaKey: currentParshaKey,
-    resources: initialResources,
-    isFallback,
-    fallbackParshaLabel,
-    fallbackParshaKey,
-    readingDate,
-    upcomingAfterYomTovKey,
-  } = Route.useLoaderData() as LoaderData;
+  // Read loader data through a single object binding. An aliased destructure of
+  // `resources` was implicated in a production ReferenceError, so the value is
+  // read explicitly where it is used instead.
+  const loaderData = Route.useLoaderData() as LoaderData;
+  const currentLabel = loaderData.label;
+  const currentParshaKey = loaderData.parshaKey;
+  const isFallback = loaderData.isFallback;
+  const fallbackParshaLabel = loaderData.fallbackParshaLabel;
+  const fallbackParshaKey = loaderData.fallbackParshaKey;
+  const readingDate = loaderData.readingDate;
+  const upcomingAfterYomTovKey = loaderData.upcomingAfterYomTovKey;
 
   const displayedLabel = isFallback && fallbackParshaLabel ? fallbackParshaLabel : currentLabel;
   const displayedParshaKey = isFallback && fallbackParshaKey ? fallbackParshaKey : currentParshaKey;
