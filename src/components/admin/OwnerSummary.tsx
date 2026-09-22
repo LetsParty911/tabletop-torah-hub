@@ -283,7 +283,11 @@ export default function OwnerSummary({
               {cohorts.cohorts.map((cohort) => (
                 <div key={cohort.window} className="rounded-md border border-border p-3">
                   <span className="block text-xs font-semibold uppercase text-muted-foreground">
-                    {cohort.window} return
+                    {cohort.window === "D1"
+                      ? "Came back next day"
+                      : cohort.window === "D7"
+                        ? "Came back within 7 days"
+                        : "Came back within 30 days"}
                   </span>
                   <span className="mt-1 block font-serif text-xl font-bold text-primary">
                     {cohort.eligible === 0
@@ -296,14 +300,19 @@ export default function OwnerSummary({
                     {cohort.returned} returned of {cohort.eligible} eligible
                     {cohort.immature > 0 ? ` · ${cohort.immature} too recent to judge` : ""}
                   </span>
+                  <span className="mt-1 block text-xs text-muted-foreground">{cohort.definition}</span>
                 </div>
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
               Active in 2+ different weeks: {cohorts.loyalty.twoPlusWeeks} · 4+ weeks:{" "}
               {cohorts.loyalty.fourPlusWeeks} · of {cohorts.loyalty.visitorsConsidered} visitors seen in
-              the last {cohorts.lookbackDays} days. Only visitors whose first visit we actually observed
-              can enter a cohort, and percentages are hidden under 10 eligible visitors.
+              the last {cohorts.lookbackDays} days. Returns are counted from separate visits, so extra
+              activity inside one visit never counts. The 7-day and 30-day figures are cumulative — a
+              return on any day inside the period counts. Only visitors whose very first visit we
+              actually observed can enter a cohort ({cohorts.leftCensoredVisitors} excluded because
+              they were already visiting before this period), and percentages are hidden under 10
+              eligible visitors.
             </p>
           </div>
         )}
