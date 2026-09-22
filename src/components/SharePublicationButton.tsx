@@ -3,6 +3,7 @@ import { Share2, Link2, Check } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { trackFp } from "@/lib/first-party-analytics";
 import { absoluteUrl } from "@/lib/site-url";
+import { withUtm } from "@/lib/utm";
 
 type Props = {
   pdfId: string;

@@ -1,3 +1,5 @@
+import { normalizeUtmValue, withUtm } from "@/lib/utm";
+
 export function shouldShowRate(denominator: number): boolean {
   return denominator >= 10;
 }
