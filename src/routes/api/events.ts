@@ -184,9 +184,17 @@ export const Route = createFileRoute("/api/events")({
             .upsert(rows, { onConflict: "event_id", ignoreDuplicates: true });
           if (error) {
             console.error("[api/events] insert failed", error.message);
-            // The geo_source column may not exist yet — never lose the event.
-            if (/geo_source/.test(error.message)) {
-              const legacy = rows.map(({ geo_source: _drop, ...rest }) => rest);
+            // Geo/network columns may not exist yet — never lose the event.
+            if (/geo_source|geo_provider|geo_reliability|network_type/.test(error.message)) {
+              const legacy = rows.map(
+                ({
+                  geo_source: _g,
+                  geo_provider: _p,
+                  geo_reliability: _r,
+                  network_type: _n,
+                  ...rest
+                }) => rest,
+              );
               const retry = await supabase
                 .from("analytics_events")
                 .upsert(legacy, { onConflict: "event_id", ignoreDuplicates: true });
