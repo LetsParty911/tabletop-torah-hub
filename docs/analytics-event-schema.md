@@ -37,13 +37,16 @@ Admin routes are excluded on both client and ingest server. `/admin`, `/admin/*`
 | `signup`                 | Successful weekly-email subscription; email address is not stored in analytics_events                   |
 | `heartbeat`              | Active-time sample while visible and focused                                                            |
 | `human_signal`           | First trusted pointer, keyboard, touch, or scroll interaction in the session                              |
+| `download_served`        | Server-side: the application validated the publication and issued the redirect to the file              |
 | `error`                  | Sanitized meaningful site error                                                                         |
+
+`download_served` is written by `src/routes/view.$id.download.tsx`, never by the browser, and needs no schema change: it carries `metadata.action_id`, the same id the client attached to its `download` event, so an action and a served request can be matched. It means the request was validated and the redirect to the storage CDN was issued. **It is not proof that the download completed** — the bytes travel directly from the CDN and nothing reports completion back to us. Reports therefore say "served download request", and also show download actions with no matching served request.
 
 A canonical `download` event confirms that the user initiated a download request. Browser telemetry does not reliably prove that the transfer completed, so the dashboards deliberately use **download action** rather than “completed download” language.
 
 ## Stored canonical fields
 
-`event_id`, `event_name`, `occurred_at`, `visitor_id`, `session_id`, `is_new_visitor`, `path`, `landing_path`, `source_path`, `publication_id`, `publication_title`, `publication_series`, `publisher`, `parsha`, `jewish_year`, `device_type`, `referrer_host`, `referrer_url`, `utm_source`, `utm_medium`, `utm_campaign`, `source_group`, `country`, `region`, `city`, `postal_code`, `ip_address`, `user_agent`, `accept_language`, low-entropy browser client hints, edge-provided ASN/network organization, and `metadata`.
+`event_id`, `event_name`, `occurred_at`, `visitor_id`, `session_id`, `is_new_visitor`, `path`, `landing_path`, `source_path`, `publication_id`, `publication_title`, `publication_series`, `publisher`, `parsha`, `jewish_year`, `device_type`, `referrer_host`, `referrer_url`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `is_internal`, `source_group`, `country`, `region`, `city`, `postal_code`, `ip_address`, `user_agent`, `accept_language`, low-entropy browser client hints, edge-provided ASN/network organization, and `metadata`.
 
 Privacy rules:
 
@@ -238,3 +241,48 @@ navigation is unchanged).
   come from deterministic rules in `src/lib/admin-reports.ts`.
 - "Copy report" writes a plain-text version to the clipboard; "Print" uses the `.report-print-area`
   print stylesheet. No email is sent from the site.
+
+
+## utm_content
+
+First-touch attribution captures `utm_content` alongside source, medium and campaign. It labels a
+variant inside one campaign (two WhatsApp messages, two QR posters). Campaign reporting always
+groups by source/medium/campaign first and lists `utm_content` variants underneath, so adding a
+variant never fragments a campaign. `src/lib/utm.ts` accepts an optional `content` field; callers
+that omit it are unaffected.
+
+## Internal / test devices
+
+`analytics_events.is_internal` is set **only** by the ingest server, from a signed, HttpOnly
+first-party cookie (`tftt_internal`) that `POST /api/internal-device` issues after verifying a
+signed-in administrator. The cookie value is an HMAC derived from an existing server-only key, so it
+cannot be forged from the browser, and any `is_internal` value in the JSON payload is ignored.
+
+Internal events are kept for diagnostics and excluded from headline audience metrics; the admin
+report shows the internal session count separately. The existing exclusion of `/admin` and
+`/admin-analytics` routes is unchanged.
+
+## Traffic confidence (reporting only)
+
+`src/lib/traffic-confidence.ts` classifies each session at report time as one of: high-confidence
+human, likely human, uncertain, suspected automation, internal/test. Nothing is written back to the
+event rows — the labels are recomputed from raw data every time, so the rules can change without
+rewriting history. An explicit `human_signal` or any meaningful intent event always protects a
+session from the generic automation rules. Where two visitor IDs share network or device evidence,
+reporting states "possible relationship" or "insufficient evidence" only; visitor IDs are never
+merged.
+
+## Retention cohorts
+
+`src/lib/retention-cohorts.ts` computes D1 / D7 / D30 returns only for visitors whose first
+canonical session is actually observed in the retained data, and only once the full window has
+elapsed for that visitor. Visitors still inside their window are reported as immature, not as
+failures. Percentages follow the house rule and are suppressed below 10 eligible visitors. The same
+data yields "active in 2+ distinct weeks" and "4+ distinct weeks".
+
+## Analytics health
+
+`adminAnalyticsHealth` reports evidence from the last 7 days of real events: ingestion recency,
+session/session_start consistency, duplicate observations, geo enrichment coverage and reliability,
+human-signal presence, campaign-field coverage, and download action to `download_served` matching.
+Each check returns healthy, warning, or not-enough-data with the counts behind it.

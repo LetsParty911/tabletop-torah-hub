@@ -116,6 +116,8 @@ function PrivacyPage() {
 
                   <Sub heading="3. Download records">
                     <p>
+                      A download record means the request was made and our server issued the file —
+                      it is not proof that the file finished downloading to your device.
                       When someone downloads a publication, we record which publication it was and
                       the city, region, country, and time zone of the request, as reported by our
                       hosting provider. Download activity may also be recorded in the site analytics
@@ -172,6 +174,12 @@ function PrivacyPage() {
 
                   <Sub heading="5. Information stored in your browser">
                     <p>
+                      Administrators can mark their own browser as an internal test device. That
+                      places one additional cookie on that browser only, so their own testing is kept
+                      out of the reader statistics. It is never set on a visitor's browser.
+                      Links we share may carry campaign labels (including a variant label) so we can
+                      see which message brought people to the site. These labels describe the link,
+                      not the person.
                       The first-party analytics system stores a visitor identifier in a cookie with
                       a 12-month lifetime that is renewed when the site is used. It also uses
                       browser storage for the visitor identifier, session identifier and session
