@@ -978,16 +978,25 @@ async function fetchVisitorEvents(start: string, end: string): Promise<VisitorEv
   const pageSize = 1000;
   const maxRows = 40_000; // hard guard so a wide range cannot run forever
 
+  let projection = VISITOR_SELECT;
+
   for (let offset = 0; offset < maxRows; offset += pageSize) {
-    const { data, error } = await admin
-      .from("analytics_events")
-      .select(VISITOR_SELECT)
-      .gte("occurred_at", start)
-      .lt("occurred_at", end)
-      .order("occurred_at", { ascending: false })
-      .range(offset, offset + pageSize - 1);
+    const run = (select: string) =>
+      admin
+        .from("analytics_events")
+        .select(select)
+        .gte("occurred_at", start)
+        .lt("occurred_at", end)
+        .order("occurred_at", { ascending: false })
+        .range(offset, offset + pageSize - 1);
+
+    let { data, error } = await run(projection);
+    if (error && /geo_provider|geo_reliability|network_type/.test(error.message)) {
+      projection = VISITOR_SELECT_BASE;
+      ({ data, error } = await run(projection));
+    }
     if (error) throw new Error(error.message);
-    const page = (data ?? []) as VisitorEventRow[];
+    const page = (data ?? []) as unknown as VisitorEventRow[];
     out.push(...page);
     if (page.length < pageSize) break;
   }
