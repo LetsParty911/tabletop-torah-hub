@@ -73,7 +73,7 @@ export const Route = createFileRoute("/api/track-view")({
           const { getSupabaseAdmin } = await import("@/integrations/supabase/ext.server");
           const supabase = getSupabaseAdmin();
 
-          await supabase.from("page_views").insert({
+          const row: Record<string, unknown> = {
             path,
             referrer: str("referrer", 800),
             referrer_host: str("referrer_host", 200),
@@ -90,7 +90,14 @@ export const Route = createFileRoute("/api/track-view")({
             postal_code: geo.postalCode,
             geo_source: geo.geoSource,
             timezone: cfTimezone,
-          });
+          };
+
+          const { error } = await supabase.from("page_views").insert(row);
+          if (error && /geo_source|postal_code/.test(error.message)) {
+            // Columns may not exist yet — never lose the page view.
+            const { geo_source: _g, postal_code: _p, ...legacy } = row;
+            await supabase.from("page_views").insert(legacy);
+          }
 
           return new Response(null, { status: 204 });
         } catch (err) {
