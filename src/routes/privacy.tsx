@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/SiteFooter";
 
 const PRIVACY_EMAIL = "hello@torahforthetable.com";
-const ENTITY_NAME = "Torah For The Table";
 const LAST_UPDATED = "September 22, 2026";
 
 const mailLink = (
@@ -11,6 +10,17 @@ const mailLink = (
     className="text-accent underline hover:text-primary transition-colors"
   >
     {PRIVACY_EMAIL}
+  </a>
+);
+
+const googlePrivacyLink = (
+  <a
+    href="https://business.safety.google/privacy/"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-accent underline hover:text-primary transition-colors"
+  >
+    https://business.safety.google/privacy/
   </a>
 );
 
@@ -41,24 +51,6 @@ export const Route = createFileRoute("/privacy")({
   },
 });
 
-function Section({ heading, children }: { heading: string; children: React.ReactNode }) {
-  return (
-    <section className="space-y-3">
-      <h2 className="font-serif text-2xl font-bold text-primary">{heading}</h2>
-      {children}
-    </section>
-  );
-}
-
-function Sub({ heading, children }: { heading: string; children: React.ReactNode }) {
-  return (
-    <section className="space-y-2">
-      <h3 className="font-serif text-lg font-semibold text-primary">{heading}</h3>
-      {children}
-    </section>
-  );
-}
-
 function PrivacyPage() {
   return (
     <div className="min-h-screen bg-background">
@@ -80,171 +72,36 @@ function PrivacyPage() {
               </p>
             </div>
 
-            <div className="mt-8 space-y-8 font-serif text-base sm:text-lg text-foreground leading-relaxed max-w-2xl mx-auto text-left">
+            <div className="mt-8 space-y-6 font-serif text-base sm:text-lg text-foreground leading-relaxed max-w-2xl mx-auto text-left">
               <p>
-                This policy describes the information Torah for the Table collects and how it is
-                used.
+                Torah for the Table collects information you choose to provide, such as an email
+                address or contact message, and technical and usage information generated when you
+                use the site.
               </p>
 
-              <Section heading="Who we are">
-                <p>
-                  Torah for the Table is operated by {ENTITY_NAME}, a nonprofit corporation
-                  recognized by the IRS as a tax-exempt organization under Section 501(c)(3). You
-                  can reach us about anything in this policy at {mailLink}.
-                </p>
-              </Section>
+              <p>
+                We use cookies and similar technologies, including first-party analytics and Google
+                Analytics, to understand site use, maintain security, and improve the site. Analytics
+                may include device and network information, approximate location, referral
+                information, site activity, and pseudonymous identifiers. Google explains how it
+                processes information from sites that use its services at {googlePrivacyLink}.
+              </p>
 
-              <Section heading="What we collect">
-                <div className="space-y-6">
-                  <Sub heading="1. Your email address, if you give it to us">
-                    <p>
-                      If you sign up for the weekly reminder — either from the signup box on the
-                      site or the popup that appears after a download — we store your email address
-                      and the date you subscribed. We use it to manage the mailing list and send
-                      messages about new weekly collections. Every email we send includes an
-                      unsubscribe link.
-                    </p>
-                  </Sub>
+              <p>
+                We may disclose information to service providers that support hosting, analytics,
+                security, data storage, and email delivery.
+              </p>
 
-                  <Sub heading="2. Messages you send us">
-                    <p>
-                      If you use the contact form, we receive whatever you type into it, including
-                      the contact details you provide, so that we can respond.
-                    </p>
-                  </Sub>
+              <p>
+                You may unsubscribe from emails using the unsubscribe link. Where applicable, you
+                may request access to, correction of, or deletion of personal information, or appeal
+                a privacy-request decision, by emailing {mailLink}.
+              </p>
 
-                  <Sub heading="3. Download records">
-                    <p>
-                      A download record means the request was made and our server issued the file —
-                      it is not proof that the file finished downloading to your device.
-                      When someone downloads a publication, we record which publication it was and
-                      the city, region, country, and time zone of the request, as reported by our
-                      hosting provider. Download activity may also be recorded in the site analytics
-                      described below.
-                    </p>
-                  </Sub>
-
-                  <Sub heading="4. Site analytics">
-                    <div className="space-y-3">
-                      <p>
-                        We operate first-party site analytics that assign a browser visitor
-                        identifier and a session identifier. The analytics system records activity
-                        such as page views, publications displayed on screen, publication clicks,
-                        PDF opens and downloads, filter changes, searches, share actions, signup
-                        interactions, active-time measurements, and site errors.
-                      </p>
-                      <p>
-                        Analytics records may also include the publication ID and title, series,
-                        publisher, parsha and Jewish year; the landing page and referring site or
-                        URL; campaign parameters such as UTM source, medium and campaign; a
-                        normalized traffic-source category; device category; and approximate,
-                        network-derived country, state or region, city, and postal code. This
-                        location can be inaccurate, for example when a mobile carrier or VPN routes
-                        traffic elsewhere.
-                      </p>
-                      <p>
-                        For accepted analytics events we also retain the request's IP address, the
-                        raw User-Agent/browser string sent by the browser, the language preferences
-                        your browser sends, the browser client-hint headers, and the network
-                        operator identifier (ASN) and organization name when our hosting provider
-                        reports them. These are used for traffic analysis, security and abuse
-                        detection, distinguishing automated traffic from real visitors, and
-                        browser/device diagnostics. The User-Agent can reveal browser, operating
-                        system and device details. Analytics are not run on the site's
-                        administrative pages.
-                      </p>
-                      <p>
-                        We also use Google Tag Manager and Google Analytics to measure site usage,
-                        including page visits, publication interactions, downloads or printing, and
-                        signup interactions. Google may set cookies in your browser as part of this.
-                        Google's handling of that data is governed by its own privacy policy at{" "}
-                        <a
-                          href="https://policies.google.com/privacy"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-accent underline hover:text-primary transition-colors"
-                        >
-                          policies.google.com/privacy
-                        </a>
-                        . Analytics are not run on the site's administrative pages.
-                      </p>
-                    </div>
-                  </Sub>
-
-                  <Sub heading="5. Information stored in your browser">
-                    <p>
-                      Administrators can mark their own browser as an internal test device. That
-                      places one additional cookie on that browser only, so their own testing is kept
-                      out of the reader statistics. It is never set on a visitor's browser.
-                      Links we share may carry campaign labels (including a variant label) so we can
-                      see which message brought people to the site. These labels describe the link,
-                      not the person.
-                      The first-party analytics system stores a visitor identifier in a cookie with
-                      a 12-month lifetime that is renewed when the site is used. It also uses
-                      browser storage for the visitor identifier, session identifier and session
-                      timing, and first-touch referral and campaign information. The site also stores values used
-                      for features such as remembering dismissed prompts and supporting faster or
-                      offline use. Google Analytics may use its own cookies or browser storage.
-                      These values can be cleared through your browser settings.
-                    </p>
-                  </Sub>
-                </div>
-              </Section>
-
-              <Section heading="Service providers">
-                <p>We use service providers to operate the site and related communications:</p>
-                <ul className="list-disc space-y-1 pl-6">
-                  <li>Vercel and Lovable — website deployment, hosting, and development tooling</li>
-                  <li>
-                    Supabase — database storage for subscriptions, contact messages, download
-                    records, and analytics events
-                  </li>
-                  <li>Google — Tag Manager and Analytics</li>
-                  <li>Sender.net and Resend — mailing-list management and email delivery</li>
-                </ul>
-                <p>We may also disclose information if we are legally required to do so.</p>
-              </Section>
-
-              <Section heading="Data retention">
-                <p>
-                  Email addresses are kept until the subscriber unsubscribes or requests removal.
-                  Contact form messages are kept as long as needed to handle the inquiry. Download
-                  records and analytics records are retained for operational and historical
-                  reporting unless they are deleted.
-                </p>
-              </Section>
-
-              <Section heading="Children">
-                <p>
-                  The site includes material intended for children to read, and the site itself is
-                  meant to be used by adults. We do not knowingly collect personal information from
-                  children under 13. If you believe a child has given us their email address, write
-                  to us and we will delete it.
-                </p>
-              </Section>
-
-              <Section heading="Your choices">
-                <p>
-                  You may unsubscribe at any time using the link in any email we send. You may also
-                  contact us to ask what information we hold about you, or to request that it be
-                  corrected or deleted, at {mailLink}.
-                </p>
-              </Section>
-
-              <Section heading="Changes to this policy">
-                <p>
-                  If we change how we handle information, we will update this page and change the
-                  date at the top.
-                </p>
-              </Section>
-
-              <Section heading="Contact">
-                <p>
-                  {mailLink}
-                  <br />
-                  {ENTITY_NAME}
-                </p>
-              </Section>
+              <p>
+                Material changes to this policy will be posted on this page with a new effective
+                date.
+              </p>
             </div>
           </div>
         </section>
