@@ -42,6 +42,7 @@ import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
 import { Route as ParshaSlugYearRouteImport } from './routes/parsha.$slug.$year'
 import { Route as ApiUnsubscribeTokenRouteImport } from './routes/api/unsubscribe.$token'
+import { Route as ApiPublicGeoDebugRouteImport } from './routes/api/public/geo-debug'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -208,6 +209,11 @@ const ApiUnsubscribeTokenRoute = ApiUnsubscribeTokenRouteImport.update({
   path: '/api/unsubscribe/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicGeoDebugRoute = ApiPublicGeoDebugRouteImport.update({
+  id: '/api/public/geo-debug',
+  path: '/api/public/geo-debug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -238,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe/': typeof UnsubscribeIndexRoute
+  '/api/public/geo-debug': typeof ApiPublicGeoDebugRoute
   '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
   '/parsha/$slug/$year': typeof ParshaSlugYearRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
@@ -273,6 +280,7 @@ export interface FileRoutesByTo {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe': typeof UnsubscribeIndexRoute
+  '/api/public/geo-debug': typeof ApiPublicGeoDebugRoute
   '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
   '/parsha/$slug/$year': typeof ParshaSlugYearRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
@@ -309,6 +317,7 @@ export interface FileRoutesById {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe/': typeof UnsubscribeIndexRoute
+  '/api/public/geo-debug': typeof ApiPublicGeoDebugRoute
   '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
   '/parsha/$slug/$year': typeof ParshaSlugYearRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
@@ -346,6 +355,7 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe/'
+    | '/api/public/geo-debug'
     | '/api/unsubscribe/$token'
     | '/parsha/$slug/$year'
     | '/view/$id/download'
@@ -381,6 +391,7 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe'
+    | '/api/public/geo-debug'
     | '/api/unsubscribe/$token'
     | '/parsha/$slug/$year'
     | '/view/$id/download'
@@ -416,6 +427,7 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe/'
+    | '/api/public/geo-debug'
     | '/api/unsubscribe/$token'
     | '/parsha/$slug/$year'
     | '/view/$id/download'
@@ -452,6 +464,7 @@ export interface RootRouteChildren {
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ViewIdRoute: typeof ViewIdRouteWithChildren
   UnsubscribeIndexRoute: typeof UnsubscribeIndexRoute
+  ApiPublicGeoDebugRoute: typeof ApiPublicGeoDebugRoute
   ApiUnsubscribeTokenRoute: typeof ApiUnsubscribeTokenRoute
   ParshaSlugYearRoute: typeof ParshaSlugYearRoute
   YomTovSlugYearRoute: typeof YomTovSlugYearRoute
@@ -690,6 +703,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUnsubscribeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/geo-debug': {
+      id: '/api/public/geo-debug'
+      path: '/api/public/geo-debug'
+      fullPath: '/api/public/geo-debug'
+      preLoaderRoute: typeof ApiPublicGeoDebugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -735,6 +755,7 @@ const rootRouteChildren: RootRouteChildren = {
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ViewIdRoute: ViewIdRouteWithChildren,
   UnsubscribeIndexRoute: UnsubscribeIndexRoute,
+  ApiPublicGeoDebugRoute: ApiPublicGeoDebugRoute,
   ApiUnsubscribeTokenRoute: ApiUnsubscribeTokenRoute,
   ParshaSlugYearRoute: ParshaSlugYearRoute,
   YomTovSlugYearRoute: YomTovSlugYearRoute,
