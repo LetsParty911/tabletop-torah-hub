@@ -617,22 +617,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
     if (vid && (priorVisitors.has(vid) || row.is_new_visitor === false)) returning.add(vid);
   }
 
-  type PublicationAgg = {
-    title: string;
-    impressions: Set<string>;
-    clicks: Set<string>;
-    readers: Set<string>;
-    opens: number;
-    downloads: number;
-    served: number;
-    newVisitorSessions: Set<string>;
-    returningSessions: Set<string>;
-    devices: Map<string, Set<string>>;
-    downloadPairs: Set<string>;
-    accessPairs: Set<string>;
-    sources: Map<string, Set<string>>;
-  };
-  const publications = new Map<string, PublicationAgg>();
+  const publications = aggregatePublications(keptRows, priorVisitors);
   const campaigns = new Map<string, { sessions: Set<string>; variants: Map<string, Set<string>> }>();
   const utmSources = new Map<string, Set<string>>();
   const locations = new Map<string, Set<string>>();
@@ -641,57 +626,6 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
   for (const row of keptRows) {
     const sid = row.session_id?.trim();
     if (!sid) continue;
-    // The publication id is the canonical key whenever it is present. A
-    // server-recorded download_served row carries the id but no title, so
-    // keying on the title would split it into a second, UUID-named row.
-    const pubId = row.publication_id?.trim() || "";
-    const pubTitle = row.publication_title?.trim() || "";
-    const key = pubId || pubTitle;
-    if (key) {
-      const publication = publications.get(key) ?? {
-        title: pubTitle || pubId,
-        impressions: new Set<string>(), clicks: new Set<string>(), readers: new Set<string>(),
-        opens: 0, downloads: 0, served: 0,
-        newVisitorSessions: new Set<string>(), returningSessions: new Set<string>(),
-        devices: new Map<string, Set<string>>(),
-        downloadPairs: new Set<string>(), accessPairs: new Set<string>(),
-        sources: new Map<string, Set<string>>(),
-      };
-      // Any event that knows the human title upgrades the display name.
-      if (pubTitle) publication.title = pubTitle;
-      const pair = `${sid}::${key}`;
-      if (row.event_name === "publication_impression") publication.impressions.add(pair);
-      if (row.event_name === "publication_click") publication.clicks.add(pair);
-      if (row.event_name === "pdf_open") {
-        publication.opens += 1;
-        publication.accessPairs.add(pair);
-        if (row.visitor_id) publication.readers.add(row.visitor_id);
-      }
-      if (row.event_name === "download_served") {
-        publication.served += 1;
-      }
-      if (row.event_name === "download") {
-        publication.downloads += 1;
-        publication.downloadPairs.add(pair);
-        publication.accessPairs.add(pair);
-        if (row.visitor_id) publication.readers.add(row.visitor_id);
-      }
-      const source = row.source_group?.trim() || "Direct";
-      const sourceSet = publication.sources.get(source) ?? new Set<string>();
-      sourceSet.add(sid);
-      publication.sources.set(source, sourceSet);
-
-      const device = row.device_type?.trim() || "unknown";
-      const deviceSet = publication.devices.get(device) ?? new Set<string>();
-      deviceSet.add(sid);
-      publication.devices.set(device, deviceSet);
-
-      const vid = row.visitor_id?.trim();
-      if (vid && (priorVisitors.has(vid) || row.is_new_visitor === false)) publication.returningSessions.add(sid);
-      else if (row.is_new_visitor === true) publication.newVisitorSessions.add(sid);
-
-      publications.set(key, publication);
-    }
 
     const utmSource = row.utm_source?.trim().toLowerCase();
     if (utmSource) {
