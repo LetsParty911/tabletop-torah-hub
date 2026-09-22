@@ -171,7 +171,9 @@ export async function resolveApproximateGeo(t: RequestTelemetry): Promise<Approx
       };
     }
 
-    const fresh = await lookupIpWhoIs(ip);
+    const whois = await lookupIpWhoIs(ip);
+    // MaxMind GeoLite City is only called when ipwho.is failed or gave no city/region.
+    const fresh = isUsable(whois) ? whois : ((await lookupMaxMind(ip)) ?? whois);
     if (!fresh) {
       await writeCache(supabase, ip, {
         country: t.country,
