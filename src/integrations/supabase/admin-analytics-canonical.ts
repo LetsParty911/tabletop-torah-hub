@@ -549,6 +549,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
   };
   const publications = new Map<string, PublicationAgg>();
   const campaigns = new Map<string, Set<string>>();
+  const utmSources = new Map<string, Set<string>>();
   const locations = new Map<string, Set<string>>();
   const searches: Array<{ term: string; at: string; sessionId: string; ledToContent: boolean }> = [];
 
@@ -582,6 +583,16 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
       sourceSet.add(sid);
       publication.sources.set(source, sourceSet);
       publications.set(title, publication);
+    }
+
+    const utmSource = row.utm_source?.trim().toLowerCase();
+    if (utmSource) {
+      const label = row.utm_medium?.trim()
+        ? `${utmSource} / ${row.utm_medium.trim().toLowerCase()}`
+        : utmSource;
+      const set = utmSources.get(label) ?? new Set<string>();
+      set.add(sid);
+      utmSources.set(label, set);
     }
 
     const campaignParts = [row.utm_source, row.utm_medium, row.utm_campaign]
@@ -651,6 +662,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
       downloadDenominator: publication.accessPairs.size,
       sources: [...publication.sources.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
     })).sort((a, b) => b.pdfOpens + b.downloadActions - (a.pdfOpens + a.downloadActions)),
+    utmSources: [...utmSources.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
     campaigns: [...campaigns.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
     locations: [...locations.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions).slice(0, 20),
     searches: searches.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 50),
