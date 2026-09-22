@@ -887,10 +887,17 @@ type VisitorEventRow = EventRow & {
   utm_source: string | null;
   utm_medium: string | null;
   utm_campaign: string | null;
+  geo_provider?: string | null;
+  geo_reliability?: string | null;
+  network_type?: string | null;
 };
 
-const VISITOR_SELECT =
+const VISITOR_SELECT_BASE =
   "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, source_group, device_type, country, region, city, postal_code, metadata, ip_address, user_agent, accept_language, sec_ch_ua, sec_ch_platform, sec_ch_mobile, asn, as_organization, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign";
+
+// Extended geo columns may not exist yet in the analytics project; the fetcher
+// falls back to the base projection when they are missing.
+const VISITOR_SELECT = `${VISITOR_SELECT_BASE}, geo_provider, geo_reliability, network_type`;
 
 /** Admin-only view of the enhanced fingerprint snapshot for a session. */
 export type FingerprintRow = {
