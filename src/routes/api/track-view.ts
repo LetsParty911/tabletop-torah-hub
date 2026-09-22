@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { checkRateLimit } from "@/lib/rate-limit.server";
-import { getRequestTelemetry } from "@/lib/request-telemetry.server";
+import { getRequestTelemetry, isAutomatedAgent } from "@/lib/request-telemetry.server";
 
 // Coarse device bucket derived from the user agent. The raw UA string is
 // never stored — only "mobile" | "tablet" | "desktop".
@@ -58,10 +58,22 @@ export const Route = createFileRoute("/api/track-view")({
               ? cf["timezone"].trim()
               : null;
 
+          // Skip external lookups for obvious automation; still record the view.
+          const { resolveApproximateGeo } = await import("@/lib/ip-geo.server");
+          const geo = isAutomatedAgent(telemetry.userAgent)
+            ? {
+                country: telemetry.country,
+                region: telemetry.region,
+                city: telemetry.city,
+                postalCode: telemetry.postalCode,
+                geoSource: "country_only" as const,
+              }
+            : await resolveApproximateGeo(telemetry);
+
           const { getSupabaseAdmin } = await import("@/integrations/supabase/ext.server");
           const supabase = getSupabaseAdmin();
 
-          await supabase.from("page_views").insert({
+          const row: Record<string, unknown> = {
             path,
             referrer: str("referrer", 800),
             referrer_host: str("referrer_host", 200),
@@ -72,11 +84,20 @@ export const Route = createFileRoute("/api/track-view")({
             visitor_id: visitorId,
             is_new_visitor: body["is_new_visitor"] === true,
             device_type: deviceTypeFrom(telemetry.userAgent),
-            city: telemetry.city,
-            region: telemetry.region,
-            country: telemetry.country,
+            city: geo.city,
+            region: geo.region,
+            country: geo.country,
+            postal_code: geo.postalCode,
+            geo_source: geo.geoSource,
             timezone: cfTimezone,
-          });
+          };
+
+          const { error } = await supabase.from("page_views").insert(row);
+          if (error && /geo_source|postal_code/.test(error.message)) {
+            // Columns may not exist yet — never lose the page view.
+            const { geo_source: _g, postal_code: _p, ...legacy } = row;
+            await supabase.from("page_views").insert(legacy);
+          }
 
           return new Response(null, { status: 204 });
         } catch (err) {
