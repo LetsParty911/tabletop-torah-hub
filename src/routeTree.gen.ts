@@ -41,6 +41,7 @@ import { Route as YomTovSlugYearRouteImport } from './routes/yom-tov.$slug.$year
 import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
 import { Route as ParshaSlugYearRouteImport } from './routes/parsha.$slug.$year'
+import { Route as ApiUnsubscribeTokenRouteImport } from './routes/api/unsubscribe.$token'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -202,6 +203,11 @@ const ParshaSlugYearRoute = ParshaSlugYearRouteImport.update({
   path: '/parsha/$slug/$year',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiUnsubscribeTokenRoute = ApiUnsubscribeTokenRouteImport.update({
+  id: '/api/unsubscribe/$token',
+  path: '/api/unsubscribe/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -232,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe/': typeof UnsubscribeIndexRoute
+  '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
   '/parsha/$slug/$year': typeof ParshaSlugYearRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/pdf': typeof ViewIdPdfRoute
@@ -266,6 +273,7 @@ export interface FileRoutesByTo {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe': typeof UnsubscribeIndexRoute
+  '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
   '/parsha/$slug/$year': typeof ParshaSlugYearRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/pdf': typeof ViewIdPdfRoute
@@ -301,6 +309,7 @@ export interface FileRoutesById {
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
   '/unsubscribe/': typeof UnsubscribeIndexRoute
+  '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
   '/parsha/$slug/$year': typeof ParshaSlugYearRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/pdf': typeof ViewIdPdfRoute
@@ -337,6 +346,7 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe/'
+    | '/api/unsubscribe/$token'
     | '/parsha/$slug/$year'
     | '/view/$id/download'
     | '/view/$id/pdf'
@@ -371,6 +381,7 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe'
+    | '/api/unsubscribe/$token'
     | '/parsha/$slug/$year'
     | '/view/$id/download'
     | '/view/$id/pdf'
@@ -405,6 +416,7 @@ export interface FileRouteTypes {
     | '/unsubscribe/$token'
     | '/view/$id'
     | '/unsubscribe/'
+    | '/api/unsubscribe/$token'
     | '/parsha/$slug/$year'
     | '/view/$id/download'
     | '/view/$id/pdf'
@@ -440,6 +452,7 @@ export interface RootRouteChildren {
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ViewIdRoute: typeof ViewIdRouteWithChildren
   UnsubscribeIndexRoute: typeof UnsubscribeIndexRoute
+  ApiUnsubscribeTokenRoute: typeof ApiUnsubscribeTokenRoute
   ParshaSlugYearRoute: typeof ParshaSlugYearRoute
   YomTovSlugYearRoute: typeof YomTovSlugYearRoute
 }
@@ -670,6 +683,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ParshaSlugYearRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/unsubscribe/$token': {
+      id: '/api/unsubscribe/$token'
+      path: '/api/unsubscribe/$token'
+      fullPath: '/api/unsubscribe/$token'
+      preLoaderRoute: typeof ApiUnsubscribeTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -715,6 +735,7 @@ const rootRouteChildren: RootRouteChildren = {
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ViewIdRoute: ViewIdRouteWithChildren,
   UnsubscribeIndexRoute: UnsubscribeIndexRoute,
+  ApiUnsubscribeTokenRoute: ApiUnsubscribeTokenRoute,
   ParshaSlugYearRoute: ParshaSlugYearRoute,
   YomTovSlugYearRoute: YomTovSlugYearRoute,
 }
