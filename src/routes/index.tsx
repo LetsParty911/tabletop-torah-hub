@@ -9,6 +9,7 @@ import { PublicationCardTracker } from "@/components/PublicationCardTracker";
 import { trackFp } from "@/lib/first-party-analytics";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { SITE_URL } from "@/lib/site-url";
+import { withUtm } from "@/lib/utm";
 
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
