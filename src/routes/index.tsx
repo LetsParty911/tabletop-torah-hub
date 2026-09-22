@@ -228,16 +228,17 @@ const FEATURED_SLOTS = [
 ] as const;
 
 function Index() {
-  const {
-    label: currentLabel,
-    parshaKey: currentParshaKey,
-    resources: initialResources,
-    isFallback,
-    fallbackParshaLabel,
-    fallbackParshaKey,
-    readingDate,
-    upcomingAfterYomTovKey,
-  } = Route.useLoaderData() as LoaderData;
+  // Read loader data through a single object binding. An aliased destructure of
+  // `resources` was implicated in a production ReferenceError, so the value is
+  // read explicitly where it is used instead.
+  const loaderData = Route.useLoaderData() as LoaderData;
+  const currentLabel = loaderData.label;
+  const currentParshaKey = loaderData.parshaKey;
+  const isFallback = loaderData.isFallback;
+  const fallbackParshaLabel = loaderData.fallbackParshaLabel;
+  const fallbackParshaKey = loaderData.fallbackParshaKey;
+  const readingDate = loaderData.readingDate;
+  const upcomingAfterYomTovKey = loaderData.upcomingAfterYomTovKey;
 
   const displayedLabel = isFallback && fallbackParshaLabel ? fallbackParshaLabel : currentLabel;
   const displayedParshaKey = isFallback && fallbackParshaKey ? fallbackParshaKey : currentParshaKey;
@@ -277,7 +278,7 @@ function Index() {
   // and a platform/CDN can occasionally serve older SSR HTML even after the database
   // has newer published PDFs. A client-side server-function refresh ensures readers
   // see the current published collection without requiring a hard refresh.
-  const [resources, setResources] = useState<Resource[]>(initialResources);
+  const [resources, setResources] = useState<Resource[]>(loaderData.resources ?? []);
   useEffect(() => {
     let cancelled = false;
     const refreshCurrentCollection = async () => {
@@ -506,7 +507,7 @@ function Index() {
                   }}
                   className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
                 >
-                  {isCurrentYomKippur ? "Explore Yom Kippur selections" : "See this week&apos;s PDFs"}
+                  {isCurrentYomKippur ? "Explore Yom Kippur selections" : "See this week’s PDFs"}
                 </a>
               </div>
             )}
