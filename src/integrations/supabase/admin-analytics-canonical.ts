@@ -1931,13 +1931,32 @@ export const adminAnalyticsHealth = createServerFn({ method: "POST" })
           : `${duplicates} rows share a session, event name and timestamp. Distinct event_ids kept them, so they are separate events, not retries.`,
     });
 
-    // 4. Geo enrichment
-    const withCity = rows.filter((row) => row.city?.trim()).length;
-    const lowReliability = rows.filter((row) => row.geo_reliability === "low").length;
+    // 4. Geo enrichment — measured per recent SESSION, not per event row.
+    // Geo enrichment was rolled out mid-window and not every event row needs
+    // a location, so an event-level ratio produced a misleading warning.
+    const recentCutoff = Date.now() - 24 * 60 * 60 * 1000;
+    const recentSessions = new Set<string>();
+    const recentSessionsWithGeo = new Set<string>();
+    const recentSessionsLowReliability = new Set<string>();
+    const recentSessionsWithNetwork = new Set<string>();
+    for (const row of rows) {
+      const sid = row.session_id?.trim();
+      if (!sid) continue;
+      if (Date.parse(row.occurred_at) < recentCutoff) continue;
+      recentSessions.add(sid);
+      if (row.country?.trim() || row.region?.trim() || row.city?.trim()) recentSessionsWithGeo.add(sid);
+      if (row.geo_reliability === "low") recentSessionsLowReliability.add(sid);
+      if (row.network_type?.trim() && row.network_type.trim() !== "unknown") recentSessionsWithNetwork.add(sid);
+    }
     checks.push({
       name: "Location enrichment",
-      status: total < 10 ? "not_enough_data" : withCity / Math.max(1, total) >= 0.5 ? "healthy" : "warning",
-      detail: `${withCity} of ${total} events carry an approximate city; ${lowReliability} are flagged low reliability (carrier, VPN or hosting network).`,
+      status:
+        recentSessions.size < 10
+          ? "not_enough_data"
+          : recentSessionsWithGeo.size / recentSessions.size >= 0.5
+            ? "healthy"
+            : "warning",
+      detail: `${recentSessionsWithGeo.size} of ${recentSessions.size} sessions in the last 24 hours carry an approximate country, region or city; ${recentSessionsLowReliability.size} flagged low reliability and ${recentSessionsWithNetwork.size} carry network context (carrier, VPN or hosting). Older events from before geo enrichment rolled out are not counted.`,
     });
 
     // 5. Human signal
@@ -1948,13 +1967,22 @@ export const adminAnalyticsHealth = createServerFn({ method: "POST" })
       detail: `${humanSignals} human_signal events across ${sessions.size} sessions.`,
     });
 
-    // 6. Campaign coverage
-    const tagged = rows.filter((row) => row.utm_source?.trim()).length;
-    const withContent = rows.filter((row) => row.utm_content?.trim()).length;
+    // 6. Campaign coverage — no tagged sessions is "nothing to judge", not healthy.
+    const taggedSessions = new Set<string>();
+    const contentSessions = new Set<string>();
+    for (const row of rows) {
+      const sid = row.session_id?.trim();
+      if (!sid) continue;
+      if (row.utm_source?.trim()) taggedSessions.add(sid);
+      if (row.utm_content?.trim()) contentSessions.add(sid);
+    }
     checks.push({
       name: "Campaign fields",
-      status: total < 10 ? "not_enough_data" : "healthy",
-      detail: `${tagged} of ${total} events carry a utm_source; ${withContent} also carry a utm_content variant.`,
+      status: total < 10 || taggedSessions.size === 0 ? "not_enough_data" : "healthy",
+      detail:
+        taggedSessions.size === 0
+          ? `No campaign-tagged sessions in this window, so campaign capture cannot be judged. ${sessions.size} sessions seen.`
+          : `${taggedSessions.size} of ${sessions.size} sessions carry a utm_source; ${contentSessions.size} also carry a utm_content variant.`,
     });
 
     // 7. Download action -> served matching
