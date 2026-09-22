@@ -278,7 +278,7 @@ function Index() {
   // and a platform/CDN can occasionally serve older SSR HTML even after the database
   // has newer published PDFs. A client-side server-function refresh ensures readers
   // see the current published collection without requiring a hard refresh.
-  const [resources, setResources] = useState<Resource[]>(initialResources);
+  const [resources, setResources] = useState<Resource[]>(loaderData.resources ?? []);
   useEffect(() => {
     let cancelled = false;
     const refreshCurrentCollection = async () => {
