@@ -1009,13 +1009,43 @@ function pushUnique(list: string[], value: string | null | undefined) {
   if (!list.includes(v)) list.push(v);
 }
 
-function geoLabel(row: {
+function geoPlace(row: {
   city: string | null;
   region: string | null;
   country: string | null;
 }): string {
   const parts = [row.city, row.region, row.country].map((p) => p?.trim()).filter(Boolean);
   return parts.length ? parts.join(", ") : "";
+}
+
+const NETWORK_WORD: Record<string, string> = {
+  mobile: "mobile",
+  vpn: "VPN",
+  proxy: "proxy",
+  tor: "Tor",
+  hosting: "datacenter",
+  relay: "private relay",
+};
+
+/**
+ * Admin-facing location wording. IP-derived places are never presented as an
+ * exact physical address, and a network is only described as mobile/VPN/etc.
+ * when the provider gave an explicit signal.
+ */
+function geoLabel(row: {
+  city: string | null;
+  region: string | null;
+  country: string | null;
+  reliability?: string | null;
+  networkType?: string | null;
+}): string {
+  const place = geoPlace(row);
+  if (!place) return row.networkType && row.networkType !== "unknown" ? "Network location only" : "";
+  const word = row.networkType ? NETWORK_WORD[row.networkType] : undefined;
+  if (row.reliability === "low") {
+    return `${place} — ${word ? `${word}/network location` : "network location"}, low reliability`;
+  }
+  return `${place} — approximate network location`;
 }
 
 export const adminVisitorActivity = createServerFn({ method: "POST" })
