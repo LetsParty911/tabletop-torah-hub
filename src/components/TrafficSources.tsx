@@ -128,6 +128,10 @@ export default function TrafficSources({
         </h3>
         {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
       </div>
+      <p className="text-xs text-muted-foreground">
+        Legacy raw page-view rows, kept for historical audit. Headline audience numbers come from
+        the canonical report, not from this section, and the two are never added together.
+      </p>
 
       {error && (
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive" role="alert">
@@ -138,7 +142,7 @@ export default function TrafficSources({
       {data?.funnel && (
         <div>
           <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-            Visit-to-download funnel
+            Legacy raw visit-to-download funnel
           </p>
           <div className="mb-4 grid gap-3 sm:grid-cols-3">
             {[
