@@ -1,53 +1,59 @@
-# Analytics upgrade — Torah for the Table
+# Add the two Trust in Hashem Sukkah decorations safely
 
-A single coherent upgrade of the existing canonical analytics. Nothing is replaced: the current event stream, metrics, filters and tabs stay exactly as they are; everything below is added on top.
+## Recommendation
 
-## What you get
+Use **one seasonal feature card with two size buttons**, not two cards. The PDFs are two print sizes of the same decoration, so separate cards would repeat the artwork and copy and crowd the homepage on mobile.
 
-**Owner Summary** — a new first tab on the analytics page written for you, not for an analyst:
-- People: visitors, new vs returning, confident humans, uncertain, suspected automation, internal/test kept out
-- What they did: engaged, Used Torah, PDF opens, download actions, served download requests, chooser use, My Table, signups
-- Where they came from: Google / WhatsApp / Email / Sender / Direct, plus named campaigns
-- What worked: top publications with a clear funnel
-- Returning audience: 1-day, 7-day, 30-day return rates, plus 2+ and 4+ week readers
-- Recent story: plain-English, factual sentences about recent meaningful visits, with approximate location wording
-Headline numbers stay clickable into the existing detail drawers.
+**Card copy**
+- Eyebrow: `Free Sukkah Decoration`
+- Headline: `Trust in Hashem`
+- Supporting line: `A beautiful collection of pesukim, ready to print for your Sukkah.`
+- Prompt above buttons: `Choose your print size`
+- Primary actions: `Download 8.5 × 11` and `Download 11 × 17`
+- Closing line: `Print • Laminate • Enjoy in your Sukkah`
 
-**Mark this device as internal** — a button on the analytics page that tags your own phone/laptop so your testing stops polluting the numbers, plus an Unmark button. It is verified on the server (a signed cookie issued only to a signed-in admin), so no visitor can fake it. Internal visits are still recorded for diagnostics and shown as a separate count.
+Both size actions should have equal visual weight. The artwork remains first on mobile, followed immediately by two full-width download buttons.
 
-**Traffic confidence** — every session is labelled for reporting only: high-confidence human, likely human, uncertain, suspected automation, internal/test. Real intent (downloads, PDF opens, chooser use) always protects a session. Where two visitor IDs share network evidence, we say "possible relationship — insufficient evidence" and never merge them.
+## Exact placements
 
-**Campaign Link Builder** — destination path, source, medium, campaign, and a new optional "content" field to distinguish two versions of the same campaign (e.g. two WhatsApp messages). Presets for WhatsApp, Sender.net email and QR. Links keep any existing query parameters and anchors.
+1. **Homepage:** directly below the current announcement strip and before the weekly/current collection. This makes the seasonal item visible in the first screen without replacing the current-week state.
+2. **Archive:** one compact seasonal feature between the archive controls and the year-by-year listings. Do not create two archive cards.
+3. **Sukkos collection:** include both PDFs as ordinary resources in the Sukkos 5787 collection, while also showing the same compact two-button feature above that collection. The existing Sukkos-only condition can be retained.
+4. Do not add the decoration to unrelated publication pages or ordinary weekly selections.
 
-**Confirmed download requests** — when someone taps download we now also record that the server validated the file and issued it, matched to the original tap. Reported as "served download requests" — honest wording; it is not proof the file finished saving.
+## Content setup
 
-**Analytics Health** — an admin panel that checks real recent data: are events arriving, do sessions look consistent, any duplicate events, how much location enrichment succeeded, human signals present, campaign fields filled, and how many download taps matched a served request. Each check says healthy / warning / not enough data with counts.
+- Upload exactly two supplied, unaltered PDFs through the existing admin upload flow:
+  - `Sukkos Decoration — Trust in Hashem (8.5 × 11)`
+  - `Sukkos Decoration — Trust in Hashem (11 × 17)`
+- Assign both to `Sukkos`, Jewish year `5787`, with clear page size metadata and no invented publisher information.
+- Keep both unpublished until their previews, titles, dimensions, and downloads are verified.
+- Use the generated preview from the supplied artwork; do not redraw, OCR, regenerate, or substitute imagery.
+- Publish both records together only when the isolated site release is ready.
 
-**Location honesty** — approximate location is shown with its reliability and network context (cellular, VPN, hosting), never as an exact address. No coordinates stored, no raw IP in the summary.
+## Smallest code change
 
-## Technical plan
+- **`src/components/SukkosTrustFeature.tsx`** — convert the existing single disabled 11 × 17 action into two tracked download actions and support one shared artwork preview.
+- **`src/routes/index.tsx`** — supply the two publication IDs/download links and preview to the existing homepage placement.
+- **`src/routes/archive.tsx`** — supply the same data to the compact archive placement.
+- **`src/components/ReadingCollectionView.tsx`** — supply the same data to the existing Sukkos-only placement.
+- **`src/components/DownloadToPrintButton.tsx`** — no further change expected; it already supports custom labels and the existing action/served-event correlation.
+- No schema migration, new page, analytics rewrite, filter change, or new download system is needed.
 
-1. **Migration file** `supabase_internal_utm_content_migration.sql` — idempotent `ADD COLUMN IF NOT EXISTS` for `analytics_events.is_internal` and `.utm_content` plus the two indexes, documenting what is already applied in production. No destructive SQL. `download_served` needs no schema change: it is an `event_name` with `metadata.action_id`.
+## Safest isolated release workflow
 
-2. **Internal marker** — new server fn `markDeviceInternal` / `unmarkDeviceInternal` in a new `src/integrations/supabase/internal-device.functions.ts`: verifies the admin access token the same way `requireAnalyticsAdmin` does, then sets/clears an HttpOnly, SameSite=Lax, 1-year cookie `tftt_internal` whose value is `HMAC(secret, "internal")`. Secret from `ADMIN_EMAILS`-adjacent new secret `INTERNAL_MARKER_SECRET` (auto-generated if absent, falling back to the service key hash). `/api/events` and `/api/track-view` verify the cookie server-side and set `is_internal`; the client never influences it.
+1. Confirm the exact production deployment commit before changing anything. The public homepage and archive currently do **not** render the scaffolded Sukkos feature, although the repository contains it.
+2. Create a temporary release branch/worktree from that confirmed production commit, not from the current repository tip.
+3. Bring over only the reusable seasonal card and its three placements, revised for the two supplied PDF records. Exclude every analytics, admin, privacy, and unrelated commit.
+4. Upload the two PDFs as unpublished records and capture their generated IDs/previews.
+5. Wire only those two IDs into the isolated release. Verify both tracked download routes issue the correct direct file redirect and preserve the existing meaning of “served.”
+6. Run unit tests, TypeScript checks, and the production build. Check desktop and mobile homepage, archive, Sukkos collection, both previews, and both downloads.
+7. Publish the isolated release first, verify production, then publish the two content records together. If the platform cannot make those steps atomic, publish the records immediately after the site verification and confirm the public pages again.
 
-3. **Session race** — `touchSession()` in `first-party-analytics.ts` wrapped in `navigator.locks.request("tftt-session", …)` when available, with a BroadcastChannel re-read and the current synchronous path as fallback. Session mint becomes async-safe while `getSessionId()` keeps its sync signature via a cached value. `event_id` idempotency untouched.
+## Current-state and deployment risks
 
-4. **Confidence classification** — pure function `classifySession()` in a new `src/lib/traffic-confidence.ts` (unit-tested), consumed by the canonical report. Derived at report time only; no column written.
-
-5. **utm_content** — added to `FpAttribution` capture, `/api/events` ingest, `EventRow`, campaign grouping (same source/medium/campaign grouped, content shown as a sub-line), and `withUtm()` gains an optional `content` field with existing callers unchanged.
-
-6. **download_served** — `DownloadToPrintButton` generates an `action_id`, appends it to `/view/$id/download?a=…`; the download route validates the id format and inserts one `download_served` event (visitor/session read from the sanitized query, capped lengths) before redirecting. Added to the allowed-event set and the catalog. Reports show actions, served, and unmatched.
-
-7. **Cohorts** — `src/lib/retention-cohorts.ts`: D1/D7/D30 computed only for visitors whose first session is observed in the canonical stream and who have had the full window elapse; denominator and returned count labelled explicitly; percentages suppressed under 10, matching the existing rule. Plus 2+ / 4+ distinct-week counts.
-
-8. **Content funnel** — publication rows extended with impressions → clicks → PDF opens → download actions → served, and new/returning, source and device splits where the sample allows.
-
-9. **Docs, privacy, tests** — `docs/analytics-event-schema.md` updated for `utm_content`, `is_internal`, `download_served`, confidence language; privacy page gains accurate wording about the internal marker cookie and that a served request is not proof of a completed download. New/updated tests: UTM helper with content, confidence classification, cohort eligibility, download matching, report math.
-
-## Limitations to expect
-
-- The internal-device marker is per-browser; marking a phone does not mark a laptop.
-- D30 cohorts will read "not enough elapsed time" until the canonical stream is 30 days deep for enough visitors.
-- `download_served` only starts matching from deployment forward; no backfill.
-- Everything stays in preview until you approve publishing.
+- The working tree is clean, but `HEAD` is seven commits beyond the last visible publish marker. Those commits include unrelated admin/analytics work as well as the dormant seasonal scaffold. Publishing the current tip directly could expose unrelated pending changes.
+- The live homepage currently leads with `Sukkos` and then the still-available Ha'azinu collection; the new feature should sit between the announcement strip and that weekly content.
+- The live archive currently exposes Rosh Hashanah and Yom Kippur but no Sukkos collection. Adding two published Sukkos 5787 rows should create that collection through the existing collection loader.
+- No supplied decoration PDF or matching artwork is present in project assets or recent uploads available to this workspace. The exact two files must be attached before implementation can finish; substitutes should not be used.
+- The content database and PDF storage are external to the connected project database, so records should be created through the existing admin upload flow rather than a new migration.
