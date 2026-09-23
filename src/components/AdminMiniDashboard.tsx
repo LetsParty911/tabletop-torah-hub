@@ -238,33 +238,6 @@ export default function AdminMiniDashboard({
                 </>
               )}
             </Tile>
-            <Tile
-              label="Raw download actions · this collection vs previous"
-              quiet={data.currentParshaDownloads === 0}
-            >
-              <p className="font-serif text-2xl font-semibold text-primary sm:text-3xl">
-                {data.currentParshaDownloads}
-                <span className="text-lg font-normal text-muted-foreground">
-                  {" "}
-                  vs {data.previousParshaDownloads}
-                </span>{" "}
-                <span
-                  className={
-                    change > 0
-                      ? "text-accent-foreground"
-                      : change < 0
-                        ? "text-destructive"
-                        : "text-muted-foreground"
-                  }
-                >
-                  {change > 0 ? `▲ +${change}` : change < 0 ? `▼ −${Math.abs(change)}` : "→ even"}
-                </span>
-              </p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Legacy/raw collection comparison; use Site traffic &amp; conversion below for
-                matched-window conversion metrics.
-              </p>
-            </Tile>
           </div>
         )}
       </div>
