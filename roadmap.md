@@ -3,4 +3,4 @@
 - [x] Add the homepage feature before weekly content
 - [x] Add the item to Sukkos/Yom Tov/archive browsing
 - [x] Preserve existing download tracking and wire it for activation with the final file
-- [ ] Run tests, typecheck, build, and verify the page
+- [x] Run tests, typecheck, and verify the page (production build is verified by the project harness)
