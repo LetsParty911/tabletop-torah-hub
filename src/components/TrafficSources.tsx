@@ -123,7 +123,9 @@ export default function TrafficSources({
   return (
     <section className="space-y-4">
       <div className="flex items-center gap-2">
-        <h3 className="font-serif text-xl font-semibold">Traffic sources</h3>
+        <h3 className="font-serif text-xl font-semibold">
+          Legacy raw traffic sources (audit only)
+        </h3>
         {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
       </div>
 
@@ -191,7 +193,8 @@ export default function TrafficSources({
 
           <div>
             <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-              All site visits ({data.visits.total.toLocaleString()} pageviews)
+              Legacy raw page views ({data.visits.total.toLocaleString()} rows) — not a canonical
+              audience count
             </p>
             <div className="grid gap-4 lg:grid-cols-3">
               <Panel title="Top referrers" rows={data.visits.referrers} />
