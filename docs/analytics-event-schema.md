@@ -9,7 +9,15 @@ Primary audience, engagement, funnel, source, device, and conversion metrics use
 **Client:** `src/lib/first-party-analytics.ts`  
 **Ingest:** `POST /api/events` (`src/routes/api/events.ts`)
 
-Legacy `page_views`, `search_events`, `download_events`, and `download_attribution` remain available for historical/raw audit views. They are not the preferred source for primary conversion rates.
+Legacy `page_views`, `search_events`, `download_events`, and `download_attribution` remain available for historical/raw audit views. They are not the preferred source for primary conversion rates, and legacy rows are never mixed into canonical totals. Admin sections built on them are labelled "Legacy raw page views".
+
+### Legacy compatibility tracker
+
+`src/lib/site-analytics.ts` used to mint its own visitor id (`tftt:analytics-visitor`), its own `sessionStorage` session (`tftt:analytics-session`) and its own first-touch attribution. It is now a thin wrapper around the canonical identity in `src/lib/first-party-analytics.ts`, so from this change forward legacy `page_views` / `search_events` rows carry the **same** canonical `visitor_id` and `session_id` as `analytics_events`.
+
+`POST /api/track-view` now applies the same exclusions as `/api/events`: obvious automated agents are rejected, admin routes (`/admin`, `/admin/*`, `/admin-analytics*`) are excluded, Lovable editor/preview traffic is skipped, and any device carrying the signed internal-device cookie is skipped. A client-supplied internal flag is never trusted.
+
+**Historical rows written before this change still carry legacy ids and must never be joined to `analytics_events` by `visitor_id` or `session_id`.** Treat pre-change `page_views` strictly as a raw audit feed.
 
 ## Identity
 
