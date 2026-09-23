@@ -123,9 +123,15 @@ export default function TrafficSources({
   return (
     <section className="space-y-4">
       <div className="flex items-center gap-2">
-        <h3 className="font-serif text-xl font-semibold">Traffic sources</h3>
+        <h3 className="font-serif text-xl font-semibold">
+          Legacy raw traffic sources (audit only)
+        </h3>
         {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
       </div>
+      <p className="text-xs text-muted-foreground">
+        Legacy raw page-view rows, kept for historical audit. Headline audience numbers come from
+        the canonical report, not from this section, and the two are never added together.
+      </p>
 
       {error && (
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive" role="alert">
@@ -136,7 +142,7 @@ export default function TrafficSources({
       {data?.funnel && (
         <div>
           <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-            Visit-to-download funnel
+            Legacy raw visit-to-download funnel
           </p>
           <div className="mb-4 grid gap-3 sm:grid-cols-3">
             {[
@@ -191,7 +197,8 @@ export default function TrafficSources({
 
           <div>
             <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-              All site visits ({data.visits.total.toLocaleString()} pageviews)
+              Legacy raw page views ({data.visits.total.toLocaleString()} rows) — not a canonical
+              audience count
             </p>
             <div className="grid gap-4 lg:grid-cols-3">
               <Panel title="Top referrers" rows={data.visits.referrers} />

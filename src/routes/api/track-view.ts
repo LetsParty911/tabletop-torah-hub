@@ -2,6 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { checkRateLimit } from "@/lib/rate-limit.server";
 import { getRequestTelemetry, isAutomatedAgent } from "@/lib/request-telemetry.server";
 
+// Legacy raw page_views ingest.
+//
+// `analytics_events` (POST /api/events) is the authoritative source for headline
+// audience metrics. This route only keeps the historical raw feed alive, so it
+// applies the same exclusions as the canonical ingest: obvious automation,
+// admin routes, Lovable editor/preview traffic and any device an administrator
+// marked internal with the signed, server-issued cookie are never recorded.
+// A client-supplied internal flag is never trusted.
+
 // Coarse device bucket derived from the user agent. The raw UA string is
 // never stored — only "mobile" | "tablet" | "desktop".
 function deviceTypeFrom(ua: string): string {
@@ -9,6 +18,23 @@ function deviceTypeFrom(ua: string): string {
   if (/ipad|tablet|playbook|silk|(android(?!.*mobile))/.test(s)) return "tablet";
   if (/mobi|iphone|ipod|android|blackberry|windows phone/.test(s)) return "mobile";
   return "desktop";
+}
+
+function isAdminPath(path: string): boolean {
+  return path === "/admin" || path.startsWith("/admin/") || path.startsWith("/admin-analytics");
+}
+
+// Same convention the canonical report uses to recognise editor/preview traffic.
+function isEditorPreviewTraffic(referrerHost: string, userAgent: string): boolean {
+  const host = referrerHost.trim().toLowerCase();
+  const ua = userAgent.toLowerCase();
+  return (
+    host === "lovable.dev" ||
+    host.endsWith(".lovable.dev") ||
+    host === "lovable.app" ||
+    host.endsWith(".lovable.app") ||
+    ua.includes("lovableapp/")
+  );
 }
 
 export const Route = createFileRoute("/api/track-view")({
@@ -20,12 +46,26 @@ export const Route = createFileRoute("/api/track-view")({
             return new Response(null, { status: 204 });
           }
 
+          const telemetry = getRequestTelemetry(request);
+
+          // Drop obvious automated traffic before anything is persisted,
+          // exactly as /api/events does.
+          if (isAutomatedAgent(telemetry.userAgent)) {
+            return new Response(null, { status: 204 });
+          }
+
+          // Internal/test device: verified only from the signed HttpOnly cookie.
+          const { isInternalRequest } = await import("@/lib/internal-marker.server");
+          if (await isInternalRequest(request)) {
+            return new Response(null, { status: 204 });
+          }
+
           const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
 
           const rawPath = typeof body["path"] === "string" ? (body["path"] as string) : "";
           // Pathname only — never a query string.
           const path = (rawPath.split("?")[0] ?? "").slice(0, 300) || "/";
-          if (path === "/admin" || path.startsWith("/admin/")) {
+          if (isAdminPath(path)) {
             return new Response(null, { status: 204 });
           }
 
@@ -33,8 +73,7 @@ export const Route = createFileRoute("/api/track-view")({
           const referer = request.headers.get("referer") ?? "";
           if (referer) {
             try {
-              const p = new URL(referer).pathname;
-              if (p === "/admin" || p.startsWith("/admin/")) {
+              if (isAdminPath(new URL(referer).pathname)) {
                 return new Response(null, { status: 204 });
               }
             } catch {
@@ -51,24 +90,19 @@ export const Route = createFileRoute("/api/track-view")({
           const visitorId = str("visitor_id", 80);
           if (!sessionId || !visitorId) return new Response(null, { status: 204 });
 
-          const telemetry = getRequestTelemetry(request);
+          const referrerHost = str("referrer_host", 200);
+          if (isEditorPreviewTraffic(referrerHost ?? "", telemetry.userAgent)) {
+            return new Response(null, { status: 204 });
+          }
+
           const cf = (request as unknown as { cf?: Record<string, unknown> }).cf ?? {};
           const cfTimezone =
             typeof cf["timezone"] === "string" && cf["timezone"].trim()
               ? cf["timezone"].trim()
               : null;
 
-          // Skip external lookups for obvious automation; still record the view.
           const { resolveApproximateGeo } = await import("@/lib/ip-geo.server");
-          const geo = isAutomatedAgent(telemetry.userAgent)
-            ? {
-                country: telemetry.country,
-                region: telemetry.region,
-                city: telemetry.city,
-                postalCode: telemetry.postalCode,
-                geoSource: "country_only" as const,
-              }
-            : await resolveApproximateGeo(telemetry);
+          const geo = await resolveApproximateGeo(telemetry);
 
           const { getSupabaseAdmin } = await import("@/integrations/supabase/ext.server");
           const supabase = getSupabaseAdmin();
@@ -76,7 +110,7 @@ export const Route = createFileRoute("/api/track-view")({
           const row: Record<string, unknown> = {
             path,
             referrer: str("referrer", 800),
-            referrer_host: str("referrer_host", 200),
+            referrer_host: referrerHost,
             utm_source: str("utm_source", 120),
             utm_medium: str("utm_medium", 120),
             utm_campaign: str("utm_campaign", 200),

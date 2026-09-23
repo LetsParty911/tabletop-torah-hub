@@ -1,50 +1,36 @@
-// First-party, privacy-preserving site analytics client helper.
+// Legacy first-party tracker — now a thin compatibility wrapper.
 //
-// Mirrors the download-tracking approach: the browser posts a small JSON body
-// to a server route, and the server does the geo lookup at the edge. No IP
-// addresses, no raw user agents, no third-party scripts.
+// Historically this module minted its OWN visitor ids (tftt:analytics-visitor),
+// its own sessionStorage session (tftt:analytics-session) and its own
+// first-touch attribution. That made the legacy `page_views` / `search_events`
+// rows impossible to reconcile with the canonical `analytics_events` stream and
+// could inflate visitor/session counts.
 //
-// Admin routes are never tracked.
+// From this change forward every id written by this module comes from the
+// canonical identity in `src/lib/first-party-analytics.ts`. The public exports
+// are unchanged so existing callers keep working. Canonical analytics remains
+// the authoritative source for headline audience metrics; page_views is a
+// legacy raw/audit feed only.
+//
+// Older historical page_views rows still carry the old legacy ids and must
+// never be joined to analytics_events by visitor_id / session_id.
 
-const SESSION_KEY = "tftt:analytics-session";
-const VISITOR_KEY = "tftt:analytics-visitor";
-
-function randomId(): string {
-  try {
-    if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
-  } catch {
-    /* fall through */
-  }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-}
+import {
+  captureFirstTouch,
+  getFirstTouch,
+  getSessionId as getCanonicalSessionId,
+  getVisitorId,
+  isAdminPath as isCanonicalAdminPath,
+  isNewVisitor,
+} from "@/lib/first-party-analytics";
 
 export function isAdminPath(path: string): boolean {
-  return path === "/admin" || path.startsWith("/admin/") || path === "/admin-analytics";
+  return isCanonicalAdminPath(path);
 }
 
+/** Canonical session id — shared with the canonical event stream. */
 export function getSessionId(): string {
-  try {
-    const existing = sessionStorage.getItem(SESSION_KEY);
-    if (existing) return existing;
-    const id = randomId();
-    sessionStorage.setItem(SESSION_KEY, id);
-    return id;
-  } catch {
-    return randomId();
-  }
-}
-
-/** Returns the visitor id plus whether it was created just now. */
-function getVisitor(): { visitorId: string; isNew: boolean } {
-  try {
-    const existing = localStorage.getItem(VISITOR_KEY);
-    if (existing) return { visitorId: existing, isNew: false };
-    const id = randomId();
-    localStorage.setItem(VISITOR_KEY, id);
-    return { visitorId: id, isNew: true };
-  } catch {
-    return { visitorId: randomId(), isNew: true };
-  }
+  return getCanonicalSessionId();
 }
 
 function post(url: string, payload: unknown): void {
@@ -63,37 +49,26 @@ function post(url: string, payload: unknown): void {
   }
 }
 
-/** Log one pageview. Safe to call on every client-side route change. */
+/** Log one legacy raw pageview. Safe to call on every client-side route change. */
 export function trackPageView(path: string): void {
   try {
     if (typeof window === "undefined") return;
     if (isAdminPath(path)) return;
 
-    const params = new URLSearchParams(window.location.search);
-    const referrer = document.referrer || null;
-    let referrerHost: string | null = null;
-    if (referrer) {
-      try {
-        const host = new URL(referrer).hostname;
-        // Internal navigation isn't a traffic source.
-        referrerHost = host && host !== window.location.hostname ? host : null;
-      } catch {
-        referrerHost = null;
-      }
-    }
-
-    const { visitorId, isNew } = getVisitor();
+    const attribution = captureFirstTouch(path);
+    const visitorId = getVisitorId();
+    if (!visitorId) return;
 
     post("/api/track-view", {
       path,
-      referrer: referrerHost ? referrer : null,
-      referrer_host: referrerHost,
-      utm_source: params.get("utm_source"),
-      utm_medium: params.get("utm_medium"),
-      utm_campaign: params.get("utm_campaign"),
+      referrer: attribution.referrer_url,
+      referrer_host: attribution.referrer_host,
+      utm_source: attribution.utm_source,
+      utm_medium: attribution.utm_medium,
+      utm_campaign: attribution.utm_campaign,
       session_id: getSessionId(),
       visitor_id: visitorId,
-      is_new_visitor: isNew,
+      is_new_visitor: isNewVisitor(),
     });
   } catch {
     /* silent */
@@ -118,10 +93,8 @@ export function trackSearch(query: string, resultCount: number): void {
 }
 
 // ---------------------------------------------------------------------------
-// First-touch attribution
+// First-touch attribution (canonical-backed)
 // ---------------------------------------------------------------------------
-
-const ATTRIBUTION_KEY = "tftt:attribution";
 
 export type Attribution = {
   referrer_host: string | null;
@@ -132,51 +105,37 @@ export type Attribution = {
   landing_path: string | null;
 };
 
-/**
- * Records the first external referrer / campaign / landing page of the session
- * and returns it. Later pageviews never overwrite the first touch.
- */
+function toLegacy(a: {
+  referrer_host: string | null;
+  referrer_url: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  landing_path: string | null;
+}): Attribution {
+  return {
+    referrer_host: a.referrer_host,
+    referrer_url: a.referrer_url,
+    utm_source: a.utm_source,
+    utm_medium: a.utm_medium,
+    utm_campaign: a.utm_campaign,
+    landing_path: a.landing_path,
+  };
+}
+
+/** Records the canonical first-touch attribution for the session and returns it. */
 export function captureAttribution(path: string): Attribution | null {
   try {
     if (typeof window === "undefined") return null;
     if (isAdminPath(path)) return null;
-
-    const stored = sessionStorage.getItem(ATTRIBUTION_KEY);
-    if (stored) return JSON.parse(stored) as Attribution;
-
-    const params = new URLSearchParams(window.location.search);
-    let referrerHost: string | null = null;
-    const referrer = document.referrer || null;
-    if (referrer) {
-      try {
-        const host = new URL(referrer).hostname;
-        referrerHost = host && host !== window.location.hostname ? host : null;
-      } catch {
-        referrerHost = null;
-      }
-    }
-
-    const attribution: Attribution = {
-      referrer_host: referrerHost,
-      referrer_url: referrerHost ? referrer : null,
-      utm_source: params.get("utm_source"),
-      utm_medium: params.get("utm_medium"),
-      utm_campaign: params.get("utm_campaign"),
-      landing_path: path,
-    };
-    sessionStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution));
-    return attribution;
+    return toLegacy(captureFirstTouch(path));
   } catch {
     return null;
   }
 }
 
-/** Reads the session's first-touch attribution, if any. */
+/** Reads the session's canonical first-touch attribution, if any. */
 export function getAttribution(): Attribution | null {
-  try {
-    const stored = sessionStorage.getItem(ATTRIBUTION_KEY);
-    return stored ? (JSON.parse(stored) as Attribution) : null;
-  } catch {
-    return null;
-  }
+  const first = getFirstTouch();
+  return first ? toLegacy(first) : null;
 }
