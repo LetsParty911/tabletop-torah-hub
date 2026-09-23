@@ -107,7 +107,6 @@ export default function AdminMiniDashboard({
 
 
   const remaining = Math.max(0, checklist.countableTotal - checklist.uploadedCount);
-  const change = data ? data.currentParshaDownloads - data.previousParshaDownloads : 0;
   const nothingNew =
     !!data &&
     !!canonical &&
