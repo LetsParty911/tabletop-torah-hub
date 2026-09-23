@@ -24,6 +24,7 @@ export function SukkosTrustFeature({
       publicationId={publicationId}
       publicationName={TITLE}
       publicationTitle={TITLE}
+      label="Download 11 × 17"
       publicationSeries="Torah for the Table"
       parsha="Sukkos"
       filename="Sukkos-Decoration-Trust-in-Hashem-11x17.pdf"
