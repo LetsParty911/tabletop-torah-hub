@@ -58,7 +58,7 @@ export function SukkosTrustFeature({
     >
       <div className={`grid items-stretch ${compact ? "md:grid-cols-[minmax(15rem,0.7fr)_1.3fr]" : "md:grid-cols-[minmax(18rem,0.85fr)_1.15fr]"}`}>
         <div className="order-1 bg-card p-3 sm:p-4 md:p-5">
-          <div className="mx-auto flex aspect-[11/17] max-h-[29rem] w-full max-w-[19rem] items-center justify-center overflow-hidden rounded-md border border-accent/40 bg-background">
+          <div className="mx-auto flex aspect-[11/17] w-full max-w-[13rem] items-center justify-center overflow-hidden rounded-md border border-accent/40 bg-background sm:max-w-[17rem] md:max-w-[19rem]">
             {artworkSrc ? (
               <img
                 src={artworkSrc}
