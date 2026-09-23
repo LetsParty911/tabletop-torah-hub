@@ -272,6 +272,8 @@ function Index() {
     "shavuos",
   ].includes(normalizedCollectionKey);
   const isCurrentYomKippur = normalizedCollectionKey === "yom kippur";
+  const isSukkosSeason = normalizedCurrentKey === "sukkos";
+  const sukkosSeasonTitle = "Torah for Sukkos, Shemini Atzeres & Simchas Torah";
   const upcomingParsha = isFallback
     ? (currentParshaKey ?? nextParshaAfter(displayedParshaKey) ?? upcomingAfterYomTovKey)
     : (nextParshaAfter(displayedParshaKey) ?? upcomingAfterYomTovKey);
@@ -439,11 +441,13 @@ function Index() {
             <h1 className="mt-2 font-serif text-[2rem] leading-[1.08] sm:text-4xl md:text-5xl font-bold tracking-tight text-primary">
               {isCurrentYomKippur
                 ? "Yom Kippur"
-                : isFallback
-                  ? currentLabel
-                  : postShabbos
-                    ? `Divrei Torah for ${displayedLabel}`
-                    : `Free Divrei Torah for Your ${isYomTovCollection ? "Yom Tov" : "Shabbos"} Table`}
+                : isSukkosSeason
+                  ? sukkosSeasonTitle
+                  : isFallback
+                    ? currentLabel
+                    : postShabbos
+                      ? `Divrei Torah for ${displayedLabel}`
+                      : `Free Divrei Torah for Your ${isYomTovCollection ? "Yom Tov" : "Shabbos"} Table`}
             </h1>
             {heroDateLine && (
               <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-sm">
