@@ -12,6 +12,7 @@ import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { SaveToMyTableButton } from "@/components/SaveToMyTableButton";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SukkosTrustFeature } from "@/components/SukkosTrustFeature";
 
 export function ReadingCollectionView({
   collection,
@@ -118,6 +119,12 @@ export function ReadingCollectionView({
             </p>
           </div>
         </section>
+
+        {collection.kind === "yom-tov" && /sukk(os|ot)/i.test(collection.parsha_key) && (
+          <div className="mt-6">
+            <SukkosTrustFeature compact />
+          </div>
+        )}
 
         {quickPicks.length > 0 && (
           <section className="mt-6 rounded-2xl border border-accent/30 bg-accent/5 px-4 py-5 sm:px-5">

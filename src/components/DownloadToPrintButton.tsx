@@ -99,6 +99,8 @@ type DownloadToPrintButtonProps = {
   publicationName?: string;
   /** Fallback title used for tracking and accessibility when name is omitted. */
   publicationTitle?: string;
+  /** Optional visible label when the call to action needs format-specific copy. */
+  label?: string;
   /** Preferred download filename; falls back to the server Content-Disposition. */
   filename?: string;
   /** Canonical-event context (Phase 1 analytics). */
@@ -115,6 +117,7 @@ export function DownloadToPrintButton({
   publicationId,
   publicationName,
   publicationTitle,
+  label,
   filename: preferredFilename,
   parsha,
   jewishYear,
@@ -122,7 +125,7 @@ export function DownloadToPrintButton({
   publicationSeries,
 }: DownloadToPrintButtonProps) {
   const displayName = publicationName ?? publicationTitle;
-  const buttonLabel = displayName ? `Download ${displayName}` : "Download";
+  const buttonLabel = label ?? (displayName ? `Download ${displayName}` : "Download");
 
   type DownloadPhase = "idle" | "starting" | "error";
   const [phase, setPhase] = useState<DownloadPhase>("idle");
