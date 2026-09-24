@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { MyTableIndicator } from "@/components/MyTableIndicator";
-
 type Props = {
   /** Element id of the in-flow (sticky) collection controls. */
   anchorId: string;
@@ -64,7 +62,6 @@ export function MobileCollectionControlsBar({ anchorId, count, activeFilterCount
         >
           Filter {count} selections{activeFilterCount > 0 ? ` · ${activeFilterCount} active` : ""}
         </button>
-        <MyTableIndicator className="shrink-0" />
       </div>
     </div>,
     document.body,
