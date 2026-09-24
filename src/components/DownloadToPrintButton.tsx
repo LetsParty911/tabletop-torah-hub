@@ -145,27 +145,27 @@ export function DownloadToPrintButton({
     [],
   );
 
-  // Warm the origin lookup before the click so the download starts sooner.
-  //
-  // This must NEVER run on touch devices: `rel=prefetch` pulls the entire PDF,
-  // and on a phone `touchstart` fires ~100ms before the tap completes, so the
-  // prefetch and the real download transfer the same megabyte side by side and
-  // split the cellular bandwidth in half. On desktop, hover precedes the click
-  // by seconds on a connection where the extra copy is free.
+  // Warm only the network connection (DNS + TLS) to the file host before the
+  // click. We deliberately do NOT prefetch the PDF itself: the click adds a
+  // unique tracking tag to /view/ links and the files are served no-cache, so
+  // a prefetched copy was never reused — the whole PDF (up to ~20 MB) was
+  // transferred twice, side by side, and the real download started late.
+  // A preconnect is a few hundred bytes, so it is safe on phones too.
   const warm = useCallback(() => {
     if (warmedRef.current || typeof document === "undefined") return;
-    const coarsePointer =
-      typeof window !== "undefined" &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(pointer: coarse)").matches;
-    if (coarsePointer) return;
     warmedRef.current = true;
     try {
-      const link = document.createElement("link");
-      link.rel = "prefetch";
-      link.as = "fetch";
-      link.href = href;
-      document.head.appendChild(link);
+      const origins = new Set<string>([PDF_STORAGE_ORIGIN]);
+      const target = new URL(href, window.location.origin);
+      if (target.origin !== window.location.origin) origins.add(target.origin);
+      for (const origin of origins) {
+        if (document.head.querySelector(`link[rel="preconnect"][href="${origin}"]`)) continue;
+        const link = document.createElement("link");
+        link.rel = "preconnect";
+        link.href = origin;
+        link.crossOrigin = "anonymous";
+        document.head.appendChild(link);
+      }
     } catch {
       // best effort only
     }
