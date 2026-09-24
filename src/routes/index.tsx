@@ -499,11 +499,11 @@ function Index() {
                   href="#this-weeks-collection"
                   onClick={(e) => {
                     e.preventDefault();
-                    document.getElementById("this-weeks-collection")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    document.getElementById("shabbos-table-chooser")?.scrollIntoView({ behavior: "smooth", block: "start" });
                   }}
                   className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
                 >
-                  {isCurrentYomKippur ? "Explore Yom Kippur selections" : "See this week’s PDFs"}
+                  {isCurrentYomKippur ? "Find a Yom Kippur Dvar Torah" : "Help me choose a Dvar Torah"}
                 </a>
               </div>
             )}
