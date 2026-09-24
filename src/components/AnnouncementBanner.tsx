@@ -27,7 +27,8 @@ export function AnnouncementBanner() {
     return null;
   }
 
-  const displayText = "Get new Divrei Torah every Thursday. Subscribe and never miss a collection.";
+  const displayText =
+    "Enjoying Torah For The Table? Please share it with family and friends. Help us spread Torah, one Shabbos table at a time.";
   const hasConfiguredLink = Boolean(banner.linkUrl && banner.linkLabel);
   const emailReminderBanner = /email|reminder|subscribe/i.test(displayText);
   const linkUrl = hasConfiguredLink ? banner.linkUrl! : emailReminderBanner ? "#weekly-email-signup" : null;

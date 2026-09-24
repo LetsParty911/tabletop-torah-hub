@@ -330,7 +330,6 @@ function Index() {
   const matchesContentType = (r: Resource, value = contentTypeFilter) =>
     value === "All" || resourceContentType(r) === value;
 
-  const audienceFiltered = sortedResources.filter((r) => matchesLength(r) && matchesContentType(r));
   const lengthScoped = sortedResources.filter((r) => matchesAudience(r) && matchesContentType(r));
   const contentTypeScoped = sortedResources.filter((r) => matchesAudience(r) && matchesLength(r));
 
@@ -342,8 +341,6 @@ function Index() {
     (r) => matchesAudience(r) && matchesLength(r) && matchesContentType(r),
   );
 
-  const audienceHasChoice =
-    new Set(sortedResources.map((r) => normalizeAudience(r.audience, r.title)).filter((v) => !!v)).size > 1;
   const lengthHasChoice =
     sortedResources.some((r) => typeof r.page_count === "number" && r.page_count < 5) &&
     sortedResources.some((r) => typeof r.page_count === "number" && r.page_count >= 5);
