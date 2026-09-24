@@ -96,8 +96,9 @@ let waitUntilFn: ((p: Promise<unknown>) => void) | null | undefined;
 async function runInBackground(task: Promise<void>): Promise<void> {
   if (waitUntilFn === undefined) {
     try {
-      // @ts-ignore -- runtime-provided module on the Worker
-      const mod: any = await import("cloudflare:workers");
+      // Runtime-provided module on the Worker; kept out of the bundler graph.
+      const spec = "cloudflare:workers";
+      const mod: any = await import(/* @vite-ignore */ spec);
       waitUntilFn = typeof mod?.waitUntil === "function" ? mod.waitUntil : null;
     } catch {
       waitUntilFn = null;
