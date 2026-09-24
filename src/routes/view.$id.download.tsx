@@ -90,6 +90,23 @@ async function recordDownloadServed(
   }
 }
 
+// Keep the Worker alive for background work after the response is returned.
+// Falls back to awaiting (old behavior) where waitUntil is unavailable (dev).
+let waitUntilFn: ((p: Promise<unknown>) => void) | null | undefined;
+async function runInBackground(task: Promise<void>): Promise<void> {
+  if (waitUntilFn === undefined) {
+    try {
+      // @ts-ignore -- runtime-provided module on the Worker
+      const mod: any = await import("cloudflare:workers");
+      waitUntilFn = typeof mod?.waitUntil === "function" ? mod.waitUntil : null;
+    } catch {
+      waitUntilFn = null;
+    }
+  }
+  if (waitUntilFn) waitUntilFn(task);
+  else await task;
+}
+
 export const Route = createFileRoute("/view/$id/download")({
   server: {
     handlers: {
@@ -129,7 +146,7 @@ export const Route = createFileRoute("/view/$id/download")({
           // Record download_served in the background: the redirect is issued
           // immediately and the insert finishes after the response is sent.
           // Semantics are unchanged (the server validated and issued the redirect).
-          runInBackground(recordDownloadServed(request, id, entry.filename));
+          await runInBackground(recordDownloadServed(request, id, entry.filename));
 
           return new Response(null, {
             status: 302,
