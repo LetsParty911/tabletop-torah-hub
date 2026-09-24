@@ -196,6 +196,17 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
           })}
         </div>
 
+        {selected && recommendations.length === 0 && (
+          <div ref={resultsRef} className="mt-5 scroll-mt-24 border-t border-accent/25 pt-4 text-center">
+            <p className="font-serif text-base font-semibold text-primary">
+              No {selectedLabel?.toLowerCase()} selections are available in this week&apos;s collection.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Try another category or show the full collection.
+            </p>
+          </div>
+        )}
+
         {selected && recommendations.length > 0 && (
           <div ref={resultsRef} className="mt-5 scroll-mt-24 border-t border-accent/25 pt-4">
             <p className="text-center font-sans text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
