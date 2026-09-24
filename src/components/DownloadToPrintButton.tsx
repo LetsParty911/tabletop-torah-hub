@@ -4,6 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { AlertCircle, Download, Loader2 } from "lucide-react";
 
+/** Public storage host that /view/:id/download redirects to (public bucket). */
+const PDF_STORAGE_ORIGIN = "https://kwdeyzumetmjcvtbqnzl.supabase.co";
+
 type DownloadTrackingContext = {
   publicationId?: string;
   publicationName?: string;
@@ -163,7 +166,6 @@ export function DownloadToPrintButton({
         const link = document.createElement("link");
         link.rel = "preconnect";
         link.href = origin;
-        link.crossOrigin = "anonymous";
         document.head.appendChild(link);
       }
     } catch {
