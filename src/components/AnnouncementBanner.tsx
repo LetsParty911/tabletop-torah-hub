@@ -27,10 +27,7 @@ export function AnnouncementBanner() {
     return null;
   }
 
-  const rawText = banner.text.trim();
-  const displayText = /^fact:\s*reminders are helpful\.?$/i.test(rawText)
-    ? "Get an email when the new Divrei Torah are ready."
-    : rawText;
+  const displayText = "Get new Divrei Torah every Thursday. Subscribe and never miss a collection.";
   const hasConfiguredLink = Boolean(banner.linkUrl && banner.linkLabel);
   const emailReminderBanner = /email|reminder|subscribe/i.test(displayText);
   const linkUrl = hasConfiguredLink ? banner.linkUrl! : emailReminderBanner ? "#weekly-email-signup" : null;

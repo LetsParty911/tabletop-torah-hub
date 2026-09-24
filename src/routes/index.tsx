@@ -528,7 +528,7 @@ function Index() {
               <>
                 {!isFallback && (
                   <p className="mt-3 text-center font-sans text-sm text-muted-foreground sm:text-base">
-                    More Divrei Torah will be added Thursday evening — please check back then.
+                    Your Sukkos collection is ready. New Divrei Torah are added every Thursday evening.
                   </p>
                 )}
                 <div className="mt-3 flex justify-center">
