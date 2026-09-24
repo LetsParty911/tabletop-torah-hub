@@ -1,59 +1,40 @@
-# Add the two Trust in Hashem Sukkah decorations safely
+# Sukkos Trust sign downloads: how they are tracked today (read-only findings)
 
-## Recommendation
+No changes proposed. This summarizes the published code (commit c2cf7e2). Approving this does nothing to the site.
 
-Use **one seasonal feature card with two size buttons**, not two cards. The PDFs are two print sizes of the same decoration, so separate cards would repeat the artwork and copy and crowd the homepage on mobile.
+## What happens when a sign button is clicked
 
-**Card copy**
-- Eyebrow: `Free Sukkah Decoration`
-- Headline: `Trust in Hashem`
-- Supporting line: `A beautiful collection of pesukim, ready to print for your Sukkah.`
-- Prompt above buttons: `Choose your print size`
-- Primary actions: `Download 8.5 × 11` and `Download 11 × 17`
-- Closing line: `Print • Laminate • Enjoy in your Sukkah`
+Each click on "Download 8.5 × 11" or "Download 11 × 17" sends three separate signals:
 
-Both size actions should have equal visual weight. The artwork remains first on mobile, followed immediately by two full-width download buttons.
+1. **Google Tag Manager `pdf_download` event** (browser only, not saved in our own database)
+   - 8.5 × 11: `file_id: "sukkos-trust-8.5x11"`, `print_size: "8.5 × 11"`
+   - 11 × 17: `file_id: "sukkos-trust-11x17"`, `print_size: "11 × 17"`
+   - Both also send `file_title`, `source_name`, `parsha: "Sukkos"`, `page_path`, and `page_location`.
+2. **The site's main analytics record, event `download`** (saved in the same analytics store as regular PDF downloads)
+   - `publication_id`: empty (these signs have no publication record)
+   - `publication_title`: "Sukkos Decoration — Trust in Hashem (8.5 × 11)" or "… (11 × 17)"
+   - `publication_series`: "Sukkos Decoration — Trust in Hashem", `parsha`: "Sukkos"
+   - `metadata.action_id`: a unique ID for each click
+3. **Legacy download log** (the older `download_events` list, plus the `download_attribution` list): saved with an empty publication ID and the size-specific title above.
 
-## Exact placements
+**Not recorded:** a "file was sent" (`download_served`) record. Only the `/view/…/download` path writes that, and the sign files are served directly.
 
-1. **Homepage:** directly below the current announcement strip and before the weekly/current collection. This makes the seasonal item visible in the first screen without replacing the current-week state.
-2. **Archive:** one compact seasonal feature between the archive controls and the year-by-year listings. Do not create two archive cards.
-3. **Sukkos collection:** include both PDFs as ordinary resources in the Sukkos 5787 collection, while also showing the same compact two-button feature above that collection. The existing Sukkos-only condition can be retained.
-4. Do not add the decoration to unrelated publication pages or ordinary weekly selections.
+## Same analytics store as regular PDFs?
 
-## Content setup
+Yes, for signals 2 and 3. They use the same `download` event and the same legacy log as regular PDF downloads. The two sizes stay separate because their titles differ. Signal 1 goes only to Google Tag Manager or Google Analytics.
 
-- Upload exactly two supplied, unaltered PDFs through the existing admin upload flow:
-  - `Sukkos Decoration — Trust in Hashem (8.5 × 11)`
-  - `Sukkos Decoration — Trust in Hashem (11 × 17)`
-- Assign both to `Sukkos`, Jewish year `5787`, with clear page size metadata and no invented publisher information.
-- Keep both unpublished until their previews, titles, dimensions, and downloads are verified.
-- Use the generated preview from the supplied artwork; do not redraw, OCR, regenerate, or substitute imagery.
-- Publish both records together only when the isolated site release is ready.
+## Does the admin dashboard show a count for the signs?
 
-## Smallest code change
+Based on the code only (I have not checked the signed-in admin screens):
+- **Publication funnel (main analytics):** likely yes. Rows are grouped by publication ID, or by title when there is no ID. That means each size should appear as its own row under its full title, but only after it has had downloads in the selected period.
+- **Legacy download reports** (grouped by parsha and the download list): these match downloads to the publication list by ID. The signs have no ID, so they probably show up as "(untitled)" or unmatched rows, or not at all. There is no dedicated "Sukkah sign" count.
+- **Google Analytics / GTM:** the `pdf_download` events with `file_id` can be counted there, outside the admin dashboard.
 
-- **`src/components/SukkosTrustFeature.tsx`** — convert the existing single disabled 11 × 17 action into two tracked download actions and support one shared artwork preview.
-- **`src/routes/index.tsx`** — supply the two publication IDs/download links and preview to the existing homepage placement.
-- **`src/routes/archive.tsx`** — supply the same data to the compact archive placement.
-- **`src/components/ReadingCollectionView.tsx`** — supply the same data to the existing Sukkos-only placement.
-- **`src/components/DownloadToPrintButton.tsx`** — no further change expected; it already supports custom labels and the existing action/served-event correlation.
-- No schema migration, new page, analytics rewrite, filter change, or new download system is needed.
+## Not verified
 
-## Safest isolated release workflow
+- I did not read actual saved rows. That data lives in a separate database I didn't query in this check.
+- I did not look at the admin screens while signed in.
 
-1. Confirm the exact production deployment commit before changing anything. The public homepage and archive currently do **not** render the scaffolded Sukkos feature, although the repository contains it.
-2. Create a temporary release branch/worktree from that confirmed production commit, not from the current repository tip.
-3. Bring over only the reusable seasonal card and its three placements, revised for the two supplied PDF records. Exclude every analytics, admin, privacy, and unrelated commit.
-4. Upload the two PDFs as unpublished records and capture their generated IDs/previews.
-5. Wire only those two IDs into the isolated release. Verify both tracked download routes issue the correct direct file redirect and preserve the existing meaning of “served.”
-6. Run unit tests, TypeScript checks, and the production build. Check desktop and mobile homepage, archive, Sukkos collection, both previews, and both downloads.
-7. Publish the isolated release first, verify production, then publish the two content records together. If the platform cannot make those steps atomic, publish the records immediately after the site verification and confirm the public pages again.
+## Optional next step (only if you ask)
 
-## Current-state and deployment risks
-
-- The working tree is clean, but `HEAD` is seven commits beyond the last visible publish marker. Those commits include unrelated admin/analytics work as well as the dormant seasonal scaffold. Publishing the current tip directly could expose unrelated pending changes.
-- The live homepage currently leads with `Sukkos` and then the still-available Ha'azinu collection; the new feature should sit between the announcement strip and that weekly content.
-- The live archive currently exposes Rosh Hashanah and Yom Kippur but no Sukkos collection. Adding two published Sukkos 5787 rows should create that collection through the existing collection loader.
-- No supplied decoration PDF or matching artwork is present in project assets or recent uploads available to this workspace. The exact two files must be attached before implementation can finish; substitutes should not be used.
-- The content database and PDF storage are external to the connected project database, so records should be created through the existing admin upload flow rather than a new migration.
+Add a small "Sukkah sign downloads (8.5 × 11 / 11 × 17)" count to the admin area, based on the two titles. This would be a separate, approved change.
