@@ -330,7 +330,6 @@ function Index() {
   const matchesContentType = (r: Resource, value = contentTypeFilter) =>
     value === "All" || resourceContentType(r) === value;
 
-  const audienceFiltered = sortedResources.filter((r) => matchesLength(r) && matchesContentType(r));
   const lengthScoped = sortedResources.filter((r) => matchesAudience(r) && matchesContentType(r));
   const contentTypeScoped = sortedResources.filter((r) => matchesAudience(r) && matchesLength(r));
 
@@ -342,8 +341,6 @@ function Index() {
     (r) => matchesAudience(r) && matchesLength(r) && matchesContentType(r),
   );
 
-  const audienceHasChoice =
-    new Set(sortedResources.map((r) => normalizeAudience(r.audience, r.title)).filter((v) => !!v)).size > 1;
   const lengthHasChoice =
     sortedResources.some((r) => typeof r.page_count === "number" && r.page_count < 5) &&
     sortedResources.some((r) => typeof r.page_count === "number" && r.page_count >= 5);
@@ -699,20 +696,12 @@ function Index() {
                       </div>
                     )}
 
-                    {audienceHasChoice && (
+                    {sortedResources.length > 0 && (
                       <div>
                         <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By audience</span>
                         <div className="mt-1.5 flex flex-wrap justify-start gap-2">
                           {(["All", "Children", "Families", "Adults"] as const)
-                            .map((audience) => ({
-                              audience,
-                              count:
-                                audience === "All"
-                                  ? audienceFiltered.length
-                                  : audienceFiltered.filter((r) => normalizeAudience(r.audience, r.title) === audience).length,
-                            }))
-                            .filter(({ audience, count }) => audience === "All" || count > 0)
-                            .map(({ audience }) => {
+                            .map((audience) => {
                               const active = audienceFilter === audience;
                               return (
                                 <button
@@ -909,7 +898,9 @@ function Index() {
 
                 {filteredResources.length === 0 && (
                   <p className="mt-8 text-center text-muted-foreground max-w-md mx-auto">
-                    No Divrei Torah match this combination of filters — try clearing one.
+                    {audienceFilter !== "All" && activeFilterCount === 1
+                      ? `No selections for ${audienceLabel(audienceFilter)} in this collection yet — choose another audience or All.`
+                      : "No Divrei Torah match this combination of filters — try clearing one."}
                   </p>
                 )}
               </>

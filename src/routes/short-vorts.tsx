@@ -162,8 +162,9 @@ function ParshaSection({
             <div className="parchment-frame">
               <div className="parchment-panel text-center">
                 <p className="text-sm text-muted-foreground">
-                  {emptyLabel ?? heading} Short Vorts are being prepared. In the meantime, browse
-                  the full {emptyLabel ?? heading} collection.
+                  {/sukk/i.test(emptyLabel ?? heading)
+                    ? "Original Sukkos Short Vorts are being prepared. In the meantime, browse the full Sukkos collection."
+                    : `Original ${emptyLabel ?? heading} Short Vorts are being prepared. In the meantime, browse the full ${emptyLabel ?? heading} collection.`}
                 </p>
                 <Link
                   to="/"
