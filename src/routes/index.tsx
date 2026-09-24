@@ -35,8 +35,6 @@ import { trackEvent } from "@/lib/analytics";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { TableChooser } from "@/components/TableChooser";
-import { SaveToMyTableButton } from "@/components/SaveToMyTableButton";
-import { MyTableIndicator } from "@/components/MyTableIndicator";
 import { MobileCollectionControlsBar } from "@/components/MobileCollectionControlsBar";
 import { chooseReason } from "@/lib/table-chooser";
 import { SukkosTrustFeature } from "@/components/SukkosTrustFeature";
@@ -358,18 +356,6 @@ function Index() {
     resource: resources.find((r) => (r.featured_slot ?? "").trim().toLowerCase() === slot.key),
   })).filter((p) => !!p.resource);
 
-  const myTableItem = (r: Resource) => ({
-    id: r.id,
-    title: displayTitle(r),
-    publication: r.publication,
-    publisher: r.publisher,
-    parsha: (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
-    audience: normalizeAudience(r.audience, r.title) ?? r.audience,
-    formatType: formatTypeLabel(r.format_type) ?? formatTypeLabel(r.content_type),
-    pageCount: r.page_count,
-    description: r.summary_quick || r.description || r.subtitle,
-  });
-
   const pdfParams = (r: Resource) => ({
     file_id: r.id,
     file_title: r.title,
@@ -646,11 +632,6 @@ function Index() {
                                 className="w-full px-3 py-2.5 lg:py-2"
                               />
                                <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-                                 <SaveToMyTableButton
-                                   item={myTableItem(r)}
-                                   size="sm"
-                                   analyticsContext={{ surface: "featured" }}
-                                 />
                                  <SharePublicationButton
                                    pdfId={r.id}
                                    title={r.title}
@@ -704,9 +685,6 @@ function Index() {
                     )}
                   </div>
 
-                  <div className="mt-2 flex justify-center sm:mt-0 sm:justify-end">
-                    <MyTableIndicator />
-                  </div>
 
                   <div className={`${filtersOpen ? "block" : "hidden"} mt-3 space-y-3 sm:mt-0 sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:space-y-0`}>
                     {activeFilterCount > 0 && (
@@ -918,11 +896,6 @@ function Index() {
                           className="w-full px-3 py-2.5 lg:py-2"
                         />
                         <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-                          <SaveToMyTableButton
-                            item={myTableItem(r)}
-                            size="sm"
-                            analyticsContext={{ surface: "collection" }}
-                          />
                           <SharePublicationButton
                             pdfId={r.id}
                             title={r.title}
