@@ -1,110 +1,117 @@
-import { Download, ImagePlus } from "lucide-react";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
-import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/analytics";
+import pdf11x17 from "@/assets/sukkah-trust-11x17.pdf.asset.json";
+import pdf8x11 from "@/assets/sukkah-trust-8-5x11.pdf.asset.json";
+import preview11x17 from "@/assets/sukkah-trust-11x17-preview.jpg.asset.json";
 
-const TITLE = "Sukkos Decoration — Trust in Hashem";
+const THEME = "Sukkos Decoration — Trust in Hashem";
+
+const SIZES = [
+  {
+    key: "8.5x11",
+    label: "Download 8.5 × 11",
+    hint: "Standard home printer",
+    size: "8.5 × 11",
+    href: pdf8x11.url,
+    filename: "Sukkos-Decoration-Trust-in-Hashem-8.5x11.pdf",
+  },
+  {
+    key: "11x17",
+    label: "Download 11 × 17",
+    hint: "Large Sukkah poster",
+    size: "11 × 17",
+    href: pdf11x17.url,
+    filename: "Sukkos-Decoration-Trust-in-Hashem-11x17.pdf",
+  },
+] as const;
 
 type SukkosTrustFeatureProps = {
-  artworkSrc?: string;
-  downloadHref?: string;
-  publicationId?: string;
   compact?: boolean;
 };
 
-export function SukkosTrustFeature({
-  artworkSrc,
-  downloadHref,
-  publicationId,
-  compact = false,
-}: SukkosTrustFeatureProps) {
-  const download = downloadHref ? (
-    <DownloadToPrintButton
-      href={downloadHref}
-      publicationId={publicationId}
-      publicationName={TITLE}
-      publicationTitle={TITLE}
-      label="Download 11 × 17"
-      publicationSeries="Torah for the Table"
-      parsha="Sukkos"
-      filename="Sukkos-Decoration-Trust-in-Hashem-11x17.pdf"
-      onClick={() =>
-        trackEvent("pdf_download", {
-          file_id: publicationId ?? "sukkos-trust-decoration",
-          file_title: TITLE,
-          source_name: TITLE,
-          parsha: "Sukkos",
-          print_size: "11 × 17",
-        })
-      }
-      className="min-h-12 w-full px-6 py-3 text-base font-bold sm:w-auto"
-    />
-  ) : (
-    <Button
-      type="button"
-      disabled
-      aria-label="Download unavailable until the Sukkos artwork is attached"
-      className="min-h-12 w-full rounded-full px-6 py-3 text-base font-bold sm:w-auto"
-    >
-      <Download aria-hidden="true" />
-      Download 11 × 17
-    </Button>
-  );
+export function SukkosTrustFeature({ compact = false }: SukkosTrustFeatureProps) {
+  const titleId = compact ? "sukkos-feature-archive-title" : "sukkos-feature-title";
 
   return (
     <section
-      aria-labelledby={compact ? "sukkos-feature-archive-title" : "sukkos-feature-title"}
+      aria-labelledby={titleId}
       className="overflow-hidden rounded-lg border-2 border-gold-decorative bg-primary shadow-lg"
     >
-      <div className={`grid items-stretch ${compact ? "md:grid-cols-[minmax(15rem,0.7fr)_1.3fr]" : "md:grid-cols-[minmax(18rem,0.85fr)_1.15fr]"}`}>
-        <div className="order-1 bg-card p-3 sm:p-4 md:p-5">
-          <div className="mx-auto flex aspect-[11/17] w-full max-w-[13rem] items-center justify-center overflow-hidden rounded-md border border-accent/40 bg-background sm:max-w-[17rem] md:max-w-[19rem]">
-            {artworkSrc ? (
-              <img
-                src={artworkSrc}
-                alt="Sukkos Trust in Hashem printable decoration"
-                className="h-full w-full object-contain"
-              />
-            ) : (
-              <div className="px-5 text-center text-primary">
-                <ImagePlus className="mx-auto h-9 w-9 text-accent-readable" aria-hidden="true" />
-                <p className="mt-3 font-serif text-lg font-bold">Artwork attachment needed</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  The exact supplied Sukkos artwork will appear here without alteration.
-                </p>
-              </div>
-            )}
+      <div
+        className={`grid items-stretch ${compact ? "md:grid-cols-[minmax(12rem,0.5fr)_1.5fr]" : "md:grid-cols-[minmax(18rem,0.85fr)_1.15fr]"}`}
+      >
+        <div className={`order-1 bg-card ${compact ? "p-3" : "p-3 sm:p-4 md:p-5"}`}>
+          <div
+            className={`mx-auto aspect-[11/17] w-full overflow-hidden rounded-md border border-accent/40 bg-background ${compact ? "max-w-[9rem] sm:max-w-[11rem]" : "max-w-[13rem] sm:max-w-[17rem] md:max-w-[19rem]"}`}
+          >
+            <img
+              src={preview11x17.url}
+              alt="Preview of the Trust in Hashem Sukkah decoration (11 × 17)"
+              loading={compact ? "lazy" : "eager"}
+              className="h-full w-full object-contain"
+            />
           </div>
         </div>
 
-        <div className="order-2 flex flex-col justify-center px-5 py-7 text-primary-foreground sm:px-8 sm:py-9 md:px-10">
+        <div
+          className={`order-2 flex flex-col justify-center text-primary-foreground ${compact ? "px-5 py-6 sm:px-7" : "px-5 py-7 sm:px-8 sm:py-9 md:px-10"}`}
+        >
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-gold-decorative bg-gold-decorative/15 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-gold-decorative">
               Free Download
             </span>
             <span className="rounded-full border border-primary-foreground/40 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-primary-foreground">
-              Print Size: 11 × 17
+              8.5 × 11 · 11 × 17
             </span>
           </div>
           <h2
-            id={compact ? "sukkos-feature-archive-title" : "sukkos-feature-title"}
-            className={`mt-4 font-serif font-bold leading-tight text-primary-foreground ${compact ? "text-2xl sm:text-3xl" : "text-3xl sm:text-4xl"}`}
+            id={titleId}
+            className={`mt-4 font-serif font-bold leading-tight text-primary-foreground ${compact ? "text-2xl" : "text-3xl sm:text-4xl"}`}
           >
             NEW: Sukkos Decoration — Trust in Hashem
           </h2>
-          <p className="mt-4 max-w-xl font-serif text-base leading-relaxed text-primary-foreground/90 sm:text-lg">
+          <p
+            className={`mt-3 max-w-xl font-serif leading-relaxed text-primary-foreground/90 ${compact ? "text-base" : "text-base sm:text-lg"}`}
+          >
             A beautiful collection of pesukim about placing our trust in Hashem — ready to print for your Sukkah.
           </p>
-          <div className="mt-6">{download}</div>
-          {!downloadHref && (
-            <p className="mt-2 text-xs text-primary-foreground/75">
-              Download will activate when the exact artwork file is attached.
+
+          <p className="mt-5 text-xs font-bold uppercase tracking-[0.14em] text-gold-decorative">
+            Choose your print size
+          </p>
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">
+            {SIZES.map((s) => (
+              <div key={s.key} className="flex flex-col gap-1">
+                <DownloadToPrintButton
+                  href={s.href}
+                  publicationName={THEME}
+                  publicationTitle={`${THEME} (${s.size})`}
+                  publicationSeries={THEME}
+                  label={s.label}
+                  parsha="Sukkos"
+                  filename={s.filename}
+                  onClick={() =>
+                    trackEvent("pdf_download", {
+                      file_id: `sukkos-trust-${s.key}`,
+                      file_title: `${THEME} (${s.size})`,
+                      source_name: THEME,
+                      parsha: "Sukkos",
+                      print_size: s.size,
+                    })
+                  }
+                  className="min-h-12 w-full rounded-full bg-gold-decorative! px-5 py-3 text-base font-bold text-primary! hover:bg-card!"
+                />
+                <span className="text-center text-xs text-primary-foreground/75">{s.hint}</span>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-5 font-semibold text-gold-decorative">Print • Laminate • Enjoy in your Sukkah</p>
+          {!compact && (
+            <p className="mt-2 text-sm leading-relaxed text-primary-foreground/80">
+              Download it, use it, and share it with family and friends.
             </p>
           )}
-          <p className="mt-5 font-semibold text-gold-decorative">Print • Laminate • Enjoy in your Sukkah</p>
-          <p className="mt-2 text-sm leading-relaxed text-primary-foreground/80">
-            Download it, use it, and share it with family and friends.
-          </p>
         </div>
       </div>
     </section>
