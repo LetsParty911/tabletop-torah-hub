@@ -99,7 +99,7 @@ export function SukkosTrustFeature({ compact = false }: SukkosTrustFeatureProps)
                       print_size: s.size,
                     })
                   }
-                  className="min-h-12 w-full rounded-full bg-gold-decorative px-5 py-3 text-base font-bold text-primary hover:bg-gold-decorative/90"
+                  className="min-h-12 w-full rounded-full bg-gold-decorative! px-5 py-3 text-base font-bold text-primary! hover:bg-card!"
                 />
                 <span className="text-center text-xs text-primary-foreground/75">{s.hint}</span>
               </div>
