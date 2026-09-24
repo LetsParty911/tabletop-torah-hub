@@ -84,7 +84,11 @@ export function SukkosTrustFeature({ compact = false }: SukkosTrustFeatureProps)
           </p>
           <div className="mt-2 grid gap-3 sm:grid-cols-2">
             {SIZES.map((s) => (
-              <div key={s.key} className="flex flex-col gap-1">
+              <div
+                key={s.key}
+                id={s.key === "8.5x11" ? "sukkah-8x11" : "sukkah-11x17"}
+                className="scroll-mt-24 flex flex-col gap-1"
+              >
                 <DownloadToPrintButton
                   href={s.href}
                   publicationName={THEME}
