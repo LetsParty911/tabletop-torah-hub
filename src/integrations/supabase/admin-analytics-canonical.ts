@@ -1,3 +1,4 @@
+import { countSukkahSignDownloads } from "@/lib/sukkah-sign-downloads";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
@@ -1661,6 +1662,8 @@ function shapeReport(report: BuiltReport, limit: number) {
     suspectedAutomatedSessions: report.filteredAutomationSessions,
     internalSessions: report.filteredInternalSessions,
     publications: report.publications.slice(0, limit),
+    // Computed before the top-N slice so the signs are counted even when not in the top list.
+    sukkahSignDownloads: countSukkahSignDownloads(report.publications),
     sources: report.sources.slice(0, limit),
     downloadSources: sources.breakdown.slice(0, limit),
     campaigns: report.campaigns.slice(0, limit),
