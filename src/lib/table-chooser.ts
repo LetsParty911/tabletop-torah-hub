@@ -96,16 +96,43 @@ function score(r: ChooserResource, key: ChooserKey): number {
   return s;
 }
 
-/** Up to `limit` current-week resources matching the chosen intent. */
+function qualifies(r: ChooserResource, key: ChooserKey): boolean {
+  const text = haystack(r);
+  const audience = normalizeAudience(r.audience, r.title);
+  const pages = typeof r.page_count === "number" ? r.page_count : null;
+  const format = formatTypeLabel(r.format_type) ?? formatTypeLabel(r.content_type);
+  const slot = (r.featured_slot ?? "").trim().toLowerCase();
+
+  switch (key) {
+    case "quick":
+      return slot === "quickest" || format === "Brief Insights" || (pages !== null && pages <= 4);
+    case "kids":
+      return audience === "Children";
+    case "family":
+      return slot === "family" || audience === "Families";
+    case "story":
+      return format === "Stories" || /stor(y|ies)|mashal|maaseh|tale/.test(text);
+    case "deeper":
+      return (
+        slot === "deeper" ||
+        (audience === "Adults" &&
+          ((pages !== null && pages >= 5) ||
+            format === "Essays" ||
+            /depth|iyun|analysis|essay|shiur|machshav|study/.test(text)))
+      );
+  }
+}
+
+/** Up to `limit` current-week resources that actually qualify for the chosen intent. */
 export function pickRecommendations<T extends ChooserResource>(
   resources: readonly T[],
   key: ChooserKey,
   limit = 3,
 ): T[] {
   return resources
+    .filter((r) => qualifies(r, key))
     .map((r, index) => ({ r, index, s: score(r, key) }))
     .sort((a, b) => b.s - a.s || a.index - b.index)
-    .filter((entry, i) => entry.s > 0 || i < limit)
     .slice(0, limit)
     .map((entry) => entry.r);
 }
