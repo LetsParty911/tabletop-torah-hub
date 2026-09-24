@@ -7,3 +7,4 @@
 
 ## Two-size Sukkah decoration (no publish)
 - [x] Wire both uploaded PDFs (8.5 × 11, 11 × 17) into the existing Sukkos feature with a real preview
+- [ ] Admin: 'Sukkah Sign Downloads' section (8.5x11 / 11x17 / Total), publish
