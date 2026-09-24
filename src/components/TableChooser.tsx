@@ -140,10 +140,10 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="text-center sm:text-left">
             <h2 className="font-serif text-xl font-bold text-primary sm:text-2xl md:text-3xl">
-              What would you like for your Shabbos table?
+              Find the right Dvar Torah for your table
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Choose what you need and we'll point you to a good place to start.
+              Choose what you want and we'll show you up to three good options to download.
             </p>
           </div>
         </div>
@@ -231,7 +231,19 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
                       {chooserMetaLine(r)}
                     </p>
                   )}
-                  <div className="mt-auto flex flex-wrap items-center gap-2 pt-4">
+                  <div className="mt-auto flex flex-col gap-2 pt-4">
+                    <DownloadToPrintButton
+                      href={`/view/${r.id}/download`}
+                      publicationId={r.id}
+                      publicationName={displayPublicationName(r)}
+                      publicationTitle={r.title}
+                      publisher={r.publisher}
+                      publicationSeries={r.publication}
+                      parsha={parshaKey}
+                      filename={buildDownloadFilename(parshaKey, r.publication || r.title)}
+                      label="Download PDF"
+                      className="w-full px-4 py-2.5 text-sm font-semibold"
+                    />
                     <Link
                       to="/view/$id"
                       params={{ id: r.id }}
@@ -243,21 +255,10 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
                           metadata: { chooser: selected, action: "view" },
                         })
                       }
-                      className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-1.5 font-serif text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                      className="inline-flex w-full items-center justify-center rounded-full border border-accent/45 px-4 py-2 font-serif text-xs font-semibold text-primary transition-colors hover:bg-accent/10"
                     >
-                      View
+                      Read details first
                     </Link>
-                    <DownloadToPrintButton
-                      href={`/view/${r.id}/download`}
-                      publicationId={r.id}
-                      publicationName={displayPublicationName(r)}
-                      publicationTitle={r.title}
-                      publisher={r.publisher}
-                      publicationSeries={r.publication}
-                      parsha={parshaKey}
-                      filename={buildDownloadFilename(parshaKey, r.publication || r.title)}
-                      className="px-3 py-1.5 text-xs"
-                    />
                   </div>
                 </div>
               ))}
