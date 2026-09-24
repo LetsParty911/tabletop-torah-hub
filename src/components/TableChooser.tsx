@@ -1,17 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { BookmarkCheck } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
-import { MyTableIndicator } from "@/components/MyTableIndicator";
-import { SaveToMyTableButton } from "@/components/SaveToMyTableButton";
 import { normalizeAudience } from "@/lib/audience";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { trackFp } from "@/lib/first-party-analytics";
 import { formatTypeLabel } from "@/lib/format-labels";
-import { readMyTable, subscribeMyTable } from "@/lib/my-table";
 import { standardizeCopy } from "@/lib/standardize-copy";
 
 import {
@@ -35,7 +31,6 @@ type Props = {
 export function TableChooser({ resources, parshaKey, displayTitle, displayPublicationName, onActiveChooserChange }: Props) {
   const [selected, setSelected] = useState<ChooserKey | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [savedCount, setSavedCount] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
 
   const lastViewed = useRef<string | null>(null);
@@ -58,8 +53,6 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
 
   useEffect(() => {
     setMounted(true);
-    setSavedCount(readMyTable().length);
-    return subscribeMyTable((items) => setSavedCount(items.length));
   }, []);
 
   // Keep the last page content scrollable above the fixed bar on mobile.
@@ -140,17 +133,6 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
 
   if (resources.length === 0) return null;
 
-  const itemFor = (r: ChooserResource) => ({
-    id: r.id,
-    title: displayTitle(r),
-    publication: r.publication,
-    publisher: r.publisher,
-    parsha: parshaKey,
-    audience: normalizeAudience(r.audience, r.title) ?? r.audience,
-    formatType: formatTypeLabel(r.format_type) ?? formatTypeLabel(r.content_type),
-    pageCount: r.page_count,
-    description: r.summary_quick || r.description || r.subtitle,
-  });
 
   return (
     <section id="shabbos-table-chooser" className="mt-8 scroll-mt-24">
@@ -164,7 +146,6 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
               Choose what you need and we'll point you to a good place to start.
             </p>
           </div>
-          <MyTableIndicator className="shrink-0" />
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -266,11 +247,6 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
                     >
                       View
                     </Link>
-                    <SaveToMyTableButton
-                      item={itemFor(r)}
-                      size="sm"
-                      analyticsContext={{ chooser: selected, surface: "chooser" }}
-                    />
                     <DownloadToPrintButton
                       href={`/view/${r.id}/download`}
                       publicationId={r.id}
@@ -358,14 +334,6 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
               >
                 Change
               </button>
-              <Link
-                to="/my-table"
-                onClick={() => trackFp("my_table_open", { metadata: { saved_count: savedCount ?? 0 } })}
-                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 font-serif text-xs font-semibold text-primary-foreground"
-              >
-                <BookmarkCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                {savedCount && savedCount > 0 ? `My Table (${savedCount})` : "My Table"}
-              </Link>
             </div>
           </div>
         </div>,
