@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { Bookmark, CheckCircle2, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -20,7 +20,14 @@ import {
   type MyTableItem,
 } from "@/lib/my-table";
 
+// Public My Table is paused: direct visits go to the homepage. The page code
+// below is intentionally kept intact for when the feature is re-enabled.
+const MY_TABLE_PUBLIC_ENABLED = false;
+
 export const Route = createFileRoute("/my-table")({
+  beforeLoad: () => {
+    if (!MY_TABLE_PUBLIC_ENABLED) throw redirect({ to: "/", replace: true });
+  },
   component: MyTablePage,
   head: () => ({
     meta: [

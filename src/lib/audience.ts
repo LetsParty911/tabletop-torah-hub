@@ -24,10 +24,13 @@ export function normalizeAudience(
   value: string | null,
   title?: string | null,
 ): AudienceKey | null {
-  const t = (title ?? "").trim().toLowerCase();
-  if (t && KIDS_TITLE_HINTS.some((h) => t.includes(h))) return "Children";
+  // Stored metadata is authoritative. Title hints are only a fallback for
+  // rows with no audience tagged at all.
   const v = (value ?? "").trim().toLowerCase();
-  if (!v) return null;
+  if (!v) {
+    const t = (title ?? "").trim().toLowerCase();
+    return t && KIDS_TITLE_HINTS.some((h) => t.includes(h)) ? "Children" : null;
+  }
   if (v.startsWith("child") || v.startsWith("kid") || v.startsWith("youth")) return "Children";
   if (v.startsWith("famil")) return "Families";
   if (v.startsWith("adult") || v.startsWith("teen")) return "Adults";
