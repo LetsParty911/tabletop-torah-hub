@@ -10,7 +10,6 @@ import { formatTypeLabel } from "@/lib/format-labels";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
-import { SaveToMyTableButton } from "@/components/SaveToMyTableButton";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SukkosTrustFeature } from "@/components/SukkosTrustFeature";
 
@@ -297,27 +296,11 @@ export function ReadingCollectionView({
                       className="w-full px-4 py-2.5"
                     />
                   </div>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    <div className="flex justify-center sm:justify-end">
-                      <SharePublicationButton
-                        pdfId={resource.id}
-                        title={resource.publication_name || resource.title}
-                        parsha={resource.parsha_key}
-                      />
-                    </div>
-                    <SaveToMyTableButton
-                      item={{
-                        id: resource.id,
-                        title: resource.title,
-                        publication: resource.publication_name ?? null,
-                        publisher: resource.publisher ?? null,
-                        parsha: resource.parsha_key ?? null,
-                        audience: resource.audience ?? null,
-                        formatType: resource.format_type ?? resource.content_type ?? null,
-                        pageCount: resource.page_count ?? null,
-                        description: description ?? null,
-                      }}
-                      className="w-full px-3 py-2 text-sm"
+                  <div className="mt-2 flex justify-center">
+                    <SharePublicationButton
+                      pdfId={resource.id}
+                      title={resource.publication_name || resource.title}
+                      parsha={resource.parsha_key}
                     />
                   </div>
                 </div>
