@@ -17,7 +17,6 @@ import { buildDownloadFilename } from "@/lib/download-filename";
 import { publicationLabel } from "@/lib/badges";
 import { DownloadToPrintButton, trackDownloadAction } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
-import { SaveToMyTableButton } from "@/components/SaveToMyTableButton";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
@@ -294,19 +293,6 @@ function ViewPdf() {
             parsha={pdf.parsha_key}
             variant="inline"
           />
-          <SaveToMyTableButton
-            item={{
-              id: pdf.id,
-              title: pdf.title,
-              publication: publication?.name ?? pdf.publication ?? null,
-              publisher: publication?.publisher ?? pdf.publisher ?? null,
-              parsha: pdf.parsha_key ?? null,
-              audience: pdf.audience ?? null,
-              formatType: pdf.format_type ?? null,
-              pageCount: pdf.page_count ?? null,
-              description: standardizeCopy(pdf.description ?? null),
-            }}
-          />
         </div>
 
         <div className="mt-6">
@@ -423,9 +409,6 @@ function ViewPdf() {
           >
             <ArrowLeft className="h-4 w-4" />{" "}
             {isCurrentWeek ? "Back to this week's collection" : "Back to Archive"}
-          </Link>
-          <Link to="/my-table" className="font-serif italic text-accent hover:text-primary transition-colors">
-            Open My Table →
           </Link>
         </div>
 
