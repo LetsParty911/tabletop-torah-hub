@@ -126,10 +126,10 @@ export const Route = createFileRoute("/view/$id/download")({
             rowCache.set(id, entry);
           }
 
-          // The redirect target is computed locally (no network call), so the
-          // only added latency is one small insert, and only for tagged links.
-          // The file itself still streams straight from the storage CDN.
-          await recordDownloadServed(request, id, entry.filename);
+          // Record download_served in the background: the redirect is issued
+          // immediately and the insert finishes after the response is sent.
+          // Semantics are unchanged (the server validated and issued the redirect).
+          runInBackground(recordDownloadServed(request, id, entry.filename));
 
           return new Response(null, {
             status: 302,
