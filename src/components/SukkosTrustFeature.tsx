@@ -51,6 +51,9 @@ export function SukkosTrustFeature({ compact = false }: SukkosTrustFeatureProps)
               className="h-full w-full object-contain"
             />
           </div>
+          <p className="mt-2 text-center text-xs font-semibold text-muted-foreground">
+            Preview: 11 × 17 version
+          </p>
         </div>
 
         <div
