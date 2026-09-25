@@ -8,18 +8,17 @@ const LOGO_ICON = "/assets/logo-icon.png";
 const BRAND_COMPACT = "/assets/brand-logo-compact.webp";
 const BRAND_FOOTER = "/assets/brand-logo-footer.webp";
 
-/** Compact header logo cropped from the approved navy/gold banner artwork. */
+/** Wordmark-only header logo in crisp HTML typography. */
 export function SiteLogoHorizontal({ className = "" }: { className?: string }) {
   return (
-    <span className={`flex items-center overflow-hidden rounded-md bg-primary ${className}`}>
-      <img
-        src={BRAND_COMPACT}
-        alt="Torah for the Table"
-        width={480}
-        height={156}
-        decoding="async"
-        className="h-11 w-auto object-contain sm:h-12 md:h-14"
-      />
+    <span
+      className={`flex items-baseline whitespace-nowrap font-serif text-[1.35rem] leading-none font-semibold tracking-tight sm:text-2xl md:text-[1.75rem] ${className}`}
+    >
+      <span className="text-primary">Torah</span>
+      <span className="text-accent-readable italic font-medium">For</span>
+      <span className="text-primary">The</span>
+      <span className="text-primary">Table</span>
+      <span className="text-accent-readable text-[0.7em] font-medium">.com</span>
     </span>
   );
 }
