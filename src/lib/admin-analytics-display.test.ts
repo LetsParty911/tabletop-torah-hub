@@ -37,5 +37,6 @@ describe("admin analytics presentation rules", () => {
     expect(usedTorahQualification(["page_view", "publication_click"])).toBeNull();
     expect(usedTorahQualification(["page_view", "pdf_open"])).toBe("Opened a PDF");
     expect(usedTorahQualification(["share_click", "download"])).toBe("Requested a download");
+    expect(usedTorahQualification(["download_served"])).toBe("Requested a download");
   });
 });
