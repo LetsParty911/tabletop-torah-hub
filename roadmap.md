@@ -17,3 +17,13 @@
 
 ## Brand banner rollout
 - [x] Homepage banner, header, footer, share image from approved artwork; verify; publish; check live
+
+## Sept 25 production fixes
+- [x] Resources: Mi Ka'amcha Yisroel moved to Featured Independent Series
+- [x] Publications in desktop + mobile nav
+- [x] Short Vorts: published Sukkos PDF beats placeholder
+- [x] Archive "From <publication>" attribution
+- [x] Mobile seasonal title kept
+- [x] "Download PDF" labels
+- [x] Evergreen series descriptions (5)
+- [ ] Archive show-more: left unchanged (risk to search/filter)
