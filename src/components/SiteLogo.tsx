@@ -6,7 +6,6 @@ const LOGO_FOOTER = "/assets/logo-footer.webp";
 const LOGO_ICON = "/assets/logo-icon.png";
 
 const BRAND_COMPACT = "/assets/brand-logo-compact.webp";
-const BRAND_FOOTER = "/assets/brand-logo-footer.webp";
 
 /** Wordmark-only header logo in crisp HTML typography. */
 export function SiteLogoHorizontal({ className = "" }: { className?: string }) {
@@ -23,18 +22,33 @@ export function SiteLogoHorizontal({ className = "" }: { className?: string }) {
   );
 }
 
-/** Restrained footer logo (with tagline) from the approved banner artwork. */
+/** Crisp footer wordmark rendered in HTML so there are no raster artifacts. */
 export function SiteLogoFooter({ className = "" }: { className?: string }) {
+  const gold = {
+    backgroundImage: "linear-gradient(180deg, #fff2b2 0%, #f3c454 42%, #c98a1f 100%)",
+    WebkitBackgroundClip: "text",
+    backgroundClip: "text",
+    color: "transparent",
+  } as const;
+
   return (
-    <span className={`flex items-center overflow-hidden rounded-lg bg-primary ${className}`}>
-      <img
-        src={BRAND_FOOTER}
-        alt="Torah for the Table — Torah. For your table."
-        width={560}
-        height={228}
-        loading="lazy"
-        decoding="async"
-        className="h-20 w-auto object-contain sm:h-24"
+    <span
+      className={`block w-[min(88vw,560px)] overflow-hidden rounded-lg border border-white/5 bg-[#031b35] px-5 py-4 shadow-sm sm:px-7 sm:py-5 ${className}`}
+      aria-label="TorahForTheTable.com"
+    >
+      <span className="block text-center font-serif font-semibold leading-[0.84] tracking-[-0.045em]">
+        <span className="block text-[2.35rem] sm:text-[3.35rem]" style={gold}>
+          TorahFor
+        </span>
+        <span className="mt-1 block text-[2rem] sm:text-[2.9rem]">
+          <span style={gold}>The</span>
+          <span className="text-white">Table</span>
+          <span className="text-[0.7em]" style={gold}>.com</span>
+        </span>
+      </span>
+      <span
+        className="mx-auto mt-3 block h-px w-[90%]"
+        style={{ backgroundImage: "linear-gradient(90deg, transparent, #e0a334 18%, #fff1ad 50%, #e0a334 82%, transparent)" }}
       />
     </span>
   );
