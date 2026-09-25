@@ -84,7 +84,7 @@ function Overview({ data, accessToken, openDetail }: { data: ReportData; accessT
     </section>
     <section><h3 className="font-serif text-lg font-semibold text-primary">Recent activity</h3><ul className="mt-3 divide-y divide-border text-sm">{report.recentActivity.slice(0, 8).map((row, index) => <li key={`${row.at}-${index}`} className="flex flex-col gap-1 py-2 sm:flex-row sm:justify-between"><span>{row.event.replaceAll("_", " ")}{row.publication ? ` · ${row.publication}` : row.path ? ` · ${row.path}` : ""}</span><span className="text-xs text-muted-foreground">{dateTime(row.at)} ET</span></li>)}</ul></section>
     <ReportsSection accessToken={accessToken} />
-    <footer className="text-xs text-muted-foreground">Headline numbers count likely human sessions only ({m.sessions} of {report.raw.sessions} raw sessions, {report.raw.visitors} raw visitors). Excluded but kept for diagnostics: {report.filteredUncertainSessions} uncertain · {report.filteredAutomationSessions} suspected automation · {report.filteredInternalSessions} internal/test. Any deliberate action or explicit human signal keeps a session counted.</footer>
+    <footer className="text-xs text-muted-foreground">Headline audience metrics are human-qualified: only high-confidence and likely human sessions count ({m.sessions} of {report.raw.sessions} raw sessions, {report.raw.visitors} raw visitors). Excluded but kept for diagnostics: {report.filteredUncertainSessions} uncertain · {report.filteredAutomationSessions} suspected automation · {report.filteredInternalSessions} internal/test. Any deliberate action or explicit human signal keeps a session counted.</footer>
   </div>;
 }
 
