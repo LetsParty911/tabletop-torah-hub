@@ -10,7 +10,7 @@
 - [x] Admin: 'Sukkah Sign Downloads' section (8.5x11 / 11x17 / Total), publish
 
 ## Mobile-first homepage conversion
-- [ ] Add concise mobile action/value introduction
-- [ ] Surface four existing chooser categories before newsletter signup
-- [ ] Add a routed, tracked current Sukkos recommendation CTA
+- [x] Add concise mobile action/value introduction
+- [x] Surface four existing chooser categories before newsletter signup
+- [x] Add a routed, tracked current Sukkos recommendation CTA
 - [ ] Verify mobile and desktop behavior, tests, typecheck, and build

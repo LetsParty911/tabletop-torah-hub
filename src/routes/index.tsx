@@ -36,7 +36,7 @@ import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { TableChooser } from "@/components/TableChooser";
 import { MobileCollectionControlsBar } from "@/components/MobileCollectionControlsBar";
-import { chooseReason } from "@/lib/table-chooser";
+import { CHOOSERS, chooseReason, pickRecommendations, type ChooserKey } from "@/lib/table-chooser";
 
 type Resource = {
   id: string;
@@ -309,6 +309,7 @@ function Index() {
   // When a guided-chooser category is active the page enters focused mode and
   // the full weekly collection (plus its filter controls) is hidden.
   const [activeChooser, setActiveChooser] = useState<string | null>(null);
+  const [selectedChooser, setSelectedChooser] = useState<ChooserKey | null>(null);
 
   const sortedResources = resources;
   usePrewarmDownloads(sortedResources.map((r) => r.id));
@@ -351,6 +352,21 @@ function Index() {
     ...slot,
     resource: resources.find((r) => (r.featured_slot ?? "").trim().toLowerCase() === slot.key),
   })).filter((p) => !!p.resource);
+  const quickChoices = (["quick", "family", "kids", "story"] as const).map((key) => {
+    const chooser = CHOOSERS.find((option) => option.key === key);
+    const labels: Record<(typeof key), string> = {
+      quick: "Quick Vorts",
+      family: "Family Table",
+      kids: "Children",
+      story: "Stories",
+    };
+    return { key, label: labels[key], trackingLabel: chooser?.label ?? labels[key] };
+  });
+  const preferredStartHere = resources.find((resource) => {
+    const title = resource.title.toLowerCase();
+    return title.includes("sukkos") && /short\s+vort/.test(title);
+  });
+  const startHereResource = preferredStartHere ?? pickRecommendations(resources, "quick", 1)[0] ?? null;
 
   const pdfParams = (r: Resource) => ({
     file_id: r.id,
@@ -418,17 +434,28 @@ function Index() {
             <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-accent-readable sm:text-xs">
               {isCurrentYomKippur ? "Yom Kippur Resources" : "Weekly Divrei Torah"}
             </p>
-            <h1 className="mt-2 font-serif text-[2rem] leading-[1.08] sm:text-4xl md:text-5xl font-bold tracking-tight text-primary">
-              {isCurrentYomKippur
-                ? "Yom Kippur"
-                : isSukkosSeason
-                  ? sukkosSeasonTitle
-                  : isFallback
-                    ? currentLabel
-                    : postShabbos
-                      ? `Divrei Torah for ${displayedLabel}`
-                      : `Free Divrei Torah for Your ${isYomTovCollection ? "Yom Tov" : "Shabbos"} Table`}
+            <h1 className="mt-2 font-serif text-[1.85rem] leading-[1.08] font-bold tracking-tight text-primary sm:text-4xl md:text-5xl">
+              <span className="sm:hidden">Choose a Dvar Torah for Your Table</span>
+              <span className="hidden sm:inline">
+                {isCurrentYomKippur
+                  ? "Yom Kippur"
+                  : isSukkosSeason
+                    ? sukkosSeasonTitle
+                    : isFallback
+                      ? currentLabel
+                      : postShabbos
+                        ? `Divrei Torah for ${displayedLabel}`
+                        : `Free Divrei Torah for Your ${isYomTovCollection ? "Yom Tov" : "Shabbos"} Table`}
+              </span>
             </h1>
+            <p className="mx-auto mt-2 max-w-md font-serif text-sm leading-relaxed text-primary sm:hidden">
+              Free Divrei Torah for Shabbos and Yom Tov — choose what fits your table.
+            </p>
+            {isSukkosSeason && (
+              <p className="mt-2 font-serif text-sm font-semibold text-accent-readable sm:hidden">
+                {sukkosSeasonTitle}
+              </p>
+            )}
             {heroDateLine && (
               <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-sm">
                 {heroDateLine}
@@ -514,6 +541,59 @@ function Index() {
           </div>
         </section>
 
+        {resources.length > 0 && (
+          <section aria-labelledby="mobile-quick-choices" className="sm:hidden">
+            <h2 id="mobile-quick-choices" className="sr-only">Choose what fits your table</h2>
+            <div className="grid grid-cols-2 gap-2">
+              {quickChoices.map((choice) => {
+                const active = selectedChooser === choice.key;
+                return (
+                  <button
+                    key={choice.key}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => {
+                      const next = active ? null : choice.key;
+                      setSelectedChooser(next);
+                      if (next) {
+                        trackFp("chooser_select", {
+                          metadata: { chooser: next, label: choice.trackingLabel },
+                        });
+                      }
+                    }}
+                    className={`min-w-0 rounded-lg border px-3 py-2.5 font-serif text-sm font-semibold transition-colors ${
+                      active
+                        ? "border-accent bg-accent/15 text-primary shadow-sm"
+                        : "border-accent/40 bg-background/70 text-primary hover:bg-accent/10"
+                    }`}
+                  >
+                    {choice.label}
+                  </button>
+                );
+              })}
+            </div>
+            {startHereResource && (
+              <Link
+                to="/view/$id"
+                params={{ id: startHereResource.id }}
+                onClick={() =>
+                  trackFp("recommendation_click", {
+                    publication_id: startHereResource.id,
+                    publication_title: startHereResource.title,
+                    publication_series: startHereResource.publication,
+                    publisher: startHereResource.publisher,
+                    parsha: displayedParshaKey,
+                    metadata: { chooser: "start_here" },
+                  })
+                }
+                className="mt-2.5 inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-2.5 font-serif text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                Not sure what to choose? Start here.
+              </Link>
+            )}
+          </section>
+        )}
+
         <ThursdayProgressMeter
           heading={isFallback ? currentLabel : upcomingLabel ? `Upcoming: ${upcomingLabel}` : "Upcoming Divrei Torah"}
           badgeLabel={isFallback ? "This Shabbos" : "Upcoming"}
@@ -575,6 +655,8 @@ function Index() {
               parshaKey={displayedParshaKey}
               displayTitle={(r) => displayTitle(r as Resource)}
               displayPublicationName={(r) => displayPublicationName(r as Resource)}
+              selected={selectedChooser}
+              onSelectedChange={setSelectedChooser}
               onActiveChooserChange={setActiveChooser}
             />
 

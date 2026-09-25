@@ -24,12 +24,27 @@ type Props = {
   parshaKey: string | null;
   displayTitle: (r: ChooserResource) => string;
   displayPublicationName: (r: ChooserResource) => string;
+  selected?: ChooserKey | null;
+  onSelectedChange?: (key: ChooserKey | null) => void;
   /** Notifies the page which category is active, so it can hide the full collection. */
   onActiveChooserChange?: (key: ChooserKey | null) => void;
 };
 
-export function TableChooser({ resources, parshaKey, displayTitle, displayPublicationName, onActiveChooserChange }: Props) {
-  const [selected, setSelected] = useState<ChooserKey | null>(null);
+export function TableChooser({
+  resources,
+  parshaKey,
+  displayTitle,
+  displayPublicationName,
+  selected: controlledSelected,
+  onSelectedChange,
+  onActiveChooserChange,
+}: Props) {
+  const [internalSelected, setInternalSelected] = useState<ChooserKey | null>(null);
+  const selected = controlledSelected === undefined ? internalSelected : controlledSelected;
+  const setSelected = (key: ChooserKey | null) => {
+    if (controlledSelected === undefined) setInternalSelected(key);
+    onSelectedChange?.(key);
+  };
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -135,9 +150,9 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
 
 
   return (
-    <section id="shabbos-table-chooser" className="mt-8 scroll-mt-24">
-      <div className="mx-auto max-w-4xl rounded-2xl border border-accent/35 bg-card/40 px-4 py-5 sm:px-6 sm:py-6">
-        <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <section id="shabbos-table-chooser" className="scroll-mt-24 sm:mt-8">
+      <div className="mx-auto max-w-4xl sm:rounded-2xl sm:border sm:border-accent/35 sm:bg-card/40 sm:px-6 sm:py-6">
+        <div className="hidden flex-col items-center gap-3 sm:flex sm:flex-row sm:items-start sm:justify-between">
           <div className="text-center sm:text-left">
             <h2 className="font-serif text-xl font-bold text-primary sm:text-2xl md:text-3xl">
               Find the right Dvar Torah for your table
@@ -148,7 +163,7 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 hidden grid-cols-1 gap-2.5 sm:grid sm:grid-cols-2 lg:grid-cols-3">
           {CHOOSERS.map((chooser) => {
             const active = selected === chooser.key;
             return (
@@ -266,7 +281,7 @@ export function TableChooser({ resources, parshaKey, displayTitle, displayPublic
           </div>
         )}
 
-        <div className="mt-4 text-center">
+        <div className="mt-4 hidden text-center sm:block">
           <button
             type="button"
             onClick={() => clearSelection(true)}
