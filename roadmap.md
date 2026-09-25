@@ -13,4 +13,4 @@
 - [x] Add concise mobile action/value introduction
 - [x] Surface four existing chooser categories before newsletter signup
 - [x] Add a routed, tracked current Sukkos recommendation CTA
-- [ ] Verify mobile and desktop behavior, tests, typecheck, and build
+- [x] Verify mobile and desktop behavior, tests, typecheck, and build
