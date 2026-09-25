@@ -96,42 +96,57 @@ function score(r: ChooserResource, key: ChooserKey): number {
   return s;
 }
 
-function qualifies(r: ChooserResource, key: ChooserKey): boolean {
-  const text = haystack(r);
-  const audience = normalizeAudience(r.audience, r.title);
-  const pages = typeof r.page_count === "number" ? r.page_count : null;
-  const format = formatTypeLabel(r.format_type) ?? formatTypeLabel(r.content_type);
-  const slot = (r.featured_slot ?? "").trim().toLowerCase();
+const norm = (v: string | null | undefined) =>
+  (v ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
 
+/** Structured metadata only: format/content type, category and tags. */
+function structuredTerms(r: ChooserResource): string[] {
+  return [formatTypeLabel(r.format_type), formatTypeLabel(r.content_type), r.primary_category, ...(r.tags ?? [])]
+    .map(norm)
+    .filter(Boolean);
+}
+
+const STORY = /^(stories|story|good_story|maaseh|maasei|maasim|mashal|meshalim|tale|tales)$/;
+const QUICK = /^(brief_insights|short_vorts?|quick_vorts?|quick|vorts?|brief|quickest)$/;
+const KIDS = /^(children|child|kids|kid|for_the_kids)$/;
+const FAMILY = /^(families|family|family_table|all_ages)$/;
+
+/**
+ * Exhaustive category membership from explicit structured metadata.
+ * Page count and prose never force an item into a category.
+ */
+function qualifies(r: ChooserResource, key: ChooserKey): boolean {
+  const terms = structuredTerms(r);
+  const audience = normalizeAudience(r.audience, r.title);
+  const slot = norm(r.featured_slot);
+  const has = (re: RegExp) => terms.some((t) => re.test(t));
   switch (key) {
     case "quick":
-      return slot === "quickest" || format === "Brief Insights" || (pages !== null && pages <= 4);
+      return slot === "quickest" || has(QUICK);
     case "kids":
-      return audience === "Children";
+      return slot === "children" || audience === "Children" || has(KIDS);
     case "family":
-      return slot === "family" || audience === "Families";
+      return slot === "family" || audience === "Families" || has(FAMILY);
     case "story":
-      return format === "Stories" || /stor(y|ies)|mashal|maaseh|tale/.test(text);
+      return has(STORY);
     case "deeper":
-      return (
-        slot === "deeper" ||
-        (audience === "Adults" &&
-          ((pages !== null && pages >= 5) ||
-            format === "Essays" ||
-            /depth|iyun|analysis|essay|shiur|machshav|study/.test(text)))
-      );
+      return slot === "deeper" || (audience === "Adults" && (has(/^(essays|essay|iyun|in_depth|deeper)$/) || (r.page_count ?? 0) >= 5));
   }
 }
 
-/** Up to `limit` current-week resources that actually qualify for the chosen intent. */
+/** Every current-week resource in the chosen category, strongest explicit matches first. */
 export function pickRecommendations<T extends ChooserResource>(
   resources: readonly T[],
   key: ChooserKey,
-  limit = 3,
+  limit = Infinity,
 ): T[] {
   return resources
     .filter((r) => qualifies(r, key))
-    .map((r, index) => ({ r, index, s: score(r, key) }))
+    .map((r, index) => ({
+      r,
+      index,
+      s: score(r, key) + (key === "story" && norm(formatTypeLabel(r.format_type)) === "stories" ? 50 : 0),
+    }))
     .sort((a, b) => b.s - a.s || a.index - b.index)
     .slice(0, limit)
     .map((entry) => entry.r);
