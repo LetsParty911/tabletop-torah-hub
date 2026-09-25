@@ -37,7 +37,6 @@ import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { TableChooser } from "@/components/TableChooser";
 import { MobileCollectionControlsBar } from "@/components/MobileCollectionControlsBar";
 import { chooseReason } from "@/lib/table-chooser";
-import { SukkosTrustFeature } from "@/components/SukkosTrustFeature";
 
 type Resource = {
   id: string;
@@ -414,8 +413,6 @@ function Index() {
     <div className="min-h-screen bg-background">
       <AnnouncementBanner />
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
-        <SukkosTrustFeature />
-
         <section className="parchment-frame">
           <div className="parchment-panel text-center">
             <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-accent-readable sm:text-xs">

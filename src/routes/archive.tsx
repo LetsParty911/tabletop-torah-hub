@@ -18,7 +18,6 @@ import { standardizeCopy } from "@/lib/standardize-copy";
 import { publicationLabel } from "@/lib/badges";
 import { formatReadingLabel } from "@/lib/parshiyos";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
-import { SukkosTrustFeature } from "@/components/SukkosTrustFeature";
 
 type ArchiveSearch = {
   year?: string;
@@ -401,8 +400,6 @@ function ArchivePage() {
             </div>
           </div>
         </section>
-
-        <SukkosTrustFeature compact />
 
         {years.length > 0 && (
           <section className="parchment-frame">
