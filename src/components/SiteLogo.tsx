@@ -1,10 +1,11 @@
-const LOGO_HORIZONTAL_LIGHT = "/assets/logo-horizontal.png";
+const LOGO_STACKED = "/assets/logo-stacked.png";
 const LOGO_HEADER_DESKTOP = "/assets/logo-header-desktop.webp";
 const LOGO_HEADER_TABLET = "/assets/logo-header-tablet.webp";
 const LOGO_HEADER_MOBILE = "/assets/logo-header-mobile.webp";
+const LOGO_FOOTER = "/assets/logo-footer.webp";
 const LOGO_ICON = "/assets/logo-icon.png";
 
-/** Responsive Shabbos-table header lockup. */
+/** Responsive horizontal wordmark for the nav header (light backgrounds). */
 export function SiteLogoHorizontal({ className = "" }: { className?: string }) {
   return (
     <span className={`flex items-center ${className}`}>
@@ -14,8 +15,8 @@ export function SiteLogoHorizontal({ className = "" }: { className?: string }) {
         <img
           src={LOGO_HEADER_MOBILE}
           alt="Torah for the Table"
-          width={561}
-          height={420}
+          width={945}
+          height={260}
           className="h-12 w-auto object-contain sm:h-14 md:h-16 lg:h-16"
         />
       </picture>
@@ -23,33 +24,29 @@ export function SiteLogoHorizontal({ className = "" }: { className?: string }) {
   );
 }
 
-/** Responsive centered footer lockup using the new Shabbos-table identity. */
+/** Centered stacked lockup for the footer (light backgrounds). */
 export function SiteLogoFooter({ className = "" }: { className?: string }) {
   return (
     <span className={`flex items-center ${className}`}>
-      <picture>
-        <source media="(min-width: 1024px)" srcSet={LOGO_HEADER_DESKTOP} />
-        <source media="(min-width: 640px)" srcSet={LOGO_HEADER_TABLET} />
-        <img
-          src={LOGO_HEADER_MOBILE}
-          alt="Torah for the Table"
-          width={561}
-          height={420}
-          className="h-20 w-auto object-contain sm:h-24"
-        />
-      </picture>
+      <img
+        src={LOGO_FOOTER}
+        alt="Torah for the Table"
+        width={880}
+        height={480}
+        className="h-20 w-auto object-contain sm:h-24"
+      />
     </span>
   );
 }
 
-/** Full horizontal lockup for page headers on light backgrounds. */
+/** Full stacked lockup for page headers on light backgrounds. */
 export function SiteLogoStacked({ className = "" }: { className?: string }) {
   return (
     <img
-      src={LOGO_HORIZONTAL_LIGHT}
+      src={LOGO_STACKED}
       alt="Torah for the Table"
-      width={1385}
-      height={1037}
+      width={1650}
+      height={900}
       className={`h-16 w-auto object-contain sm:h-20 ${className}`}
     />
   );
