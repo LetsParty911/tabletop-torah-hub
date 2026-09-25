@@ -16,4 +16,4 @@
 - [x] Verify mobile and desktop behavior, tests, typecheck, and build
 
 ## Brand banner rollout
-- [ ] Homepage banner, header, footer, share image from approved artwork; verify; publish; check live
+- [x] Homepage banner, header, footer, share image from approved artwork; verify; publish; check live
