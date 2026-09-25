@@ -49,23 +49,56 @@ function post(url: string, payload: unknown): void {
   }
 }
 
+// Page-level referrer semantics: document.referrer only describes the page that
+// loaded this document, so it is reported on the first tracked view only.
+// Later client-side navigations are internal and carry no external referrer.
+let firstViewTracked = false;
+
+function pageLevelSource(): {
+  referrer: string | null;
+  referrer_host: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+} {
+  const params = new URLSearchParams(window.location.search);
+  let referrer: string | null = null;
+  let referrerHost: string | null = null;
+  if (!firstViewTracked && document.referrer) {
+    try {
+      const host = new URL(document.referrer).hostname;
+      if (host && host !== window.location.hostname) {
+        referrer = document.referrer;
+        referrerHost = host;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  firstViewTracked = true;
+  return {
+    referrer,
+    referrer_host: referrerHost,
+    utm_source: params.get("utm_source"),
+    utm_medium: params.get("utm_medium"),
+    utm_campaign: params.get("utm_campaign"),
+  };
+}
+
 /** Log one legacy raw pageview. Safe to call on every client-side route change. */
 export function trackPageView(path: string): void {
   try {
     if (typeof window === "undefined") return;
     if (isAdminPath(path)) return;
 
-    const attribution = captureFirstTouch(path);
+    // First-touch attribution is still recorded separately (canonical stream).
+    captureFirstTouch(path);
     const visitorId = getVisitorId();
     if (!visitorId) return;
 
     post("/api/track-view", {
       path,
-      referrer: attribution.referrer_url,
-      referrer_host: attribution.referrer_host,
-      utm_source: attribution.utm_source,
-      utm_medium: attribution.utm_medium,
-      utm_campaign: attribution.utm_campaign,
+      ...pageLevelSource(),
       session_id: getSessionId(),
       visitor_id: visitorId,
       is_new_visitor: isNewVisitor(),

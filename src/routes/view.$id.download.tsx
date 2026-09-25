@@ -63,7 +63,40 @@ async function recordDownloadServed(
     const isInternal = await isInternalRequest(request);
 
     const admin = getSupabaseAdmin();
+
+    // Inherit the session's own context (source, campaign, referrer, device,
+    // geo) from its earliest recorded event, so this server row never looks
+    // like a separate "Direct" / "unknown device" visit.
+    const context: Record<string, unknown> = {};
+    try {
+      const { data: prior } = await admin
+        .from("analytics_events")
+        .select(
+          "landing_path, device_type, source_group, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign, country, region, city",
+        )
+        .eq("session_id", sessionId)
+        .eq("visitor_id", visitorId)
+        .neq("event_name", "download_served")
+        .order("occurred_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (prior) {
+        for (const [k, v] of Object.entries(prior)) if (v != null) context[k] = v;
+      }
+    } catch {
+      /* context is best-effort */
+    }
+    if (!context["device_type"]) {
+      const ua = (request.headers.get("user-agent") ?? "").toLowerCase();
+      context["device_type"] = /ipad|tablet|(android(?!.*mobile))/.test(ua)
+        ? "tablet"
+        : /mobi|iphone|ipod|android/.test(ua)
+          ? "mobile"
+          : "desktop";
+    }
+
     const row: Record<string, unknown> = {
+      ...context,
       event_id: `served-${actionId}`,
       event_name: "download_served",
       occurred_at: new Date().toISOString(),
