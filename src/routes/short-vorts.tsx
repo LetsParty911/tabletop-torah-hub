@@ -264,7 +264,7 @@ function ShortVortsPage() {
     {
       key: "current",
       heading:
-        current.length > 0 || publishedPdf
+        current.length > 0 || publishedPdf || /sukk/i.test(label)
           ? isYomTov
             ? label
             : `This Week — ${label}`
