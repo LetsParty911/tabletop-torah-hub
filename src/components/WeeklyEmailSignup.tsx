@@ -11,6 +11,8 @@ type WeeklyEmailSignupProps = {
   variant?: "full" | "compact";
   /** Label above the compact form. */
   ctaLabel?: string;
+  /** Optional heading for the full signup card. */
+  heading?: string;
 };
 
 export function WeeklyEmailSignup({
@@ -18,6 +20,7 @@ export function WeeklyEmailSignup({
   className = "",
   variant = "full",
   ctaLabel = "Get the new Shabbos collection every Thursday",
+  heading = "Don't Miss a Week",
 }: WeeklyEmailSignupProps) {
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
@@ -156,7 +159,7 @@ export function WeeklyEmailSignup({
           <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
         </div>
         <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
-          Don't Miss a Week
+          {heading}
         </h2>
         <p className="mt-2 font-serif italic font-medium text-sm sm:text-base text-primary max-w-md mx-auto">
           One weekly email when the new collection is ready.
