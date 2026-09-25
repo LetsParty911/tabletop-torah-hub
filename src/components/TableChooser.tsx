@@ -53,7 +53,10 @@ export function TableChooser({
   const pendingScrollRef = useRef(false);
 
   const recommendations = useMemo(
-    () => (selected ? pickRecommendations(resources, selected, 3) : []),
+    () =>
+      selected
+        ? pickRecommendations(resources, selected, selected === "story" ? 6 : 3)
+        : [],
     [resources, selected],
   );
 
@@ -158,7 +161,7 @@ export function TableChooser({
               Find the right Dvar Torah for your table
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Choose what you want and we'll show you up to three good options to download.
+              Choose what you want and we'll show you good options to download.
             </p>
           </div>
         </div>
