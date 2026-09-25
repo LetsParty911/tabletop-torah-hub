@@ -434,9 +434,8 @@ function Index() {
             <p className="hidden font-sans text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-accent-readable sm:block sm:text-xs">
               {isCurrentYomKippur ? "Yom Kippur Resources" : "Weekly Divrei Torah"}
             </p>
-            <h1 className="mt-2 font-serif text-[1.85rem] leading-[1.08] font-bold tracking-tight text-primary sm:text-4xl md:text-5xl">
-              <span className="sm:hidden">Choose a Dvar Torah for Your Table</span>
-              <span className="hidden sm:inline">
+            <h1 className="mt-2 font-serif text-[1.6rem] leading-[1.1] font-bold tracking-tight text-primary sm:text-4xl md:text-5xl">
+              <span>
                 {isCurrentYomKippur
                   ? "Yom Kippur"
                   : isSukkosSeason
@@ -449,7 +448,7 @@ function Index() {
               </span>
             </h1>
             <p className="mx-auto mt-2 max-w-md font-serif text-sm leading-relaxed text-primary sm:hidden">
-              Free Divrei Torah for Shabbos and Yom Tov — choose what fits your table.
+              Choose a Dvar Torah for your table — free, and ready to print.
             </p>
             {!isFallback && (
               <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-accent-readable sm:hidden">
