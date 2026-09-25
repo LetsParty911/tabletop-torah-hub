@@ -508,16 +508,11 @@ function Index() {
               </div>
             )}
             {resources.length > 0 && !isCurrentYomKippur && (
-              <>
-                {!isFallback && (
-                  <p className="mt-3 text-center font-sans text-sm text-muted-foreground sm:text-base">
-                    Your Sukkos collection is ready. New Divrei Torah are added every Thursday evening.
-                  </p>
-                )}
-                <div className="mt-3 flex justify-center">
-                  <ShareButton className="w-full sm:w-auto" />
-                </div>
-              </>
+              !isFallback && (
+                <p className="mt-3 text-center font-sans text-sm text-muted-foreground sm:text-base">
+                  Your Sukkos collection is ready. New Divrei Torah are added every Thursday evening.
+                </p>
+              )
             )}
           </div>
         </section>
@@ -541,12 +536,31 @@ function Index() {
           </div>
         )}
 
-        <div className="mx-auto max-w-2xl rounded-xl border border-accent/40 bg-card/40 px-4 py-4 sm:px-5">
-          <WeeklyEmailSignup
-            sourceId="homepage"
-            variant="compact"
-            ctaLabel={isCurrentYomKippur ? "Get Yom Kippur updates" : "Get the new Shabbos collection every Thursday"}
-          />
+        <div className="mx-auto grid w-full max-w-3xl grid-cols-1 items-center gap-3 rounded-xl border border-accent/40 bg-card/40 px-4 py-4 text-center sm:grid-cols-[minmax(0,1fr)_auto] sm:px-5 sm:text-left">
+          <div className="min-w-0">
+            <p className="font-serif text-lg font-bold text-primary sm:text-xl">
+              Get new Divrei Torah every Thursday
+            </p>
+            <p className="mt-0.5 font-sans text-sm text-muted-foreground">
+              Be the first to know when a new collection is live.
+            </p>
+          </div>
+          <a
+            href="#weekly-email-signup"
+            onClick={(event) => {
+              event.preventDefault();
+              const signup = document.getElementById("weekly-email-signup");
+              signup?.scrollIntoView({ behavior: "smooth", block: "center" });
+              window.setTimeout(() => {
+                signup?.querySelector<HTMLInputElement>('input[type="email"]')?.focus({
+                  preventScroll: true,
+                });
+              }, 500);
+            }}
+            className="inline-flex w-full shrink-0 items-center justify-center rounded-full bg-primary px-6 py-2.5 font-serif text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
+          >
+            Subscribe
+          </a>
         </div>
 
         <section id="this-weeks-collection" className="scroll-mt-8">
@@ -910,6 +924,17 @@ function Index() {
 
           </div>
         </section>
+
+        <WeeklyEmailSignup
+          sourceId="homepage"
+          heading="GET EACH NEW COLLECTION EVERY THURSDAY"
+        />
+
+        {resources.length > 0 && !isCurrentYomKippur && (
+          <div className="flex justify-center">
+            <ShareButton className="w-full sm:w-auto" />
+          </div>
+        )}
 
         <div className="gold-divider" aria-hidden>
           <span className="gold-divider-dot" />
