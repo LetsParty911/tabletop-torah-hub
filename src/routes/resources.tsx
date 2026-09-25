@@ -6,7 +6,7 @@ export const Route = createFileRoute("/resources")({
   head: () => {
     const title = "Torah for the Table Originals — In-House Torah Learning Resources";
     const description =
-      "Original educational material created in-house for the Shabbos table: Short Vorts, Stories for the Shabbos Table, Mi Ka'amcha Yisroel, and Parsha Questions & Answers — all free of charge.";
+      "Original educational material created in-house for the Shabbos table: Short Vorts, Stories for the Shabbos Table and Parsha Questions & Answers — plus featured series from independent authors, all free of charge.";
     const url = "https://torahforthetable.com/resources";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -57,15 +57,6 @@ const SERIES: SeriesCard[] = [
     cta: "Browse Stories for the Shabbos Table →",
   },
   {
-    title: "Mi Ka'amcha Yisroel",
-    description:
-      "A weekly piece that uses parashah insights to discuss communication and positive speech. Each installment takes a moment from the parsha where words shape an outcome — a blessing, a rebuke, a report — and draws out a practical point about how we speak to family, friends, and neighbors.",
-    sample: "What to expect: a parsha moment connected to practical speech and relationships.",
-    linkTo: "/archive",
-    linkSearch: { q: "Mi Ka'amcha Yisroel" },
-    cta: "Browse Mi Ka'amcha Yisroel →",
-  },
-  {
     title: "Parsha Q&A",
     description:
       "Source-based questions and answers on the parsha each week, written for learning together at the table. Every set is accompanied by a Kids' Corner page with riddles and picture puzzles so younger children have their own way in.",
@@ -75,6 +66,39 @@ const SERIES: SeriesCard[] = [
     cta: "Browse Parsha Q&A →",
   },
 ];
+
+const FEATURED_SERIES: SeriesCard[] = [
+  {
+    title: "Mi Ka'amcha Yisroel",
+    description:
+      "An independent weekly series, shared here with our collection. Each installment uses the parsha to discuss communication and positive speech — how the words we choose shape our homes and relationships.",
+    sample: "Not written by Torah For The Table. Shared as part of our weekly collection.",
+    linkTo: "/archive",
+    linkSearch: { q: "Mi Ka'amcha Yisroel" },
+    cta: "Browse Mi Ka'amcha Yisroel →",
+  },
+];
+
+function SeriesGrid({ items }: { items: SeriesCard[] }) {
+  return (
+    <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
+      {items.map((s) => (
+        <article key={s.title} className="flex flex-col rounded-xl border border-accent/30 bg-card/40 p-5">
+          <h3 className="font-serif text-xl font-bold text-primary">{s.title}</h3>
+          <p className="mt-2 font-serif text-sm sm:text-base leading-relaxed text-foreground">{s.description}</p>
+          <p className="mt-3 flex-1 rounded-lg border border-accent/20 bg-background/50 px-3 py-2 text-xs sm:text-sm text-muted-foreground">
+            {s.sample}
+          </p>
+          <p className="mt-4 text-sm sm:text-base">
+            <Link to={s.linkTo} search={s.linkSearch} className="text-accent underline hover:text-primary">
+              {s.cta}
+            </Link>
+          </p>
+        </article>
+      ))}
+    </div>
+  );
+}
 
 function ResourcesPage() {
   return (
@@ -106,31 +130,14 @@ function ResourcesPage() {
               </p>
             </div>
 
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
-              {SERIES.map((s) => (
-                <article
-                  key={s.title}
-                  className="flex flex-col rounded-xl border border-accent/30 bg-card/40 p-5"
-                >
-                  <h2 className="font-serif text-xl font-bold text-primary">{s.title}</h2>
-                  <p className="mt-2 font-serif text-sm sm:text-base leading-relaxed text-foreground">
-                    {s.description}
-                  </p>
-                  <p className="mt-3 flex-1 rounded-lg border border-accent/20 bg-background/50 px-3 py-2 text-xs sm:text-sm text-muted-foreground">
-                    {s.sample}
-                  </p>
-                  <p className="mt-4 text-sm sm:text-base">
-                    <Link
-                      to={s.linkTo}
-                      search={s.linkSearch}
-                      className="text-accent underline hover:text-primary"
-                    >
-                      {s.cta}
-                    </Link>
-                  </p>
-                </article>
-              ))}
-            </div>
+            <h2 className="mt-8 text-center font-serif text-2xl font-bold text-primary">Torah For The Table Originals</h2>
+            <SeriesGrid items={SERIES} />
+
+            <h2 className="mt-10 text-center font-serif text-2xl font-bold text-primary">Featured Independent Series</h2>
+            <p className="mx-auto mt-2 max-w-2xl text-center font-serif text-sm sm:text-base text-muted-foreground">
+              Series by other authors that we're glad to share. They are not written by Torah For The Table.
+            </p>
+            <SeriesGrid items={FEATURED_SERIES} />
 
             <p className="mt-8 max-w-2xl mx-auto text-center font-serif text-base sm:text-lg text-foreground">
               Looking for the full weekly collection?{" "}
