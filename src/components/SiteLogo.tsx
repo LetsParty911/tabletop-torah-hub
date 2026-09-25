@@ -5,37 +5,60 @@ const LOGO_HEADER_MOBILE = "/assets/logo-header-mobile.webp";
 const LOGO_FOOTER = "/assets/logo-footer.webp";
 const LOGO_ICON = "/assets/logo-icon.png";
 
-/** Responsive horizontal wordmark for the nav header (light backgrounds). */
+const BRAND_COMPACT = "/assets/brand-logo-compact.webp";
+const BRAND_FOOTER = "/assets/brand-logo-footer.webp";
+
+/** Compact header logo cropped from the approved navy/gold banner artwork. */
 export function SiteLogoHorizontal({ className = "" }: { className?: string }) {
   return (
-    <span className={`flex items-center ${className}`}>
-      <picture>
-        <source media="(min-width: 1024px)" srcSet={LOGO_HEADER_DESKTOP} />
-        <source media="(min-width: 768px)" srcSet={LOGO_HEADER_TABLET} />
-        <img
-          src={LOGO_HEADER_MOBILE}
-          alt="Torah for the Table"
-          width={945}
-          height={260}
-          className="h-12 w-auto object-contain sm:h-14 md:h-16 lg:h-16"
-        />
-      </picture>
+    <span className={`flex items-center overflow-hidden rounded-md bg-primary ${className}`}>
+      <img
+        src={BRAND_COMPACT}
+        alt="Torah for the Table"
+        width={480}
+        height={156}
+        decoding="async"
+        className="h-11 w-auto object-contain sm:h-12 md:h-14"
+      />
     </span>
   );
 }
 
-/** Centered stacked lockup for the footer (light backgrounds). */
+/** Restrained footer logo (with tagline) from the approved banner artwork. */
 export function SiteLogoFooter({ className = "" }: { className?: string }) {
   return (
-    <span className={`flex items-center ${className}`}>
+    <span className={`flex items-center overflow-hidden rounded-lg bg-primary ${className}`}>
       <img
-        src={LOGO_FOOTER}
-        alt="Torah for the Table"
-        width={880}
-        height={480}
+        src={BRAND_FOOTER}
+        alt="Torah for the Table — Torah. For your table."
+        width={560}
+        height={228}
+        loading="lazy"
+        decoding="async"
         className="h-20 w-auto object-contain sm:h-24"
       />
     </span>
+  );
+}
+
+/** Full homepage brand banner: mobile-safe crop under 640px, full artwork above. */
+export function BrandBanner() {
+  return (
+    <picture>
+      <source media="(max-width: 639px)" srcSet="/assets/brand-banner-mobile.webp" />
+      <source
+        srcSet="/assets/brand-banner-800.webp 800w, /assets/brand-banner-1280.webp 1280w, /assets/brand-banner-1920.webp 1920w"
+        sizes="(min-width: 1024px) 1024px, 100vw"
+      />
+      <img
+        src="/assets/brand-banner-1280.webp"
+        alt="Torah for the Table — Torah. For your table."
+        width={1280}
+        height={427}
+        fetchPriority="high"
+        className="block h-auto w-full rounded-lg shadow-sm"
+      />
+    </picture>
   );
 }
 
