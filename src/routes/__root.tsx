@@ -14,6 +14,8 @@ import {
 } from "@/lib/first-party-analytics";
 
 import { SiteLogoHorizontal } from "@/components/SiteLogo";
+import { MaintenancePage } from "@/components/MaintenancePage";
+import { MAINTENANCE_MODE, isAdminPath } from "@/lib/maintenance";
 import { getSafePostLoginRedirect, POST_LOGIN_REDIRECT_KEY } from "@/lib/auth-redirect";
 
 // GTM is now the sole analytics path. GA4 is loaded via GTM (container GTM-WMVV6CJ7).
@@ -220,13 +222,15 @@ export const Route = createRootRoute({
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
+  const shellPath = useRouterState({ select: (s) => s.location.pathname });
+  const showMaintenance = MAINTENANCE_MODE && !isAdminPath(shellPath);
   return (
     <html lang="en">
       <head>
         <HeadContent />
       </head>
       <body>
-        {children}
+        {showMaintenance ? <MaintenancePage /> : children}
         <Scripts />
       </body>
     </html>
