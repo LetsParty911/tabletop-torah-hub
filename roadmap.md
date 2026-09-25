@@ -14,3 +14,6 @@
 - [x] Surface four existing chooser categories before newsletter signup
 - [x] Add a routed, tracked current Sukkos recommendation CTA
 - [x] Verify mobile and desktop behavior, tests, typecheck, and build
+
+## Brand banner rollout
+- [ ] Homepage banner, header, footer, share image from approved artwork; verify; publish; check live

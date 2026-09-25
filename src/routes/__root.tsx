@@ -315,7 +315,7 @@ function SiteNav() {
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
         <div className="flex items-center justify-between gap-3 py-1.5 md:py-2.5">
           <Link to="/" aria-label="Torah for the Table — home" className="shrink-0">
-            <SiteLogoHorizontal className="[&_img]:h-14 md:[&_img]:h-16" />
+            <SiteLogoHorizontal />
           </Link>
 
           <div className="hidden items-center gap-5 md:flex">
