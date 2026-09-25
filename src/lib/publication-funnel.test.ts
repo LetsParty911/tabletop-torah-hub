@@ -9,6 +9,7 @@ function row(partial: Partial<PublicationEventRow> & { event_name: string }): Pu
     visitor_id: "visitor-1",
     publication_id: PUB_ID,
     publication_title: "Parshas Vayeitzei Booklet",
+    metadata: { action_id: "action-1" },
     ...partial,
   };
 }
@@ -32,6 +33,15 @@ describe("aggregatePublications", () => {
     expect(result[0].downloadsServed).toBe(1);
     expect(result[0].pdfOpens).toBe(1);
     expect(result[0].impressions).toBe(1);
+  });
+
+  it("counts a served-only action as one actual download", () => {
+    const result = aggregatePublications([
+      row({ event_name: "download_served", publication_title: null, metadata: { action_id: "served-only" } }),
+    ]);
+    expect(result).toHaveLength(1);
+    expect(result[0].downloadActions).toBe(1);
+    expect(result[0].downloadsServed).toBe(1);
   });
 
   it("carries the display title from whichever event knows it", () => {
