@@ -22,6 +22,7 @@ describe("classifySessions (headline filter)", () => {
     ev("ms-human", "human_signal", 2_000, { as_organization: "Microsoft Corporation" }),
     ev("reader", "page_view", 0),
     ev("reader", "download", 5_000),
+    ev("served-only-reader", "download_served", 5_000),
     ev("uncertain", "page_view", 0),
     ev("internal", "page_view", 0, { is_internal: true }),
     ev("internal", "download", 1_000, { is_internal: true }),
@@ -35,12 +36,13 @@ describe("classifySessions (headline filter)", () => {
   it("keeps Microsoft with explicit human_signal and a downloading reader", () => {
     expect(result.humanIds.has("ms-human")).toBe(true);
     expect(result.humanIds.has("reader")).toBe(true);
+    expect(result.humanIds.has("served-only-reader")).toBe(true);
   });
 
   it("excludes uncertain and internal sessions from the headline set", () => {
     expect(result.confidence.get("uncertain")).toBe("uncertain");
     expect(result.humanIds.has("uncertain")).toBe(false);
     expect(result.humanIds.has("internal")).toBe(false);
-    expect(result.humanIds.size).toBe(2);
+    expect(result.humanIds.size).toBe(3);
   });
 });
