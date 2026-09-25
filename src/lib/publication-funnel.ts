@@ -15,6 +15,7 @@ export type PublicationEventRow = {
   publication_title?: string | null;
   source_group?: string | null;
   device_type?: string | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 export type PublicationFunnelRow = {
@@ -45,6 +46,7 @@ type Agg = {
   opens: number;
   downloads: number;
   served: number;
+  downloadActionIds: Set<string>;
   newVisitorSessions: Set<string>;
   returningSessions: Set<string>;
   devices: Map<string, Set<string>>;
@@ -81,6 +83,7 @@ export function aggregatePublications(
       opens: 0,
       downloads: 0,
       served: 0,
+      downloadActionIds: new Set<string>(),
       newVisitorSessions: new Set<string>(),
       returningSessions: new Set<string>(),
       devices: new Map<string, Set<string>>(),
@@ -98,9 +101,21 @@ export function aggregatePublications(
       publication.accessPairs.add(pair);
       if (row.visitor_id) publication.readers.add(row.visitor_id);
     }
-    if (row.event_name === "download_served") publication.served += 1;
+    const actionId =
+      row.metadata && typeof row.metadata["action_id"] === "string"
+        ? String(row.metadata["action_id"]).trim()
+        : "";
+    if (row.event_name === "download_served") {
+      publication.served += 1;
+      const actionKey = actionId || `served::${sid}::${key}`;
+      publication.downloadActionIds.add(actionKey);
+      publication.downloadPairs.add(pair);
+      publication.accessPairs.add(pair);
+      if (row.visitor_id) publication.readers.add(row.visitor_id);
+    }
     if (row.event_name === "download") {
-      publication.downloads += 1;
+      const actionKey = actionId || `client::${sid}::${key}`;
+      publication.downloadActionIds.add(actionKey);
       publication.downloadPairs.add(pair);
       publication.accessPairs.add(pair);
       if (row.visitor_id) publication.readers.add(row.visitor_id);
@@ -131,7 +146,7 @@ export function aggregatePublications(
       clicks: publication.clicks.size,
       uniqueReaders: publication.readers.size,
       pdfOpens: publication.opens,
-      downloadActions: publication.downloads,
+      downloadActions: publication.downloadActionIds.size,
       downloadsServed: publication.served,
       newVisitorSessions: publication.newVisitorSessions.size,
       returningSessions: publication.returningSessions.size,
