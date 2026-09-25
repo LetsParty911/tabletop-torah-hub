@@ -51,7 +51,7 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
           <p className="mt-1 text-sm text-muted-foreground">
             The selected range chooses active visitors. Earlier canonical history is consulted for
             return status and recorded download history; lifetime labels are used only where the
-            visitor&apos;s first canonical session is actually observed.
+            visitor&apos;s first canonical session is actually observed. Only likely human sessions are counted; uncertain, suspected automation and internal/test sessions are excluded.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

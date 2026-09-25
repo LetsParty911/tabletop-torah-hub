@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifySession, describePossibleRelationship } from "./traffic-confidence";
+import { classifySession, describePossibleRelationship, isInfrastructureOrganization } from "./traffic-confidence";
 
 const base = {
   internal: false,
@@ -52,5 +52,24 @@ describe("describePossibleRelationship", () => {
     const stronger = describePossibleRelationship(["a", "b"], "same network and device", 2);
     expect(stronger.verdict).toBe("possible relationship");
     expect(stronger.note).toContain("never merged");
+  });
+});
+
+describe("infrastructure automation rule", () => {
+  it("flags one-hit Amazon and Cisco OpenDNS sessions", () => {
+    for (const org of ["Amazon.com Inc.", "Cisco OpenDNS, LLC", "Cisco OpenDNS LLC", "Cloudflare, Inc.", "Fastly, Inc.", "Latitude.sh", "Microsoft Corporation"]) {
+      expect(isInfrastructureOrganization(org)).toBe(true);
+      expect(classifySession({ ...base, infrastructureNetwork: isInfrastructureOrganization(org) })).toBe("suspected_automation");
+    }
+    expect(isInfrastructureOrganization("Verizon Business")).toBe(false);
+  });
+
+  it("keeps Microsoft sessions with a human_signal or intent human", () => {
+    expect(classifySession({ ...base, infrastructureNetwork: true, humanSignal: true })).toBe("likely_human");
+    expect(classifySession({ ...base, infrastructureNetwork: true, meaningfulIntent: true })).toBe("likely_human");
+  });
+
+  it("does not flag sustained multi-page infrastructure browsing", () => {
+    expect(classifySession({ ...base, infrastructureNetwork: true, pageviews: 3, durationMs: 60_000 })).toBe("likely_human");
   });
 });

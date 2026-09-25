@@ -16,6 +16,12 @@ import {
 } from "@/lib/retention-cohorts";
 import { aggregatePublications } from "@/lib/publication-funnel";
 import {
+  buildSessions,
+  classifyAutomation,
+  classifyKnownIncident,
+  classifySessions,
+} from "@/lib/human-sessions";
+import {
   buildChangeObservations,
   buildObservations,
   formatDayLabel,
@@ -62,50 +68,7 @@ type EventRow = {
 
 type WindowDef = { parsha: string; start: string; end: string };
 
-type SessionAgg = {
-  id: string;
-  visitorId: string | null;
-  source: string;
-  device: string;
-  pageviews: number;
-  engaged: boolean;
-  accessedPdf: boolean;
-  downloaded: boolean;
-  firstAt: number;
-  lastAt: number;
-  heartbeats: number;
-  impressions: number;
-  humanSignal: boolean;
-  meaningfulIntent: boolean;
-  internalTestTraffic: boolean;
-  markedInternal: boolean;
-};
 
-// Events that only a person can realistically produce.
-const MEANINGFUL_INTENT = new Set([
-  "download",
-  "pdf_open",
-  "publication_click",
-  "filter_change",
-  "search",
-  "share_click",
-  "signup",
-  "human_signal",
-  // Deliberate homepage choices. recommendation_view is intentionally absent:
-  // it is a render-time impression, not an act of human intent.
-  "chooser_select",
-  "recommendation_click",
-  "my_table_add",
-  "my_table_remove",
-  "my_table_open",
-]);
-
-// One-time cleanup for a known automated traffic spike on 2026-09-18.
-// This is intentionally narrow: it only applies to sessions that started inside
-// the incident window and match every low-confidence signal. It must not be
-// turned into a general "filter all one-page bounces" rule.
-const KNOWN_INCIDENT_START = Date.parse("2026-09-18T00:30:00.000Z");
-const KNOWN_INCIDENT_END = Date.parse("2026-09-18T01:15:00.000Z");
 
 async function requireAnalyticsAdmin(accessToken: string) {
   const { createClient } = await import("@supabase/supabase-js");
@@ -244,175 +207,15 @@ async function fetchPriorVisitors(ids: string[], before: string): Promise<Set<st
   return prior;
 }
 
-/**
- * Builds per-session stats from the raw canonical event rows.
- * No filtering happens here — classification is a separate step.
- */
-function buildSessions(rows: EventRow[]): Map<string, SessionAgg> {
-  const sessions = new Map<string, SessionAgg>();
-
-  for (const row of rows) {
-    const sid = row.session_id?.trim();
-    if (!sid) continue;
-    const vid = row.visitor_id?.trim() || null;
-    const at = Date.parse(row.occurred_at);
-    const time = Number.isNaN(at) ? 0 : at;
-
-    let session = sessions.get(sid);
-    if (!session) {
-      session = {
-        id: sid,
-        visitorId: vid,
-        source: row.source_group?.trim() || "Direct",
-        device: row.device_type?.trim() || "unknown",
-        pageviews: 0,
-        engaged: false,
-        accessedPdf: false,
-        downloaded: false,
-        firstAt: time,
-        lastAt: time,
-        heartbeats: 0,
-        impressions: 0,
-        humanSignal: false,
-        meaningfulIntent: false,
-        internalTestTraffic: false,
-        markedInternal: false,
-      };
-      sessions.set(sid, session);
-    }
-
-    if (!session.visitorId && vid) session.visitorId = vid;
-    if (session.source === "Direct" && row.source_group?.trim())
-      session.source = row.source_group.trim();
-    if (session.device === "unknown" && row.device_type?.trim())
-      session.device = row.device_type.trim();
-
-    // Lovable editor/preview traffic is internal testing, not public readership.
-    // Keep it in raw analytics for diagnostics, but mark the session so headline
-    // audience metrics can exclude it without using IP-based identity merging.
-    // Server-verified internal/test device marker (signed HttpOnly cookie).
-    if (row.is_internal === true) {
-      session.internalTestTraffic = true;
-      session.markedInternal = true;
-    }
-
-    const referrerHost = row.referrer_host?.trim().toLowerCase() ?? "";
-    const userAgent = row.user_agent?.toLowerCase() ?? "";
-    if (
-      referrerHost === "lovable.dev" ||
-      referrerHost.endsWith(".lovable.dev") ||
-      referrerHost === "lovable.app" ||
-      referrerHost.endsWith(".lovable.app") ||
-      userAgent.includes("lovableapp/")
-    ) {
-      session.internalTestTraffic = true;
-    }
-
-    if (time) {
-      if (!session.firstAt || time < session.firstAt) session.firstAt = time;
-      if (time > session.lastAt) session.lastAt = time;
-    }
-
-    const name = row.event_name ?? "";
-    if (name === "page_view") session.pageviews += 1;
-    if (name === "heartbeat") session.heartbeats += 1;
-    if (name === "publication_impression") session.impressions += 1;
-    if (name === "human_signal") session.humanSignal = true;
-    if (MEANINGFUL_INTENT.has(name)) session.meaningfulIntent = true;
-    // A heartbeat alone is never engagement.
-    if (MEANINGFUL_INTENT.has(name)) session.engaged = true;
-    if (name === "pdf_open" || name === "download") session.accessedPdf = true;
-    if (name === "download") session.downloaded = true;
-  }
-
-  return sessions;
-}
-
-/**
- * High-confidence automation only. Any session showing real intent (download,
- * pdf_open, publication_click, filter, search, share, signup, human_signal) is
- * never classified as automated.
- */
-function classifyAutomation(sessions: SessionAgg[]): Set<string> {
-  const automated = new Set<string>();
-  const oneHitCandidates: SessionAgg[] = [];
-
-  for (const session of sessions) {
-    if (session.meaningfulIntent || session.humanSignal) continue;
-    const isDirectDesktop = session.source === "Direct" && session.device === "desktop";
-    if (!isDirectDesktop) continue;
-
-    const durationMs = Math.max(0, session.lastAt - session.firstAt);
-
-    // (b) Impossible heartbeat cadence — the client beats every 15 seconds,
-    // so 10+ beats inside a minute cannot be a real browser.
-    if (durationMs <= 60_000 && session.heartbeats >= 10) {
-      automated.add(session.id);
-      continue;
-    }
-
-    // (a) Instant one-hit session — only counted when it arrives in a burst.
-    if (durationMs <= 2_000 && session.pageviews <= 1) {
-      oneHitCandidates.push(session);
-    }
-  }
-
-  const buckets = new Map<number, SessionAgg[]>();
-  for (const session of oneHitCandidates) {
-    const bucket = Math.floor(session.firstAt / 10_000);
-    const list = buckets.get(bucket) ?? [];
-    list.push(session);
-    buckets.set(bucket, list);
-  }
-  for (const list of buckets.values()) {
-    if (list.length < 8) continue; // isolated instant bounces stay counted
-    for (const session of list) automated.add(session.id);
-  }
-
-  return automated;
-}
-
-/**
- * One-time cleanup for a known automation incident.
- *
- * On 2026-09-18 a crawler/bot produced many Direct/desktop sessions, each with
- * a single pageview, no meaningful intent events, no human_signal, no
- * publication impressions, and no heartbeats. Because they were spread across
- * many minutes they did not trigger the 10-second burst rule. This helper
- * removes only those sessions that started inside the known incident window and
- * match every low-confidence signal. It is intentionally not a general rule.
- */
-function classifyKnownIncident(sessions: SessionAgg[]): Set<string> {
-  const automated = new Set<string>();
-  for (const session of sessions) {
-    if (session.firstAt < KNOWN_INCIDENT_START || session.firstAt >= KNOWN_INCIDENT_END)
-      continue;
-    if (session.source !== "Direct") continue;
-    if (session.device !== "desktop") continue;
-    if (session.meaningfulIntent) continue;
-    if (session.humanSignal) continue;
-    if (session.pageviews > 1) continue;
-    if (session.impressions !== 0) continue;
-    if (session.heartbeats > 1) continue;
-    automated.add(session.id);
-  }
-  return automated;
-}
-
-function classifyInternalTestTraffic(sessions: SessionAgg[]): Set<string> {
-  return new Set(
-    sessions.filter((session) => session.internalTestTraffic).map((session) => session.id),
-  );
-}
 
 function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>()) {
-  const allSessions = buildSessions(rows);
-  const automated = classifyAutomation([...allSessions.values()]);
-  const knownIncident = classifyKnownIncident([...allSessions.values()]);
-  const allAutomated = new Set([...automated, ...knownIncident]);
-  const internalTest = classifyInternalTestTraffic([...allSessions.values()]);
-  const internalOnly = new Set([...internalTest].filter((id) => !allAutomated.has(id)));
-  const excluded = new Set([...allAutomated, ...internalOnly]);
+  // Headline counts use ONLY high_confidence_human + likely_human sessions.
+  const classified = classifySessions(rows);
+  const allSessions = classified.sessions;
+  const excluded = new Set([...allSessions.keys()].filter((id) => !classified.humanIds.has(id)));
+  const allAutomated = new Set([...allSessions.keys()].filter((id) => classified.confidence.get(id) === "suspected_automation"));
+  const internalOnly = new Set([...allSessions.keys()].filter((id) => classified.confidence.get(id) === "internal_test"));
+  const uncertain = new Set([...allSessions.keys()].filter((id) => classified.confidence.get(id) === "uncertain"));
 
   const rawSessions = allSessions.size;
   const rawVisitors = new Set<string>();
@@ -483,6 +286,7 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
     rawUniqueVisitors: rawVisitors.size,
     filteredAutomationSessions: allAutomated.size,
     filteredInternalSessions: internalOnly.size,
+    filteredUncertainSessions: uncertain.size,
     returningVisitors: returningVisitors.size,
     engagedSessions,
     pdfAccessingSessions,
@@ -544,34 +348,13 @@ export function describeLocation(place: string, row: Pick<EventRow, "geo_reliabi
 }
 
 function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
-  const allSessions = buildSessions(rows);
-  const automation = new Set([
-    ...classifyAutomation([...allSessions.values()]),
-    ...classifyKnownIncident([...allSessions.values()]),
-  ]);
-  const internalTest = classifyInternalTestTraffic([...allSessions.values()]);
-  const internalOnly = new Set([...internalTest].filter((id) => !automation.has(id)));
-  const excluded = new Set([...automation, ...internalOnly]);
-  const keptSessions = [...allSessions.values()].filter((session) => !excluded.has(session.id));
-  const keptIds = new Set(keptSessions.map((session) => session.id));
-
-  // Reporting-only confidence classification. Nothing is written back to the
-  // stored rows: this is how we describe the traffic, not a verdict on it.
-  const confidenceBySession = new Map<string, TrafficConfidence>();
-  const confidenceCounts = emptyConfidenceCounts();
-  for (const session of allSessions.values()) {
-    const label = classifySession({
-      internal: session.internalTestTraffic,
-      flaggedAutomation: automation.has(session.id),
-      humanSignal: session.humanSignal,
-      meaningfulIntent: session.meaningfulIntent,
-      pageviews: session.pageviews,
-      impressions: session.impressions,
-      durationMs: Math.max(0, session.lastAt - session.firstAt),
-    });
-    confidenceBySession.set(session.id, label);
-    confidenceCounts[label] += 1;
-  }
+  // Shared classifier: only high_confidence_human + likely_human count.
+  const classified = classifySessions(rows);
+  const allSessions = classified.sessions;
+  const confidenceBySession = classified.confidence;
+  const confidenceCounts = classified.counts;
+  const keptSessions = [...allSessions.values()].filter((session) => classified.humanIds.has(session.id));
+  const keptIds = classified.humanIds;
   const markedInternalSessions = [...allSessions.values()].filter((s) => s.markedInternal).length;
   const keptRows = rows.filter((row) => Boolean(row.session_id && keptIds.has(row.session_id.trim())));
   const canonical = summarizeCanonical(rows, priorVisitors);
@@ -753,6 +536,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
     raw: { sessions: canonical.rawSessions, visitors: canonical.rawUniqueVisitors },
     filteredAutomationSessions: canonical.filteredAutomationSessions,
     filteredInternalSessions: canonical.filteredInternalSessions,
+    filteredUncertainSessions: canonical.filteredUncertainSessions,
     details: metricDetails,
     sessions: sessionDetails,
     recentActivity: keptRows.slice(-20).reverse().map((row) => detailFor(row)),
@@ -1661,6 +1445,7 @@ function shapeReport(report: BuiltReport, limit: number) {
     raw: report.raw,
     suspectedAutomatedSessions: report.filteredAutomationSessions,
     internalSessions: report.filteredInternalSessions,
+    uncertainSessions: report.filteredUncertainSessions,
     publications: report.publications.slice(0, limit),
     // Computed before the top-N slice so the signs are counted even when not in the top list.
     sukkahSignDownloads: countSukkahSignDownloads(report.publications),

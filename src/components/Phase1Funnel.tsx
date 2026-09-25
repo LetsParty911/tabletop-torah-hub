@@ -177,7 +177,7 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
       {data && (
         <>
           <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
-            <Card label="Unique visitors" value={String(data.totals.uniqueVisitors)} />
+            <Card label="Likely human visitors" value={String(data.totals.uniqueVisitors)} />
             <Card label="Sessions" value={String(data.totals.sessions)} />
             <Card
               label="Engaged sessions"
@@ -344,8 +344,9 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
               </p>
               <p>
                 <b className="text-foreground">Engaged session:</b> positive action, heartbeat, at
-                least two pageviews, or at least 10 seconds of tracked active time. Low-confidence
-                sessions remain in totals.
+                least two pageviews, or at least 10 seconds of tracked active time. Only sessions
+                classified high-confidence or likely human are included; uncertain, suspected
+                automation and internal/test sessions are excluded from these totals.
               </p>
               <p>
                 <b className="text-foreground">Location:</b> approximate country, region, and city

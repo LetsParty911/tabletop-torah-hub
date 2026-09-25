@@ -138,9 +138,9 @@ export default function AdminMiniDashboard({
               {canonical.sources[0] ? ` · top source ${canonical.sources[0].label}` : ""}.
             </p>
           )}
-          {canonical && canonical.filteredAutomationSessions > 0 && (
+          {canonical && (
             <p className="mt-1 text-xs text-muted-foreground">
-              {canonical.filteredAutomationSessions} suspected automated sessions filtered
+              Likely human sessions only · {canonical.filteredAutomationSessions} suspected automated sessions filtered
             </p>
           )}
           {canonical && canonical.filteredInternalSessions > 0 && (

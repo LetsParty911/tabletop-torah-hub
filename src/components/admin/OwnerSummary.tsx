@@ -90,7 +90,7 @@ export default function OwnerSummary({
       <Block title="People">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Stat
-            label="People"
+            label="Likely human visitors"
             value={m.people}
             note="Distinct browser visitors"
             onClick={() => openDetail("people", "People", "The distinct browser visitors included in this report.")}
