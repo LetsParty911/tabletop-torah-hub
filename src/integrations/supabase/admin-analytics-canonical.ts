@@ -759,10 +759,13 @@ export const adminDownloadActionsTodayEt = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireAnalyticsAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
+    // Canonical reporting view: one action_id = one real download, with
+    // internal traffic already excluded. Do not use the legacy raw
+    // download_events feed for headline metrics.
     const { count, error } = await admin
-      .from("download_events")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", startOfTodayNewYork());
+      .from("fsr_download_actions")
+      .select("action_id", { count: "exact", head: true })
+      .gte("occurred_at", startOfTodayNewYork());
     if (error) throw new Error(error.message);
     return { count: count ?? 0 };
   });
