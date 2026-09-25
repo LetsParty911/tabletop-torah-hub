@@ -6,7 +6,7 @@ export const Route = createFileRoute("/resources")({
   head: () => {
     const title = "Torah for the Table Originals — In-House Torah Learning Resources";
     const description =
-      "Original educational material created in-house for the Shabbos table: Short Vorts, Stories for the Shabbos Table and Parsha Questions & Answers — plus featured series from independent authors, all free of charge.";
+      "Original educational material created in-house for the Shabbos table: Short Vorts, Stories for the Shabbos Table and Parsha Questions & Answers — all free of charge.";
     const url = "https://torahforthetable.com/resources";
     const image = "https://torahforthetable.com/og-image.png";
     return {
