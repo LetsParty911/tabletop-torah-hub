@@ -213,7 +213,7 @@ export function TableChooser({
             </p>
             {selectedLabel && (
               <p className="mt-1 text-center text-xs italic text-muted-foreground">
-                {recommendations.length} {selectedLabel} {recommendations.length === 1 ? "selection" : "selections"}
+                {selectedLabel}: all {recommendations.length} {recommendations.length === 1 ? "selection" : "selections"}
               </p>
             )}
             <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
