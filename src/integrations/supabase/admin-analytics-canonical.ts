@@ -166,7 +166,7 @@ async function fetchEventsBetween(start: string, end: string): Promise<EventRow[
 export type UsedTorahReason = "Opened a PDF" | "Requested a download" | "Shared Torah" | "Signed up";
 
 export function usedTorahQualification(eventNames: string[]): UsedTorahReason | null {
-  if (eventNames.includes("download")) return "Requested a download";
+  if (eventNames.includes("download") || eventNames.includes("download_served")) return "Requested a download";
   if (eventNames.includes("pdf_open")) return "Opened a PDF";
   if (eventNames.includes("share_click")) return "Shared Torah";
   if (eventNames.includes("signup")) return "Signed up";
@@ -236,7 +236,7 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
   const deviceSessions = new Map<string, Set<string>>();
   const pageMap = new Map<string, { pageviews: number; sessions: Set<string> }>();
   const uniquePdfDownloads = new Set<string>();
-  let downloadActions = 0;
+  const downloadActionIds = new Set<string>();
 
   for (const row of keptRows) {
     const sid = row.session_id?.trim();
@@ -255,9 +255,11 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
       page.sessions.add(sid);
       pageMap.set(path, page);
     }
-    if (name === "download") {
-      downloadActions += 1;
+    if (name === "download" || name === "download_served") {
       const publication = row.publication_id?.trim() || row.publication_title?.trim() || "unknown";
+      const rawActionId = row.metadata?.["action_id"];
+      const actionId = typeof rawActionId === "string" ? rawActionId.trim() : "";
+      downloadActionIds.add(actionId || `${name}::${sid}::${publication}`);
       uniquePdfDownloads.add(`${sid}::${publication}`);
     }
   }
@@ -292,7 +294,7 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
     pdfAccessingSessions,
     downloadingSessions,
     uniquePdfDownloads: uniquePdfDownloads.size,
-    downloadActions,
+    downloadActions: downloadActionIds.size,
     downloadConversion: kept.length ? downloadingSessions / kept.length : 0,
     sources: [...sourceSessions.entries()]
       .map(([label, set]) => ({ label, sessions: set.size }))
