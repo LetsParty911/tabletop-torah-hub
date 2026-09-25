@@ -146,7 +146,7 @@ export const adminPhase1DashboardV2 = createServerFn({ method: "POST" })
     await requireAdmin(data.accessToken);
     const days = data.days ?? 7;
     const since = new Date(Date.now() - days * 86400000).toISOString();
-    const rows = await fetchRows(since);
+    const rows = humanRowsOnly(await fetchRows(since));
     const visitorIds = [
       ...new Set(rows.map((r) => s(r.visitor_id)).filter((v): v is string => Boolean(v))),
     ];

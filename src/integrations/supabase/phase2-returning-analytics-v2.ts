@@ -324,13 +324,13 @@ export const adminPhase2ReturningAnalyticsV2 = createServerFn({ method: "POST" }
     await requireAdmin(data.accessToken);
     const days = data.days ?? 90;
     const since = new Date(Date.now() - days * 86_400_000).toISOString();
-    const inRange = await fetchRows(since);
+    const inRange = humanRowsOnly(await fetchRows(since));
     const activeIds = [
       ...new Set(
         inRange.map((row) => nonempty(row.visitor_id)).filter((id): id is string => Boolean(id)),
       ),
     ];
-    const history = await fetchHistory(activeIds, since);
+    const history = humanRowsOnly(await fetchHistory(activeIds, since));
     const visitors = buildVisitors([...history, ...inRange], since).filter(
       (visitor) => firstActiveIndex(visitor) >= 0,
     );
