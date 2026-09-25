@@ -19,6 +19,8 @@ export type ConfidenceInput = {
   internal: boolean;
   /** Matched an explicit automation rule (burst, impossible cadence, incident). */
   flaggedAutomation: boolean;
+  /** Network belongs to known cloud/security infrastructure (see INFRASTRUCTURE_ORGANIZATIONS). */
+  infrastructureNetwork?: boolean;
   /** An explicit human_signal event was recorded. */
   humanSignal: boolean;
   /** A download, PDF open, click, search, chooser or My Table action. */
@@ -28,6 +30,30 @@ export type ConfidenceInput = {
   impressions: number;
   durationMs: number;
 };
+
+/**
+ * Cloud hosting / security-scanning networks. A real reader can browse through
+ * these (corporate VPNs, secure DNS), so the rule only applies to low-signal
+ * sessions — never to one with a deliberate action or an explicit human_signal.
+ */
+export const INFRASTRUCTURE_ORGANIZATIONS = [
+  "amazon.com",
+  "amazon technologies",
+  "cisco opendns",
+  "cloudflare",
+  "fastly",
+  "latitude.sh",
+  "microsoft corporation",
+];
+
+export function isInfrastructureOrganization(org: string | null | undefined): boolean {
+  const value = org?.trim().toLowerCase().replace(/,/g, "") ?? "";
+  if (!value) return false;
+  return INFRASTRUCTURE_ORGANIZATIONS.some((needle) => value.includes(needle));
+}
+
+/** Low-signal: at most one page, no card impressions, under 30 seconds. */
+export const INFRASTRUCTURE_MAX_DURATION_MS = 30_000;
 
 export const CONFIDENCE_LABELS: Record<TrafficConfidence, string> = {
   high_confidence_human: "High-confidence human",
@@ -62,6 +88,16 @@ export function classifySession(input: ConfidenceInput): TrafficConfidence {
   if (input.humanSignal) return "likely_human";
 
   if (input.flaggedAutomation) return "suspected_automation";
+
+  // Low-signal session from cloud/security infrastructure (e.g. the Amazon and
+  // Cisco OpenDNS one-event bursts). Intent and human_signal returned above.
+  if (
+    input.infrastructureNetwork &&
+    input.pageviews <= 1 &&
+    input.impressions === 0 &&
+    input.durationMs < INFRASTRUCTURE_MAX_DURATION_MS
+  )
+    return "suspected_automation";
 
   // Sustained, multi-page reading with real dwell time is likely a person even
   // without a recorded interaction event.
