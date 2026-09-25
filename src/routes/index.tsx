@@ -429,6 +429,18 @@ function Index() {
     <div className="min-h-screen bg-background">
       <AnnouncementBanner />
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
+        {isSukkosSeason && (
+          <section aria-label="Sukkos greeting" className="overflow-hidden rounded-xl shadow-md ring-1 ring-accent/25">
+            <img
+              src="/assets/sukkos-chag-sameach-banner.svg"
+              alt="TorahForTheTable.com wishes everyone a Chag Sameach"
+              width={1600}
+              height={900}
+              fetchPriority="high"
+              className="block h-auto w-full"
+            />
+          </section>
+        )}
         <section className="parchment-frame">
           <div className="parchment-panel text-center">
             <p className="hidden font-sans text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-accent-readable sm:block sm:text-xs">
