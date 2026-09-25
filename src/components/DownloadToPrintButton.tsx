@@ -83,9 +83,8 @@ export function downloadHrefWithAction(href: string, actionId: string): string {
   try {
     const url = new URL(href, window.location.origin);
     // Only the /view/:id/download route records `download_served`. Direct
-    // static/CDN files (e.g. the Sukkos decorations) gain nothing from the ids,
-    // and a unique query per click defeats the browser cache, so the hover
-    // prefetch was never reused and the file transferred twice.
+    // static/CDN files gain nothing from these ids, and a unique query per click
+    // defeats the browser cache and can cause a file to transfer twice.
     if (!url.pathname.startsWith("/view/")) return href;
     url.searchParams.set("a", actionId);
     const session = getFpSessionId();
