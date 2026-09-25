@@ -140,7 +140,7 @@ export default function AdminMiniDashboard({
           )}
           {canonical && (
             <p className="mt-1 text-xs text-muted-foreground">
-              Likely human sessions only · {canonical.filteredAutomationSessions} suspected automated sessions filtered
+              Headline audience metrics are human-qualified · {canonical.filteredAutomationSessions} suspected automated sessions filtered
             </p>
           )}
           {canonical && canonical.filteredInternalSessions > 0 && (
