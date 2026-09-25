@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { checkRateLimit } from "@/lib/rate-limit.server";
+import { isAutomatedAgent } from "@/lib/request-telemetry.server";
 
 export const Route = createFileRoute("/api/track-download")({
   server: {
@@ -7,6 +8,16 @@ export const Route = createFileRoute("/api/track-download")({
       POST: async ({ request }) => {
         try {
           if (!(await checkRateLimit(request, "track-download", "TRACKING_RATE_LIMITER"))) {
+            return new Response(null, { status: 204 });
+          }
+
+          // Match the canonical event ingest: do not persist obvious automation
+          // or traffic from a device explicitly marked internal by the admin.
+          if (isAutomatedAgent(request.headers.get("user-agent") ?? "")) {
+            return new Response(null, { status: 204 });
+          }
+          const { isInternalRequest } = await import("@/lib/internal-marker.server");
+          if (await isInternalRequest(request)) {
             return new Response(null, { status: 204 });
           }
 
