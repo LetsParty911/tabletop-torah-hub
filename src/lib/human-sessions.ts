@@ -48,6 +48,7 @@ export type SessionAgg = {
 // Events that only a person can realistically produce.
 export const MEANINGFUL_INTENT = new Set([
   "download",
+  "download_served",
   "pdf_open",
   "publication_click",
   "filter_change",
@@ -141,8 +142,8 @@ export function buildSessions(rows: SessionEventRow[]): Map<string, SessionAgg> 
       session.meaningfulIntent = true;
       session.engaged = true;
     }
-    if (name === "pdf_open" || name === "download") session.accessedPdf = true;
-    if (name === "download") session.downloaded = true;
+    if (name === "pdf_open" || name === "download" || name === "download_served") session.accessedPdf = true;
+    if (name === "download" || name === "download_served") session.downloaded = true;
   }
 
   return sessions;
