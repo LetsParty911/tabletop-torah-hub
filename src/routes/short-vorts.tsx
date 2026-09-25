@@ -4,7 +4,7 @@ import { ChevronDown, Sparkles } from "lucide-react";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
 import { resolveHebcalParsha } from "@/lib/hebcal";
-import { getParshaOverride } from "@/integrations/supabase/api.functions";
+import { getParshaOverride, listPublishedPdfs } from "@/integrations/supabase/api.functions";
 import { VORTS, getVortsForParsha, type Vort } from "@/data/vorts";
 import { PARSHIYOS, formatReadingLabel, YOM_TOV_KEYS } from "@/lib/parshiyos";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
@@ -13,6 +13,7 @@ type LoaderData = {
   label: string;
   parshaKey: string | null;
   current: Vort[];
+  publishedPdf: { id: string; title: string } | null;
 };
 
 async function loadVortsWeek(): Promise<LoaderData> {
@@ -35,7 +36,22 @@ async function loadVortsWeek(): Promise<LoaderData> {
     label = resolved.label;
   }
 
-  return { label, parshaKey, current: getVortsForParsha(parshaKey) };
+  // A published Short Vorts PDF for the current reading always wins over the
+  // "In preparation" placeholder.
+  let publishedPdf: { id: string; title: string } | null = null;
+  if (parshaKey) {
+    try {
+      const { resources } = await listPublishedPdfs({ data: { parshaKey } });
+      const hit = resources.find(
+        (r: any) => r.format_type === "Short Vorts" || /short\s+vort/i.test(r.title ?? ""),
+      );
+      if (hit) publishedPdf = { id: hit.id, title: hit.title };
+    } catch {
+      // ignore — fall back to the placeholder
+    }
+  }
+
+  return { label, parshaKey, current: getVortsForParsha(parshaKey), publishedPdf };
 }
 
 export const Route = createFileRoute("/short-vorts")({
@@ -119,7 +135,9 @@ function ParshaSection({
   vorts,
   defaultOpen,
   emptyLabel,
+  publishedPdf,
 }: {
+  publishedPdf?: { id: string; title: string } | null;
   id: string;
   heading: string;
   vorts: Vort[];
@@ -141,7 +159,7 @@ function ParshaSection({
           <span className="font-serif text-lg font-bold text-primary sm:text-xl">{heading}</span>
           <span className="flex items-center gap-3">
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {vorts.length > 0 ? `${vorts.length} ${vorts.length === 1 ? "vort" : "vorts"}` : "Preparing"}
+              {vorts.length > 0 ? `${vorts.length} ${vorts.length === 1 ? "vort" : "vorts"}` : publishedPdf ? "PDF" : "Preparing"}
             </span>
             <ChevronDown
               className={`h-5 w-5 text-accent transition-transform ${open ? "rotate-180" : ""}`}
@@ -157,6 +175,22 @@ function ParshaSection({
               {vorts.map((v) => (
                 <VortCard key={v.id} vort={v} />
               ))}
+            </div>
+          ) : publishedPdf ? (
+            <div className="parchment-frame">
+              <div className="parchment-panel text-center">
+                <p className="font-serif text-lg font-bold text-primary">{publishedPdf.title}</p>
+                <p className="mt-1 text-sm text-muted-foreground">Now available — ready to print for your table.</p>
+                <div className="mt-4 flex flex-col items-center justify-center gap-2 sm:flex-row">
+                  <Link
+                    to="/view/$id"
+                    params={{ id: publishedPdf.id }}
+                    className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                  >
+                    View & Download PDF
+                  </Link>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="parchment-frame">
@@ -189,7 +223,7 @@ function sectionId(key: string): string {
 }
 
 function ShortVortsPage() {
-  const { label, parshaKey, current } = Route.useLoaderData();
+  const { label, parshaKey, current, publishedPdf } = Route.useLoaderData();
   const isYomTov =
     !!parshaKey && YOM_TOV_KEYS.includes(parshaKey.replace(/^parshas\s+/i, "").trim());
   const normalizedCurrent = (parshaKey ?? "")
@@ -216,7 +250,13 @@ function ShortVortsPage() {
   const sections = [
     {
       key: "current",
-      heading: current.length > 0 ? (isYomTov ? label : `This Week — ${label}`) : `${label} — In preparation`,
+      heading:
+        current.length > 0 || publishedPdf
+          ? isYomTov
+            ? label
+            : `This Week — ${label}`
+          : `${label} — In preparation`,
+      publishedPdf,
       vorts: current,
       defaultOpen: true,
       emptyLabel: label,
@@ -227,6 +267,7 @@ function ShortVortsPage() {
       vorts: p.vorts,
       defaultOpen: false,
       emptyLabel: formatReadingLabel(p.parshaKey),
+      publishedPdf: null,
     })),
   ].map((s) => ({ ...s, id: sectionId(s.key) }));
 
@@ -244,7 +285,7 @@ function ShortVortsPage() {
             Quick Insights for the Table
           </p>
           <h1 className="mt-4 font-serif text-3xl font-bold text-primary sm:text-4xl">
-            Short Vorts on Parshas Hashavua
+            {isYomTov ? `Short Vorts for ${label}` : "Short Vorts on Parshas Hashavua"}
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
             One-minute Torah thoughts you can say over at the Shabbos table — drawn from Rashi,
@@ -283,6 +324,7 @@ function ShortVortsPage() {
               vorts={s.vorts}
               defaultOpen={s.defaultOpen}
               emptyLabel={s.emptyLabel}
+              publishedPdf={s.publishedPdf}
             />
           ))}
         </div>
