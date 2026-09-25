@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
+import { classifySessions } from "@/lib/human-sessions";
 
 async function requireAdmin(accessToken: string) {
   const { createClient } = await import("@supabase/supabase-js");
@@ -39,7 +40,35 @@ type Row = {
   city: string | null;
   postal_code: string | null;
   metadata: Record<string, unknown> | null;
+  referrer_host?: string | null;
+  user_agent?: string | null;
+  is_internal?: boolean | null;
+  as_organization?: string | null;
 };
+
+const BASE_COLUMNS = "event_name, occurred_at, visitor_id, session_id, is_new_visitor, publication_id, publication_title, publication_series, publisher, parsha, device_type, source_group, country, region, city, postal_code, metadata";
+// Columns the shared human-session classifier needs; probed once in case an
+// environment is missing a newer column.
+const CLASSIFIER_COLUMNS = "referrer_host, user_agent, is_internal, as_organization";
+let cachedColumns: string | null = null;
+async function columns(): Promise<string> {
+  if (cachedColumns) return cachedColumns;
+  const probe = await getSupabaseAdmin()
+    .from("analytics_events")
+    .select(`${BASE_COLUMNS}, ${CLASSIFIER_COLUMNS}`)
+    .limit(1);
+  cachedColumns = probe.error ? BASE_COLUMNS : `${BASE_COLUMNS}, ${CLASSIFIER_COLUMNS}`;
+  return cachedColumns;
+}
+
+/** Keeps only rows from high_confidence_human / likely_human sessions. */
+function humanRowsOnly<T extends Row>(rows: T[]): T[] {
+  const { humanIds } = classifySessions(rows);
+  return rows.filter((row) => {
+    const sid = row.session_id?.trim();
+    return sid ? humanIds.has(sid) : false;
+  });
+}
 
 type Session = {
   visitorId: string | null;
@@ -71,13 +100,13 @@ async function fetchRows(since: string): Promise<Row[]> {
     const { data, error } = await admin
       .from("analytics_events")
       .select(
-        "event_name, occurred_at, visitor_id, session_id, is_new_visitor, publication_id, publication_title, publication_series, publisher, parsha, device_type, source_group, country, region, city, postal_code, metadata",
+        await columns(),
       )
       .gte("occurred_at", since)
       .order("occurred_at", { ascending: true })
       .range(offset, offset + pageSize - 1);
     if (error) throw new Error(error.message);
-    const page = (data ?? []) as Row[];
+    const page = (data ?? []) as unknown as Row[];
     out.push(...page);
     if (page.length < pageSize) break;
   }
