@@ -132,7 +132,7 @@ export function DownloadToPrintButton({
   publicationSeries,
 }: DownloadToPrintButtonProps) {
   const displayName = publicationName ?? publicationTitle;
-  const buttonLabel = label ?? (displayName ? `Download ${displayName}` : "Download");
+  const buttonLabel = label ?? "Download PDF";
 
   type DownloadPhase = "idle" | "starting" | "error";
   const [phase, setPhase] = useState<DownloadPhase>("idle");

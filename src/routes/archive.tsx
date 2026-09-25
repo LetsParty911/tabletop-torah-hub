@@ -698,11 +698,15 @@ function ArchivePage() {
                                       </span>
                                     )}
                                   </div>
-                                  {r.publisher && (
+                                  {r.publisher ? (
                                     <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">
                                       By {r.publisher}
                                     </p>
-                                  )}
+                                  ) : r.publication && r.publication !== r.title ? (
+                                    <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">
+                                      From {r.publication}
+                                    </p>
+                                  ) : null}
                                   {r.subtitle && (
                                     <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                                       {standardizeCopy(r.subtitle)}
