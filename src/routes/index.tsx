@@ -431,7 +431,7 @@ function Index() {
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
         <section className="parchment-frame">
           <div className="parchment-panel text-center">
-            <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-accent-readable sm:text-xs">
+            <p className="hidden font-sans text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-accent-readable sm:block sm:text-xs">
               {isCurrentYomKippur ? "Yom Kippur Resources" : "Weekly Divrei Torah"}
             </p>
             <h1 className="mt-2 font-serif text-[1.85rem] leading-[1.08] font-bold tracking-tight text-primary sm:text-4xl md:text-5xl">
@@ -451,13 +451,13 @@ function Index() {
             <p className="mx-auto mt-2 max-w-md font-serif text-sm leading-relaxed text-primary sm:hidden">
               Free Divrei Torah for Shabbos and Yom Tov — choose what fits your table.
             </p>
-            {isSukkosSeason && (
-              <p className="mt-2 font-serif text-sm font-semibold text-accent-readable sm:hidden">
-                {sukkosSeasonTitle}
+            {!isFallback && (
+              <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-accent-readable sm:hidden">
+                {resources.length} {resources.length === 1 ? "selection" : "selections"} for {displayedLabel}
               </p>
             )}
             {heroDateLine && (
-              <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-sm">
+              <p className="mt-2 hidden font-sans text-xs font-semibold uppercase tracking-[0.14em] text-accent-readable sm:block sm:text-sm">
                 {heroDateLine}
               </p>
             )}
@@ -467,7 +467,7 @@ function Index() {
                 Collection in progress
               </p>
             )}
-            <p className="mx-auto mt-3 max-w-2xl font-serif text-base leading-relaxed text-primary sm:text-lg md:text-xl">
+            <p className="mx-auto mt-3 hidden max-w-2xl font-serif text-base leading-relaxed text-primary sm:block sm:text-lg md:text-xl">
               {isCurrentYomKippur ? (
                 <>
                   <span className="block font-semibold">Yom Kippur Divrei Torah and preparation.</span>
@@ -518,7 +518,7 @@ function Index() {
                 </a>
               </div>
             ) : (
-              <div className="mt-5 flex justify-center">
+              <div className="mt-5 hidden justify-center sm:flex">
                 <a
                   href="#this-weeks-collection"
                   onClick={(e) => {
@@ -533,7 +533,7 @@ function Index() {
             )}
             {resources.length > 0 && !isCurrentYomKippur && (
               !isFallback && (
-                <p className="mt-3 text-center font-sans text-sm text-muted-foreground sm:text-base">
+                <p className="mt-3 hidden text-center font-sans text-sm text-muted-foreground sm:block sm:text-base">
                   Your Sukkos collection is ready. New Divrei Torah are added every Thursday evening.
                 </p>
               )
@@ -558,6 +558,14 @@ function Index() {
                       if (next) {
                         trackFp("chooser_select", {
                           metadata: { chooser: next, label: choice.trackingLabel },
+                        });
+                        window.requestAnimationFrame(() => {
+                          document.getElementById("shabbos-table-chooser")?.scrollIntoView({
+                            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                              ? "auto"
+                              : "smooth",
+                            block: "start",
+                          });
                         });
                       }
                     }}
