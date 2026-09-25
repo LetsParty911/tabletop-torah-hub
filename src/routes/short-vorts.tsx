@@ -159,7 +159,13 @@ function ParshaSection({
           <span className="font-serif text-lg font-bold text-primary sm:text-xl">{heading}</span>
           <span className="flex items-center gap-3">
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {vorts.length > 0 ? `${vorts.length} ${vorts.length === 1 ? "vort" : "vorts"}` : publishedPdf ? "PDF" : "Preparing"}
+              {vorts.length > 0
+                ? `${vorts.length} ${vorts.length === 1 ? "vort" : "vorts"}`
+                : publishedPdf
+                  ? "PDF"
+                  : /sukk/i.test(emptyLabel ?? heading)
+                    ? "Available"
+                    : "Preparing"}
             </span>
             <ChevronDown
               className={`h-5 w-5 text-accent transition-transform ${open ? "rotate-180" : ""}`}
@@ -175,6 +181,21 @@ function ParshaSection({
               {vorts.map((v) => (
                 <VortCard key={v.id} vort={v} />
               ))}
+            </div>
+          ) : /sukk/i.test(emptyLabel ?? heading) ? (
+            <div className="parchment-frame">
+              <div className="parchment-panel text-center">
+                <p className="font-serif text-lg font-bold text-primary">Short Vorts for Sukkos</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Available now in this week's collection — open it there to read or download.
+                </p>
+                <Link
+                  to="/"
+                  className="mt-4 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                  Open the Sukkos collection
+                </Link>
+              </div>
             </div>
           ) : publishedPdf ? (
             <div className="parchment-frame">
@@ -196,9 +217,7 @@ function ParshaSection({
             <div className="parchment-frame">
               <div className="parchment-panel text-center">
                 <p className="text-sm text-muted-foreground">
-                  {/sukk/i.test(emptyLabel ?? heading)
-                    ? "Original Sukkos Short Vorts are being prepared. In the meantime, browse the full Sukkos collection."
-                    : `Original ${emptyLabel ?? heading} Short Vorts are being prepared. In the meantime, browse the full ${emptyLabel ?? heading} collection.`}
+                  {`Original ${emptyLabel ?? heading} Short Vorts are being prepared. In the meantime, browse the full ${emptyLabel ?? heading} collection.`}
                 </p>
                 <Link
                   to="/"
@@ -251,7 +270,7 @@ function ShortVortsPage() {
     {
       key: "current",
       heading:
-        current.length > 0 || publishedPdf
+        current.length > 0 || publishedPdf || /sukk/i.test(label)
           ? isYomTov
             ? label
             : `This Week — ${label}`
