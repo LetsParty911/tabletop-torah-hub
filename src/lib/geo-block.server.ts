@@ -99,7 +99,8 @@ export async function checkGeoBlock(request: Request): Promise<Response | null> 
     const t = getRequestTelemetry(request);
     const { resolveApproximateGeo } = await import("./ip-geo.server");
     const geo: ApproximateGeo = await resolveApproximateGeo(t);
-    if (!isAshburnVirginia(geo)) return null;
+    const rule = matchBlockedCity(geo);
+    if (!rule) return null;
 
     // Log BEFORE returning the block. Each retry is its own row.
     try {
