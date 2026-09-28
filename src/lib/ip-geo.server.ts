@@ -461,7 +461,7 @@ export async function resolveApproximateGeo(
     if (!isUsable(whois)) {
       const mm = await lookupMaxMind(ip);
       if (mm) results.push(mm);
-      if (!isUsable(mm)) {
+      if (!isUsable(mm) && purpose === "analytics") {
         const ipapi = await lookupIpApi(ip);
         if (ipapi) results.push(ipapi);
       }
