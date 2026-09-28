@@ -471,7 +471,7 @@ export async function resolveApproximateGeo(
     }
     const fresh = mergeLookups(results);
     if (!fresh) {
-      await writeCache(supabase, ip, {
+      if (purpose !== "blocking") await writeCache(supabase, ip, {
         country: t.country,
         region: null,
         city: null,
