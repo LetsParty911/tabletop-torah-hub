@@ -22,6 +22,7 @@ export type FpEventName =
   | "signup"
   | "heartbeat"
   | "human_signal"
+  | "scroll_depth"
   | "chooser_select"
   | "recommendation_view"
   | "recommendation_click"
@@ -629,6 +630,78 @@ export function startHeartbeat(): () => void {
     window.removeEventListener("focus", onVisibility);
     window.removeEventListener("pagehide", flushEvents);
     flushEvents();
+  };
+}
+
+
+// ---------------------------------------------------------------------------
+// Scroll depth — page-level milestones, once per route view
+// ---------------------------------------------------------------------------
+
+const SCROLL_MILESTONES = [25, 50, 75, 100] as const;
+
+/**
+ * Emits a scroll_depth event the first time a visitor reaches each milestone
+ * on the current route view. Milestones reset on client-side navigation.
+ *
+ * The canonical heartbeat remains the source for active time; scroll_depth
+ * only records how far down the page the visitor reached.
+ */
+export function startScrollDepthWatcher(): () => void {
+  if (typeof window === "undefined") return () => {};
+
+  let activePath = window.location.pathname;
+  let reached = new Set<number>();
+
+  const resetIfRouteChanged = () => {
+    const path = window.location.pathname;
+    if (path !== activePath) {
+      activePath = path;
+      reached = new Set<number>();
+    }
+  };
+
+  const measure = (event?: Event) => {
+    if (event && "isTrusted" in event && event.isTrusted === false) return;
+    if (isAdminPath(window.location.pathname)) return;
+
+    resetIfRouteChanged();
+
+    const doc = document.documentElement;
+    const body = document.body;
+    const scrollTop = Math.max(window.scrollY || 0, doc.scrollTop || 0, body?.scrollTop || 0);
+    const viewport = Math.max(window.innerHeight || 0, doc.clientHeight || 0);
+    const fullHeight = Math.max(
+      doc.scrollHeight || 0,
+      body?.scrollHeight || 0,
+      doc.offsetHeight || 0,
+      body?.offsetHeight || 0,
+    );
+
+    if (fullHeight <= 0) return;
+
+    const percent = Math.max(0, Math.min(100, ((scrollTop + viewport) / fullHeight) * 100));
+
+    for (const milestone of SCROLL_MILESTONES) {
+      if (percent < milestone || reached.has(milestone)) continue;
+      reached.add(milestone);
+      trackFp("scroll_depth", {
+        metadata: {
+          percent: milestone,
+          max_scroll_percent: Math.round(percent),
+          document_height: Math.round(fullHeight),
+          viewport_height: Math.round(viewport),
+        },
+      });
+    }
+  };
+
+  window.addEventListener("scroll", measure, { passive: true });
+  window.addEventListener("resize", measure, { passive: true });
+
+  return () => {
+    window.removeEventListener("scroll", measure);
+    window.removeEventListener("resize", measure);
   };
 }
 
