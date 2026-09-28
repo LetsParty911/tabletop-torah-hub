@@ -433,7 +433,10 @@ export async function resolveApproximateGeo(
     const supabase = getSupabaseAdmin();
 
     const cached = await readCache(supabase, ip);
-    if (cached) {
+    // Blocking must stay independent of the analytics-only ipapi.co fallback:
+    // a cached ipapi result is ignored for blocking, and the blocking path
+    // never writes to the cache (so it can't degrade a useful analytics row).
+    if (cached && !(purpose === "blocking" && cached.provider === "ipapi")) {
       if (!cached.lookup_ok) return countryOnly();
       const provider: GeoProvider =
         cached.provider === "ipwhois" || cached.provider === "maxmind" || cached.provider === "ipapi"
@@ -468,7 +471,7 @@ export async function resolveApproximateGeo(
     }
     const fresh = mergeLookups(results);
     if (!fresh) {
-      await writeCache(supabase, ip, {
+      if (purpose !== "blocking") await writeCache(supabase, ip, {
         country: t.country,
         region: null,
         city: null,
@@ -488,7 +491,7 @@ export async function resolveApproximateGeo(
       return countryOnly();
     }
 
-    await writeCache(supabase, ip, fresh);
+    if (purpose !== "blocking") await writeCache(supabase, ip, fresh);
     return finalize({
       country: fresh.country ?? t.country,
       region: fresh.region,

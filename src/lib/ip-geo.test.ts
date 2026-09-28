@@ -129,11 +129,21 @@ describe("mergeLookups", () => {
 import { afterEach, beforeEach, vi } from "vitest";
 import { resolveApproximateGeo } from "./ip-geo.server";
 
+const mockState = vi.hoisted(() => ({
+  cacheRow: null as any,
+  upserts: [] as any[],
+}));
+
 vi.mock("@/integrations/supabase/ext.server", () => ({
   getSupabaseAdmin: () => ({
     from: () => ({
-      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
-      upsert: async () => ({ error: null }),
+      select: () => ({
+        eq: () => ({ maybeSingle: async () => ({ data: mockState.cacheRow, error: null }) }),
+      }),
+      upsert: async (row: any) => {
+        mockState.upserts.push(row);
+        return { error: null };
+      },
     }),
   }),
 }));
@@ -151,6 +161,8 @@ describe("resolveApproximateGeo purpose separation", () => {
   let calls: string[];
   beforeEach(() => {
     calls = [];
+    mockState.cacheRow = null;
+    mockState.upserts = [];
     vi.stubGlobal("fetch", vi.fn(async (url: any) => {
       calls.push(String(url));
       // ipwho.is and MaxMind fail; ipapi.co would succeed if called.
@@ -175,5 +187,67 @@ describe("resolveApproximateGeo purpose separation", () => {
     const geo = await resolveApproximateGeo(telemetry, "analytics");
     expect(calls.some((u) => u.includes("ipapi.co"))).toBe(true);
     expect(geo.city).toBe("Bayonne");
+  });
+});
+
+describe("resolveApproximateGeo blocking cache independence", () => {
+  const telemetry = {
+    ipAddress: "8.8.8.8",
+    country: "US",
+    region: null,
+    city: null,
+    postalCode: null,
+    userAgent: "test",
+  } as any;
+
+  const ipapiCacheRow = {
+    ip_address: "8.8.8.8",
+    country: "US",
+    region: "New Jersey",
+    city: "Bayonne",
+    postal_code: "07002",
+    lookup_ok: true,
+    provider: "ipapi",
+    fetched_at: new Date().toISOString(),
+  };
+
+  let calls: string[];
+  beforeEach(() => {
+    calls = [];
+    mockState.cacheRow = null;
+    mockState.upserts = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: any) => {
+      calls.push(String(url));
+      if (String(url).includes("ipapi.co")) {
+        return new Response(
+          JSON.stringify({ country_code: "US", region: "New Jersey", city: "Bayonne" }),
+          { status: 200 },
+        );
+      }
+      return new Response("fail", { status: 500 });
+    }));
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("blocking ignores a cached ipapi row and re-runs the original chain", async () => {
+    mockState.cacheRow = ipapiCacheRow;
+    const geo = await resolveApproximateGeo(telemetry, "blocking");
+    expect(geo.city).toBeNull();
+    expect(calls.some((u) => u.includes("ipwho.is"))).toBe(true);
+    expect(calls.some((u) => u.includes("ipapi.co"))).toBe(false);
+  });
+
+  it("blocking never writes to the cache, preserving the analytics row", async () => {
+    mockState.cacheRow = ipapiCacheRow;
+    await resolveApproximateGeo(telemetry, "blocking");
+    expect(mockState.upserts).toHaveLength(0);
+  });
+
+  it("analytics still consumes the cached ipapi row without new lookups", async () => {
+    mockState.cacheRow = ipapiCacheRow;
+    const geo = await resolveApproximateGeo(telemetry, "analytics");
+    expect(geo.city).toBe("Bayonne");
+    expect(geo.provider).toBe("ipapi");
+    expect(calls).toHaveLength(0);
   });
 });
