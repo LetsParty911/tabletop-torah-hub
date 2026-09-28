@@ -125,3 +125,55 @@ describe("mergeLookups", () => {
     expect(m.asn).toBe(5);
   });
 });
+
+import { afterEach, beforeEach, vi } from "vitest";
+import { resolveApproximateGeo } from "./ip-geo.server";
+
+vi.mock("@/integrations/supabase/ext.server", () => ({
+  getSupabaseAdmin: () => ({
+    from: () => ({
+      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+      upsert: async () => ({ error: null }),
+    }),
+  }),
+}));
+
+describe("resolveApproximateGeo purpose separation", () => {
+  const telemetry = {
+    ipAddress: "8.8.8.8",
+    country: "US",
+    region: null,
+    city: null,
+    postalCode: null,
+    userAgent: "test",
+  } as any;
+
+  let calls: string[];
+  beforeEach(() => {
+    calls = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: any) => {
+      calls.push(String(url));
+      // ipwho.is and MaxMind fail; ipapi.co would succeed if called.
+      if (String(url).includes("ipapi.co")) {
+        return new Response(
+          JSON.stringify({ country_code: "US", region: "New Jersey", city: "Bayonne" }),
+          { status: 200 },
+        );
+      }
+      return new Response("fail", { status: 500 });
+    }));
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("blocking purpose never calls ipapi.co", async () => {
+    const geo = await resolveApproximateGeo(telemetry, "blocking");
+    expect(calls.some((u) => u.includes("ipapi.co"))).toBe(false);
+    expect(geo.city).toBeNull();
+  });
+
+  it("analytics purpose may use the ipapi.co fallback", async () => {
+    const geo = await resolveApproximateGeo(telemetry, "analytics");
+    expect(calls.some((u) => u.includes("ipapi.co"))).toBe(true);
+    expect(geo.city).toBe("Bayonne");
+  });
+});

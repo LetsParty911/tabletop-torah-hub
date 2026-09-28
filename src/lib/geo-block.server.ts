@@ -100,7 +100,9 @@ export async function checkGeoBlock(request: Request): Promise<Response | null> 
 
     const t = getRequestTelemetry(request);
     const { resolveApproximateGeo } = await import("./ip-geo.server");
-    const geo: ApproximateGeo = await resolveApproximateGeo(t);
+    // "blocking" keeps the original provider chain (edge -> ipwho.is -> MaxMind);
+    // the ipapi.co analytics fallback is never used for block decisions.
+    const geo: ApproximateGeo = await resolveApproximateGeo(t, "blocking");
     const rule = matchBlockedCity(geo);
     if (!rule) return null;
 

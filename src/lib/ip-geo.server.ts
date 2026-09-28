@@ -385,8 +385,15 @@ function finalize(args: {
  * Resolve approximate country/region/city/postal plus provider/network metadata
  * for one request. Call at most once per incoming request (never per event).
  * Latitude/longitude is never requested or stored.
+ *
+ * purpose "blocking" (used by the geo-block gate) preserves the original
+ * provider chain — edge -> ipwho.is -> MaxMind — and never calls ipapi.co,
+ * so blocked-city enforcement is unaffected by the analytics-only fallback.
  */
-export async function resolveApproximateGeo(t: RequestTelemetry): Promise<ApproximateGeo> {
+export async function resolveApproximateGeo(
+  t: RequestTelemetry,
+  purpose: "analytics" | "blocking" = "analytics",
+): Promise<ApproximateGeo> {
   const edgeFlags: NetworkFlags = { ...EMPTY_FLAGS };
   const countryOnly = () =>
     finalize({
@@ -447,14 +454,14 @@ export async function resolveApproximateGeo(t: RequestTelemetry): Promise<Approx
     }
 
     // Providers are tried in order and only while no usable city/region exists:
-    // ipwho.is -> MaxMind GeoLite City -> ipapi.co.
+    // ipwho.is -> MaxMind GeoLite City -> ipapi.co (analytics purpose only).
     const results: LookupResult[] = [];
     const whois = await lookupIpWhoIs(ip);
     if (whois) results.push(whois);
     if (!isUsable(whois)) {
       const mm = await lookupMaxMind(ip);
       if (mm) results.push(mm);
-      if (!isUsable(mm)) {
+      if (!isUsable(mm) && purpose === "analytics") {
         const ipapi = await lookupIpApi(ip);
         if (ipapi) results.push(ipapi);
       }
