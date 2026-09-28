@@ -31,6 +31,7 @@ export const BLOCKED_CITIES: BlockedCity[] = [
   { city: "irvington", regions: ["new jersey", "nj"], country: "us", label: "Irvington, NJ" },
   { city: "cranford", regions: ["new jersey", "nj"], country: "us", label: "Cranford, NJ" },
   { city: "council bluffs", regions: ["iowa", "ia"], country: "us", label: "Council Bluffs, IA" },
+  { city: "bayonne", regions: ["new jersey", "nj"], country: "us", label: "Bayonne, NJ" },
 ];
 
 const norm = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
