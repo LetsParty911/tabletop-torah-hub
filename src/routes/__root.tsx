@@ -9,6 +9,7 @@ import { captureAttribution, trackPageView } from "@/lib/site-analytics";
 import {
   startHeartbeat,
   startHumanSignalWatcher,
+  startScrollDepthWatcher,
   trackFp,
   trackRouteView,
 } from "@/lib/first-party-analytics";
@@ -254,6 +255,7 @@ function PageViewTracker() {
 
   useEffect(() => startHeartbeat(), []);
   useEffect(() => startHumanSignalWatcher(), []);
+  useEffect(() => startScrollDepthWatcher(), []);
 
   return null;
 }
