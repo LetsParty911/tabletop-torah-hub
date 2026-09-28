@@ -491,7 +491,7 @@ export async function resolveApproximateGeo(
       return countryOnly();
     }
 
-    await writeCache(supabase, ip, fresh);
+    if (purpose !== "blocking") await writeCache(supabase, ip, fresh);
     return finalize({
       country: fresh.country ?? t.country,
       region: fresh.region,
