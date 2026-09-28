@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_visits: {
+        Row: {
+          action: string
+          block_reason: string
+          blocked: boolean
+          city: string | null
+          country: string | null
+          created_at: string
+          geo_provider: string | null
+          geo_source: string | null
+          id: string
+          ip_address: string | null
+          path: string | null
+          postal_code: string | null
+          referrer: string | null
+          region: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          block_reason: string
+          blocked?: boolean
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          geo_provider?: string | null
+          geo_source?: string | null
+          id?: string
+          ip_address?: string | null
+          path?: string | null
+          postal_code?: string | null
+          referrer?: string | null
+          region?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          block_reason?: string
+          blocked?: boolean
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          geo_provider?: string | null
+          geo_source?: string | null
+          id?: string
+          ip_address?: string | null
+          path?: string | null
+          postal_code?: string | null
+          referrer?: string | null
+          region?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       download_attribution: {
         Row: {
           country: string | null
