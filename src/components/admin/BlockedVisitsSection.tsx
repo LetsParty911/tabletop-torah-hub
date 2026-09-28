@@ -48,7 +48,7 @@ export default function BlockedVisitsSection({ accessToken }: { accessToken: str
         <div>
           <h2 className="font-serif text-2xl font-bold text-primary">Blocked Visits</h2>
           <p className="text-sm text-muted-foreground">
-            Ashburn, Virginia visitors shown the maintenance page. Kept out of all visitor, session,
+            Visitors from blocked locations shown the maintenance page. Kept out of all visitor, session,
             engagement and download reports. Latest 200 attempts.
           </p>
         </div>
