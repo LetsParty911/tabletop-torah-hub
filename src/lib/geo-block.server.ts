@@ -117,7 +117,7 @@ export async function checkGeoBlock(request: Request): Promise<Response | null> 
         referrer: request.headers.get("referer")?.slice(0, 500) ?? null,
         user_agent: t.userAgent || null,
         blocked: true,
-        block_reason: BLOCK_REASON,
+        block_reason: blockReasonFor(rule),
         action: BLOCK_ACTION,
       });
     } catch (e) {
