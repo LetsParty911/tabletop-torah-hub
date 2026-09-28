@@ -2,7 +2,8 @@
 //
 // Precedence:
 //   1. "edge"         — native hosting/Cloudflare geo headers (preferred, free, instant)
-//   2. "ip_lookup"    — ipwho.is HTTPS lookup, then MaxMind GeoLite City fallback
+//   2. "ip_lookup"    — ipwho.is HTTPS lookup, then MaxMind GeoLite City, then ipapi.co
+//                       (each fallback only when no usable city/region so far)
 //   3. "country_only" — lookup unavailable/failed; existing country (if any) is kept
 //
 // The visitor IP never leaves the server: it is used as the lookup argument and
@@ -23,7 +24,7 @@
 import type { RequestTelemetry } from "./request-telemetry.server";
 
 export type GeoSource = "edge" | "ip_lookup" | "country_only";
-export type GeoProvider = "edge" | "ipwhois" | "maxmind" | "none";
+export type GeoProvider = "edge" | "ipwhois" | "maxmind" | "ipapi" | "none";
 export type GeoReliability = "low" | "medium" | "unknown";
 export type NetworkType =
   | "mobile"
@@ -97,7 +98,7 @@ const EMPTY_FLAGS: NetworkFlags = {
   isRelay: null,
 };
 
-type LookupResult = {
+export type LookupResult = {
   country: string | null;
   region: string | null;
   city: string | null;
@@ -278,6 +279,79 @@ async function lookupIpWhoIs(ip: string): Promise<LookupResult | null> {
   }
 }
 
+/** Parse "AS15169" / "15169" / 15169 into a number; anything else -> null. */
+export function parseAsn(v: unknown): number | null {
+  if (typeof v === "number") return num(v);
+  if (typeof v !== "string") return null;
+  const m = /^\s*(?:AS)?(\d{1,10})\s*$/i.exec(v);
+  return m ? Number(m[1]) : null;
+}
+
+/** Map an ipapi.co JSON body to a LookupResult. Exported for tests. */
+export function parseIpApi(j: Record<string, unknown>): LookupResult | null {
+  if (!j || j["error"] === true) return null;
+  return {
+    country: clean(j["country_code"], 10),
+    region: clean(j["region"], 120),
+    city: clean(j["city"], 120),
+    postal_code: clean(j["postal"], 20),
+    lookup_ok: true,
+    provider: "ipapi",
+    asn: parseAsn(j["asn"]),
+    as_organization: clean(j["org"], 200),
+    isp: null,
+    // ipapi.co does not return explicit risk booleans; never infer them from org names.
+    is_mobile: null,
+    is_vpn: null,
+    is_proxy: null,
+    is_tor: null,
+    is_hosting: null,
+    is_relay: null,
+  };
+}
+
+// ipapi.co JSON API (HTTPS, server-side only). Coarse fields only; lat/long ignored.
+async function lookupIpApi(ip: string): Promise<LookupResult | null> {
+  try {
+    const key = process.env["IPAPI_KEY"];
+    const url = `https://ipapi.co/${encodeURIComponent(ip)}/json/${key ? `?key=${encodeURIComponent(key)}` : ""}`;
+    const res = await fetch(url, {
+      headers: { Accept: "application/json", "User-Agent": "torahforthetable-analytics" },
+      signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS),
+    });
+    if (!res.ok) return null;
+    return parseIpApi((await res.json()) as Record<string, unknown>);
+  } catch {
+    return null;
+  }
+}
+
+const FLAG_KEYS = ["is_mobile", "is_vpn", "is_proxy", "is_tor", "is_hosting", "is_relay"] as const;
+
+/**
+ * Conservative merge of provider results (in priority order).
+ * Location comes from the first provider with a usable city/region (else the
+ * first result). Other fields are filled from later providers only where the
+ * selected one is null — a known value is never overwritten with null.
+ */
+export function mergeLookups(results: (LookupResult | null | undefined)[]): LookupResult | null {
+  const list = results.filter((r): r is LookupResult => !!r && r.lookup_ok);
+  if (list.length === 0) return null;
+  const primary = list.find((r) => isUsable(r)) ?? list[0];
+  const out: LookupResult = { ...primary };
+  for (const r of list) {
+    if (r === primary) continue;
+    // Location fields only from the same provider as the city/region, except country.
+    if (out.country == null && r.country != null) out.country = r.country;
+    if (out.asn == null && r.asn != null) out.asn = r.asn;
+    if (out.as_organization == null && r.as_organization != null)
+      out.as_organization = r.as_organization;
+    if (out.isp == null && r.isp != null) out.isp = r.isp;
+    for (const k of FLAG_KEYS) if (out[k] == null && r[k] != null) out[k] = r[k];
+  }
+  return out;
+}
+
 function finalize(args: {
   country: string | null;
   region: string | null;
@@ -355,7 +429,9 @@ export async function resolveApproximateGeo(t: RequestTelemetry): Promise<Approx
     if (cached) {
       if (!cached.lookup_ok) return countryOnly();
       const provider: GeoProvider =
-        cached.provider === "ipwhois" || cached.provider === "maxmind" ? cached.provider : "none";
+        cached.provider === "ipwhois" || cached.provider === "maxmind" || cached.provider === "ipapi"
+          ? cached.provider
+          : "none";
       return finalize({
         country: cached.country ?? t.country,
         region: cached.region ?? null,
@@ -370,9 +446,20 @@ export async function resolveApproximateGeo(t: RequestTelemetry): Promise<Approx
       });
     }
 
+    // Providers are tried in order and only while no usable city/region exists:
+    // ipwho.is -> MaxMind GeoLite City -> ipapi.co.
+    const results: LookupResult[] = [];
     const whois = await lookupIpWhoIs(ip);
-    // MaxMind GeoLite City is only called when ipwho.is failed or gave no city/region.
-    const fresh = isUsable(whois) ? whois : ((await lookupMaxMind(ip)) ?? whois);
+    if (whois) results.push(whois);
+    if (!isUsable(whois)) {
+      const mm = await lookupMaxMind(ip);
+      if (mm) results.push(mm);
+      if (!isUsable(mm)) {
+        const ipapi = await lookupIpApi(ip);
+        if (ipapi) results.push(ipapi);
+      }
+    }
+    const fresh = mergeLookups(results);
     if (!fresh) {
       await writeCache(supabase, ip, {
         country: t.country,

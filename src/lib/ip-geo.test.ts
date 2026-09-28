@@ -58,3 +58,70 @@ describe("deriveReliability", () => {
     expect(deriveReliability(false, none)).toBe("unknown");
   });
 });
+
+import { mergeLookups, parseAsn, parseIpApi, type LookupResult } from "./ip-geo.server";
+
+const base = (o: Partial<LookupResult>): LookupResult => ({
+  country: null, region: null, city: null, postal_code: null, lookup_ok: true,
+  provider: "ipwhois", asn: null, as_organization: null, isp: null,
+  is_mobile: null, is_vpn: null, is_proxy: null, is_tor: null, is_hosting: null, is_relay: null,
+  ...o,
+});
+
+describe("parseAsn", () => {
+  it("parses AS-prefixed and numeric values only", () => {
+    expect(parseAsn("AS15169")).toBe(15169);
+    expect(parseAsn("15169")).toBe(15169);
+    expect(parseAsn(701)).toBe(701);
+    expect(parseAsn("Google")).toBeNull();
+    expect(parseAsn(undefined)).toBeNull();
+  });
+});
+
+describe("parseIpApi", () => {
+  it("reads coarse fields, ignores lat/long, infers no flags", () => {
+    const r = parseIpApi({
+      country_code: "US", region: "New Jersey", city: "Bayonne", postal: "07002",
+      asn: "AS701", org: "Verizon Business Hosting VPN", latitude: 40.6, longitude: -74.1,
+    })!;
+    expect(r.provider).toBe("ipapi");
+    expect(r.city).toBe("Bayonne");
+    expect(r.asn).toBe(701);
+    expect(r.as_organization).toBe("Verizon Business Hosting VPN");
+    expect(r.is_vpn).toBeNull();
+    expect(r.is_hosting).toBeNull();
+    expect(JSON.stringify(r)).not.toMatch(/latitude|longitude|40\.6/);
+  });
+  it("returns null on an error body", () => {
+    expect(parseIpApi({ error: true, reason: "RateLimited" })).toBeNull();
+  });
+});
+
+describe("mergeLookups", () => {
+  it("returns null when no provider succeeded", () => {
+    expect(mergeLookups([null, undefined])).toBeNull();
+  });
+  it("prefers the provider with a usable city/region and keeps ASN/org from another", () => {
+    const whois = base({ country: "US", asn: 701, as_organization: "Verizon", is_vpn: false });
+    const ipapi = base({ provider: "ipapi", country: "US", region: "New Jersey", city: "Bayonne" });
+    const m = mergeLookups([whois, null, ipapi])!;
+    expect(m.provider).toBe("ipapi");
+    expect(m.city).toBe("Bayonne");
+    expect(m.asn).toBe(701);
+    expect(m.as_organization).toBe("Verizon");
+    expect(m.is_vpn).toBe(false);
+  });
+  it("never overwrites a known value with null or another value", () => {
+    const a = base({ city: "Hackensack", region: "New Jersey", asn: 1, isp: "X" });
+    const b = base({ provider: "ipapi", city: "Other", asn: null, isp: "Y" });
+    const m = mergeLookups([a, b])!;
+    expect(m.city).toBe("Hackensack");
+    expect(m.asn).toBe(1);
+    expect(m.isp).toBe("X");
+  });
+  it("falls back to the first result when no provider has a place", () => {
+    const m = mergeLookups([base({ country: "US" }), base({ provider: "ipapi", asn: 5 })])!;
+    expect(m.provider).toBe("ipwhois");
+    expect(m.asn).toBe(5);
+  });
+});
