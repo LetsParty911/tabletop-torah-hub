@@ -88,7 +88,7 @@ export function blockedResponse(): Response {
   });
 }
 
-/** Returns a block Response for Ashburn traffic, or null to continue. Never throws. */
+/** Returns a block Response for blocked-city traffic, or null to continue. Never throws. */
 export async function checkGeoBlock(request: Request): Promise<Response | null> {
   let path = "/";
   try {
