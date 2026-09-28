@@ -1,30 +1,57 @@
-// Server-only Ashburn, Virginia visitor block.
+// Server-only blocked-city visitor gate.
 //
 // Flow: request -> resolve IP/geo (existing ip-geo system + cache) -> if the
-// visitor matches Ashburn, VA, US, log the attempt to public.blocked_visits
-// (Lovable Cloud, separate from every analytics table) and return a static
-// 503 maintenance page. Everyone else continues through the normal pipeline.
-// Blocked visitors never load the site, so no client analytics fire for them.
+// visitor matches one of BLOCKED_CITIES, log the attempt to
+// public.blocked_visits (Lovable Cloud, separate from every analytics table)
+// and return a static 503 maintenance page. Everyone else continues through
+// the normal pipeline. Blocked visitors never load the site, so no client
+// analytics fire for them.
+//
+// To add or remove a blocked location, edit BLOCKED_CITIES only.
 
 import { getRequestTelemetry, isAdminPath } from "./request-telemetry.server";
 import type { ApproximateGeo } from "./ip-geo.server";
 
-export const BLOCK_REASON = "Ashburn geo rule";
 export const BLOCK_ACTION = "maintenance page served";
+
+export type BlockedCity = {
+  /** Lower-case city name as reported by the geo provider. */
+  city: string;
+  /** Accepted region spellings/abbreviations, lower-case. */
+  regions: string[];
+  /** Lower-case country code. */
+  country: string;
+  /** Human-readable label used in block_reason. */
+  label: string;
+};
+
+export const BLOCKED_CITIES: BlockedCity[] = [
+  { city: "ashburn", regions: ["virginia", "va"], country: "us", label: "Ashburn, VA" },
+  { city: "hackensack", regions: ["new jersey", "nj"], country: "us", label: "Hackensack, NJ" },
+  { city: "irvington", regions: ["new jersey", "nj"], country: "us", label: "Irvington, NJ" },
+  { city: "cranford", regions: ["new jersey", "nj"], country: "us", label: "Cranford, NJ" },
+];
 
 const norm = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
 
-/** Exact match only: city Ashburn, region Virginia/VA, country US. */
-export function isAshburnVirginia(geo: {
+/** Returns the matched blocked city rule, or null. Exact city + region + country only. */
+export function matchBlockedCity(geo: {
   city: string | null;
   region: string | null;
   country: string | null;
-}): boolean {
+}): BlockedCity | null {
+  const city = norm(geo.city);
+  const region = norm(geo.region);
+  const country = norm(geo.country);
   return (
-    norm(geo.city) === "ashburn" &&
-    (norm(geo.region) === "virginia" || norm(geo.region) === "va") &&
-    norm(geo.country) === "us"
+    BLOCKED_CITIES.find(
+      (r) => r.city === city && r.country === country && r.regions.includes(region),
+    ) ?? null
   );
+}
+
+export function blockReasonFor(rule: BlockedCity): string {
+  return `${rule.label} geo rule`;
 }
 
 /** Only real page/document navigations and direct PDF routes are checked. */
