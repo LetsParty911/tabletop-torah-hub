@@ -454,7 +454,7 @@ export async function resolveApproximateGeo(
     }
 
     // Providers are tried in order and only while no usable city/region exists:
-    // ipwho.is -> MaxMind GeoLite City -> ipapi.co.
+    // ipwho.is -> MaxMind GeoLite City -> ipapi.co (analytics purpose only).
     const results: LookupResult[] = [];
     const whois = await lookupIpWhoIs(ip);
     if (whois) results.push(whois);
