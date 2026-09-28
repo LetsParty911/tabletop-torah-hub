@@ -80,7 +80,19 @@ const cacheControl = createMiddleware().server(async ({ next, request }) => {
   return result;
 });
 
+/**
+ * Ashburn, Virginia visitor block: resolve IP geo server-side, log the attempt
+ * to blocked_visits, and serve a static 503 maintenance page. All logic lives
+ * in geo-block.server.ts; normal visitors fall through to next().
+ */
+const geoBlock = createMiddleware().server(async ({ next, request }) => {
+  const { checkGeoBlock } = await import("@/lib/geo-block.server");
+  const blocked = await checkGeoBlock(request);
+  if (blocked) return { response: blocked } as never;
+  return next();
+});
+
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [dotOrgRedirect, cacheControl],
+  requestMiddleware: [dotOrgRedirect, geoBlock, cacheControl],
 }));
