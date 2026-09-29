@@ -27,3 +27,6 @@
 - [x] "Download PDF" labels
 - [x] Evergreen series descriptions (5)
 - [ ] Archive show-more: left unchanged (risk to search/filter)
+
+## Archive publication filter
+- [x] Options from canonical publication only; no title fallback; match publication only
