@@ -60,7 +60,7 @@ export type ApproximateGeo = {
 } & NetworkFlags;
 
 const SUCCESS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const FAILURE_TTL_MS = 6 * 60 * 60 * 1000;
+const FAILURE_TTL_MS = 10 * 60 * 1000;
 const LOOKUP_TIMEOUT_MS = 1500;
 
 function clean(v: unknown, max: number): string | null {
@@ -469,7 +469,19 @@ export async function resolveApproximateGeo(
         if (ipapi) results.push(ipapi);
       }
     }
-    const fresh = mergeLookups(results);
+    let fresh = mergeLookups(results);
+
+    // A single transient provider/network failure should not strand a visitor at
+    // country_only. For analytics only, retry the two zero-config HTTPS providers
+    // once, in parallel, after a short pause. This retry runs only when the entire
+    // first provider chain produced no usable result, so normal requests are not
+    // slowed down or doubled.
+    if (!fresh && purpose === "analytics") {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      const retryResults = await Promise.all([lookupIpWhoIs(ip), lookupIpApi(ip)]);
+      fresh = mergeLookups(retryResults);
+    }
+
     if (!fresh) {
       if (purpose !== "blocking") await writeCache(supabase, ip, {
         country: t.country,
