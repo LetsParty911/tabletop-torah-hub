@@ -4,6 +4,11 @@ import { formatCountRate, shouldShowRate } from "@/lib/admin-analytics-display";
 
 type Row = { label: string; sessions: number; count?: number };
 
+// Approximate IP location, per session. IP/network geolocation can differ from
+// the visitor's physical location, especially on cellular, VPN, corporate, or
+// ISP gateway networks.
+const GEO_NOTE = "Approx. IP location, per session — may differ from the visitor's physical location (cellular, VPN, corporate, ISP gateway).";
+
 function secs(n: number) {
   if (!n) return "—";
   const m = Math.floor(n / 60);
@@ -104,10 +109,10 @@ export default function PlausibleOverview({ overview, prior, rangeLabel }: { ove
     </div>
 
     <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-4">
-      <List title="Countries" rows={overview.geography.countries} note="Approximate network location, per session." />
-      <List title="Regions" rows={overview.geography.regions} />
-      <List title="Cities" rows={overview.geography.cities} />
-      <List title="Postal codes" rows={overview.geography.postalCodes} />
+      <List title="Countries" rows={overview.geography.countries} note={GEO_NOTE} />
+      <List title="Regions" rows={overview.geography.regions} note={GEO_NOTE} />
+      <List title="Cities" rows={overview.geography.cities} note={GEO_NOTE} />
+      <List title="Postal codes" rows={overview.geography.postalCodes} note={GEO_NOTE} />
     </div>
 
     <div className="grid gap-8 md:grid-cols-3">
