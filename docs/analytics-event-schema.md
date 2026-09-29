@@ -45,6 +45,7 @@ Admin routes are excluded on both client and ingest server. `/admin`, `/admin/*`
 | `signup`                 | Successful weekly-email subscription; email address is not stored in analytics_events                   |
 | `heartbeat`              | Active-time sample while visible and focused                                                            |
 | `human_signal`           | First trusted pointer, keyboard, touch, or scroll interaction in the session                              |
+| `outbound_click`         | Click on a link to another host; metadata `target_host`, `target_path` (no query/fragment), `new_tab`     |
 | `download_served`        | Server-side: the application validated the publication and issued the redirect to the file              |
 | `error`                  | Sanitized meaningful site error                                                                         |
 
@@ -294,3 +295,21 @@ data yields "active in 2+ distinct weeks" and "4+ distinct weeks".
 session/session_start consistency, duplicate observations, geo enrichment coverage and reliability,
 human-signal presence, campaign-field coverage, and download action to `download_served` matching.
 Each check returns healthy, warning, or not-enough-data with the counts behind it.
+
+
+## Dashboard overview (`/admin-analytics` → Dashboard)
+
+Computed in `src/lib/overview-analytics.ts` from human-qualified canonical rows only (same classifier as every headline). No new tables.
+
+- Ranges: last hour, today and yesterday (New York calendar days, DST-safe), current collection, 7 and 30 days. Prior period: yesterday → the day before; today → yesterday midnight to the same elapsed time; others → equal-length window immediately before. Changes are shown as % only when the prior value is ≥ 10.
+- **Pageviews**: `page_view` count. **Pages/session**: pageviews ÷ sessions.
+- **Bounced session**: ≤ 1 pageview and no `MEANINGFUL_INTENT` event. Bounce rate shown as % only when sessions ≥ 10.
+- **Engaged time**: sum of heartbeat `active_seconds` (each capped at 20) per engaged session; median and average over engaged sessions that have any heartbeat.
+- **New / returning**: returning = the existing Returning Reader definition; new = visitors − returning.
+- **Landing / exit page**: first / last `page_view` path in the session, ordered by `occurred_at`.
+- **Acquisition & geography & device**: session level, from the session's first-touch values (first row with a value). Location is approximate network location; raw IP stays in admin forensic views only. Browser/OS come from the stored user agent via `ua-parse`.
+- **Scroll depth**: `scroll_depth` carries `percent` (25/50/75/100), `max_scroll_percent` and `page_view_id` (new per route view, so each threshold fires once per page view). Reported as sessions that viewed the page and reached each threshold ÷ sessions that viewed it. Rows written before `page_view_id` existed are deduped by session + path.
+- **Outbound clicks**: `outbound_click` counts and distinct sessions by host and host+path.
+- **Funnels**: distinct sessions, each stage must occur at or after the previous stage. (1) any pageview → `publication_click` → `pdf_open` → `download`/`download_served`. (2) pageview on `/` or a collection path (`/parsha`, `/yom-tov`, `/publications`, `/archive`, `/short-vorts`) → `publication_click`/`recommendation_click`/`chooser_select` → `pdf_open` → download.
+- **Recency**: latest canonical event and heartbeat; sessions whose last event is within 5 / 30 minutes.
+- **Not measurable**: completed CDN byte transfer, scroll on PDF viewers, time on the final page without heartbeats, and outbound navigation where the browser leaves before the beacon is sent.
