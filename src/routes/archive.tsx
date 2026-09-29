@@ -253,8 +253,14 @@ function ArchivePage() {
         : false;
   const matchesType = (r: ArchivePdf) =>
     typeFilter === "All" || formatTypeLabel(r.format_type) === typeFilter;
+  // Publication filter uses only the canonical publication value — never the
+  // PDF title — so unlinked one-off PDFs don't become fake publications.
+  const canonicalPub = (r: ArchivePdf) => {
+    const p = r.publication?.trim();
+    return p ? p : null;
+  };
   const matchesPub = (r: ArchivePdf) =>
-    pubFilter === "All" || (r.publication ?? r.title) === pubFilter;
+    pubFilter === "All" || canonicalPub(r) === pubFilter;
 
   const allPdfs = useMemo(
     () => years.flatMap((y) => y.parshiyos.flatMap((p) => p.pdfs)),
@@ -273,7 +279,13 @@ function ArchivePage() {
   );
   const publicationOptions = useMemo(
     () =>
-      Array.from(new Set(allPdfs.map((r) => r.publication ?? r.title))).sort(
+      Array.from(
+        new Set(
+          allPdfs
+            .map((r) => canonicalPub(r))
+            .filter((v): v is string => !!v),
+        ),
+      ).sort(
         (a, b) => a.localeCompare(b),
       ),
     [allPdfs],
