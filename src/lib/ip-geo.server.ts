@@ -358,6 +358,50 @@ async function lookupIpApi(ip: string): Promise<LookupResult | null> {
   }
 }
 
+/** Parse an ip-api.com JSON body to a LookupResult. Exported for tests. */
+export function parseIpApiCom(j: Record<string, unknown>): LookupResult | null {
+  if (!j || j["status"] !== "success") return null;
+  // The "as" field looks like "AS15169 Google LLC"; org/isp are separate fields.
+  const asField = clean(j["as"], 200);
+  const asn = asField ? parseAsn(asField.split(" ")[0]) : null;
+  return {
+    country: clean(j["countryCode"], 10),
+    region: clean(j["regionName"], 120),
+    city: clean(j["city"], 120),
+    postal_code: clean(j["zip"], 20),
+    lookup_ok: true,
+    provider: "ipapicom",
+    asn,
+    as_organization: clean(j["org"], 200),
+    isp: clean(j["isp"], 200),
+    // ip-api.com returns explicit booleans for these; tor/relay are not offered.
+    is_mobile: explicitBool(j["mobile"]),
+    is_vpn: null,
+    is_proxy: explicitBool(j["proxy"]),
+    is_tor: null,
+    is_hosting: explicitBool(j["hosting"]),
+    is_relay: null,
+  };
+}
+
+// ip-api.com JSON API (server-side only; free tier is HTTP-only, which is fine
+// for a server-to-server coarse lookup). Coarse fields only; lat/long ignored.
+async function lookupIpApiCom(ip: string): Promise<LookupResult | null> {
+  try {
+    const j = await providerFetch(
+      "ipapicom",
+      `http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,countryCode,regionName,city,zip,as,org,isp,mobile,proxy,hosting`,
+      { headers: { Accept: "application/json" } },
+    );
+    if (!j) return null;
+    const parsed = parseIpApiCom(j);
+    if (!parsed) logProviderFailure("ipapicom", "unsuccessful");
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 const FLAG_KEYS = ["is_mobile", "is_vpn", "is_proxy", "is_tor", "is_hosting", "is_relay"] as const;
 
 /**
