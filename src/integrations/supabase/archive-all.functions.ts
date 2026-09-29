@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { standardizeCopy } from "@/lib/standardize-copy";
+import { publicationLabel, PUBLICATION_LABELS } from "@/lib/badges";
+import { readingChronoIndex } from "@/lib/parshiyos";
 
 export type ArchivePdfAll = {
   id: string;
@@ -73,8 +75,13 @@ export const listArchiveAll = createServerFn({ method: "GET" }).handler(async ()
       id: row.id as string,
       title: canonical?.name ?? (row.title as string),
       publisher: canonical?.publisher ?? null,
+      // Canonical series name only. Legacy slug values (e.g. "tftt_original")
+      // map to their display label; the PDF title is never used as a series.
       publication:
-        canonical?.name ?? ((row.publication as string | null) ?? null),
+        canonical?.name ??
+        (row.publication && PUBLICATION_LABELS[row.publication as string]
+          ? publicationLabel(row.publication as string)
+          : null),
       subtitle: standardizeCopy((row.subtitle as string | null) ?? null),
       summary_quick: (row.summary_quick as string | null) ?? null,
       description: standardizeCopy((row.description as string | null) ?? null),
@@ -107,7 +114,16 @@ export const listArchiveAll = createServerFn({ method: "GET" }).handler(async ()
             pdfs: sorted.map(({ created_at: _created, sort_order: _sort, ...pdf }) => pdf),
           };
         })
-        .sort((a, b) => (a.latest < b.latest ? 1 : -1))
+        // Reverse calendar order within the year; unknown keys fall back to
+        // most-recent upload.
+        .sort((a, b) => {
+          const ia = readingChronoIndex(a.parshaKey);
+          const ib = readingChronoIndex(b.parshaKey);
+          if (ia >= 0 && ib >= 0 && ia !== ib) return ib - ia;
+          if (ia >= 0 && ib < 0) return -1;
+          if (ib >= 0 && ia < 0) return 1;
+          return a.latest < b.latest ? 1 : -1;
+        })
         .map(({ parshaKey, pdfs }) => ({ parshaKey, pdfs })),
     }));
 

@@ -16,7 +16,7 @@ import { normalizeAudience, audienceLabel, type AudienceKey } from "@/lib/audien
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { publicationLabel } from "@/lib/badges";
-import { formatReadingLabel } from "@/lib/parshiyos";
+import { formatReadingLabel, displayReadingName } from "@/lib/parshiyos";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 
 type ArchiveSearch = {
@@ -33,7 +33,7 @@ type ArchiveSearch = {
 type ResolvedArchiveSearch = Required<ArchiveSearch>;
 
 const AUDIENCE_VALUES = ["All", "Children", "Families", "Adults"] as const;
-const LENGTH_VALUES = ["All", "short", "long"] as const;
+const LENGTH_VALUES = ["All", "short", "long", "study"] as const;
 
 /** Lenient parsing: any unexpected value falls back to the default. */
 function parseArchiveSearch(input: Record<string, unknown>): ResolvedArchiveSearch {
@@ -249,7 +249,9 @@ function ArchivePage() {
       : typeof r.page_count === "number"
         ? lengthFilter === "short"
           ? r.page_count < 5
-          : r.page_count >= 5
+          : lengthFilter === "study"
+            ? r.page_count >= 20
+            : r.page_count >= 5
         : false;
   const matchesType = (r: ArchivePdf) =>
     typeFilter === "All" || formatTypeLabel(r.format_type) === typeFilter;
@@ -473,7 +475,7 @@ function ArchivePage() {
                     <option value="all">All Parshas</option>
                     {allParshiyos.map((p) => (
                       <option key={p} value={p}>
-                        {p}
+                        {displayReadingName(p)}
                       </option>
                     ))}
                   </select>
@@ -544,6 +546,7 @@ function ArchivePage() {
                       { value: "All", label: "All lengths" },
                       { value: "short", label: "Under 5 pages" },
                       { value: "long", label: "5+ pages" },
+                      { value: "study", label: "Long Study (20+)" },
                     ] as const
                   ).map(({ value, label }) => {
                     const active = lengthFilter === value;
@@ -731,7 +734,7 @@ function ArchivePage() {
                                         formatTypeLabel(r.format_type),
                                         typeof r.page_count === "number"
                                           ? r.page_count === 1
-                                            ? "1 page · Quick Pick"
+                                            ? "1 page · Short Vort"
                                             : r.page_count >= 20
                                               ? `Long Study · ${r.page_count} pages`
                                               : `${r.page_count} pages`

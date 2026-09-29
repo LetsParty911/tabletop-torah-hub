@@ -120,6 +120,41 @@ export const YOM_TOV_KEYS: string[] = [
  * parshiyos get the "Parshas " prefix (never doubled).
  */
 export function formatReadingLabel(key: string): string {
-  if (YOM_TOV_KEYS.includes(key)) return key;
-  return /^parshas\s/i.test(key) ? key : `Parshas ${key}`;
+  if (YOM_TOV_KEYS.includes(key)) return displayReadingName(key);
+  if (/^parshas\s/i.test(key)) return displayReadingName(key);
+  return `Parshas ${displayReadingName(key)}`;
+}
+
+/**
+ * Site spelling convention for display only. Stored keys stay unchanged
+ * ("Shemini Atzeres", "Ha'azinu") so routes, slugs and lookups keep working.
+ */
+export function displayReadingName(key: string): string {
+  return key
+    .replace(/\bShemini Atzeres\b/g, "Shmini Atzeres")
+    .replace(/\bHa['\u2019]azinu\b/g, "Haazinu");
+}
+
+// Calendar order within one Jewish year (Rosh Hashanah first). Used to sort
+// archive collections reverse-chronologically instead of by upload time.
+// Vayeilech alone is Shabbos Shuva; Ha'azinu normally precedes Yom Kippur.
+const CHRONO_ORDER: string[] = (() => {
+  const head = ["Rosh Hashanah", "Vayeilech", "Ha'azinu", "Yom Kippur", "Sukkos", "Shemini Atzeres", "Simchas Torah", "Vezos Habrachah"];
+  const body = PARSHIYOS.filter((k) => !head.includes(k) && !["Pesach", "Shavuos"].includes(k));
+  const out: string[] = [...head];
+  for (const k of body) {
+    out.push(k);
+    if (k === "Tzav") out.push("Pesach");
+    if (k === "Bamidbar") out.push("Shavuos");
+  }
+  return out;
+})();
+
+/** Position of a reading within its Jewish year, or -1 when unknown. */
+export function readingChronoIndex(key: string): number {
+  const cleaned = key.replace(/^parshas\s+/i, "").replace(/\u2019/g, "'").trim();
+  const exact = CHRONO_ORDER.indexOf(cleaned);
+  if (exact >= 0) return exact;
+  const lower = cleaned.toLowerCase().replace(/[^a-z]/g, "");
+  return CHRONO_ORDER.findIndex((k) => k.toLowerCase().replace(/[^a-z]/g, "") === lower);
 }

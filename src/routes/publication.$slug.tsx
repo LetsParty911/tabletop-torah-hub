@@ -94,7 +94,7 @@ function PublicationPage() {
       formatTypeLabel(edition.format_type),
       typeof edition.page_count === "number"
         ? edition.page_count === 1
-          ? "1 page · Quick Pick"
+          ? "1 page · Short Vort"
           : `${edition.page_count} pages`
         : null,
     ]

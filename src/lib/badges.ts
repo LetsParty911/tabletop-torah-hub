@@ -8,7 +8,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
 export const CATEGORY_KEYS = ["kids", "family", "in_depth", "reference"] as const;
 
 export const PUBLICATION_LABELS: Record<string, string> = {
-  tftt_original: "TFTT Original",
+  tftt_original: "Torah for the Table Original",
   mikaamcha: "Mi Ka'amcha Yisroel",
   peninei_mechkerei: "Peninei Mechkerei Eretz",
 };
