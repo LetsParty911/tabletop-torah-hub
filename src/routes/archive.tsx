@@ -25,7 +25,7 @@ type ArchiveSearch = {
   audience?: "All" | AudienceKey;
   q?: string;
   /** Facets mirroring the homepage filters. */
-  length?: "All" | "short" | "long";
+  length?: "All" | "short" | "long" | "study";
   type?: string;
   pub?: string;
 };

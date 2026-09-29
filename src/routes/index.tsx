@@ -270,7 +270,7 @@ function Index() {
   ].includes(normalizedCollectionKey);
   const isCurrentYomKippur = normalizedCollectionKey === "yom kippur";
   const isSukkosSeason = normalizedCurrentKey === "sukkos";
-  const sukkosSeasonTitle = "Torah for Sukkos, Shemini Atzeres & Simchas Torah";
+  const sukkosSeasonTitle = "Torah for Sukkos, Shmini Atzeres & Simchas Torah";
   const upcomingParsha = isFallback
     ? (currentParshaKey ?? nextParshaAfter(displayedParshaKey) ?? upcomingAfterYomTovKey)
     : (nextParshaAfter(displayedParshaKey) ?? upcomingAfterYomTovKey);
@@ -303,7 +303,7 @@ function Index() {
   }, [isFallback, resources.length, readingDate]);
 
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
-  const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long">("All");
+  const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long" | "study">("All");
   const [contentTypeFilter, setContentTypeFilter] = useState<string>("All");
   const [filtersOpen, setFiltersOpen] = useState(false);
   // When a guided-chooser category is active the page enters focused mode and
@@ -323,7 +323,9 @@ function Index() {
       : typeof r.page_count === "number"
         ? value === "short"
           ? r.page_count < 5
-          : r.page_count >= 5
+          : value === "study"
+            ? r.page_count >= 20
+            : r.page_count >= 5
         : false;
   const resourceContentType = (r: Resource) =>
     formatTypeLabel(r.format_type) ?? formatTypeLabel(r.content_type);
@@ -355,7 +357,7 @@ function Index() {
   const quickChoices = (["quick", "family", "kids", "story"] as const).map((key) => {
     const chooser = CHOOSERS.find((option) => option.key === key);
     const labels: Record<(typeof key), string> = {
-      quick: "Quick Vorts",
+      quick: "Short Vorts",
       family: "Family Table",
       kids: "Children",
       story: "Stories",
@@ -855,6 +857,13 @@ function Index() {
                               { key: "All" as const, label: "All", count: lengthScoped.length },
                               { key: "short" as const, label: "Under 5 Pages", count: shortCount },
                               { key: "long" as const, label: "5+ Pages", count: longCount },
+                              {
+                                key: "study" as const,
+                                label: "Long Study (20+)",
+                                count: lengthScoped.filter(
+                                  (r) => typeof r.page_count === "number" && r.page_count >= 20,
+                                ).length,
+                              },
                             ].filter((o) => o.key === "All" || o.count > 0);
                             return options.map((o) => {
                               const active = lengthFilter === o.key;
