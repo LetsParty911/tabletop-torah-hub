@@ -17,7 +17,8 @@ import {
 
 import { SiteLogoHorizontal } from "@/components/SiteLogo";
 import { MaintenancePage } from "@/components/MaintenancePage";
-import { MAINTENANCE_MODE, isAdminPath } from "@/lib/maintenance";
+import { isAdminPath } from "@/lib/maintenance";
+import { getMaintenanceStatus } from "@/lib/maintenance.functions";
 import { getSafePostLoginRedirect, POST_LOGIN_REDIRECT_KEY } from "@/lib/auth-redirect";
 
 // GTM is now the sole analytics path. GA4 is loaded via GTM (container GTM-WMVV6CJ7).
@@ -159,6 +160,14 @@ function NotFoundComponent() {
 }
 
 export const Route = createRootRoute({
+  // Persistent maintenance state, read server-side (fails closed on error).
+  loader: async () => {
+    try {
+      return await getMaintenanceStatus();
+    } catch {
+      return { enabled: true };
+    }
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -225,7 +234,11 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   const shellPath = useRouterState({ select: (s) => s.location.pathname });
-  const showMaintenance = MAINTENANCE_MODE && !isAdminPath(shellPath);
+  const maintenance = useRouterState({
+    select: (s) => (s.matches[0]?.loaderData as { enabled?: boolean } | undefined)?.enabled,
+  });
+  // Unknown state => fail closed for public paths.
+  const showMaintenance = maintenance !== false && !isAdminPath(shellPath);
   return (
     <html lang="en">
       <head>

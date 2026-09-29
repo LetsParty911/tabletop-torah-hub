@@ -1,4 +1,3 @@
-import { MAINTENANCE_MODE, maintenanceResponse } from "@/lib/maintenance";
 import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { buildDownloadFilename } from "@/lib/download-filename";
@@ -146,7 +145,9 @@ export const Route = createFileRoute("/view/$id/download")({
   server: {
     handlers: {
       GET: async ({ params, request }) => {
-        if (MAINTENANCE_MODE) return maintenanceResponse();
+        const { maintenanceGate } = await import("@/lib/maintenance.server");
+        const closed = await maintenanceGate(new URL(request.url).pathname);
+        if (closed) return closed;
         const id = params.id;
         if (!/^[0-9a-f-]{36}$/i.test(id)) {
           return new Response("Bad request", { status: 400, headers: NOINDEX });

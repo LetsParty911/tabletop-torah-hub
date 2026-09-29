@@ -13,6 +13,7 @@ import PdfListSection from "@/components/admin/PdfListSection";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import VisitorActivitySection from "@/components/admin/VisitorActivitySection";
 import BlockedVisitsSection from "@/components/admin/BlockedVisitsSection";
+import MaintenanceModeControl from "@/components/admin/MaintenanceModeControl";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -1394,6 +1395,12 @@ function AdminPage() {
             Open Site Analytics →
           </Link>
         </div>
+
+        <section className="parchment-frame">
+          <div className="parchment-panel">
+            <MaintenanceModeControl accessToken={accessToken} />
+          </div>
+        </section>
 
         <Tabs defaultValue="this-week" className="w-full">
           <TabsList className="flex flex-wrap h-auto gap-1">
