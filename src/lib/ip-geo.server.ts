@@ -24,7 +24,7 @@
 import type { RequestTelemetry } from "./request-telemetry.server";
 
 export type GeoSource = "edge" | "ip_lookup" | "country_only";
-export type GeoProvider = "edge" | "ipwhois" | "maxmind" | "ipapi" | "none";
+export type GeoProvider = "edge" | "ipwhois" | "maxmind" | "ipapi" | "ipapicom" | "none";
 export type GeoReliability = "low" | "medium" | "unknown";
 export type NetworkType =
   | "mobile"
@@ -63,7 +63,7 @@ const SUCCESS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const FAILURE_TTL_MS = 10 * 60 * 1000;
 const LOOKUP_TIMEOUT_MS = 4000;
 
-type ProviderName = "ipwhois" | "maxmind" | "ipapi";
+type ProviderName = "ipwhois" | "maxmind" | "ipapi" | "ipapicom";
 
 /**
  * Server-only diagnostic for a provider failure. Logs provider + failure kind
