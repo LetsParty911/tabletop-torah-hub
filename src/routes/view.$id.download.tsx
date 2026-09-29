@@ -145,9 +145,31 @@ export const Route = createFileRoute("/view/$id/download")({
   server: {
     handlers: {
       GET: async ({ params, request }) => {
-        const { maintenanceGate } = await import("@/lib/maintenance.server");
-        const closed = await maintenanceGate(new URL(request.url).pathname);
-        if (closed) return closed;
+        const requestUrl = new URL(request.url);
+        let adminBypass = false;
+        if (requestUrl.searchParams.get("admin") === "1") {
+          try {
+            const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+            const authHeader = request.headers.get("authorization");
+            const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+            if (token) {
+              const { data } = await supabaseAdmin.auth.getUser(token);
+              const email = (data.user?.email ?? "").toLowerCase();
+              const admins = (process.env["ADMIN_EMAILS"] ?? "")
+                .split(",")
+                .map((v) => v.trim().toLowerCase())
+                .filter(Boolean);
+              adminBypass = !!email && admins.includes(email);
+            }
+          } catch {
+            adminBypass = false;
+          }
+        }
+        if (!adminBypass) {
+          const { maintenanceGate } = await import("@/lib/maintenance.server");
+          const closed = await maintenanceGate(requestUrl.pathname);
+          if (closed) return closed;
+        }
         const id = params.id;
         if (!/^[0-9a-f-]{36}$/i.test(id)) {
           return new Response("Bad request", { status: 400, headers: NOINDEX });
