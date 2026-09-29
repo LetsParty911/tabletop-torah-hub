@@ -808,10 +808,18 @@ export function startOutboundClickWatcher(): () => void {
     }
   };
 
+  // `click` already fires for normal left-click navigation. `auxclick`
+  // covers middle-click only; ignoring auxclick button 0 prevents an unusual
+  // browser from reporting the same activation through both event types.
+  const onAuxClick = (event: MouseEvent) => {
+    if (event.button !== 1) return;
+    onClick(event);
+  };
+
   document.addEventListener("click", onClick, { capture: true });
-  document.addEventListener("auxclick", onClick, { capture: true });
+  document.addEventListener("auxclick", onAuxClick, { capture: true });
   return () => {
     document.removeEventListener("click", onClick, { capture: true });
-    document.removeEventListener("auxclick", onClick, { capture: true });
+    document.removeEventListener("auxclick", onAuxClick, { capture: true });
   };
 }
