@@ -510,14 +510,12 @@ export async function resolveApproximateGeo(
     const supabase = getSupabaseAdmin();
 
     const cached = await readCache(supabase, ip);
-    // Blocking must stay independent of the analytics-only ipapi.co fallback:
-    // a cached ipapi result is ignored for blocking, and the blocking path
-    // never writes to the cache (so it can't degrade a useful analytics row).
-    // Blocking must also ignore cached analytics-only fallback rows (ipapi.co,
-    // ip-api.com) so block decisions never depend on a provider the blocking
-    // chain itself would not have used.
-    const analyticsOnly = cached?.provider === "ipapi" || cached?.provider === "ipapicom";
-    if (cached && !(purpose === "blocking" && analyticsOnly)) {
+    // Reuse any fresh persistent geo cache row for both analytics and blocking.
+    // This prevents the blocked-city gate from repeating slow external provider
+    // calls on every page view when a visitor was resolved by a fallback
+    // provider. Fresh uncached blocking lookups still use the conservative
+    // ipwho.is -> MaxMind chain below.
+    if (cached) {
       if (!cached.lookup_ok) return countryOnly();
       const provider: GeoProvider =
         cached.provider === "ipwhois" || cached.provider === "maxmind" ||
