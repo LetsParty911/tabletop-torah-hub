@@ -15,6 +15,7 @@ import {
   type VisitorTimeline,
 } from "@/lib/retention-cohorts";
 import { aggregatePublications } from "@/lib/publication-funnel";
+import { buildOverview } from "@/lib/overview-analytics";
 import {
   buildSessions,
   classifyAutomation,
@@ -28,6 +29,8 @@ import {
   formatWindowLabel,
   hasComparableBaseline,
   newYorkDayWindow,
+  addDaysToDayKey,
+  previousCompletedDayKey,
   priorWeekDayKey,
   recentCompletedDayKeys,
   selectCollectionReportWindows,
@@ -309,7 +312,7 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
   };
 }
 
-export type AnalyticsReportRange = "1h" | "today" | "collection" | "7d";
+export type AnalyticsReportRange = "1h" | "today" | "yesterday" | "collection" | "7d" | "30d";
 
 type ReportDetail = {
   sessionId: string;
@@ -326,12 +329,32 @@ function reportWindow(range: AnalyticsReportRange, collection: WindowDef | null)
   const end = new Date(Date.now() + 60_000).toISOString();
   if (range === "collection" && collection) return { start: collection.start, end, label: collection.parsha };
   if (range === "today") return { start: startOfTodayNewYork(), end, label: "Today" };
-  const hours = range === "1h" ? 1 : 24 * 7;
+  if (range === "yesterday") {
+    // DST-safe completed New York calendar day (23h/25h on change days).
+    const day = previousCompletedDayKey();
+    const w = newYorkDayWindow(day);
+    return { start: w.start, end: w.end, label: "Yesterday" };
+  }
+  const hours = range === "1h" ? 1 : range === "30d" ? 24 * 30 : 24 * 7;
   return {
     start: new Date(Date.now() - hours * 60 * 60 * 1000).toISOString(),
     end,
-    label: range === "1h" ? "Last hour" : "Last 7 days",
+    label: range === "1h" ? "Last hour" : range === "30d" ? "Last 30 days" : "Last 7 days",
   };
+}
+
+/** The immediately preceding comparable period. */
+function priorReportWindow(range: AnalyticsReportRange, window: { start: string; end: string }) {
+  if (range === "yesterday") return newYorkDayWindow(addDaysToDayKey(previousCompletedDayKey(), -1));
+  if (range === "today") {
+    // Yesterday from its New York midnight up to the same elapsed time.
+    const start = newYorkDayWindow(addDaysToDayKey(previousCompletedDayKey(), 0)).start;
+    const elapsed = Date.now() - Date.parse(window.start);
+    return { start, end: new Date(Math.min(Date.parse(start) + elapsed, Date.parse(window.start))).toISOString() };
+  }
+  const end = Math.min(Date.now(), Date.parse(window.end));
+  const duration = end - Date.parse(window.start);
+  return { start: new Date(Date.parse(window.start) - duration).toISOString(), end: window.start };
 }
 
 /**
@@ -349,7 +372,7 @@ export function describeLocation(place: string, row: Pick<EventRow, "geo_reliabi
   return `${place} — approximate network location`;
 }
 
-function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
+function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, window?: { start: string; end: string }) {
   // Shared classifier: only high_confidence_human + likely_human count.
   const classified = classifySessions(rows);
   const allSessions = classified.sessions;
@@ -506,7 +529,16 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
     downloadsServed: keptRows.filter((row) => row.event_name === "download_served").map((row) => detailFor(row, "Application validated the file and issued the redirect")),
   };
 
+  const overview = buildOverview({
+    rows: keptRows,
+    sessions: keptSessions,
+    returningVisitors: returning,
+    windowStart: window?.start ?? rows[0]?.occurred_at ?? new Date().toISOString(),
+    windowEnd: window?.end ?? new Date().toISOString(),
+  });
+
   return {
+    overview,
     metrics: {
       people: canonical.uniqueVisitors,
       usedTorah: usedVisitors.size,
@@ -562,7 +594,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>) {
 
 export const adminAnalyticsReport = createServerFn({ method: "POST" })
   .inputValidator((input: { accessToken: string; range?: AnalyticsReportRange }) =>
-    z.object({ accessToken: z.string().min(10), range: z.enum(["1h", "today", "collection", "7d"]).optional() }).parse(input),
+    z.object({ accessToken: z.string().min(10), range: z.enum(["1h", "today", "yesterday", "collection", "7d", "30d"]).optional() }).parse(input),
   )
   .handler(async ({ data }) => {
     await requireAnalyticsAdmin(data.accessToken);
@@ -572,8 +604,7 @@ export const adminAnalyticsReport = createServerFn({ method: "POST" })
     const windows = buildCollectionWindows((pdfResult.data ?? []) as Array<{ parsha_key: string | null; created_at: string | null }>);
     const range = data.range ?? "collection";
     const window = reportWindow(range, windows[0] ?? null);
-    const duration = Date.parse(window.end) - Date.parse(window.start);
-    const priorWindow = { start: new Date(Date.parse(window.start) - duration).toISOString(), end: window.start };
+    const priorWindow = priorReportWindow(range, window);
     const [rows, priorRows] = await Promise.all([
       fetchEventsBetween(window.start, window.end),
       fetchEventsBetween(priorWindow.start, priorWindow.end),
@@ -587,8 +618,11 @@ export const adminAnalyticsReport = createServerFn({ method: "POST" })
       rangeLabel: window.label,
       windowStart: window.start,
       windowEnd: window.end,
-      report: buildAnalyticsReport(rows, priorVisitors),
-      comparison: buildAnalyticsReport(priorRows, comparisonPriorVisitors).metrics,
+      report: buildAnalyticsReport(rows, priorVisitors, window),
+      ...(() => {
+        const prior = buildAnalyticsReport(priorRows, comparisonPriorVisitors, priorWindow);
+        return { comparison: prior.metrics, comparisonHeadline: prior.overview.headline, comparisonWindow: priorWindow };
+      })(),
     };
   });
 
