@@ -1,0 +1,1 @@
+- Maintenance mode state lives only in Lovable Cloud table public.site_maintenance (row id=1), toggled from the admin Maintenance control; read server-side and fails closed. Why: a source flag could silently flip on unrelated publishes.
