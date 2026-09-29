@@ -207,11 +207,15 @@ export const Route = createFileRoute("/view/$id/download")({
           // Semantics are unchanged (the server validated and issued the redirect).
           await runInBackground(recordDownloadServed(request, id, entry.filename));
 
+          const deliveryUrl = publicDownloadUrl(admin, entry.path, entry.filename);
+          if (adminBypass && request.headers.get("X-Admin-Link") === "1") {
+            return Response.json({ url: deliveryUrl }, { headers: { ...NOINDEX, "Cache-Control": "no-store" } });
+          }
           return new Response(null, {
             status: 302,
             headers: {
               ...NOINDEX,
-              Location: publicDownloadUrl(admin, entry.path, entry.filename),
+              Location: deliveryUrl,
               // Do not cache the redirect itself. Supabase can cache the actual
               // public object, while publication/path changes take effect here.
               "Cache-Control": "no-store",
