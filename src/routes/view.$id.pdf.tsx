@@ -58,6 +58,9 @@ export const Route = createFileRoute("/view/$id/pdf")({
             return new Response("Load failed", { status: 500, headers: NOINDEX });
           }
 
+          if (adminBypass && request.headers.get("X-Admin-Link") === "1") {
+            return Response.json({ url: data.publicUrl }, { headers: { ...NOINDEX, "Cache-Control": "no-store" } });
+          }
           return new Response(null, {
             status: 302,
             headers: {
