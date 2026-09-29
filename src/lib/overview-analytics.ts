@@ -407,7 +407,7 @@ export function buildOverview(input: {
           const v = Number(r.metadata?.["max_scroll_percent"] ?? r.metadata?.["percent"]);
           if (Number.isFinite(v)) maxScroll = Math.max(maxScroll ?? 0, v);
         }
-        if (r.event_name === "download_click" || r.event_name === "download") downloadIds.add(String(r.metadata?.["action_id"] ?? r.publication_id ?? r.occurred_at));
+        if (r.event_name === "download") downloadIds.add(String(r.metadata?.["action_id"] ?? r.publication_id ?? r.occurred_at));
       }
       const firstAt = Date.parse(list[0]?.occurred_at ?? "");
       const lastAt = Date.parse(list[list.length - 1]?.occurred_at ?? "");
