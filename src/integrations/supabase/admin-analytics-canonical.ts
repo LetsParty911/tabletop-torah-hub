@@ -1758,6 +1758,43 @@ export const adminAnalyticsHealth = createServerFn({ method: "POST" })
           : `${duplicates} rows share a session, event name and timestamp. Distinct event_ids kept them, so they are separate events, not retries.`,
     });
 
+    // 3b. Scroll depth coverage and threshold dedupe.
+    const pageViewSessions = new Set<string>();
+    const scrollSessions = new Set<string>();
+    const scrollKeys = new Set<string>();
+    let scrollRaw = 0;
+    let outboundRaw = 0;
+    let outboundWithQuery = 0;
+    for (const row of rows) {
+      const sid = row.session_id?.trim();
+      if (!sid) continue;
+      if (row.event_name === "page_view") pageViewSessions.add(sid);
+      if (row.event_name === "scroll_depth") {
+        scrollRaw += 1;
+        scrollSessions.add(sid);
+        const pv = String(row.metadata?.["page_view_id"] ?? row.path ?? "");
+        scrollKeys.add(`${sid}|${pv}|${String(row.metadata?.["percent"] ?? "")}`);
+      }
+      if (row.event_name === "outbound_click") {
+        outboundRaw += 1;
+        const p = String(row.metadata?.["target_path"] ?? "");
+        if (p.includes("?") || p.includes("#")) outboundWithQuery += 1;
+      }
+    }
+    const scrollDupes = scrollRaw - scrollKeys.size;
+    checks.push({
+      name: "Scroll depth coverage",
+      status: pageViewSessions.size < 10 ? "not_enough_data" : scrollSessions.size > 0 && scrollDupes === 0 ? "healthy" : "warning",
+      detail: `${scrollSessions.size} of ${pageViewSessions.size} page-viewing sessions sent scroll_depth; ${scrollRaw} raw events, ${scrollDupes} repeated thresholds for the same page view.`,
+    });
+    checks.push({
+      name: "Outbound click ingestion",
+      status: outboundRaw === 0 ? "not_enough_data" : outboundWithQuery === 0 ? "healthy" : "warning",
+      detail: outboundRaw === 0
+        ? "No outbound_click events recorded yet in the last 7 days."
+        : `${outboundRaw} outbound clicks recorded; ${outboundWithQuery} carried a query string or fragment (should be 0).`,
+    });
+
     // 4. Geo enrichment — measured per recent SESSION, not per event row.
     // Geo enrichment was rolled out mid-window and not every event row needs
     // a location, so an event-level ratio produced a misleading warning.

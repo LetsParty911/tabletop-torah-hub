@@ -293,7 +293,10 @@ data yields "active in 2+ distinct weeks" and "4+ distinct weeks".
 
 `adminAnalyticsHealth` reports evidence from the last 7 days of real events: ingestion recency,
 session/session_start consistency, duplicate observations, geo enrichment coverage and reliability,
-human-signal presence, campaign-field coverage, and download action to `download_served` matching.
+human-signal presence, campaign-field coverage, download action to `download_served` matching,
+scroll depth coverage (sessions with `scroll_depth` ÷ sessions with `page_view`, plus repeated
+thresholds per session + page_view_id + percent, which must be 0; needs ≥10 page-viewing sessions),
+and outbound click ingestion (count of `outbound_click`, warning if any `target_path` contains `?` or `#`).
 Each check returns healthy, warning, or not-enough-data with the counts behind it.
 
 
