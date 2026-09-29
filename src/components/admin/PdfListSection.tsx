@@ -1,4 +1,5 @@
 import React from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Download, Eye } from "lucide-react";
 import { formatTypeLabel } from "@/lib/format-labels";
 import {
@@ -17,6 +18,20 @@ const getCurrentPdfFileName = (filePath: string | null | undefined): string => {
 };
 
 const formatKB = (bytes: number): string => `${(bytes / 1024).toFixed(0)} KB`;
+
+async function openAdminPdf(id: string, kind: "pdf" | "download"): Promise<void> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Admin session expired");
+  const res = await fetch(`/view/${id}/${kind}?admin=1`, {
+    headers: { Authorization: `Bearer ${token}`, "X-Admin-Link": "1" },
+  });
+  if (!res.ok) throw new Error(`PDF request failed (${res.status})`);
+  const body = (await res.json()) as { url?: string };
+  if (!body.url) throw new Error("PDF URL missing");
+  if (kind === "pdf") window.open(body.url, "_blank", "noopener,noreferrer");
+  else window.location.assign(body.url);
+}
 
 export type DescBulkState =
   | { status: "idle" }
@@ -244,12 +259,13 @@ export default function PdfListSection({
                   {new Date(p.created_at).toLocaleDateString()}
                 </td>
                 <td className="py-2 pr-3">
-                  <a
-                    href={`/view/${p.id}/download?admin=1`}
+                  <button
+                    type="button"
+                    onClick={() => void openAdminPdf(p.id, "download")}
                     className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
                     <Download className="h-3 w-3" /> Download
-                  </a>
+                  </button>
                 </td>
                 <td className="py-2 text-right">
                   <div className="flex items-center justify-end gap-1.5">
@@ -293,14 +309,13 @@ export default function PdfListSection({
                           {getCurrentPdfFileName(p.file_path)}
                         </div>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <a
-                            href={`/view/${p.id}/pdf?admin=1`}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
+                            onClick={() => void openAdminPdf(p.id, "pdf")}
                             className="inline-flex items-center gap-1 rounded-md border border-primary/60 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
                           >
                             <Eye className="h-3 w-3" /> View Current PDF
-                          </a>
+                          </button>
                           <button
                             type="button"
                             onClick={() => onRecompressPdf(p.id)}
