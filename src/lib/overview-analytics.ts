@@ -123,10 +123,14 @@ export function headlineOf(rows: OverviewRow[], sessions: OverviewSession[], ret
       const s = num(row.metadata?.["active_seconds"]);
       if (s && s > 0) activeSeconds.set(sid, (activeSeconds.get(sid) ?? 0) + Math.min(s, 20));
     }
-    if (name === "download" || name === "download_served") {
+    // Canonical download metrics count user-initiated `download` events.
+    // `download_served` is a separate server-side confirmation that the
+    // application issued the CDN redirect; it must not create an action or
+    // unique-download metric on its own.
+    if (name === "download") {
       const pub = row.publication_id?.trim() || row.publication_title?.trim() || "unknown";
       const actionId = typeof row.metadata?.["action_id"] === "string" ? String(row.metadata["action_id"]).trim() : "";
-      downloadActions.add(actionId || `${name}::${sid}::${pub}`);
+      downloadActions.add(actionId || `download::${sid}::${pub}::${row.occurred_at}`);
       uniqueDownloads.add(`${sid}::${pub}`);
     }
   }
@@ -345,13 +349,15 @@ export function buildOverview(input: {
     }
     return stages;
   };
-  const isAccess = (r: OverviewRow) => r.event_name === "pdf_open";
-  const isDownload = (r: OverviewRow) => r.event_name === "download" || r.event_name === "download_served";
+  // A canonical publication access is either a viewer open or a direct
+  // download action. A served redirect alone is not a user action.
+  const isAccess = (r: OverviewRow) => r.event_name === "pdf_open" || r.event_name === "download";
+  const isDownload = (r: OverviewRow) => r.event_name === "download";
   const landingFunnel = funnel(
     (list) => list.findIndex((r) => r.event_name === "page_view" || r.event_name === "session_start"),
     [
       { label: "Selected a publication", match: (r) => r.event_name === "publication_click" },
-      { label: "Opened the PDF", match: isAccess },
+      { label: "Accessed the publication", match: isAccess },
       { label: "Requested a download", match: isDownload },
     ],
     "Landed on the site",
@@ -360,7 +366,7 @@ export function buildOverview(input: {
     (list) => list.findIndex((r) => r.event_name === "page_view" && (r.path === "/" || COLLECTION_PATH.test(r.path ?? ""))),
     [
       { label: "Interacted with a publication", match: (r) => INTERACTION.has(r.event_name ?? "") },
-      { label: "Opened the PDF", match: isAccess },
+      { label: "Accessed the publication", match: isAccess },
       { label: "Requested a download", match: isDownload },
     ],
     "Viewed home or a collection page",
