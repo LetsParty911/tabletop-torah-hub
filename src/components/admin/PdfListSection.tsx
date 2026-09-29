@@ -245,7 +245,7 @@ export default function PdfListSection({
                 </td>
                 <td className="py-2 pr-3">
                   <a
-                    href={`/view/${p.id}/download`}
+                    href={`/view/${p.id}/download?admin=1`}
                     className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
                     <Download className="h-3 w-3" /> Download
@@ -294,7 +294,7 @@ export default function PdfListSection({
                         </div>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           <a
-                            href={`/view/${p.id}/pdf`}
+                            href={`/view/${p.id}/pdf?admin=1`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 rounded-md border border-primary/60 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
