@@ -4,6 +4,11 @@ import { formatCountRate, shouldShowRate } from "@/lib/admin-analytics-display";
 
 type Row = { label: string; sessions: number; count?: number };
 
+// Approximate IP location, per session. IP/network geolocation can differ from
+// the visitor's physical location, especially on cellular, VPN, corporate, or
+// ISP gateway networks.
+const GEO_NOTE = "Approx. IP location, per session — may differ from the visitor's physical location (cellular, VPN, corporate, ISP gateway).";
+
 function secs(n: number) {
   if (!n) return "—";
   const m = Math.floor(n / 60);
