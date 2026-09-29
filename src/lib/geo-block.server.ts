@@ -33,6 +33,7 @@ export const BLOCKED_CITIES: BlockedCity[] = [
   { city: "council bluffs", regions: ["iowa", "ia"], country: "us", label: "Council Bluffs, IA" },
   { city: "bayonne", regions: ["new jersey", "nj"], country: "us", label: "Bayonne, NJ" },
   { city: "carnegie", regions: ["oklahoma", "ok"], country: "us", label: "Carnegie, OK" },
+  { city: "blackburn", regions: ["england"], country: "gb", label: "Blackburn, England" },
 ];
 
 const norm = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
