@@ -36,7 +36,7 @@ import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { TableChooser } from "@/components/TableChooser";
 import { MobileCollectionControlsBar } from "@/components/MobileCollectionControlsBar";
-import { CHOOSERS, chooseReason, pickRecommendations, type ChooserKey } from "@/lib/table-chooser";
+import { CHOOSERS, chooseReason, type ChooserKey } from "@/lib/table-chooser";
 
 type Resource = {
   id: string;
