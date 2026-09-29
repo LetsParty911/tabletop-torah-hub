@@ -364,11 +364,6 @@ function Index() {
     };
     return { key, label: labels[key], trackingLabel: chooser?.label ?? labels[key] };
   });
-  const preferredStartHere = resources.find((resource) => {
-    const title = resource.title.toLowerCase();
-    return title.includes("sukkos") && /short\s+vort/.test(title);
-  });
-  const startHereResource = preferredStartHere ?? pickRecommendations(resources, "quick", 1)[0] ?? null;
 
   const pdfParams = (r: Resource) => ({
     file_id: r.id,
@@ -593,24 +588,19 @@ function Index() {
                 );
               })}
             </div>
-            {startHereResource && (
-              <Link
-                to="/view/$id"
-                params={{ id: startHereResource.id }}
+            {resources.length > 0 && (
+              <a
+                href="#this-weeks-collection"
                 onClick={() =>
                   trackFp("recommendation_click", {
-                    publication_id: startHereResource.id,
-                    publication_title: startHereResource.title,
-                    publication_series: startHereResource.publication,
-                    publisher: startHereResource.publisher,
                     parsha: displayedParshaKey,
-                    metadata: { chooser: "start_here" },
+                    metadata: { chooser: "start_here", target: "collection" },
                   })
                 }
                 className="mt-2.5 inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-2.5 font-serif text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 Not sure what to choose? Start here.
-              </Link>
+              </a>
             )}
           </section>
         )}
