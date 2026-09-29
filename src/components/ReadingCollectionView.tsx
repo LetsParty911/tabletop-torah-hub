@@ -58,7 +58,7 @@ export function ReadingCollectionView({
       : null,
     quickShort && quickShort.id !== quickKids?.id && quickShort.id !== quickFamily?.id
       ? {
-          label: `${quickShort.page_count === 1 ? "1-Page Quick Pick" : "Quick Pick"}`,
+          label: `${quickShort.page_count === 1 ? "1-Page Short Vort" : "Short Vorts"}`,
           resource: quickShort,
         }
       : null,
@@ -74,7 +74,7 @@ export function ReadingCollectionView({
       resourceType(r),
       typeof r.page_count === "number"
         ? r.page_count === 1
-          ? "1 page · Quick Pick"
+          ? "1 page · Short Vort"
           : r.page_count >= 20
             ? `Long Study · ${r.page_count} pages`
             : `${r.page_count} pages`
