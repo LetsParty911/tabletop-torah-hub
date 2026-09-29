@@ -10,7 +10,7 @@
 // as the cache key only, and is never returned to the browser.
 //
 // Cache: public.ip_geo_cache in the analytics (external) Supabase project.
-// Successful lookups are reused for 7 days; failures are re-tried after 6 hours.
+// Successful lookups are reused for 7 days; failures are re-tried after 10 minutes.
 // That means one external request per uncached IP — never one per event.
 //
 // Network metadata rules:
@@ -61,7 +61,38 @@ export type ApproximateGeo = {
 
 const SUCCESS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const FAILURE_TTL_MS = 10 * 60 * 1000;
-const LOOKUP_TIMEOUT_MS = 1500;
+const LOOKUP_TIMEOUT_MS = 4000;
+
+type ProviderName = "ipwhois" | "maxmind" | "ipapi";
+
+/**
+ * Server-only diagnostic for a provider failure. Logs provider + failure kind
+ * (timeout / network / http status / bad body) only — never the IP address.
+ */
+export function logProviderFailure(provider: ProviderName, kind: "timeout" | "network" | "http" | "unsuccessful", status?: number) {
+  console.warn(`[ip-geo] provider=${provider} failure=${kind}${status !== undefined ? ` status=${status}` : ""}`);
+}
+
+async function providerFetch(provider: ProviderName, url: string, init: RequestInit = {}): Promise<Record<string, any> | null> {
+  let res: Response;
+  try {
+    res = await fetch(url, { ...init, signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS) });
+  } catch (e) {
+    const name = (e as { name?: string } | null)?.name;
+    logProviderFailure(provider, name === "TimeoutError" || name === "AbortError" ? "timeout" : "network");
+    return null;
+  }
+  if (!res.ok) {
+    logProviderFailure(provider, "http", res.status);
+    return null;
+  }
+  try {
+    return (await res.json()) as Record<string, any>;
+  } catch {
+    logProviderFailure(provider, "unsuccessful");
+    return null;
+  }
+}
 
 function clean(v: unknown, max: number): string | null {
   return typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null;
@@ -212,15 +243,13 @@ async function lookupMaxMind(ip: string): Promise<LookupResult | null> {
   const licenseKey = process.env["MAXMIND_LICENSE_KEY"];
   if (!accountId || !licenseKey) return null;
   try {
-    const res = await fetch(`https://geolite.info/geoip/v2.1/city/${encodeURIComponent(ip)}`, {
+    const j = await providerFetch("maxmind", `https://geolite.info/geoip/v2.1/city/${encodeURIComponent(ip)}`, {
       headers: {
         Authorization: `Basic ${btoa(`${accountId}:${licenseKey}`)}`,
         Accept: "application/json",
       },
-      signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS),
     });
-    if (!res.ok) return null;
-    const j = (await res.json()) as Record<string, any>;
+    if (!j) return null;
     const sub = Array.isArray(j["subdivisions"]) ? j["subdivisions"][0] : null;
     const traits = (j["traits"] ?? {}) as Record<string, unknown>;
     return {
@@ -247,13 +276,15 @@ async function lookupMaxMind(ip: string): Promise<LookupResult | null> {
 
 async function lookupIpWhoIs(ip: string): Promise<LookupResult | null> {
   try {
-    const res = await fetch(
+    const j = await providerFetch(
+      "ipwhois",
       `https://ipwho.is/${encodeURIComponent(ip)}?fields=success,country_code,region,city,postal,connection,security`,
-      { signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS) },
     );
-    if (!res.ok) return null;
-    const j = (await res.json()) as Record<string, any>;
-    if (j["success"] !== true) return null;
+    if (!j) return null;
+    if (j["success"] !== true) {
+      logProviderFailure("ipwhois", "unsuccessful");
+      return null;
+    }
     // connection/security are only present on some plans; absent -> unknown.
     const conn = (j["connection"] ?? {}) as Record<string, unknown>;
     const sec = (j["security"] ?? {}) as Record<string, unknown>;
@@ -315,12 +346,13 @@ async function lookupIpApi(ip: string): Promise<LookupResult | null> {
   try {
     const key = process.env["IPAPI_KEY"];
     const url = `https://ipapi.co/${encodeURIComponent(ip)}/json/${key ? `?key=${encodeURIComponent(key)}` : ""}`;
-    const res = await fetch(url, {
+    const j = await providerFetch("ipapi", url, {
       headers: { Accept: "application/json", "User-Agent": "torahforthetable-analytics" },
-      signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS),
     });
-    if (!res.ok) return null;
-    return parseIpApi((await res.json()) as Record<string, unknown>);
+    if (!j) return null;
+    const parsed = parseIpApi(j);
+    if (!parsed) logProviderFailure("ipapi", "unsuccessful");
+    return parsed;
   } catch {
     return null;
   }
@@ -456,17 +488,24 @@ export async function resolveApproximateGeo(
       });
     }
 
-    // Providers are tried in order and only while no usable city/region exists:
-    // ipwho.is -> MaxMind GeoLite City -> ipapi.co (analytics purpose only).
+    // Analytics: ipwho.is and MaxMind run concurrently (merge order unchanged:
+    // ipwho.is first), and ipapi.co only when neither yields a usable city/region.
+    // Blocking keeps the original serial chain ipwho.is -> MaxMind, no ipapi.co.
     const results: LookupResult[] = [];
-    const whois = await lookupIpWhoIs(ip);
-    if (whois) results.push(whois);
-    if (!isUsable(whois)) {
-      const mm = await lookupMaxMind(ip);
+    if (purpose === "analytics") {
+      const [whois, mm] = await Promise.all([lookupIpWhoIs(ip), lookupMaxMind(ip)]);
+      if (whois) results.push(whois);
       if (mm) results.push(mm);
-      if (!isUsable(mm) && purpose === "analytics") {
+      if (!isUsable(whois) && !isUsable(mm)) {
         const ipapi = await lookupIpApi(ip);
         if (ipapi) results.push(ipapi);
+      }
+    } else {
+      const whois = await lookupIpWhoIs(ip);
+      if (whois) results.push(whois);
+      if (!isUsable(whois)) {
+        const mm = await lookupMaxMind(ip);
+        if (mm) results.push(mm);
       }
     }
     let fresh = mergeLookups(results);
