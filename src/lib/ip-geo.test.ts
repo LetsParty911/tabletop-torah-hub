@@ -251,3 +251,54 @@ describe("resolveApproximateGeo blocking cache independence", () => {
     expect(calls).toHaveLength(0);
   });
 });
+
+describe("resolveApproximateGeo concurrent primaries + diagnostics", () => {
+  const telemetry = { ipAddress: "8.8.4.4", country: "US", region: null, city: null, postalCode: null, userAgent: "t" } as any;
+  let calls: string[];
+  let warn: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    calls = [];
+    mockState.cacheRow = null;
+    mockState.upserts = [];
+    vi.stubEnv("MAXMIND_ACCOUNT_ID", "1");
+    vi.stubEnv("MAXMIND_LICENSE_KEY", "k");
+    warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+  afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); warn.mockRestore(); });
+
+  it("analytics calls ipwho.is and MaxMind concurrently and skips ipapi when one is usable", async () => {
+    let inFlight = 0, maxInFlight = 0;
+    vi.stubGlobal("fetch", vi.fn(async (url: any) => {
+      const u = String(url); calls.push(u);
+      inFlight++; maxInFlight = Math.max(maxInFlight, inFlight);
+      await new Promise((r) => setTimeout(r, 10));
+      inFlight--;
+      if (u.includes("geolite.info")) return new Response(JSON.stringify({ country: { iso_code: "US" }, city: { names: { en: "Newark" } } }), { status: 200 });
+      return new Response("x", { status: 503 });
+    }));
+    const geo = await resolveApproximateGeo(telemetry, "analytics");
+    expect(maxInFlight).toBe(2);
+    expect(geo.city).toBe("Newark");
+    expect(geo.provider).toBe("maxmind");
+    expect(calls.some((u) => u.includes("ipapi.co"))).toBe(false);
+  });
+
+  it("logs provider + failure type without the IP address", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: any) => {
+      if (String(url).includes("ipwho.is")) throw Object.assign(new Error("t"), { name: "TimeoutError" });
+      return new Response("x", { status: 502 });
+    }));
+    await resolveApproximateGeo(telemetry, "analytics");
+    const lines = warn.mock.calls.map((c) => String(c[0]));
+    expect(lines).toContain("[ip-geo] provider=ipwhois failure=timeout");
+    expect(lines).toContain("[ip-geo] provider=maxmind failure=http status=502");
+    expect(lines.some((l) => l.includes("8.8.4.4"))).toBe(false);
+  });
+
+  it("blocking stays serial and never calls ipapi.co", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: any) => { calls.push(String(url)); return new Response("x", { status: 500 }); }));
+    await resolveApproximateGeo(telemetry, "blocking");
+    expect(calls.some((u) => u.includes("ipapi.co"))).toBe(false);
+    expect(mockState.upserts).toHaveLength(0);
+  });
+});
