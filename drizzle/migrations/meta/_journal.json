@@ -8,6 +8,13 @@
       "when": 1790569085092,
       "tag": "0000_create_blocked_visits",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790711116019,
+      "tag": "0001_create_site_maintenance",
+      "breakpoints": true
     }
   ]
 }

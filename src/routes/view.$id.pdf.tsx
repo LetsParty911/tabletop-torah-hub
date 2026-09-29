@@ -1,4 +1,3 @@
-import { MAINTENANCE_MODE, maintenanceResponse } from "@/lib/maintenance";
 import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 
@@ -7,8 +6,10 @@ const NOINDEX = { "X-Robots-Tag": "noindex" } as const;
 export const Route = createFileRoute("/view/$id/pdf")({
   server: {
     handlers: {
-      GET: async ({ params }) => {
-        if (MAINTENANCE_MODE) return maintenanceResponse();
+      GET: async ({ params, request }) => {
+        const { maintenanceGate } = await import("@/lib/maintenance.server");
+        const closed = await maintenanceGate(new URL(request.url).pathname);
+        if (closed) return closed;
         const id = params.id;
         if (!/^[0-9a-f-]{36}$/i.test(id)) {
           return new Response("Bad request", { status: 400, headers: NOINDEX });
