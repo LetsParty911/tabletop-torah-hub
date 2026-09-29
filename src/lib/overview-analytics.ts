@@ -398,12 +398,33 @@ export function buildOverview(input: {
         if (prev && prev.event === name && prev.label === label) continue;
         steps.push({ at: r.occurred_at, event: name, label });
       }
+      const pick = (k: "city" | "region" | "country" | "referrer_host") => list.find((r) => r[k]?.trim())?.[k]?.trim() ?? null;
+      const visitorId = list.find((r) => r.visitor_id)?.visitor_id ?? null;
+      let maxScroll: number | null = null;
+      const downloadIds = new Set<string>();
+      for (const r of list) {
+        if (r.event_name === "scroll_depth") {
+          const v = Number(r.metadata?.["max_scroll_percent"] ?? r.metadata?.["percent"]);
+          if (Number.isFinite(v)) maxScroll = Math.max(maxScroll ?? 0, v);
+        }
+        if (r.event_name === "download_click" || r.event_name === "download") downloadIds.add(String(r.metadata?.["action_id"] ?? r.publication_id ?? r.occurred_at));
+      }
+      const firstAt = Date.parse(list[0]?.occurred_at ?? "");
+      const lastAt = Date.parse(list[list.length - 1]?.occurred_at ?? "");
       return {
         sessionId: sid,
-        visitorId: list[0]?.visitor_id ?? null,
+        visitorId,
         startedAt: list[0]?.occurred_at ?? "",
+        lastAt: list[list.length - 1]?.occurred_at ?? "",
+        durationSeconds: Number.isFinite(firstAt) && Number.isFinite(lastAt) ? Math.max(0, Math.round((lastAt - firstAt) / 1000)) : 0,
         source: list[0]?.source_group || "Direct",
+        referrer: pick("referrer_host"),
+        location: [pick("city"), pick("region"), pick("country")].filter(Boolean).join(", ") || "Unknown",
+        returning: visitorId ? input.returningVisitors.has(visitorId) : false,
         device: list[0]?.device_type || "unknown",
+        pageviews: list.filter((r) => r.event_name === "page_view").length,
+        downloads: downloadIds.size,
+        maxScroll,
         steps: steps.slice(0, 60),
       };
     });
