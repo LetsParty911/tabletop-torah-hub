@@ -2,8 +2,9 @@
 //
 // Precedence:
 //   1. "edge"         — native hosting/Cloudflare geo headers (preferred, free, instant)
-//   2. "ip_lookup"    — ipwho.is HTTPS lookup, then MaxMind GeoLite City, then ipapi.co
-//                       (each fallback only when no usable city/region so far)
+//   2. "ip_lookup"    — ipwho.is HTTPS lookup, then MaxMind GeoLite City, then
+//                       ipapi.co, then ip-api.com (analytics-only final fallback;
+//                       each fallback only when no usable city/region so far)
 //   3. "country_only" — lookup unavailable/failed; existing country (if any) is kept
 //
 // The visitor IP never leaves the server: it is used as the lookup argument and

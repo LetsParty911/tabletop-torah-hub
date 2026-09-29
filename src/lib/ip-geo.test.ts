@@ -97,6 +97,32 @@ describe("parseIpApi", () => {
   });
 });
 
+import { parseIpApiCom } from "./ip-geo.server";
+
+describe("parseIpApiCom", () => {
+  it("reads coarse fields, ignores lat/long, uses explicit booleans only", () => {
+    const r = parseIpApiCom({
+      status: "success", countryCode: "US", regionName: "New Jersey", city: "Bayonne",
+      zip: "07002", as: "AS701 Verizon Business", org: "Verizon", isp: "Verizon Fios",
+      mobile: false, proxy: false, hosting: false, lat: 40.6, lon: -74.1,
+    })!;
+    expect(r.provider).toBe("ipapicom");
+    expect(r.city).toBe("Bayonne");
+    expect(r.region).toBe("New Jersey");
+    expect(r.asn).toBe(701);
+    expect(r.as_organization).toBe("Verizon");
+    expect(r.isp).toBe("Verizon Fios");
+    expect(r.is_proxy).toBe(false);
+    expect(r.is_hosting).toBe(false);
+    expect(r.is_vpn).toBeNull();
+    expect(r.is_tor).toBeNull();
+    expect(JSON.stringify(r)).not.toMatch(/lat|lon|40\.6/);
+  });
+  it("returns null on a non-success body", () => {
+    expect(parseIpApiCom({ status: "fail", message: "invalid query" })).toBeNull();
+  });
+});
+
 describe("mergeLookups", () => {
   it("returns null when no provider succeeded", () => {
     expect(mergeLookups([null, undefined])).toBeNull();
