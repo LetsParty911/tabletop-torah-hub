@@ -327,4 +327,48 @@ describe("resolveApproximateGeo concurrent primaries + diagnostics", () => {
     expect(calls.some((u) => u.includes("ipapi.co"))).toBe(false);
     expect(mockState.upserts).toHaveLength(0);
   });
+
+  it("analytics falls through to ip-api.com only when ipapi.co has no usable place", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: any) => {
+      const u = String(url); calls.push(u);
+      if (u.includes("ip-api.com")) {
+        return new Response(
+          JSON.stringify({ status: "success", countryCode: "US", regionName: "New Jersey", city: "Bayonne", zip: "07002" }),
+          { status: 200 },
+        );
+      }
+      return new Response("x", { status: 500 });
+    }));
+    const geo = await resolveApproximateGeo(telemetry, "analytics");
+    expect(calls.some((u) => u.includes("ipapi.co"))).toBe(true);
+    expect(calls.some((u) => u.includes("ip-api.com"))).toBe(true);
+    expect(geo.city).toBe("Bayonne");
+    expect(geo.provider).toBe("ipapicom");
+  });
+
+  it("analytics skips ip-api.com when ipapi.co already resolved a place", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: any) => {
+      const u = String(url); calls.push(u);
+      if (u.includes("ipapi.co")) {
+        return new Response(JSON.stringify({ country_code: "US", region: "New Jersey", city: "Bayonne" }), { status: 200 });
+      }
+      return new Response("x", { status: 500 });
+    }));
+    const geo = await resolveApproximateGeo(telemetry, "analytics");
+    expect(geo.city).toBe("Bayonne");
+    expect(calls.some((u) => u.includes("ip-api.com"))).toBe(false);
+  });
+
+  it("blocking never calls ip-api.com and ignores a cached ipapicom row", async () => {
+    mockState.cacheRow = {
+      ip_address: "8.8.4.4", country: "US", region: "New Jersey", city: "Bayonne",
+      postal_code: "07002", lookup_ok: true, provider: "ipapicom", fetched_at: new Date().toISOString(),
+    };
+    vi.stubGlobal("fetch", vi.fn(async (url: any) => { calls.push(String(url)); return new Response("x", { status: 500 }); }));
+    const geo = await resolveApproximateGeo(telemetry, "blocking");
+    expect(geo.city).toBeNull();
+    expect(calls.some((u) => u.includes("ip-api.com"))).toBe(false);
+    expect(calls.some((u) => u.includes("ipwho.is"))).toBe(true);
+    expect(mockState.upserts).toHaveLength(0);
+  });
 });
