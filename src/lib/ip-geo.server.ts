@@ -512,10 +512,15 @@ export async function resolveApproximateGeo(
     // Blocking must stay independent of the analytics-only ipapi.co fallback:
     // a cached ipapi result is ignored for blocking, and the blocking path
     // never writes to the cache (so it can't degrade a useful analytics row).
-    if (cached && !(purpose === "blocking" && cached.provider === "ipapi")) {
+    // Blocking must also ignore cached analytics-only fallback rows (ipapi.co,
+    // ip-api.com) so block decisions never depend on a provider the blocking
+    // chain itself would not have used.
+    const analyticsOnly = cached?.provider === "ipapi" || cached?.provider === "ipapicom";
+    if (cached && !(purpose === "blocking" && analyticsOnly)) {
       if (!cached.lookup_ok) return countryOnly();
       const provider: GeoProvider =
-        cached.provider === "ipwhois" || cached.provider === "maxmind" || cached.provider === "ipapi"
+        cached.provider === "ipwhois" || cached.provider === "maxmind" ||
+        cached.provider === "ipapi" || cached.provider === "ipapicom"
           ? cached.provider
           : "none";
       return finalize({
@@ -543,6 +548,12 @@ export async function resolveApproximateGeo(
       if (!isUsable(whois) && !isUsable(mm)) {
         const ipapi = await lookupIpApi(ip);
         if (ipapi) results.push(ipapi);
+        // Final analytics-only fallback: ip-api.com, only when ipapi.co also
+        // failed to yield a usable city/region.
+        if (!isUsable(ipapi)) {
+          const ipapicom = await lookupIpApiCom(ip);
+          if (ipapicom) results.push(ipapicom);
+        }
       }
     } else {
       const whois = await lookupIpWhoIs(ip);
@@ -561,7 +572,7 @@ export async function resolveApproximateGeo(
     // slowed down or doubled.
     if (!fresh && purpose === "analytics") {
       await new Promise((resolve) => setTimeout(resolve, 150));
-      const retryResults = await Promise.all([lookupIpWhoIs(ip), lookupIpApi(ip)]);
+      const retryResults = await Promise.all([lookupIpWhoIs(ip), lookupIpApi(ip), lookupIpApiCom(ip)]);
       fresh = mergeLookups(retryResults);
     }
 
