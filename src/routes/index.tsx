@@ -269,7 +269,7 @@ function Index() {
     "shavuos",
   ].includes(normalizedCollectionKey);
   const isCurrentYomKippur = normalizedCollectionKey === "yom kippur";
-  const isSukkosSeason = normalizedCurrentKey === "sukkos";
+  const isSukkosSeason = ["sukkos", "shemini atzeres", "simchas torah"].includes(normalizedCurrentKey);
   const sukkosSeasonTitle = "Torah for Sukkos, Shmini Atzeres & Simchas Torah";
   const upcomingParsha = isFallback
     ? (currentParshaKey ?? nextParshaAfter(displayedParshaKey) ?? upcomingAfterYomTovKey)
@@ -461,7 +461,7 @@ function Index() {
             </p>
             {!isFallback && (
               <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-accent-readable sm:hidden">
-                {resources.length} {resources.length === 1 ? "selection" : "selections"} for {displayedLabel}
+                {resources.length} {resources.length === 1 ? "selection" : "selections"} for {isSukkosSeason ? "Sukkos, Shmini Atzeres & Simchas Torah" : displayedLabel}
               </p>
             )}
             {heroDateLine && (
@@ -522,7 +522,7 @@ function Index() {
                   }}
                   className="inline-flex w-full items-center justify-center rounded-full border border-accent bg-transparent px-7 py-3 font-serif font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
                 >
-                  Browse {displayedLabel} collection
+                  Browse {isSukkosSeason ? "Sukkos & Yom Tov" : displayedLabel} collection
                 </a>
               </div>
             ) : (
