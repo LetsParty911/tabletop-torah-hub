@@ -1,35 +1,42 @@
-## Read-only audit of the preview, six focus areas (Sept 25, 2026)
+# Site audit findings (read-only) and proposed follow-up fixes
 
-Nothing was edited, committed or published. I checked in a fresh browser on phone (360 wide) and desktop (1280 wide), and read the related code.
+No changes were made during the audit. If you approve, only the fixes listed below are made.
 
-### Confirmed issues
+## 1. Definite errors
+- **Privacy page date** (`src/routes/privacy.tsx`, line 5): "Last updated September 22, 2026". Check that this is the correct date.
+- **"Resources" vs "Originals" naming**: the menu and footer say "Resources" (`src/routes/__root.tsx`, `src/components/SiteFooter.tsx`). The page's own title and main heading say "Torah for the Table Originals" (`src/routes/resources.tsx`). There is also an `/originals` address that just redirects to `/resources`. So one page has two names.
 
-| Severity | Area | Page / component | Issue |
-|---|---|---|---|
-| Medium | Short Vorts | `/short-vorts` (`src/routes/short-vorts.tsx`, heading line 247, description line 47) | The heading reads "Short Vorts on Parshas Hashavua" during Sukkos, which clashes with the Sukkos notice just below it. |
-| Low | Homepage, phone | Pinned bottom bar in the chooser, plus the back-to-top button | After a quick choice, a bar reading "A Good Story selected · Change" (60px tall) stays pinned to the bottom of the screen. The back-to-top button sits right above it. Together they cover part of the last visible card on short phones. Nothing is blocked, but it's tight. |
-| Low (content) | Footer | `SiteFooter` | The footer says "registered 501(c)(3) nonprofit organization". Earlier privacy work deliberately left nonprofit claims off that page. Please confirm this statement is accurate and intended. |
+## 2. Likely mistakes / inconsistencies
+- **External series on an "in-house" page** (`src/routes/resources.tsx`): the page describes itself as in-house material, but it also features Mi Ka'amcha Yisroel, which is labeled "Not written by Torah For The Table". It may need its own clear heading.
+- **"Short Vorts" vs "Brief Insights"** (`src/lib/format-labels.ts`): the filters rename the Short Vorts type to "Brief Insights", but the menu and page still say "Short Vorts". Someone filtering the Archive for "Short Vorts" won't find that option.
+- **Archive Publication filter** (`src/routes/archive.tsx`): when an item has no publication, the filter uses the item's title instead. This can add one-off entries to the Publication dropdown. It also doesn't use the standard publication names in `src/lib/badges.ts`.
+- **Quick tile wording** (`src/routes/index.tsx` vs `src/lib/table-chooser.ts`): the tile says "Quick Vorts" but internally it's "Quick Vort". Visitors can't see this; it's a code tidiness issue only.
 
-### Working correctly
-- **Homepage:** the phone view opens with "Choose a Dvar Torah for Your Table". Desktop keeps the Sukkos heading. No sideways scrolling, and no poster or My Table text.
-- **Quick choices:** they filter the full list. For example, Stories shows "A Good Story: all 6 selections", and each card has Download PDF and Read details first. The pinned "selected · Change" bar appears once you scroll.
-- **Publication page and download:** `/view/…` (Short Vorts for Sukkos) loads. Its Download button goes through the tracked download link, which quickly sends the browser on to the PDF file.
-- **Archive search:** searching "sukkos" returns 12 results and keeps the word in the search box. A nonsense search shows "No matches for these filters."
-- **Banner:** it shows the text saved in admin ("Something for everyone. Take your time…").
-- **Signup:** one email signup form, with no duplicate IDs.
-- **Footer:** Contact and Privacy links are present.
+## 3. Things that look correct
+- Menu and footer items, order and wording match on desktop and mobile, with nothing duplicated.
+- `/mission` redirects properly to `/about`.
+- My Table is fully hidden: its page redirects home, and its buttons aren't used anywhere.
+- The manage-preferences page is only reached from emails.
+- The quick tiles use real stored fields (featured slot, audience, format, category, tags), not free text.
+- The Archive has an empty state both for no issues and for no filter matches.
+- Audience matching is shared by the homepage, Archive and Publications.
 
-### Risks, not confirmed
-1. **Downloads saved as "Direct":** a download from a visit with no earlier activity can still be saved as "Direct" traffic (`src/routes/view.$id.download.tsx`).
-2. **Current week can go stale:** the homepage has no timer or tab-return refresh. A tab left open from Thursday won't show new items until reloaded, and the offline copy can briefly serve an older page.
-3. **Wide cards on the Sukkos page (outside your six areas):** on phones, the `/yom-tov/sukkos/5787` page scrolls sideways. One card measures about 530px on a 360px screen.
+## 4. Needs browser or data verification
+- Whether Resources visually separates Originals from Featured Series.
+- What the live Archive Publication dropdown actually shows.
+- How the Archive filter rows wrap on a phone, and the homepage's mobile collection bar.
+- Whether live rows use only the four featured slots (children, family, quickest, deeper).
+- Live stored values for format_type, publication, featured_slot and badges. This audit compared the code with itself, not with live database rows.
 
-### Not tested
-- I didn't submit the signup form, to avoid creating a real subscriber.
-- I didn't finish the PDF download in a browser. I only checked that the download link sends the browser to the file.
-- I didn't sign in to admin.
+## Proposed fixes (only if approved)
+1. Correct the Privacy date to the real date (tell me which one).
+2. Pick one name, "Resources" or "Originals", and use it in the menu, footer, page title and heading.
+3. Give the Featured Series block on Resources its own heading so it's clearly not in-house.
+4. Decide whether filters say "Short Vorts" (to match the menu) or "Brief Insights". Then make them consistent.
+5. Change the Archive Publication filter to group by the standard publication names, and stop adding titles as publications.
+6. Run a data query plus desktop and phone browser checks on the items in section 4. Report the results before changing anything else.
 
-### Suggested fixes (only if you approve)
-1. Change the Short Vorts heading to name the current Yom Tov.
-2. Raise the back-to-top button, or hide it while the pinned chooser bar shows.
-3. Confirm or remove the 501(c)(3) line in the footer.
+## Open decisions
+- The correct Privacy date.
+- "Resources" or "Originals".
+- "Short Vorts" or "Brief Insights".
