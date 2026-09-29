@@ -10,6 +10,7 @@ import {
   startHeartbeat,
   startHumanSignalWatcher,
   startScrollDepthWatcher,
+  startOutboundClickWatcher,
   trackFp,
   trackRouteView,
 } from "@/lib/first-party-analytics";
@@ -256,6 +257,7 @@ function PageViewTracker() {
   useEffect(() => startHeartbeat(), []);
   useEffect(() => startHumanSignalWatcher(), []);
   useEffect(() => startScrollDepthWatcher(), []);
+  useEffect(() => startOutboundClickWatcher(), []);
 
   return null;
 }

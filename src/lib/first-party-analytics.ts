@@ -23,6 +23,7 @@ export type FpEventName =
   | "heartbeat"
   | "human_signal"
   | "scroll_depth"
+  | "outbound_click"
   | "chooser_select"
   | "recommendation_view"
   | "recommendation_click"
@@ -426,6 +427,8 @@ const IMMEDIATE: ReadonlySet<string> = new Set<string>([
   "signup",
   "error",
   "publication_click",
+  // Sent right away: the browser is usually about to leave the site.
+  "outbound_click",
 ]);
 
 function send(events: WirePayload[]): void {
@@ -558,6 +561,13 @@ function emitSessionStart(path: string, visitorId: string, sessionId: string): v
 
 const seenImpressions = new Set<string>();
 
+// One id per client-side route view. Scroll milestones are deduplicated per
+// page view with it, so scrolling back and forth can never inflate counts.
+let currentPageViewId = "";
+export function getPageViewId(): string {
+  return currentPageViewId;
+}
+
 /**
  * Called on every real client-side route view. Fires session_start once per
  * session, then page_view, and resets per-page-view impression de-duplication.
@@ -568,6 +578,7 @@ export function trackRouteView(path: string): void {
   if (isAdminPath(path)) return;
 
   seenImpressions.clear();
+  currentPageViewId = randomId();
 
   const visitorId = getVisitorId();
   const { sessionId, isNew } = touchSession();
@@ -650,14 +661,16 @@ const SCROLL_MILESTONES = [25, 50, 75, 100] as const;
 export function startScrollDepthWatcher(): () => void {
   if (typeof window === "undefined") return () => {};
 
-  let activePath = window.location.pathname;
+  let activeView = currentPageViewId || window.location.pathname;
   let reached = new Set<number>();
+  let maxReached = 0;
 
   const resetIfRouteChanged = () => {
-    const path = window.location.pathname;
-    if (path !== activePath) {
-      activePath = path;
+    const view = currentPageViewId || window.location.pathname;
+    if (view !== activeView) {
+      activeView = view;
       reached = new Set<number>();
+      maxReached = 0;
     }
   };
 
@@ -681,6 +694,7 @@ export function startScrollDepthWatcher(): () => void {
     if (fullHeight <= 0) return;
 
     const percent = Math.max(0, Math.min(100, ((scrollTop + viewport) / fullHeight) * 100));
+    maxReached = Math.max(maxReached, Math.round(percent));
 
     for (const milestone of SCROLL_MILESTONES) {
       if (percent < milestone || reached.has(milestone)) continue;
@@ -688,7 +702,8 @@ export function startScrollDepthWatcher(): () => void {
       trackFp("scroll_depth", {
         metadata: {
           percent: milestone,
-          max_scroll_percent: Math.round(percent),
+          max_scroll_percent: maxReached,
+          page_view_id: activeView,
           document_height: Math.round(fullHeight),
           viewport_height: Math.round(viewport),
         },
@@ -753,4 +768,50 @@ export function startHumanSignalWatcher(): () => void {
   }
 
   return cleanup;
+}
+
+// ---------------------------------------------------------------------------
+// Outbound clicks — external links only, through the canonical pipeline
+// ---------------------------------------------------------------------------
+
+/**
+ * Emits `outbound_click` when a visitor follows a link to another site.
+ * Same-site navigation, mailto:/tel: and javascript: links are ignored.
+ * Only the target hostname and path are kept — never the query string or
+ * fragment, which can carry tokens.
+ */
+export function startOutboundClickWatcher(): () => void {
+  if (typeof window === "undefined") return () => {};
+
+  const onClick = (event: MouseEvent) => {
+    try {
+      if (event.isTrusted === false) return;
+      if (event.button !== 0 && event.button !== 1) return;
+      if (isAdminPath(window.location.pathname)) return;
+      const target = event.target as Element | null;
+      const anchor = target?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!anchor) return;
+      const url = new URL(anchor.href, window.location.href);
+      if (url.protocol !== "http:" && url.protocol !== "https:") return;
+      const here = window.location.hostname.replace(/^www\./, "");
+      const host = url.hostname.replace(/^www\./, "");
+      if (!host || host === here) return;
+      trackFp("outbound_click", {
+        metadata: {
+          target_host: url.hostname.toLowerCase().slice(0, 200),
+          target_path: url.pathname.slice(0, 200),
+          new_tab: anchor.target === "_blank" || event.button === 1 || event.metaKey || event.ctrlKey,
+        },
+      });
+    } catch {
+      /* analytics must never break navigation */
+    }
+  };
+
+  document.addEventListener("click", onClick, { capture: true });
+  document.addEventListener("auxclick", onClick, { capture: true });
+  return () => {
+    document.removeEventListener("click", onClick, { capture: true });
+    document.removeEventListener("auxclick", onClick, { capture: true });
+  };
 }

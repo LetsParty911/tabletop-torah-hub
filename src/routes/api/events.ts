@@ -33,6 +33,7 @@ const ALLOWED_EVENTS = new Set([
   "heartbeat",
   "human_signal",
   "scroll_depth",
+  "outbound_click",
   "chooser_select",
   "recommendation_view",
   "recommendation_click",
