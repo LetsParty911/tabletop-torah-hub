@@ -435,7 +435,17 @@ export const listHomepageWeek = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }) => {
     const admin = getSupabaseAdmin();
-    const liveComparable = data.parshaKey ? toParshaComparableKeys(data.parshaKey) : [];
+    let liveComparable = data.parshaKey ? toParshaComparableKeys(data.parshaKey) : [];
+    // During the Sukkos season, keep the full Yom Tov collection available on
+    // the homepage instead of narrowing readers to only Shmini Atzeres /
+    // Simchas Torah. This unions all published 5787 Sukkos-season records while
+    // preserving the normal single-parsha behavior the rest of the year.
+    const currentKeys = new Set(liveComparable);
+    const sukkosSeasonKeys = ["Sukkos", "Shemini Atzeres", "Simchas Torah"]
+      .flatMap((key) => toParshaComparableKeys(key));
+    if (sukkosSeasonKeys.some((key) => currentKeys.has(key))) {
+      liveComparable = Array.from(new Set([...liveComparable, ...sukkosSeasonKeys]));
+    }
     const displayed = await resolveDisplayedCollection(admin, liveComparable);
     const resources = await buildResources(admin, displayed.rows);
     return {
