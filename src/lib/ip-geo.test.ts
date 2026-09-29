@@ -97,6 +97,32 @@ describe("parseIpApi", () => {
   });
 });
 
+import { parseIpApiCom } from "./ip-geo.server";
+
+describe("parseIpApiCom", () => {
+  it("reads coarse fields, ignores lat/long, uses explicit booleans only", () => {
+    const r = parseIpApiCom({
+      status: "success", countryCode: "US", regionName: "New Jersey", city: "Bayonne",
+      zip: "07002", as: "AS701 Verizon Business", org: "Verizon", isp: "Verizon Fios",
+      mobile: false, proxy: false, hosting: false, lat: 40.6, lon: -74.1,
+    })!;
+    expect(r.provider).toBe("ipapicom");
+    expect(r.city).toBe("Bayonne");
+    expect(r.region).toBe("New Jersey");
+    expect(r.asn).toBe(701);
+    expect(r.as_organization).toBe("Verizon");
+    expect(r.isp).toBe("Verizon Fios");
+    expect(r.is_proxy).toBe(false);
+    expect(r.is_hosting).toBe(false);
+    expect(r.is_vpn).toBeNull();
+    expect(r.is_tor).toBeNull();
+    expect(JSON.stringify(r)).not.toMatch(/lat|lon|40\.6/);
+  });
+  it("returns null on a non-success body", () => {
+    expect(parseIpApiCom({ status: "fail", message: "invalid query" })).toBeNull();
+  });
+});
+
 describe("mergeLookups", () => {
   it("returns null when no provider succeeded", () => {
     expect(mergeLookups([null, undefined])).toBeNull();
@@ -299,6 +325,50 @@ describe("resolveApproximateGeo concurrent primaries + diagnostics", () => {
     vi.stubGlobal("fetch", vi.fn(async (url: any) => { calls.push(String(url)); return new Response("x", { status: 500 }); }));
     await resolveApproximateGeo(telemetry, "blocking");
     expect(calls.some((u) => u.includes("ipapi.co"))).toBe(false);
+    expect(mockState.upserts).toHaveLength(0);
+  });
+
+  it("analytics falls through to ip-api.com only when ipapi.co has no usable place", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: any) => {
+      const u = String(url); calls.push(u);
+      if (u.includes("ip-api.com")) {
+        return new Response(
+          JSON.stringify({ status: "success", countryCode: "US", regionName: "New Jersey", city: "Bayonne", zip: "07002" }),
+          { status: 200 },
+        );
+      }
+      return new Response("x", { status: 500 });
+    }));
+    const geo = await resolveApproximateGeo(telemetry, "analytics");
+    expect(calls.some((u) => u.includes("ipapi.co"))).toBe(true);
+    expect(calls.some((u) => u.includes("ip-api.com"))).toBe(true);
+    expect(geo.city).toBe("Bayonne");
+    expect(geo.provider).toBe("ipapicom");
+  });
+
+  it("analytics skips ip-api.com when ipapi.co already resolved a place", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: any) => {
+      const u = String(url); calls.push(u);
+      if (u.includes("ipapi.co")) {
+        return new Response(JSON.stringify({ country_code: "US", region: "New Jersey", city: "Bayonne" }), { status: 200 });
+      }
+      return new Response("x", { status: 500 });
+    }));
+    const geo = await resolveApproximateGeo(telemetry, "analytics");
+    expect(geo.city).toBe("Bayonne");
+    expect(calls.some((u) => u.includes("ip-api.com"))).toBe(false);
+  });
+
+  it("blocking never calls ip-api.com and ignores a cached ipapicom row", async () => {
+    mockState.cacheRow = {
+      ip_address: "8.8.4.4", country: "US", region: "New Jersey", city: "Bayonne",
+      postal_code: "07002", lookup_ok: true, provider: "ipapicom", fetched_at: new Date().toISOString(),
+    };
+    vi.stubGlobal("fetch", vi.fn(async (url: any) => { calls.push(String(url)); return new Response("x", { status: 500 }); }));
+    const geo = await resolveApproximateGeo(telemetry, "blocking");
+    expect(geo.city).toBeNull();
+    expect(calls.some((u) => u.includes("ip-api.com"))).toBe(false);
+    expect(calls.some((u) => u.includes("ipwho.is"))).toBe(true);
     expect(mockState.upserts).toHaveLength(0);
   });
 });

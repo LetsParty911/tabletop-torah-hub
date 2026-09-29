@@ -2,8 +2,9 @@
 //
 // Precedence:
 //   1. "edge"         — native hosting/Cloudflare geo headers (preferred, free, instant)
-//   2. "ip_lookup"    — ipwho.is HTTPS lookup, then MaxMind GeoLite City, then ipapi.co
-//                       (each fallback only when no usable city/region so far)
+//   2. "ip_lookup"    — ipwho.is HTTPS lookup, then MaxMind GeoLite City, then
+//                       ipapi.co, then ip-api.com (analytics-only final fallback;
+//                       each fallback only when no usable city/region so far)
 //   3. "country_only" — lookup unavailable/failed; existing country (if any) is kept
 //
 // The visitor IP never leaves the server: it is used as the lookup argument and
@@ -24,7 +25,7 @@
 import type { RequestTelemetry } from "./request-telemetry.server";
 
 export type GeoSource = "edge" | "ip_lookup" | "country_only";
-export type GeoProvider = "edge" | "ipwhois" | "maxmind" | "ipapi" | "none";
+export type GeoProvider = "edge" | "ipwhois" | "maxmind" | "ipapi" | "ipapicom" | "none";
 export type GeoReliability = "low" | "medium" | "unknown";
 export type NetworkType =
   | "mobile"
@@ -63,7 +64,7 @@ const SUCCESS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const FAILURE_TTL_MS = 10 * 60 * 1000;
 const LOOKUP_TIMEOUT_MS = 4000;
 
-type ProviderName = "ipwhois" | "maxmind" | "ipapi";
+type ProviderName = "ipwhois" | "maxmind" | "ipapi" | "ipapicom";
 
 /**
  * Server-only diagnostic for a provider failure. Logs provider + failure kind
@@ -358,6 +359,50 @@ async function lookupIpApi(ip: string): Promise<LookupResult | null> {
   }
 }
 
+/** Parse an ip-api.com JSON body to a LookupResult. Exported for tests. */
+export function parseIpApiCom(j: Record<string, unknown>): LookupResult | null {
+  if (!j || j["status"] !== "success") return null;
+  // The "as" field looks like "AS15169 Google LLC"; org/isp are separate fields.
+  const asField = clean(j["as"], 200);
+  const asn = asField ? parseAsn(asField.split(" ")[0]) : null;
+  return {
+    country: clean(j["countryCode"], 10),
+    region: clean(j["regionName"], 120),
+    city: clean(j["city"], 120),
+    postal_code: clean(j["zip"], 20),
+    lookup_ok: true,
+    provider: "ipapicom",
+    asn,
+    as_organization: clean(j["org"], 200),
+    isp: clean(j["isp"], 200),
+    // ip-api.com returns explicit booleans for these; tor/relay are not offered.
+    is_mobile: explicitBool(j["mobile"]),
+    is_vpn: null,
+    is_proxy: explicitBool(j["proxy"]),
+    is_tor: null,
+    is_hosting: explicitBool(j["hosting"]),
+    is_relay: null,
+  };
+}
+
+// ip-api.com JSON API (server-side only; free tier is HTTP-only, which is fine
+// for a server-to-server coarse lookup). Coarse fields only; lat/long ignored.
+async function lookupIpApiCom(ip: string): Promise<LookupResult | null> {
+  try {
+    const j = await providerFetch(
+      "ipapicom",
+      `http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,countryCode,regionName,city,zip,as,org,isp,mobile,proxy,hosting`,
+      { headers: { Accept: "application/json" } },
+    );
+    if (!j) return null;
+    const parsed = parseIpApiCom(j);
+    if (!parsed) logProviderFailure("ipapicom", "unsuccessful");
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 const FLAG_KEYS = ["is_mobile", "is_vpn", "is_proxy", "is_tor", "is_hosting", "is_relay"] as const;
 
 /**
@@ -468,10 +513,15 @@ export async function resolveApproximateGeo(
     // Blocking must stay independent of the analytics-only ipapi.co fallback:
     // a cached ipapi result is ignored for blocking, and the blocking path
     // never writes to the cache (so it can't degrade a useful analytics row).
-    if (cached && !(purpose === "blocking" && cached.provider === "ipapi")) {
+    // Blocking must also ignore cached analytics-only fallback rows (ipapi.co,
+    // ip-api.com) so block decisions never depend on a provider the blocking
+    // chain itself would not have used.
+    const analyticsOnly = cached?.provider === "ipapi" || cached?.provider === "ipapicom";
+    if (cached && !(purpose === "blocking" && analyticsOnly)) {
       if (!cached.lookup_ok) return countryOnly();
       const provider: GeoProvider =
-        cached.provider === "ipwhois" || cached.provider === "maxmind" || cached.provider === "ipapi"
+        cached.provider === "ipwhois" || cached.provider === "maxmind" ||
+        cached.provider === "ipapi" || cached.provider === "ipapicom"
           ? cached.provider
           : "none";
       return finalize({
@@ -499,6 +549,12 @@ export async function resolveApproximateGeo(
       if (!isUsable(whois) && !isUsable(mm)) {
         const ipapi = await lookupIpApi(ip);
         if (ipapi) results.push(ipapi);
+        // Final analytics-only fallback: ip-api.com, only when ipapi.co also
+        // failed to yield a usable city/region.
+        if (!isUsable(ipapi)) {
+          const ipapicom = await lookupIpApiCom(ip);
+          if (ipapicom) results.push(ipapicom);
+        }
       }
     } else {
       const whois = await lookupIpWhoIs(ip);
@@ -517,7 +573,7 @@ export async function resolveApproximateGeo(
     // slowed down or doubled.
     if (!fresh && purpose === "analytics") {
       await new Promise((resolve) => setTimeout(resolve, 150));
-      const retryResults = await Promise.all([lookupIpWhoIs(ip), lookupIpApi(ip)]);
+      const retryResults = await Promise.all([lookupIpWhoIs(ip), lookupIpApi(ip), lookupIpApiCom(ip)]);
       fresh = mergeLookups(retryResults);
     }
 
