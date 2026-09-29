@@ -1,5 +1,5 @@
 // Maintenance mode gate. Set to false to restore the public site.
-export const MAINTENANCE_MODE = false;
+export const MAINTENANCE_MODE = true;
 
 export function isAdminPath(pathname: string): boolean {
   return pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/admin-analytics";
