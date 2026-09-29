@@ -312,7 +312,7 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
   };
 }
 
-export type AnalyticsReportRange = "1h" | "today" | "yesterday" | "collection" | "7d" | "30d";
+export type AnalyticsReportRange = "1h" | "4h" | "24h" | "today" | "yesterday" | "collection" | "7d" | "30d" | "custom";
 
 type ReportDetail = {
   sessionId: string;
@@ -325,8 +325,13 @@ type ReportDetail = {
   reason: string | null;
 };
 
-function reportWindow(range: AnalyticsReportRange, collection: WindowDef | null) {
+function reportWindow(range: AnalyticsReportRange, collection: WindowDef | null, custom?: { start?: string; end?: string }) {
   const end = new Date(Date.now() + 60_000).toISOString();
+  if (range === "custom" && custom?.start) {
+    const cEnd = custom.end && Date.parse(custom.end) < Date.parse(end) ? custom.end : end;
+    const fmt = (v: string) => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }).format(new Date(v));
+    return { start: custom.start, end: cEnd, label: `${fmt(custom.start)} – ${fmt(cEnd)} ET` };
+  }
   if (range === "collection" && collection) return { start: collection.start, end, label: collection.parsha };
   if (range === "today") return { start: startOfTodayNewYork(), end, label: "Today" };
   if (range === "yesterday") {
@@ -335,11 +340,11 @@ function reportWindow(range: AnalyticsReportRange, collection: WindowDef | null)
     const w = newYorkDayWindow(day);
     return { start: w.start, end: w.end, label: "Yesterday" };
   }
-  const hours = range === "1h" ? 1 : range === "30d" ? 24 * 30 : 24 * 7;
+  const hours = range === "1h" ? 1 : range === "4h" ? 4 : range === "24h" ? 24 : range === "30d" ? 24 * 30 : 24 * 7;
   return {
     start: new Date(Date.now() - hours * 60 * 60 * 1000).toISOString(),
     end,
-    label: range === "1h" ? "Last hour" : range === "30d" ? "Last 30 days" : "Last 7 days",
+    label: range === "1h" ? "Last hour" : range === "4h" ? "Last 4 hours" : range === "24h" ? "Last 24 hours" : range === "30d" ? "Last 30 days" : "Last 7 days",
   };
 }
 
@@ -593,8 +598,16 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
 }
 
 export const adminAnalyticsReport = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; range?: AnalyticsReportRange }) =>
-    z.object({ accessToken: z.string().min(10), range: z.enum(["1h", "today", "yesterday", "collection", "7d", "30d"]).optional() }).parse(input),
+  .inputValidator((input: { accessToken: string; range?: AnalyticsReportRange; customStart?: string; customEnd?: string }) =>
+    z
+      .object({
+        accessToken: z.string().min(10),
+        range: z.enum(["1h", "4h", "24h", "today", "yesterday", "collection", "7d", "30d", "custom"]).optional(),
+        customStart: z.string().datetime().optional(),
+        customEnd: z.string().datetime().optional(),
+      })
+      .refine((v) => v.range !== "custom" || (v.customStart && (!v.customEnd || Date.parse(v.customEnd) > Date.parse(v.customStart)) && Date.parse(v.customEnd ?? new Date().toISOString()) - Date.parse(v.customStart) <= 92 * 86400000), "Custom range needs a start before its end, up to 92 days.")
+      .parse(input),
   )
   .handler(async ({ data }) => {
     await requireAnalyticsAdmin(data.accessToken);
@@ -603,7 +616,7 @@ export const adminAnalyticsReport = createServerFn({ method: "POST" })
     if (pdfResult.error) throw new Error(pdfResult.error.message);
     const windows = buildCollectionWindows((pdfResult.data ?? []) as Array<{ parsha_key: string | null; created_at: string | null }>);
     const range = data.range ?? "collection";
-    const window = reportWindow(range, windows[0] ?? null);
+    const window = reportWindow(range, windows[0] ?? null, { start: data.customStart, end: data.customEnd });
     const priorWindow = priorReportWindow(range, window);
     const [rows, priorRows] = await Promise.all([
       fetchEventsBetween(window.start, window.end),
