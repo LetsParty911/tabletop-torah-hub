@@ -255,12 +255,12 @@ describe("resolveApproximateGeo blocking cache independence", () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it("blocking ignores a cached ipapi row and re-runs the original chain", async () => {
+  it("blocking reuses a fresh cached fallback row without external lookups", async () => {
     mockState.cacheRow = ipapiCacheRow;
     const geo = await resolveApproximateGeo(telemetry, "blocking");
-    expect(geo.city).toBeNull();
-    expect(calls.some((u) => u.includes("ipwho.is"))).toBe(true);
-    expect(calls.some((u) => u.includes("ipapi.co"))).toBe(false);
+    expect(geo.city).toBe("Bayonne");
+    expect(geo.provider).toBe("ipapi");
+    expect(calls).toHaveLength(0);
   });
 
   it("blocking never writes to the cache, preserving the analytics row", async () => {
@@ -359,16 +359,16 @@ describe("resolveApproximateGeo concurrent primaries + diagnostics", () => {
     expect(calls.some((u) => u.includes("ip-api.com"))).toBe(false);
   });
 
-  it("blocking never calls ip-api.com and ignores a cached ipapicom row", async () => {
+  it("blocking reuses a fresh cached ipapicom row without external lookups", async () => {
     mockState.cacheRow = {
       ip_address: "8.8.4.4", country: "US", region: "New Jersey", city: "Bayonne",
       postal_code: "07002", lookup_ok: true, provider: "ipapicom", fetched_at: new Date().toISOString(),
     };
     vi.stubGlobal("fetch", vi.fn(async (url: any) => { calls.push(String(url)); return new Response("x", { status: 500 }); }));
     const geo = await resolveApproximateGeo(telemetry, "blocking");
-    expect(geo.city).toBeNull();
-    expect(calls.some((u) => u.includes("ip-api.com"))).toBe(false);
-    expect(calls.some((u) => u.includes("ipwho.is"))).toBe(true);
+    expect(geo.city).toBe("Bayonne");
+    expect(geo.provider).toBe("ipapicom");
+    expect(calls).toHaveLength(0);
     expect(mockState.upserts).toHaveLength(0);
   });
 });
