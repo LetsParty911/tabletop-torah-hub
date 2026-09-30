@@ -18,6 +18,7 @@ import { standardizeCopy } from "@/lib/standardize-copy";
 import { publicationLabel } from "@/lib/badges";
 import { formatReadingLabel, displayReadingName } from "@/lib/parshiyos";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
+import { isYomTovReading, readingSlug } from "@/lib/reading-page";
 
 type ArchiveSearch = {
   year?: string;
@@ -414,6 +415,22 @@ function ArchivePage() {
             </div>
           </div>
         </section>
+
+        {parshaFilter !== "all" && !isYomTovReading(parshaFilter) && (
+          <section className="rounded-xl border border-accent/30 bg-card/25 px-4 py-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              Looking for the permanent parsha page?{" "}
+              <Link
+                to="/parsha/$slug"
+                params={{ slug: readingSlug(parshaFilter) }}
+                className="font-semibold text-primary underline decoration-accent/60 underline-offset-4 hover:text-accent"
+              >
+                Browse all Divrei Torah for {formatReadingLabel(parshaFilter)}
+              </Link>
+              .
+            </p>
+          </section>
+        )}
 
         {years.length > 0 && (
           <section className="parchment-frame">
