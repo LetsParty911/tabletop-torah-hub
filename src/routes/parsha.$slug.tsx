@@ -142,9 +142,11 @@ function PermanentParshaPage() {
             Divrei Torah on {page.label}
           </h1>
           <p className="mx-auto mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground">
-            Browse Divrei Torah for {page.label}, including short vorts, printable Torah sheets,
-            stories, family-table material and longer essays. This page gathers the available
-            selections from every year in the Torah for the Table archive.
+            Looking for a Dvar Torah on {page.label}? This permanent library brings together the
+            Torah for the Table selections for {page.label} from every available year, including
+            quick vorts, material for children and families, stories, printable Torah sheets and
+            longer pieces for deeper learning. Choose an individual selection below to read more
+            about it before opening or printing the PDF.
           </p>
         </header>
 
@@ -230,7 +232,9 @@ function PermanentParshaPage() {
                 const description = resource.summary_quick || resource.description;
                 const meta = [
                   resource.audience,
-                  resource.format_type || resource.content_type,
+                  resource.content_type === "Questions & Answers"
+                    ? resource.content_type
+                    : resource.format_type || resource.content_type,
                   resource.page_count
                     ? `${resource.page_count} ${resource.page_count === 1 ? "page" : "pages"}`
                     : null,
