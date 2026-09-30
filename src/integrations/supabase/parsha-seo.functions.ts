@@ -24,6 +24,8 @@ export type ParshaSeoPage = {
   total_count: number;
   years: Array<{ year: number; count: number }>;
   resources: ParshaSeoResource[];
+  audience_counts: Record<string, number>;
+  type_counts: Record<string, number>;
 };
 
 function canonicalParshaForSlug(slug: string): string | null {
@@ -57,6 +59,8 @@ export const getParshaSeoPage = createServerFn({ method: "GET" })
         total_count: 0,
         years: [],
         resources: [],
+        audience_counts: {},
+        type_counts: {},
       };
     }
 
@@ -73,6 +77,15 @@ export const getParshaSeoPage = createServerFn({ method: "GET" })
     const years = [...yearCounts.entries()]
       .map(([year, count]) => ({ year, count }))
       .sort((a, b) => b.year - a.year);
+
+    const audience_counts: Record<string, number> = {};
+    const type_counts: Record<string, number> = {};
+    for (const row of matches) {
+      const audience = String((row as any).audience ?? "").trim();
+      if (audience) audience_counts[audience] = (audience_counts[audience] ?? 0) + 1;
+      const type = String((row as any).format_type ?? (row as any).content_type ?? "").trim();
+      if (type) type_counts[type] = (type_counts[type] ?? 0) + 1;
+    }
 
     const resources: ParshaSeoResource[] = matches.slice(0, 18).map((row: any) => ({
       id: row.id as string,
@@ -93,6 +106,8 @@ export const getParshaSeoPage = createServerFn({ method: "GET" })
       total_count: matches.length,
       years,
       resources,
+      audience_counts,
+      type_counts,
     };
   });
 
