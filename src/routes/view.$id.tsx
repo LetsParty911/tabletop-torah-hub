@@ -15,6 +15,7 @@ import { formatTypeLabel } from "@/lib/format-labels";
 import { formatReadingLabel } from "@/lib/parshiyos";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { publicationLabel } from "@/lib/badges";
+import { isYomTovReading, readingSlug } from "@/lib/reading-page";
 import { DownloadToPrintButton, trackDownloadAction } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
@@ -256,6 +257,25 @@ function ViewPdf() {
             )}
           </div>
         </div>
+
+        {pdf.parsha_key && !isYomTovReading(pdf.parsha_key) && (
+          <section className="mt-5 rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
+            <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable">
+              More on this parsha
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Browse more Divrei Torah, short vorts, stories and printable material for{" "}
+              <Link
+                to="/parsha/$slug"
+                params={{ slug: readingSlug(pdf.parsha_key) }}
+                className="font-semibold text-primary underline decoration-accent/60 underline-offset-4 hover:text-accent"
+              >
+                {formatReadingLabel(pdf.parsha_key)}
+              </Link>
+              .
+            </p>
+          </section>
+        )}
 
         {pdf.description && (
           <section className="mt-5 rounded-xl border border-accent/30 bg-accent/5 p-4 sm:p-5">
