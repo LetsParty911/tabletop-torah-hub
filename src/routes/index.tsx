@@ -340,7 +340,9 @@ function Index() {
             : r.page_count >= 5
         : false;
   const resourceContentType = (r: Resource) =>
-    formatTypeLabel(r.format_type) ?? formatTypeLabel(r.content_type);
+    r.content_type === "Questions & Answers"
+      ? "Questions & Answers"
+      : formatTypeLabel(r.format_type) ?? formatTypeLabel(r.content_type);
   const matchesContentType = (r: Resource, value = contentTypeFilter) =>
     value === "All" || resourceContentType(r) === value;
 
