@@ -1033,6 +1033,18 @@ function Index() {
           </div>
         )}
 
+        <section className="mx-auto max-w-2xl text-center">
+          <Link
+            to="/divrei-torah-parsha"
+            className="inline-flex items-center justify-center rounded-full border border-accent/45 bg-background px-5 py-2.5 font-serif font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            Browse Divrei Torah for Every Parsha
+          </Link>
+          <p className="mx-auto mt-2 max-w-xl text-xs leading-relaxed text-muted-foreground">
+            Permanent parsha pages with short vorts, printable Torah sheets, family material and archive selections.
+          </p>
+        </section>
+
         <div className="gold-divider" aria-hidden>
           <span className="gold-divider-dot" />
         </div>
