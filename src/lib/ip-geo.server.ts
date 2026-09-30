@@ -24,7 +24,7 @@
 
 import type { RequestTelemetry } from "./request-telemetry.server";
 
-export type GeoSource = "edge" | "ip_lookup" | "country_only";
+export type GeoSource = "edge" | "ip_lookup" | "country_only" | "geo_pending";
 export type GeoProvider = "edge" | "ipwhois" | "maxmind" | "ipapi" | "ipapicom" | "none";
 export type GeoReliability = "low" | "medium" | "unknown";
 export type NetworkType =
