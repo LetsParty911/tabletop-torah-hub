@@ -250,6 +250,7 @@ async function resolveCurrentFeatured(): Promise<{
 // ---------- Public: list published PDFs for a parsha key ----------
 type PdfResource = {
   id: string;
+  parsha_key: string | null;
   title: string;
   publisher: string | null;
   subtitle: string | null;
@@ -329,6 +330,7 @@ async function buildResources(
         .createSignedUrl(r.file_path, 60 * 60);
       return {
         id: r.id,
+        parsha_key: (r.parsha_key as string | null) ?? null,
         title: displayTitle(r),
         publisher: canonical.get(r.id as string)?.publisher ?? null,
         subtitle: standardizeCopy(r.subtitle),
