@@ -19,6 +19,7 @@ import { Route as OriginalsRouteImport } from './routes/originals'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as MyTableRouteImport } from './routes/my-table'
 import { Route as MissionRouteImport } from './routes/mission'
+import { Route as DivreiTorahParshaRouteImport } from './routes/divrei-torah-parsha'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin-analytics'
@@ -29,6 +30,7 @@ import { Route as UnsubscribeIndexRouteImport } from './routes/unsubscribe.index
 import { Route as ViewIdRouteImport } from './routes/view.$id'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as PublicationSlugRouteImport } from './routes/publication.$slug'
+import { Route as ParshaSlugRouteImport } from './routes/parsha.$slug'
 import { Route as OgImageDotpngRouteImport } from './routes/og.image[.]png'
 import { Route as ManageTableTokenRouteImport } from './routes/manage-table.$token'
 import { Route as ApiTrackViewRouteImport } from './routes/api/track-view'
@@ -94,6 +96,11 @@ const MissionRoute = MissionRouteImport.update({
   path: '/mission',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DivreiTorahParshaRoute = DivreiTorahParshaRouteImport.update({
+  id: '/divrei-torah-parsha',
+  path: '/divrei-torah-parsha',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
@@ -142,6 +149,11 @@ const UnsubscribeTokenRoute = UnsubscribeTokenRouteImport.update({
 const PublicationSlugRoute = PublicationSlugRouteImport.update({
   id: '/publication/$slug',
   path: '/publication/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParshaSlugRoute = ParshaSlugRouteImport.update({
+  id: '/parsha/$slug',
+  path: '/parsha/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OgImageDotpngRoute = OgImageDotpngRouteImport.update({
@@ -205,9 +217,9 @@ const ViewIdDownloadRoute = ViewIdDownloadRouteImport.update({
   getParentRoute: () => ViewIdRoute,
 } as any)
 const ParshaSlugYearRoute = ParshaSlugYearRouteImport.update({
-  id: '/parsha/$slug/$year',
-  path: '/parsha/$slug/$year',
-  getParentRoute: () => rootRouteImport,
+  id: '/$year',
+  path: '/$year',
+  getParentRoute: () => ParshaSlugRoute,
 } as any)
 const ApiUnsubscribeTokenRoute = ApiUnsubscribeTokenRouteImport.update({
   id: '/api/unsubscribe/$token',
@@ -222,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
+  '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
   '/offline': typeof OfflineRoute
@@ -241,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/api/track-view': typeof ApiTrackViewRoute
   '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
+  '/parsha/$slug': typeof ParshaSlugRouteWithChildren
   '/publication/$slug': typeof PublicationSlugRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
@@ -258,6 +272,7 @@ export interface FileRoutesByTo {
   '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
+  '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
   '/offline': typeof OfflineRoute
@@ -277,6 +292,7 @@ export interface FileRoutesByTo {
   '/api/track-view': typeof ApiTrackViewRoute
   '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
+  '/parsha/$slug': typeof ParshaSlugRouteWithChildren
   '/publication/$slug': typeof PublicationSlugRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
@@ -295,6 +311,7 @@ export interface FileRoutesById {
   '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
+  '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
   '/offline': typeof OfflineRoute
@@ -314,6 +331,7 @@ export interface FileRoutesById {
   '/api/track-view': typeof ApiTrackViewRoute
   '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
+  '/parsha/$slug': typeof ParshaSlugRouteWithChildren
   '/publication/$slug': typeof PublicationSlugRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
@@ -333,6 +351,7 @@ export interface FileRouteTypes {
     | '/admin-analytics'
     | '/archive'
     | '/contact'
+    | '/divrei-torah-parsha'
     | '/mission'
     | '/my-table'
     | '/offline'
@@ -352,6 +371,7 @@ export interface FileRouteTypes {
     | '/api/track-view'
     | '/manage-table/$token'
     | '/og/image.png'
+    | '/parsha/$slug'
     | '/publication/$slug'
     | '/unsubscribe/$token'
     | '/view/$id'
@@ -369,6 +389,7 @@ export interface FileRouteTypes {
     | '/admin-analytics'
     | '/archive'
     | '/contact'
+    | '/divrei-torah-parsha'
     | '/mission'
     | '/my-table'
     | '/offline'
@@ -388,6 +409,7 @@ export interface FileRouteTypes {
     | '/api/track-view'
     | '/manage-table/$token'
     | '/og/image.png'
+    | '/parsha/$slug'
     | '/publication/$slug'
     | '/unsubscribe/$token'
     | '/view/$id'
@@ -405,6 +427,7 @@ export interface FileRouteTypes {
     | '/admin-analytics'
     | '/archive'
     | '/contact'
+    | '/divrei-torah-parsha'
     | '/mission'
     | '/my-table'
     | '/offline'
@@ -424,6 +447,7 @@ export interface FileRouteTypes {
     | '/api/track-view'
     | '/manage-table/$token'
     | '/og/image.png'
+    | '/parsha/$slug'
     | '/publication/$slug'
     | '/unsubscribe/$token'
     | '/view/$id'
@@ -442,6 +466,7 @@ export interface RootRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   ArchiveRoute: typeof ArchiveRoute
   ContactRoute: typeof ContactRoute
+  DivreiTorahParshaRoute: typeof DivreiTorahParshaRoute
   MissionRoute: typeof MissionRoute
   MyTableRoute: typeof MyTableRoute
   OfflineRoute: typeof OfflineRoute
@@ -461,12 +486,12 @@ export interface RootRouteChildren {
   ApiTrackViewRoute: typeof ApiTrackViewRoute
   ManageTableTokenRoute: typeof ManageTableTokenRoute
   OgImageDotpngRoute: typeof OgImageDotpngRoute
+  ParshaSlugRoute: typeof ParshaSlugRouteWithChildren
   PublicationSlugRoute: typeof PublicationSlugRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ViewIdRoute: typeof ViewIdRouteWithChildren
   UnsubscribeIndexRoute: typeof UnsubscribeIndexRoute
   ApiUnsubscribeTokenRoute: typeof ApiUnsubscribeTokenRoute
-  ParshaSlugYearRoute: typeof ParshaSlugYearRoute
   YomTovSlugYearRoute: typeof YomTovSlugYearRoute
 }
 
@@ -542,6 +567,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MissionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/divrei-torah-parsha': {
+      id: '/divrei-torah-parsha'
+      path: '/divrei-torah-parsha'
+      fullPath: '/divrei-torah-parsha'
+      preLoaderRoute: typeof DivreiTorahParshaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact': {
       id: '/contact'
       path: '/contact'
@@ -610,6 +642,13 @@ declare module '@tanstack/react-router' {
       path: '/publication/$slug'
       fullPath: '/publication/$slug'
       preLoaderRoute: typeof PublicationSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parsha/$slug': {
+      id: '/parsha/$slug'
+      path: '/parsha/$slug'
+      fullPath: '/parsha/$slug'
+      preLoaderRoute: typeof ParshaSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/og/image.png': {
@@ -698,10 +737,10 @@ declare module '@tanstack/react-router' {
     }
     '/parsha/$slug/$year': {
       id: '/parsha/$slug/$year'
-      path: '/parsha/$slug/$year'
+      path: '/$year'
       fullPath: '/parsha/$slug/$year'
       preLoaderRoute: typeof ParshaSlugYearRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ParshaSlugRoute
     }
     '/api/unsubscribe/$token': {
       id: '/api/unsubscribe/$token'
@@ -712,6 +751,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface ParshaSlugRouteChildren {
+  ParshaSlugYearRoute: typeof ParshaSlugYearRoute
+}
+
+const ParshaSlugRouteChildren: ParshaSlugRouteChildren = {
+  ParshaSlugYearRoute: ParshaSlugYearRoute,
+}
+
+const ParshaSlugRouteWithChildren = ParshaSlugRoute._addFileChildren(
+  ParshaSlugRouteChildren,
+)
 
 interface ViewIdRouteChildren {
   ViewIdDownloadRoute: typeof ViewIdDownloadRoute
@@ -733,6 +784,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   ArchiveRoute: ArchiveRoute,
   ContactRoute: ContactRoute,
+  DivreiTorahParshaRoute: DivreiTorahParshaRoute,
   MissionRoute: MissionRoute,
   MyTableRoute: MyTableRoute,
   OfflineRoute: OfflineRoute,
@@ -752,12 +804,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTrackViewRoute: ApiTrackViewRoute,
   ManageTableTokenRoute: ManageTableTokenRoute,
   OgImageDotpngRoute: OgImageDotpngRoute,
+  ParshaSlugRoute: ParshaSlugRouteWithChildren,
   PublicationSlugRoute: PublicationSlugRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ViewIdRoute: ViewIdRouteWithChildren,
   UnsubscribeIndexRoute: UnsubscribeIndexRoute,
   ApiUnsubscribeTokenRoute: ApiUnsubscribeTokenRoute,
-  ParshaSlugYearRoute: ParshaSlugYearRoute,
   YomTovSlugYearRoute: YomTovSlugYearRoute,
 }
 export const routeTree = rootRouteImport
