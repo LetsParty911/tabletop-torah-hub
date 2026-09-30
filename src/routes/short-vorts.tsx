@@ -8,6 +8,7 @@ import { getParshaOverride, listPublishedPdfs } from "@/integrations/supabase/ap
 import { VORTS, getVortsForParsha, type Vort } from "@/data/vorts";
 import { PARSHIYOS, formatReadingLabel, YOM_TOV_KEYS } from "@/lib/parshiyos";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
+import { isYomTovReading, readingSlug } from "@/lib/reading-page";
 
 type LoaderData = {
   label: string;
@@ -176,6 +177,17 @@ function ParshaSection({
       </h2>
       {open && (
         <div id={`${id}-panel`} className="px-4 pb-5">
+          {!isYomTovReading(emptyLabel ?? heading) && (
+            <div className="mb-4 text-center">
+              <Link
+                to="/parsha/$slug"
+                params={{ slug: readingSlug(emptyLabel ?? heading) }}
+                className="text-sm font-semibold text-primary underline decoration-accent/60 underline-offset-4 hover:text-accent"
+              >
+                See all Divrei Torah for {emptyLabel ?? heading}
+              </Link>
+            </div>
+          )}
           {vorts.length > 0 ? (
             <div className="grid gap-5 sm:grid-cols-2">
               {vorts.map((v) => (
