@@ -20,6 +20,7 @@ export type RelatedEdition = {
   description: string | null;
   audience: string | null;
   format_type: string | null;
+  content_type: string | null;
   page_count: number | null;
 };
 
@@ -56,7 +57,7 @@ export const getItemPublicationContext = createServerFn({ method: "GET" })
 
     const { data: rows, error: rowsError } = await admin
       .from("pdfs")
-      .select("id, title, parsha_key, jewish_year, description, audience, format_type, page_count, created_at")
+      .select("id, title, parsha_key, jewish_year, description, audience, format_type, content_type, page_count, created_at")
       .eq("published", true)
       .eq("publication_id", publication.id)
       .neq("id", data.id)
@@ -83,6 +84,7 @@ export const getItemPublicationContext = createServerFn({ method: "GET" })
         description: standardizeCopy((row.description as string | null) ?? null),
         audience: (row.audience as string | null) ?? null,
         format_type: (row.format_type as string | null) ?? null,
+        content_type: (row.content_type as string | null) ?? null,
         page_count: typeof row.page_count === "number" ? row.page_count : null,
       })) as RelatedEdition[],
     };
