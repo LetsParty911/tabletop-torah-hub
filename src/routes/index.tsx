@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { isPostShabbosWindow } from "@/lib/post-shabbos";
 import { FileText, Share2 } from "lucide-react";
-import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { PublicationCardTracker } from "@/components/PublicationCardTracker";
@@ -31,8 +30,6 @@ import {
   listHomepageWeek,
   getParshaOverride,
   getActiveSubscriberCount,
-  getAnnouncementBanner,
-  type AnnouncementBanner as AnnouncementBannerData,
 } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
@@ -72,16 +69,9 @@ type LoaderData = {
   subscriberCount: number | null;
   readingDate: string | null;
   upcomingAfterYomTovKey: string | null;
-  announcementBanner: AnnouncementBannerData;
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
-  const announcementBannerPromise = getAnnouncementBanner().catch(() => ({
-    enabled: false,
-    text: null,
-    linkUrl: null,
-    linkLabel: null,
-  }));
   const subscriberCountPromise = getActiveSubscriberCount().catch((e) => {
     console.error("Failed to load subscriber count", e);
     return { count: 0 };
@@ -150,7 +140,6 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     subscriberCount,
     readingDate,
     upcomingAfterYomTovKey,
-    announcementBanner: await announcementBannerPromise,
   };
 }
 
@@ -452,20 +441,7 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AnnouncementBanner initialBanner={loaderData.announcementBanner} />
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
-        {isSukkosSeason && (
-          <section aria-label="Sukkos greeting" className="overflow-hidden rounded-xl shadow-md ring-1 ring-accent/25">
-            <img
-              src="/assets/sukkos-chag-sameach-banner.svg"
-              alt="TorahForTheTable.com wishes everyone a Chag Sameach"
-              width={1600}
-              height={900}
-              fetchPriority="high"
-              className="block h-auto w-full"
-            />
-          </section>
-        )}
         <section className="parchment-frame">
           <div className="parchment-panel text-center">
             <p className="hidden font-sans text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-accent-readable sm:block sm:text-xs">
