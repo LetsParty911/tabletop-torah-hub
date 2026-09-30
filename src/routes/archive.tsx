@@ -29,6 +29,7 @@ type ArchiveSearch = {
   length?: "All" | "short" | "long" | "study";
   type?: string;
   pub?: string;
+  page?: number;
 };
 
 type ResolvedArchiveSearch = Required<ArchiveSearch>;
@@ -49,6 +50,7 @@ function parseArchiveSearch(input: Record<string, unknown>): ResolvedArchiveSear
     length: (LENGTH_VALUES as readonly string[]).includes(length) ? length : "All",
     type: str(input['type']).slice(0, 60) || "All",
     pub: str(input['pub']).slice(0, 120) || "All",
+    page: Math.max(1, Math.min(999, Number.parseInt(str(input['page']), 10) || 1)),
   };
 }
 
@@ -62,6 +64,7 @@ function stripDefaults(s: ResolvedArchiveSearch) {
   if (s.length !== "All") out.length = s.length;
   if (s.type !== "All") out.type = s.type;
   if (s.pub !== "All") out.pub = s.pub;
+  if (s.page > 1) out.page = s.page;
   return out;
 }
 
@@ -80,6 +83,7 @@ export const Route = createFileRoute("/archive")({
         length: "All" as const,
         type: "All",
         pub: "All",
+        page: 1,
       }),
     ],
   },
@@ -204,8 +208,11 @@ function ArchivePage() {
   const lengthFilter = search.length;
   const typeFilter = search.type;
   const pubFilter = search.pub;
+  const page = search.page;
+  const PAGE_SIZE = 48;
 
   const setSearch = (patch: ArchiveSearch, replace = false) => {
+    if (!Object.prototype.hasOwnProperty.call(patch, "page")) patch.page = 1;
     void navigate({
       search: (prev: Record<string, unknown>) =>
         stripDefaults(parseArchiveSearch({ ...prev, ...patch })) as never,
@@ -371,6 +378,29 @@ function ArchivePage() {
       sum + y.parshiyos.reduce((s: number, p: ArchiveParsha) => s + p.pdfs.length, 0),
     0,
   );
+
+  const totalPages = Math.max(1, Math.ceil(totalPdfs / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pagedYears = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+    let cursor = 0;
+    const out: ArchiveYear[] = [];
+    for (const y of filteredYears) {
+      const parshiyos: ArchiveParsha[] = [];
+      for (const p of y.parshiyos) {
+        const next = cursor + p.pdfs.length;
+        const from = Math.max(0, start - cursor);
+        const to = Math.min(p.pdfs.length, end - cursor);
+        if (from < to) parshiyos.push({ ...p, pdfs: p.pdfs.slice(from, to) });
+        cursor = next;
+        if (cursor >= end) break;
+      }
+      if (parshiyos.length) out.push({ ...y, parshiyos });
+      if (cursor >= end) break;
+    }
+    return out;
+  }, [filteredYears, safePage]);
 
   const loggedQuery = useRef<string | null>(null);
   useEffect(() => {
@@ -679,7 +709,7 @@ function ArchivePage() {
           </section>
         ) : (
           <div id="archive-results" className="space-y-5 sm:space-y-8 md:space-y-10">
-            {filteredYears.map((y: ArchiveYear) => (
+            {pagedYears.map((y: ArchiveYear) => (
               <section key={y.year} className="parchment-frame">
                 <div className="parchment-panel">
                   <div className="flex items-baseline justify-between gap-4 border-b-2 border-accent/30 pb-4 mb-6">
@@ -821,6 +851,32 @@ function ArchivePage() {
               </section>
             ))}
           </div>
+        )}
+
+        {filteredYears.length > 0 && totalPages > 1 && (
+          <nav aria-label="Archive pages" className="flex items-center justify-center gap-3">
+            {safePage > 1 && (
+              <button
+                type="button"
+                onClick={() => setSearch({ page: safePage - 1 })}
+                className="rounded-full border border-accent/45 bg-background px-4 py-2 text-sm font-semibold text-primary hover:bg-accent/10"
+              >
+                ← Previous
+              </button>
+            )}
+            <span className="text-sm text-muted-foreground">
+              Page {safePage} of {totalPages} · {totalPdfs} results
+            </span>
+            {safePage < totalPages && (
+              <button
+                type="button"
+                onClick={() => setSearch({ page: safePage + 1 })}
+                className="rounded-full border border-accent/45 bg-background px-4 py-2 text-sm font-semibold text-primary hover:bg-accent/10"
+              >
+                Next →
+              </button>
+            )}
+          </nav>
         )}
 
         <SiteFooter />
