@@ -18,6 +18,9 @@ export function SiteFooter() {
         <Link to="/archive" className={linkClass}>
           Archive
         </Link>
+        <Link to="/divrei-torah-parsha" className={linkClass}>
+          Divrei Torah by Parsha
+        </Link>
         <Link to="/publications" className={linkClass}>
           Publications
         </Link>
