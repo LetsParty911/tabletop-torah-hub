@@ -150,3 +150,56 @@ export const getRelatedParshaItems = createServerFn({ method: "GET" })
       page_count: typeof row.page_count === "number" ? row.page_count : null,
     }));
   });
+
+
+export type OriginalHtmlContent = {
+  text: string;
+  extracted: boolean;
+};
+
+const TFTT_ORIGINAL_PUBLICATION_IDS = new Set([
+  "0fa3db5f-c153-4311-a007-415c3c022143",
+  "88719788-42fb-4e0b-a34b-3ea1868e750d",
+]);
+
+export const getOriginalHtmlContent = createServerFn({ method: "GET" })
+  .inputValidator((input: { id: string }) =>
+    z.object({ id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }): Promise<OriginalHtmlContent | null> => {
+    const admin = getSupabaseAdmin();
+    const { data: row, error } = await admin
+      .from("pdfs")
+      .select("file_path, publication, publication_id")
+      .eq("id", data.id)
+      .eq("published", true)
+      .maybeSingle();
+
+    if (error || !row?.file_path) return null;
+    const isOriginal =
+      row.publication === "tftt_original" ||
+      (row.publication_id && TFTT_ORIGINAL_PUBLICATION_IDS.has(row.publication_id as string));
+    if (!isOriginal) return null;
+
+    try {
+      const { data: file, error: downloadError } = await admin.storage
+        .from("pdfs")
+        .download(row.file_path as string);
+      if (downloadError || !file) return null;
+
+      const bytes = Buffer.from(await file.arrayBuffer());
+      const { default: pdfParse } = await import("pdf-parse");
+      const parsed = await pdfParse(bytes);
+      const text = String(parsed.text ?? "")
+        .replace(/\r\n/g, "\n")
+        .replace(/[ \t]+\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+
+      if (text.length < 80) return null;
+      return { text, extracted: true };
+    } catch (e) {
+      console.error("getOriginalHtmlContent extraction error", e);
+      return null;
+    }
+  });
