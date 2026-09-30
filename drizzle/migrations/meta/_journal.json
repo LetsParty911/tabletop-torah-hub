@@ -15,6 +15,13 @@
       "when": 1790711116019,
       "tag": "0001_create_site_maintenance",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790738432419,
+      "tag": "0002_geo_block_cache",
+      "breakpoints": true
     }
   ]
 }
