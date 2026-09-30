@@ -1027,16 +1027,18 @@ function Index() {
           </div>
         </section>
 
-        <WeeklyEmailSignup
-          sourceId="homepage"
-          heading="GET EACH NEW COLLECTION EVERY THURSDAY"
-        />
+        <section aria-label="Stay connected" className="mx-auto max-w-2xl">
+          <WeeklyEmailSignup
+            sourceId="homepage"
+            heading="GET EACH NEW COLLECTION EVERY THURSDAY"
+          />
 
-        {resources.length > 0 && !isCurrentYomKippur && (
-          <div className="flex justify-center">
-            <ShareButton className="w-full sm:w-auto" />
-          </div>
-        )}
+          {resources.length > 0 && !isCurrentYomKippur && (
+            <div className="mt-3 flex justify-center">
+              <ShareButton className="w-full border-accent/45 px-4 py-2 text-sm font-medium sm:w-auto" />
+            </div>
+          )}
+        </section>
 
         <section className="mx-auto max-w-2xl text-center">
           <Link
