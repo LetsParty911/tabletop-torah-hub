@@ -1,27 +1,8 @@
-import { useEffect, useState } from "react";
 import { Megaphone } from "lucide-react";
-import {
-  getAnnouncementBanner,
-  type AnnouncementBanner as Banner,
-} from "@/integrations/supabase/api.functions";
+import type { AnnouncementBanner as Banner } from "@/integrations/supabase/api.functions";
 
-export function AnnouncementBanner() {
-  const [banner, setBanner] = useState<Banner | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const b = await getAnnouncementBanner();
-        if (!cancelled) setBanner(b);
-      } catch {
-        // silent
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+export function AnnouncementBanner({ initialBanner }: { initialBanner: Banner }) {
+  const banner = initialBanner;
 
   if (!banner || !banner.enabled || !banner.text || !banner.text.trim()) {
     return null;
