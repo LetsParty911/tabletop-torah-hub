@@ -73,7 +73,7 @@ function DivreiTorahParshaPage() {
           </p>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {parshiyos.map((parsha) => (
+            {available.map((parsha) => (
               <Link
                 key={parsha.slug}
                 to="/parsha/$slug"
@@ -83,15 +83,16 @@ function DivreiTorahParshaPage() {
                 <div className="min-w-0">
                   <h2 className="font-serif text-lg font-bold text-primary">{parsha.label}</h2>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {parsha.count > 0
-                      ? `${parsha.count} ${parsha.count === 1 ? "selection" : "selections"}${parsha.years.length ? ` · ${parsha.years.length} ${parsha.years.length === 1 ? "year" : "years"}` : ""}`
-                      : "Collection building"}
+                    {`${parsha.count} ${parsha.count === 1 ? "selection" : "selections"}${parsha.years.length ? ` · ${parsha.years.length} ${parsha.years.length === 1 ? "year" : "years"}` : ""}`}
                   </p>
                 </div>
                 <ChevronRight className="h-4 w-4 shrink-0 text-accent transition-transform group-hover:translate-x-0.5" />
               </Link>
             ))}
           </div>
+          <p className="mt-5 text-sm text-muted-foreground">
+            Additional parsha pages will appear automatically as material is added to the archive.
+          </p>
         </section>
 
         <section className="mt-10 grid gap-5 md:grid-cols-2">
