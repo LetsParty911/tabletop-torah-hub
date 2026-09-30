@@ -209,7 +209,9 @@ function ViewPdf() {
 
   const metaLine = [
     audienceLabel(normalizeAudience(pdf.audience, pdf.title)) ?? pdf.audience,
-    formatTypeLabel(pdf.format_type),
+    pdf.content_type === "Questions & Answers"
+      ? "Questions & Answers"
+      : formatTypeLabel(pdf.format_type),
     typeof pdf.page_count === "number"
       ? pdf.page_count >= 20
         ? `Long Study · ${pdf.page_count} pages`
@@ -410,7 +412,9 @@ function ViewPdf() {
                   edition.audience
                     ? audienceLabel(normalizeAudience(edition.audience, edition.title)) ?? edition.audience
                     : null,
-                  formatTypeLabel(edition.format_type),
+                  edition.content_type === "Questions & Answers"
+                    ? "Questions & Answers"
+                    : formatTypeLabel(edition.format_type),
                   typeof edition.page_count === "number"
                     ? `${edition.page_count} ${edition.page_count === 1 ? "page" : "pages"}`
                     : null,
