@@ -94,6 +94,35 @@ function PermanentParshaPage() {
           </p>
         </header>
 
+        {page.total_count > 0 && (
+          <section className="mt-9 rounded-2xl border border-accent/25 bg-card/25 p-5 sm:p-6">
+            <h2 className="font-serif text-2xl font-bold text-primary">
+              {page.label} Divrei Torah at a Glance
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              The Torah for the Table archive currently includes {page.total_count}{" "}
+              {page.total_count === 1 ? "selection" : "selections"} for {page.label}
+              {page.years.length > 0
+                ? ` across ${page.years.length} Jewish year${page.years.length === 1 ? "" : "s"}`
+                : ""}. Use the year collections below to browse earlier material, or choose an individual Dvar Torah to preview and print.
+            </p>
+            {(Object.keys(page.audience_counts).length > 0 || Object.keys(page.type_counts).length > 0) && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {Object.entries(page.audience_counts).map(([label, count]) => (
+                  <span key={`audience-${label}`} className="rounded-full border border-accent/30 bg-background px-3 py-1.5 text-xs font-medium text-primary">
+                    {label}: {count}
+                  </span>
+                ))}
+                {Object.entries(page.type_counts).map(([label, count]) => (
+                  <span key={`type-${label}`} className="rounded-full border border-accent/30 bg-background px-3 py-1.5 text-xs font-medium text-primary">
+                    {label}: {count}
+                  </span>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
         {page.years.length > 0 && (
           <section className="mt-9 rounded-2xl border border-accent/25 bg-card/25 p-5 sm:p-6">
             <h2 className="font-serif text-2xl font-bold text-primary">
