@@ -3983,11 +3983,15 @@ export const adminTrafficSources = createServerFn({ method: "POST" })
         byCampaign: funnelBy((r) => campaign(r)),
       },
       visits: {
+        // Keep the raw page-view row count for audit, but source attribution is
+        // session-level first-touch. page_views may carry the same first-touch
+        // referrer/UTM values on every row in a session, so tallying every row
+        // would multiply one referral by the visitor's page depth.
         total: views.length,
-        referrers: tally(views, (r) => direct(r["referrer_host"])),
+        referrers: tally(landings, (r) => direct(r["referrer_host"])),
         landingPages: tally(landings, (r) => unknownPath(r["path"])),
         campaigns: tally(
-          views.filter((r) => campaign(r) !== null),
+          landings.filter((r) => campaign(r) !== null),
           (r) => campaign(r) as string,
         ),
       },
