@@ -26,6 +26,7 @@ import {
   isPastReading,
 } from "@/lib/hebcal";
 import { formatReadingLabel } from "@/lib/parshiyos";
+import { isYomTovReading, readingSlug } from "@/lib/reading-page";
 import {
   listHomepageWeek,
   getParshaOverride,
@@ -670,6 +671,17 @@ function Index() {
                   ? `${displayedLabel} Collection — Still Available`
                   : "This Week's Collection"}
             </h2>
+            {displayedParshaKey && !isYomTovCollection && !isYomTovReading(displayedParshaKey) && (
+              <p className="mt-2 text-center text-sm text-muted-foreground">
+                <Link
+                  to="/parsha/$slug"
+                  params={{ slug: readingSlug(displayedParshaKey) }}
+                  className="text-accent underline decoration-accent/60 underline-offset-4 hover:text-primary"
+                >
+                  Browse all {formatReadingLabel(displayedParshaKey)} Divrei Torah
+                </Link>
+              </p>
+            )}
 
             <TableChooser
               resources={sortedResources}

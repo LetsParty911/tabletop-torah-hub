@@ -648,6 +648,8 @@ export type PublicPdf = {
   publication: string | null;
   parsha_key: string | null;
   thumb_url: string | null;
+  summary_quick: string | null;
+  summary_full: string | null;
 };
 
 // First-page preview images live in the public `pdf-thumbs` bucket, keyed by
@@ -683,11 +685,15 @@ export const getPdfById = createServerFn({ method: "GET" })
       badge?: string | null;
       publication?: string | null;
       parsha_key?: string | null;
+      summary_quick?: string | null;
+      summary_full?: string | null;
     };
     // Ladder degrades one optional column group at a time so a single missing
     // legacy column can't drop parsha_key/description from the response.
     // NOTE: updated_at does not exist on this table; keep it out of the base set.
     const selects = [
+      "id, title, subtitle, file_path, published, created_at, week_of, description, audience, format_type, page_count, badge, publication, parsha_key, summary_quick, summary_full",
+      "id, title, subtitle, file_path, published, created_at, week_of, description, audience, format_type, page_count, badge, publication, parsha_key, summary_quick",
       "id, title, subtitle, file_path, published, created_at, week_of, description, audience, format_type, page_count, badge, publication, parsha_key",
       "id, title, subtitle, file_path, published, created_at, week_of, description, audience, format_type, page_count, badge, parsha_key",
       "id, title, subtitle, file_path, published, created_at, week_of, description, parsha_key",
@@ -755,6 +761,8 @@ export const getPdfById = createServerFn({ method: "GET" })
         publication: row.publication ?? null,
         parsha_key: row.parsha_key ?? null,
         thumb_url: pdfThumbUrl(row.id),
+        summary_quick: standardizeCopy(row.summary_quick ?? null),
+        summary_full: standardizeCopy(row.summary_full ?? null),
       } as PublicPdf,
     };
   });

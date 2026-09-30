@@ -203,6 +203,10 @@ function ViewPdf() {
     });
   };
 
+  const norm = (v: string | null | undefined) => (v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+  const chosenSummary = (pdf.summary_full?.trim() || pdf.summary_quick?.trim() || "") as string;
+  const showSummary = chosenSummary.length > 0 && norm(chosenSummary) !== norm(pdf.description);
+
   const metaLine = [
     audienceLabel(normalizeAudience(pdf.audience, pdf.title)) ?? pdf.audience,
     formatTypeLabel(pdf.format_type),
@@ -284,6 +288,20 @@ function ViewPdf() {
             </p>
             <p className="mt-2 font-serif text-base leading-relaxed text-primary/85">
               {standardizeCopy(pdf.description)}
+            </p>
+          </section>
+        )}
+
+        {showSummary && (
+          <section aria-labelledby="pdf-summary-heading" className="mt-5 rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
+            <h2
+              id="pdf-summary-heading"
+              className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable"
+            >
+              Summary
+            </h2>
+            <p className="mt-2 font-serif text-base leading-relaxed text-primary/85 whitespace-pre-line">
+              {chosenSummary}
             </p>
           </section>
         )}
