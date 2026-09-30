@@ -5,7 +5,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 import { ArrowLeft } from "lucide-react";
 import { getPdfById, getParshaOverride } from "@/integrations/supabase/api.functions";
-import { getItemPublicationContext, getRelatedParshaItems } from "@/integrations/supabase/item-page.functions";
+import { getItemPublicationContext, getOriginalHtmlContent, getRelatedParshaItems } from "@/integrations/supabase/item-page.functions";
 import { resolveHebcalParsha } from "@/lib/hebcal";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { trackEvent } from "@/lib/analytics";
@@ -25,10 +25,11 @@ import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 
 export const Route = createFileRoute("/view/$id")({
   loader: async ({ params }) => {
-    const [r, publicationContext, relatedParsha] = await Promise.all([
+    const [r, publicationContext, relatedParsha, originalHtml] = await Promise.all([
       getPdfById({ data: { id: params.id } }),
       getItemPublicationContext({ data: { id: params.id } }),
       getRelatedParshaItems({ data: { id: params.id } }),
+      getOriginalHtmlContent({ data: { id: params.id } }),
     ]);
     if (!r.pdf) throw notFound();
 
@@ -49,7 +50,7 @@ export const Route = createFileRoute("/view/$id")({
       // ignore — default to archived-style link, which is always accurate
     }
 
-    return { pdf: r.pdf, isCurrentWeek, publicationContext, relatedParsha };
+    return { pdf: r.pdf, isCurrentWeek, publicationContext, relatedParsha, originalHtml };
   },
   head: ({ loaderData, params }) => {
     const title = loaderData?.pdf?.title ?? "View PDF";
@@ -157,7 +158,7 @@ export const Route = createFileRoute("/view/$id")({
 });
 
 function ViewPdf() {
-  const { pdf, isCurrentWeek, publicationContext, relatedParsha } = Route.useLoaderData();
+  const { pdf, isCurrentWeek, publicationContext, relatedParsha, originalHtml } = Route.useLoaderData();
   const publication = publicationContext.publication;
   const related = publicationContext.related;
   const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=FitH`;
@@ -313,6 +314,20 @@ function ViewPdf() {
             <p className="mt-2 font-serif text-base leading-relaxed text-primary/85 whitespace-pre-line">
               {chosenSummary}
             </p>
+          </section>
+        )}
+
+        {originalHtml?.text && (
+          <section aria-labelledby="original-text-heading" className="mt-5 rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
+            <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable">
+              Torah For The Table Original
+            </p>
+            <h2 id="original-text-heading" className="mt-2 font-serif text-xl font-bold text-primary">
+              Read the Torah online
+            </h2>
+            <div className="mt-3 whitespace-pre-line font-serif text-base leading-7 text-foreground">
+              {originalHtml.text}
+            </div>
           </section>
         )}
 
