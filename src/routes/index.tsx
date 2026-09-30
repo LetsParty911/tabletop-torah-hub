@@ -675,15 +675,11 @@ function Index() {
               </p>
             )}
 
-            <TableChooser
-              resources={sortedResources}
-              parshaKey={displayedParshaKey}
-              displayTitle={(r) => displayTitle(r as Resource)}
-              displayPublicationName={(r) => displayPublicationName(r as Resource)}
-              selected={selectedChooser}
-              onSelectedChange={setSelectedChooser}
-              onActiveChooserChange={setActiveChooser}
-            />
+            {featuredPicks.length > 0 && !activeChooser && (
+              <p className="mt-5 text-center font-sans text-sm text-muted-foreground">
+                Start with four curated choices, or choose what fits your table.
+              </p>
+            )}
 
             {!activeChooser && (
             <>
@@ -773,6 +769,16 @@ function Index() {
               </p>
             ) : (
               <>
+                <TableChooser
+                  resources={sortedResources}
+                  parshaKey={displayedParshaKey}
+                  displayTitle={(r) => displayTitle(r as Resource)}
+                  displayPublicationName={(r) => displayPublicationName(r as Resource)}
+                  selected={selectedChooser}
+                  onSelectedChange={setSelectedChooser}
+                  onActiveChooserChange={setActiveChooser}
+                />
+
                 <MobileCollectionControlsBar
                   anchorId="filters"
                   count={filteredResources.length}
