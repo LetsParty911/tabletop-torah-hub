@@ -1,4 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { readingSlug } from "@/lib/reading-page";
 import { getReadingCollection } from "@/integrations/supabase/reading-pages.functions";
 import { ReadingCollectionView } from "@/components/ReadingCollectionView";
 
@@ -54,6 +55,33 @@ export const Route = createFileRoute("/parsha/$slug/$year")({
             },
           }),
         },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Divrei Torah",
+                item: "https://torahforthetable.com/divrei-torah-parsha",
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: label,
+                item: `https://torahforthetable.com/parsha/${params.slug}`,
+              },
+              {
+                "@type": "ListItem",
+                position: 3,
+                name: String(year),
+                item: url,
+              },
+            ],
+          }),
+        },
       ],
     };
   },
@@ -69,5 +97,18 @@ export const Route = createFileRoute("/parsha/$slug/$year")({
 
 function ParshaCollectionPage() {
   const { collection, resources } = Route.useLoaderData();
-  return <ReadingCollectionView collection={collection} resources={resources} />;
+  return (
+    <>
+      <nav aria-label="Parsha collection navigation" className="mx-auto max-w-5xl px-4 pt-5 text-sm text-muted-foreground sm:px-6">
+        <Link
+          to="/parsha/$slug"
+          params={{ slug: readingSlug(collection.parsha_key) }}
+          className="font-medium text-primary underline decoration-accent/60 underline-offset-4 hover:text-accent"
+        >
+          ← All {collection.label} Divrei Torah
+        </Link>
+      </nav>
+      <ReadingCollectionView collection={collection} resources={resources} />
+    </>
+  );
 }
