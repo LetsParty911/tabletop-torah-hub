@@ -478,7 +478,7 @@ export async function resolveApproximateGeo(
       region: t.region,
       city: t.city,
       postalCode: t.postalCode,
-      geoSource: "country_only",
+      geoSource: "geo_pending",
       provider: "none",
       asn: t.asn ?? null,
       asOrganization: t.asOrganization ?? null,
