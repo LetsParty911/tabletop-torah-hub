@@ -344,6 +344,7 @@ async function buildResources(
         description: standardizeCopy((r.description as string | null) ?? null),
         audience: (r.audience as string | null) ?? null,
         format_type: (r.format_type as string | null) ?? null,
+        content_type: (r.content_type as string | null) ?? null,
         page_count: typeof r.page_count === "number" ? r.page_count : null,
         badge: (r.badge as string | null) ?? null,
         featured_slot: (r.featured_slot as string | null) ?? null,
@@ -525,6 +526,7 @@ export type ArchivePdf = {
   description: string | null;
   audience: string | null;
   format_type: string | null;
+  content_type: string | null;
   page_count: number | null;
   badge: string | null;
 };
@@ -535,7 +537,7 @@ export type ArchiveResult = { years: ArchiveYear[] };
 export const listArchive = createServerFn({ method: "GET" }).handler(
   async (): Promise<ArchiveResult> => {
     const admin = getSupabaseAdmin();
-    const selectWith = "id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at, description, audience, format_type, page_count, badge, publication";
+    const selectWith = "id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at, description, audience, format_type, content_type, page_count, badge, publication";
     const selectBase = "id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at";
     let rows: any[] | null = null;
     const withMeta = await admin
