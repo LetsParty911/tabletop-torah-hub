@@ -433,6 +433,15 @@ function Index() {
       ? haazinuQaTitle
       : publicationLabel(r.publication || r.title) || r.title;
 
+  // Ownership is explicit rather than inferred from a title.
+  const TFTT_ORIGINAL_PUBLICATION_IDS = new Set([
+    "0fa3db5f-c153-4311-a007-415c3c022143", // Parsha Questions & Answers
+    "88719788-42fb-4e0b-a34b-3ea1868e750d", // Stories for the Shabbos Table
+  ]);
+  const isTfttOriginal = (r: Resource) =>
+    r.publication === "tftt_original" ||
+    Boolean(r.publication_id && TFTT_ORIGINAL_PUBLICATION_IDS.has(r.publication_id));
+
   const clearFilters = () => {
     setAudienceFilter("All");
     setLengthFilter("All");
@@ -943,9 +952,9 @@ function Index() {
                                 {displayTitle(r)}
                               </Link>
                             </h3>
-                            {r.badge && (
-                              <span className="shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
-                                {r.badge}
+                            {(isTfttOriginal(r) || r.badge) && (
+                              <span className="shrink-0 rounded-full border border-accent/60 bg-accent/10 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
+                                {isTfttOriginal(r) ? "TFTT Original" : r.badge}
                               </span>
                             )}
                           </div>
