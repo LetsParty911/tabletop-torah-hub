@@ -43,6 +43,7 @@ import { CHOOSERS, chooseReason, type ChooserKey } from "@/lib/table-chooser";
 
 type Resource = {
   id: string;
+  parsha_key: string | null;
   title: string;
   publisher: string | null;
   subtitle: string | null;
@@ -420,8 +421,22 @@ function Index() {
 
   const isHaazinuWeek = normalizedCurrentKey === "ha'azinu";
   const haazinuQaTitle = "Parsha Questions & Answers – Haazinu";
-  const displayTitle = (r: Resource) =>
-    isHaazinuWeek && r.title === "Parsha Questions & Answers" ? haazinuQaTitle : r.title;
+  const duplicateTitleCounts = resources.reduce((counts, resource) => {
+    counts.set(resource.title, (counts.get(resource.title) ?? 0) + 1);
+    return counts;
+  }, new Map<string, number>());
+  const holidayQualifier = (r: Resource) => {
+    if (!isSukkosSeason || (duplicateTitleCounts.get(r.title) ?? 0) < 2) return null;
+    const key = (r.parsha_key ?? "").toLowerCase();
+    if (key === "sukkos") return "Sukkos";
+    if (key === "shemini atzeres" || key === "simchas torah") return "Shmini Atzeres & Simchas Torah";
+    return r.parsha_key;
+  };
+  const displayTitle = (r: Resource) => {
+    const base = isHaazinuWeek && r.title === "Parsha Questions & Answers" ? haazinuQaTitle : r.title;
+    const qualifier = holidayQualifier(r);
+    return qualifier ? `${base} — ${qualifier}` : base;
+  };
   const displayPublicationName = (r: Resource) =>
     isHaazinuWeek && r.title === "Parsha Questions & Answers"
       ? haazinuQaTitle
@@ -502,7 +517,9 @@ function Index() {
                   <span className="font-semibold">
                     {resources.length} {resources.length === 1 ? "selection" : "selections"}
                   </span>{" "}
-                  {postShabbos ? "still available to download below" : `for ${displayedLabel}`}
+                  {postShabbos
+                    ? "still available to download below"
+                    : `for ${isSukkosSeason ? "Sukkos, Shmini Atzeres & Simchas Torah" : displayedLabel}`}
                 </>
               )}
             </p>
@@ -553,7 +570,7 @@ function Index() {
             {resources.length > 0 && !isCurrentYomKippur && (
               !isFallback && (
                 <p className="mt-3 hidden text-center font-sans text-sm text-muted-foreground sm:block sm:text-base">
-                  Your Sukkos collection is ready. New Divrei Torah are added every Thursday evening.
+                  Your Sukkos, Shmini Atzeres & Simchas Torah collection is ready. New Divrei Torah are added every Thursday evening.
                 </p>
               )
             )}
@@ -783,11 +800,11 @@ function Index() {
               <>
                 <MobileCollectionControlsBar
                   anchorId="filters"
-                  count={resources.length}
+                  count={filteredResources.length}
                   activeFilterCount={activeFilterCount}
                   onOpenFilters={() => setFiltersOpen(true)}
                 />
-                <div id="filters" className="mt-5 sticky top-14 sm:top-20 z-30 -mx-3 bg-background/95 px-3 py-3 backdrop-blur border-y border-accent/20 sm:mx-0 sm:rounded-xl sm:border sm:px-4 sm:shadow-sm scroll-mt-24">
+                <div id="filters" className="mt-5 sticky top-14 z-30 -mx-3 bg-background/95 px-3 py-3 backdrop-blur border-y border-accent/20 sm:static sm:z-auto sm:mx-0 sm:rounded-xl sm:border sm:px-4 sm:shadow-sm scroll-mt-24">
                   <div className="flex items-center justify-between gap-3 sm:hidden">
                     <button
                       type="button"
@@ -795,7 +812,7 @@ function Index() {
                       onClick={() => setFiltersOpen((open) => !open)}
                       className="flex-1 rounded-full border border-accent/45 bg-background px-4 py-2 text-left font-serif text-sm font-semibold text-primary shadow-sm"
                     >
-                      Filter {resources.length} selections{activeFilterCount > 0 ? ` · ${activeFilterCount} active` : ""}
+                      Filter {filteredResources.length} selections{activeFilterCount > 0 ? ` · ${activeFilterCount} active` : ""}
                     </button>
                     {activeFilterCount > 0 && (
                       <button
