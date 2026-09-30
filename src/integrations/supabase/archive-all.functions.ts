@@ -14,6 +14,7 @@ export type ArchivePdfAll = {
   description: string | null;
   audience: string | null;
   format_type: string | null;
+  content_type: string | null;
   page_count: number | null;
   badge: string | null;
 };
@@ -27,7 +28,7 @@ export const listArchiveAll = createServerFn({ method: "GET" }).handler(async ()
   const { data: rows, error } = await admin
     .from("pdfs")
     .select(
-      "id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at, description, audience, format_type, page_count, badge, publication, publication_id",
+      "id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at, description, audience, format_type, content_type, page_count, badge, publication, publication_id",
     )
     .eq("published", true)
     .order("jewish_year", { ascending: false })
@@ -87,6 +88,7 @@ export const listArchiveAll = createServerFn({ method: "GET" }).handler(async ()
       description: standardizeCopy((row.description as string | null) ?? null),
       audience: (row.audience as string | null) ?? null,
       format_type: (row.format_type as string | null) ?? null,
+      content_type: (row.content_type as string | null) ?? null,
       page_count: typeof row.page_count === "number" ? row.page_count : null,
       badge: (row.badge as string | null) ?? null,
       created_at: (row.created_at as string | null) ?? "",
