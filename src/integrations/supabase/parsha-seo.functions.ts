@@ -47,6 +47,7 @@ export const getParshaSeoPage = createServerFn({ method: "GET" })
         "id, title, description, summary_quick, audience, format_type, content_type, page_count, jewish_year, parsha_key, created_at",
       )
       .eq("published", true)
+      .eq("parsha_key", canonical)
       .order("jewish_year", { ascending: false })
       .order("created_at", { ascending: false });
 
@@ -64,9 +65,7 @@ export const getParshaSeoPage = createServerFn({ method: "GET" })
       };
     }
 
-    const matches = (rows ?? []).filter(
-      (row: any) => readingSlug(String(row.parsha_key ?? "")) === data.slug,
-    );
+    const matches = rows ?? [];
 
     const yearCounts = new Map<number, number>();
     for (const row of matches) {
@@ -83,7 +82,11 @@ export const getParshaSeoPage = createServerFn({ method: "GET" })
     for (const row of matches) {
       const audience = String((row as any).audience ?? "").trim();
       if (audience) audience_counts[audience] = (audience_counts[audience] ?? 0) + 1;
-      const type = String((row as any).format_type ?? (row as any).content_type ?? "").trim();
+      const type = String(
+        (row as any).content_type === "Questions & Answers"
+          ? (row as any).content_type
+          : (row as any).format_type ?? (row as any).content_type ?? "",
+      ).trim();
       if (type) type_counts[type] = (type_counts[type] ?? 0) + 1;
     }
 
