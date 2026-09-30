@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { publicationSlug } from "@/lib/publication-slug";
-import { readingPagePath } from "@/lib/reading-page";
+import { readingPagePath, readingSlug } from "@/lib/reading-page";
+import { PARSHIYOS_54 } from "@/lib/parshiyos";
 
 const SITE_URL = "https://torahforthetable.com";
 
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         const urls: Array<{ loc: string; lastmod: string | null; priority: string }> = [
           { loc: `${SITE_URL}/`, lastmod: null, priority: "1.0" },
           { loc: `${SITE_URL}/archive`, lastmod: null, priority: "0.8" },
+          { loc: `${SITE_URL}/divrei-torah-parsha`, lastmod: null, priority: "0.9" },
           { loc: `${SITE_URL}/publications`, lastmod: null, priority: "0.7" },
           { loc: `${SITE_URL}/short-vorts`, lastmod: null, priority: "0.5" },
           { loc: `${SITE_URL}/resources`, lastmod: null, priority: "0.7" },
@@ -108,6 +110,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           }
 
           const collectionPaths = new Set<string>();
+          const permanentParshaSlugs = new Set<string>();
           for (const row of rows) {
             const best =
               toLastmod(row.updated_at) ??
@@ -121,7 +124,13 @@ export const Route = createFileRoute("/sitemap.xml")({
 
             if (row.parsha_key && row.jewish_year) {
               collectionPaths.add(readingPagePath(row.parsha_key, row.jewish_year));
+              const slug = readingSlug(row.parsha_key);
+              if (PARSHIYOS_54.some((name) => readingSlug(name) === slug)) permanentParshaSlugs.add(slug);
             }
+          }
+
+          for (const slug of permanentParshaSlugs) {
+            urls.push({ loc: `${SITE_URL}/parsha/${slug}`, lastmod: null, priority: "0.9" });
           }
 
           for (const path of collectionPaths) {
