@@ -6,6 +6,7 @@ import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { buildDownloadFilename } from "@/lib/download-filename";
+import { isYomTovReading, readingSlug } from "@/lib/reading-page";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SiteFooter } from "@/components/SiteFooter";
 
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/publication/$slug")({
       publication?.default_description?.trim() ||
       `Browse current and earlier editions of ${name} on Torah for the Table.`;
     const url = `https://torahforthetable.com/publication/${params.slug}`;
-    const title = `${name} — Weekly Editions | Torah for the Table`;
+    const title = `${name} — Divrei Torah & Printable Editions | Torah for the Table`;
     const image = `https://torahforthetable.com/og/image.png?title=${encodeURIComponent(name)}`;
 
     return {
@@ -54,6 +55,16 @@ export const Route = createFileRoute("/publication/$slug")({
               "@type": "WebSite",
               name: "Torah for the Table",
               url: "https://torahforthetable.com",
+            },
+            mainEntity: {
+              "@type": "ItemList",
+              numberOfItems: loaderData?.editions?.length ?? 0,
+              itemListElement: (loaderData?.editions ?? []).slice(0, 50).map((edition, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                name: edition.title,
+                url: `https://torahforthetable.com/view/${edition.id}`,
+              })),
             },
           }),
         },
@@ -114,7 +125,17 @@ function PublicationPage() {
         }`}
       >
         <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-accent-readable">
-          {label}
+          {!isYomTovReading(edition.parsha_key) ? (
+            <Link
+              to="/parsha/$slug"
+              params={{ slug: readingSlug(edition.parsha_key) }}
+              className="underline decoration-accent/60 underline-offset-4 hover:text-primary"
+            >
+              {label}
+            </Link>
+          ) : (
+            label
+          )}
         </p>
         <h3 className="mt-1 font-serif text-lg sm:text-xl font-bold text-primary leading-snug">
           <Link to="/view/$id" params={{ id: edition.id }} className="hover:text-accent hover:underline">
@@ -191,6 +212,25 @@ function PublicationPage() {
             </div>
           </div>
         </section>
+
+        {editions.length > 0 && (
+          <section className="mt-7 rounded-2xl border border-accent/25 bg-card/25 p-5 sm:p-6">
+            <h2 className="font-serif text-2xl font-bold text-primary">About this Torah collection</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Torah for the Table currently has {editions.length} {editions.length === 1 ? "edition" : "editions"} of{" "}
+              <span className="font-semibold text-primary">{publication.name}</span>
+              {publication.publisher ? `, published by ${publication.publisher}` : ""}. The available editions cover{" "}
+              {new Set(editions.map((edition) => edition.parsha_key)).size}{" "}
+              {new Set(editions.map((edition) => edition.parsha_key)).size === 1 ? "parsha or Yom Tov reading" : "parshiyos and Yom Tov readings"}
+              {new Set(editions.map((edition) => edition.jewish_year).filter(Boolean)).size > 0
+                ? ` across ${new Set(editions.map((edition) => edition.jewish_year).filter(Boolean)).size} Jewish year${new Set(editions.map((edition) => edition.jewish_year).filter(Boolean)).size === 1 ? "" : "s"}`
+                : ""}.
+            </p>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              Open an edition below to preview the Dvar Torah, read its description and print or download the PDF. Parsha labels link to the permanent Divrei Torah page for that parsha.
+            </p>
+          </section>
+        )}
 
         {latest && (
           <section className="mt-7">
