@@ -615,3 +615,91 @@ export async function resolveApproximateGeo(
     return countryOnly();
   }
 }
+
+// ---------------------------------------------------------------------------
+// Blocking-only geo resolution with its own persistent cache.
+// ---------------------------------------------------------------------------
+
+const BLOCK_SUCCESS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const BLOCK_FAILURE_TTL_MS = 10 * 60 * 1000;
+const BLOCK_PROVIDERS = new Set(["ipwhois", "maxmind"]);
+
+async function resolveForBlocking(
+  t: RequestTelemetry,
+  ip: string,
+  countryOnly: () => ApproximateGeo,
+): Promise<ApproximateGeo> {
+  const fromRow = (r: {
+    country: string | null;
+    region: string | null;
+    city: string | null;
+    postal_code: string | null;
+    provider: string | null;
+  }) =>
+    finalize({
+      country: r.country ?? t.country,
+      region: r.region,
+      city: r.city,
+      postalCode: r.postal_code,
+      geoSource: "ip_lookup",
+      provider: (r.provider === "maxmind" ? "maxmind" : "ipwhois") as GeoProvider,
+      asn: t.asn ?? null,
+      asOrganization: t.asOrganization ?? null,
+      isp: null,
+      flags: { ...EMPTY_FLAGS },
+    });
+
+  let admin: any = null;
+  try {
+    ({ supabaseAdmin: admin } = await import("@/integrations/supabase/client.server"));
+    const { data } = await admin
+      .from("geo_block_cache")
+      .select("*")
+      .eq("ip_address", ip)
+      .maybeSingle();
+    if (data) {
+      const age = Date.now() - Date.parse(data.fetched_at);
+      const ttl = data.lookup_ok ? BLOCK_SUCCESS_TTL_MS : BLOCK_FAILURE_TTL_MS;
+      if (Number.isFinite(age) && age <= ttl) {
+        if (!data.lookup_ok || !BLOCK_PROVIDERS.has(data.provider)) return countryOnly();
+        return fromRow(data);
+      }
+    }
+  } catch {
+    /* cache is best-effort; fall through to providers */
+  }
+
+  try {
+    const results: LookupResult[] = [];
+    const whois = await lookupIpWhoIs(ip);
+    if (whois) results.push(whois);
+    if (!isUsable(whois)) {
+      const mm = await lookupMaxMind(ip);
+      if (mm) results.push(mm);
+    }
+    const fresh = mergeLookups(results);
+    const ok = !!fresh && BLOCK_PROVIDERS.has(fresh.provider);
+    if (admin) {
+      try {
+        await admin.from("geo_block_cache").upsert(
+          {
+            ip_address: ip,
+            country: ok ? fresh!.country : t.country,
+            region: ok ? fresh!.region : null,
+            city: ok ? fresh!.city : null,
+            postal_code: ok ? fresh!.postal_code : null,
+            provider: ok ? fresh!.provider : "none",
+            lookup_ok: ok,
+            fetched_at: new Date().toISOString(),
+          },
+          { onConflict: "ip_address" },
+        );
+      } catch {
+        /* best-effort */
+      }
+    }
+    return ok ? fromRow(fresh!) : countryOnly();
+  } catch {
+    return countryOnly(); // fail open
+  }
+}
