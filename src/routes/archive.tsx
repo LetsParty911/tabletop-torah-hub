@@ -603,7 +603,7 @@ function ArchivePage() {
                         <option value="All">All publications</option>
                         {publicationOptions.map((p) => (
                           <option key={p} value={p}>
-                            {p}
+                            {publicationLabel(p) ?? p}
                           </option>
                         ))}
                       </select>
@@ -749,7 +749,7 @@ function ArchivePage() {
                                 <DownloadToPrintButton
                                   href={`/view/${r.id}/download`}
                                   publicationId={r.id}
-                                  publicationName={publicationLabel(r.publication || r.title) || r.title}
+                                  publicationName={publicationLabel(r.publication) || r.title}
                                   publicationTitle={r.title}
                                   publisher={r.publisher}
                                   publicationSeries={r.publication}

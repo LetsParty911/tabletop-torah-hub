@@ -116,6 +116,39 @@ export type Database = {
         }
         Relationships: []
       }
+      geo_block_cache: {
+        Row: {
+          city: string | null
+          country: string | null
+          fetched_at: string
+          ip_address: string
+          lookup_ok: boolean
+          postal_code: string | null
+          provider: string | null
+          region: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          fetched_at?: string
+          ip_address: string
+          lookup_ok?: boolean
+          postal_code?: string | null
+          provider?: string | null
+          region?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          fetched_at?: string
+          ip_address?: string
+          lookup_ok?: boolean
+          postal_code?: string | null
+          provider?: string | null
+          region?: string | null
+        }
+        Relationships: []
+      }
       site_maintenance: {
         Row: {
           enabled: boolean
