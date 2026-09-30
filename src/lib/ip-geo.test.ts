@@ -160,6 +160,15 @@ const mockState = vi.hoisted(() => ({
   upserts: [] as any[],
 }));
 
+const blockState: { row: any; upserts: any[] } = { row: null, upserts: [] };
+vi.mock("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: {
+    from: () => ({
+      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: blockState.row, error: null }) }) }),
+      upsert: async (r: any) => { blockState.upserts.push(r); return { error: null }; },
+    }),
+  },
+}));
 vi.mock("@/integrations/supabase/ext.server", () => ({
   getSupabaseAdmin: () => ({
     from: () => ({
@@ -255,12 +264,23 @@ describe("resolveApproximateGeo blocking cache independence", () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it("blocking reuses a fresh cached fallback row without external lookups", async () => {
+  it("blocking never consumes a cached analytics-only (ipapi) row", async () => {
     mockState.cacheRow = ipapiCacheRow;
     const geo = await resolveApproximateGeo(telemetry, "blocking");
+    expect(geo.city).toBeNull();
+    expect(geo.provider).not.toBe("ipapi");
+    expect(calls.some((u) => u.includes("ipapi.co"))).toBe(false);
+  });
+
+  it("blocking reuses its own fresh blocking-cache row without external lookups", async () => {
+    blockState.row = {
+      ip_address: "8.8.4.4", country: "US", region: "New Jersey", city: "Bayonne",
+      postal_code: "07002", provider: "ipwhois", lookup_ok: true, fetched_at: new Date().toISOString(),
+    };
+    const geo = await resolveApproximateGeo(telemetry, "blocking");
     expect(geo.city).toBe("Bayonne");
-    expect(geo.provider).toBe("ipapi");
     expect(calls).toHaveLength(0);
+    blockState.row = null;
   });
 
   it("blocking never writes to the cache, preserving the analytics row", async () => {
@@ -366,9 +386,8 @@ describe("resolveApproximateGeo concurrent primaries + diagnostics", () => {
     };
     vi.stubGlobal("fetch", vi.fn(async (url: any) => { calls.push(String(url)); return new Response("x", { status: 500 }); }));
     const geo = await resolveApproximateGeo(telemetry, "blocking");
-    expect(geo.city).toBe("Bayonne");
-    expect(geo.provider).toBe("ipapicom");
-    expect(calls).toHaveLength(0);
+    expect(geo.city).toBeNull();
+    expect(calls.some((u) => u.includes("ip-api.com"))).toBe(false);
     expect(mockState.upserts).toHaveLength(0);
   });
 });
