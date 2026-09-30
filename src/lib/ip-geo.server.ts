@@ -505,16 +505,18 @@ export async function resolveApproximateGeo(
   const ip = t.ipAddress;
   if (!ip || isPrivateIp(ip)) return countryOnly();
 
+  // Blocking uses its own persistent cache (Lovable Cloud geo_block_cache),
+  // filled only by the blocking chain (ipwho.is -> MaxMind). It never reads or
+  // writes the analytics ip_geo_cache, so analytics-only providers can never
+  // influence an access-control decision.
+  if (purpose === "blocking") return resolveForBlocking(t, ip, countryOnly);
+
   try {
     const { getSupabaseAdmin } = await import("@/integrations/supabase/ext.server");
     const supabase = getSupabaseAdmin();
 
     const cached = await readCache(supabase, ip);
-    // Reuse any fresh persistent geo cache row for both analytics and blocking.
-    // This prevents the blocked-city gate from repeating slow external provider
-    // calls on every page view when a visitor was resolved by a fallback
-    // provider. Fresh uncached blocking lookups still use the conservative
-    // ipwho.is -> MaxMind chain below.
+    // Analytics reuses any fresh cache row so providers aren't re-queried per page/event.
     if (cached) {
       if (!cached.lookup_ok) return countryOnly();
       const provider: GeoProvider =
