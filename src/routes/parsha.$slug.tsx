@@ -4,6 +4,16 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { getParshaSeoPage } from "@/integrations/supabase/parsha-seo.functions";
 import { VORTS } from "@/data/vorts";
 import { readingSlug } from "@/lib/reading-page";
+import { PARSHIYOS_54, formatReadingLabel } from "@/lib/parshiyos";
+
+function seferForParsha(parshaKey: string): string {
+  const index = PARSHIYOS_54.indexOf(parshaKey);
+  if (index <= 11) return "Sefer Bereishis";
+  if (index <= 22) return "Sefer Shemos";
+  if (index <= 32) return "Sefer Vayikra";
+  if (index <= 42) return "Sefer Bamidbar";
+  return "Sefer Devarim";
+}
 
 export const Route = createFileRoute("/parsha/$slug")({
   loader: async ({ params }) => {
@@ -50,6 +60,33 @@ export const Route = createFileRoute("/parsha/$slug")({
             },
           }),
         },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Divrei Torah",
+                item: "https://torahforthetable.com/divrei-torah-parsha",
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: loaderData?.parsha_key ? seferForParsha(loaderData.parsha_key) : "Parsha",
+                item: "https://torahforthetable.com/divrei-torah-parsha",
+              },
+              {
+                "@type": "ListItem",
+                position: 3,
+                name: label,
+                item: url,
+              },
+            ],
+          }),
+        },
       ],
     };
   },
@@ -68,17 +105,34 @@ function PermanentParshaPage() {
   const page = Route.useLoaderData();
   const vorts =
     VORTS.find((entry) => readingSlug(entry.parshaKey) === page.slug)?.vorts.slice(0, 4) ?? [];
+  const currentIndex = PARSHIYOS_54.findIndex((name) => readingSlug(name) === page.slug);
+  const previousParsha = currentIndex > 0 ? PARSHIYOS_54[currentIndex - 1] : null;
+  const nextParsha =
+    currentIndex >= 0 && currentIndex < PARSHIYOS_54.length - 1 ? PARSHIYOS_54[currentIndex + 1] : null;
+  const sefer = seferForParsha(page.parsha_key);
 
   return (
     <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-5xl px-4 py-7 sm:px-6 sm:py-11">
-        <Link
-          to="/divrei-torah-parsha"
-          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          All Parshiyos
-        </Link>
+        <nav aria-label="Breadcrumb" className="text-sm text-muted-foreground">
+          <ol className="flex flex-wrap items-center gap-2">
+            <li>
+              <Link to="/divrei-torah-parsha" className="hover:text-primary hover:underline">
+                Divrei Torah
+              </Link>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li>
+              <Link to="/divrei-torah-parsha" className="hover:text-primary hover:underline">
+                {sefer}
+              </Link>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li className="font-medium text-primary" aria-current="page">
+              {page.label}
+            </li>
+          </ol>
+        </nav>
 
         <header className="mt-5 text-center">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent-readable">
@@ -226,6 +280,31 @@ function PermanentParshaPage() {
             </div>
           )}
         </section>
+
+        {(previousParsha || nextParsha) && (
+          <nav aria-label="Adjacent parshiyos" className="mt-10 grid gap-3 sm:grid-cols-2">
+            {previousParsha ? (
+              <Link
+                to="/parsha/$slug"
+                params={{ slug: readingSlug(previousParsha) }}
+                className="rounded-xl border border-accent/30 bg-background/65 p-4 transition-colors hover:border-accent/60 hover:bg-accent/5"
+              >
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Previous Parsha</span>
+                <span className="mt-1 block font-serif text-lg font-bold text-primary">← {formatReadingLabel(previousParsha)}</span>
+              </Link>
+            ) : <span />}
+            {nextParsha && (
+              <Link
+                to="/parsha/$slug"
+                params={{ slug: readingSlug(nextParsha) }}
+                className="rounded-xl border border-accent/30 bg-background/65 p-4 text-left transition-colors hover:border-accent/60 hover:bg-accent/5 sm:text-right"
+              >
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Next Parsha</span>
+                <span className="mt-1 block font-serif text-lg font-bold text-primary">{formatReadingLabel(nextParsha)} →</span>
+              </Link>
+            )}
+          </nav>
+        )}
 
         <section className="mt-10 rounded-2xl border border-accent/25 bg-card/25 p-5 sm:p-6">
           <h2 className="font-serif text-xl font-bold text-primary">More Divrei Torah on the Parsha</h2>
