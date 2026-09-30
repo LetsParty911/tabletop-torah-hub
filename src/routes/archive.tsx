@@ -254,8 +254,12 @@ function ArchivePage() {
             ? r.page_count >= 20
             : r.page_count >= 5
         : false;
+  const resourceType = (r: ArchivePdf) =>
+    r.content_type === "Questions & Answers"
+      ? "Questions & Answers"
+      : formatTypeLabel(r.format_type);
   const matchesType = (r: ArchivePdf) =>
-    typeFilter === "All" || formatTypeLabel(r.format_type) === typeFilter;
+    typeFilter === "All" || resourceType(r) === typeFilter;
   // Publication filter uses only the canonical publication value — never the
   // PDF title — so unlinked one-off PDFs don't become fake publications.
   const canonicalPub = (r: ArchivePdf) => {
@@ -274,7 +278,7 @@ function ArchivePage() {
       Array.from(
         new Set(
           allPdfs
-            .map((r) => formatTypeLabel(r.format_type))
+            .map((r) => resourceType(r))
             .filter((v): v is string => !!v),
         ),
       ).sort((a, b) => a.localeCompare(b)),
@@ -758,7 +762,7 @@ function ArchivePage() {
                                     <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                       {[
                                         audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience,
-                                        formatTypeLabel(r.format_type),
+                                        resourceType(r),
                                         typeof r.page_count === "number"
                                           ? r.page_count === 1
                                             ? "1 page · Short Vort"
