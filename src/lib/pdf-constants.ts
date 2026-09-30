@@ -27,7 +27,7 @@ export type PdfRow = {
 };
 
 export const AUDIENCE_OPTIONS = ["Adults", "Families", "Children"] as const;
-export const FORMAT_TYPE_OPTIONS = ["Short Vorts", "Questions & Answers", "Stories", "Halacha", "Essays"] as const;
+export const FORMAT_TYPE_OPTIONS = ["Short Vorts", "Stories", "Halacha", "Essays"] as const;
 export const CONTENT_TYPE_OPTIONS = [
   "Questions & Answers",
   "Brief Insights",
