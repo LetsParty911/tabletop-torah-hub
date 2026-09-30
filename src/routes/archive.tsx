@@ -695,7 +695,17 @@ function ArchivePage() {
                     {y.parshiyos.map((p: ArchiveParsha) => (
                       <div key={`${y.year}-${p.parshaKey}`}>
                         <h3 className="font-serif text-xl sm:text-2xl font-semibold text-primary mb-4">
-                          {formatReadingLabel(p.parshaKey)}
+                          {isYomTovReading(p.parshaKey) ? (
+                            formatReadingLabel(p.parshaKey)
+                          ) : (
+                            <Link
+                              to="/parsha/$slug"
+                              params={{ slug: readingSlug(p.parshaKey) }}
+                              className="hover:text-accent hover:underline decoration-accent/60 underline-offset-4"
+                            >
+                              {formatReadingLabel(p.parshaKey)}
+                            </Link>
+                          )}
                         </h3>
                         <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                           {p.pdfs.map((r: ArchivePdf) => (
