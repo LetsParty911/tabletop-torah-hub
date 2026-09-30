@@ -969,16 +969,16 @@ function Index() {
                           </div>
                           {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
                           {(() => {
-                            const summary = r.summary_quick || r.subtitle;
+                            const summary = r.summary_quick || r.subtitle || r.description;
                             return summary ? (
-                              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-3">{standardizeCopy(summary)}</p>
+                              <p className="mt-1 text-xs sm:text-sm text-muted-foreground line-clamp-3">{standardizeCopy(summary)}</p>
                             ) : null;
                           })()}
                           {(r.audience || r.format_type || typeof r.page_count === "number") && (
                             <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                               {[
                                 audienceLabel(normalizeAudience(r.audience, displayTitle(r))) ?? r.audience,
-                                formatTypeLabel(r.format_type),
+                                resourceContentType(r),
                                 pageCountLabel(r),
                               ]
                                 .filter(Boolean)
