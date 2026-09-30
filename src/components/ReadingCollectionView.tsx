@@ -24,7 +24,9 @@ export function ReadingCollectionView({
   const [type, setType] = useState("All");
 
   const resourceType = (r: ReadingResource) =>
-    formatTypeLabel(r.format_type) ?? formatTypeLabel(r.content_type) ?? null;
+    r.content_type === "Questions & Answers"
+      ? "Questions & Answers"
+      : formatTypeLabel(r.format_type) ?? formatTypeLabel(r.content_type) ?? null;
 
   const types = useMemo(
     () => [...new Set(resources.map(resourceType).filter((v): v is string => Boolean(v)))].sort(),
