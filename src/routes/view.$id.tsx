@@ -5,7 +5,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 import { ArrowLeft } from "lucide-react";
 import { getPdfById, getParshaOverride } from "@/integrations/supabase/api.functions";
-import { getItemPublicationContext } from "@/integrations/supabase/item-page.functions";
+import { getItemPublicationContext, getRelatedParshaItems } from "@/integrations/supabase/item-page.functions";
 import { resolveHebcalParsha } from "@/lib/hebcal";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { trackEvent } from "@/lib/analytics";
@@ -25,9 +25,10 @@ import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 
 export const Route = createFileRoute("/view/$id")({
   loader: async ({ params }) => {
-    const [r, publicationContext] = await Promise.all([
+    const [r, publicationContext, relatedParsha] = await Promise.all([
       getPdfById({ data: { id: params.id } }),
       getItemPublicationContext({ data: { id: params.id } }),
+      getRelatedParshaItems({ data: { id: params.id } }),
     ]);
     if (!r.pdf) throw notFound();
 
@@ -48,7 +49,7 @@ export const Route = createFileRoute("/view/$id")({
       // ignore — default to archived-style link, which is always accurate
     }
 
-    return { pdf: r.pdf, isCurrentWeek, publicationContext };
+    return { pdf: r.pdf, isCurrentWeek, publicationContext, relatedParsha };
   },
   head: ({ loaderData, params }) => {
     const title = loaderData?.pdf?.title ?? "View PDF";
@@ -91,12 +92,14 @@ export const Route = createFileRoute("/view/$id")({
 
     const jsonLd: Record<string, unknown> = {
       "@context": "https://schema.org",
-      "@type": "Article",
+      "@type": "DigitalDocument",
       headline: parshaLabel ? `${title} — ${parshaLabel}` : title,
       name: title,
       description,
       url,
       image,
+      encodingFormat: "application/pdf",
+      isAccessibleForFree: true,
       isPartOf: "https://torahforthetable.com",
       publisher: {
         "@type": "Organization",
@@ -106,6 +109,11 @@ export const Route = createFileRoute("/view/$id")({
       },
     };
     if (parshaLabel) jsonLd.about = { "@type": "Thing", name: parshaLabel };
+    const canonicalPublisher =
+      loaderData?.publicationContext?.publication?.publisher || loaderData?.pdf?.publisher;
+    if (canonicalPublisher) {
+      jsonLd.author = { "@type": "Organization", name: canonicalPublisher };
+    }
     if (datePublished) jsonLd.datePublished = datePublished;
     if (dateModified) jsonLd.dateModified = dateModified;
 
@@ -149,7 +157,7 @@ export const Route = createFileRoute("/view/$id")({
 });
 
 function ViewPdf() {
-  const { pdf, isCurrentWeek, publicationContext } = Route.useLoaderData();
+  const { pdf, isCurrentWeek, publicationContext, relatedParsha } = Route.useLoaderData();
   const publication = publicationContext.publication;
   const related = publicationContext.related;
   const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=FitH`;
@@ -386,6 +394,54 @@ function ViewPdf() {
             </div>
           )}
         </div>
+
+        {relatedParsha.length > 0 && (
+          <section className="mt-9 border-t border-accent/25 pt-7">
+            <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable">
+              More Torah for this parsha
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {relatedParsha.map((item) => {
+                const itemMeta = [
+                  item.audience
+                    ? audienceLabel(normalizeAudience(item.audience, item.title)) ?? item.audience
+                    : null,
+                  item.content_type === "Questions & Answers"
+                    ? "Questions & Answers"
+                    : formatTypeLabel(item.format_type),
+                  typeof item.page_count === "number"
+                    ? `${item.page_count} ${item.page_count === 1 ? "page" : "pages"}`
+                    : null,
+                ].filter(Boolean).join(" · ");
+                return (
+                  <Link
+                    key={item.id}
+                    to="/view/$id"
+                    params={{ id: item.id }}
+                    className="rounded-xl border border-accent/30 bg-background/65 p-4 transition-colors hover:border-accent/60 hover:bg-accent/5"
+                  >
+                    <p className="font-serif text-lg font-semibold text-primary">{item.title}</p>
+                    {itemMeta && <p className="mt-2 text-xs text-muted-foreground">{itemMeta}</p>}
+                    {item.description && (
+                      <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                        {item.description}
+                      </p>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+            {pdf.parsha_key && !isYomTovReading(pdf.parsha_key) && (
+              <Link
+                to="/parsha/$slug"
+                params={{ slug: readingSlug(pdf.parsha_key) }}
+                className="mt-4 inline-block text-sm font-medium text-accent underline hover:text-primary"
+              >
+                View all {formatReadingLabel(pdf.parsha_key)} Divrei Torah
+              </Link>
+            )}
+          </section>
+        )}
 
         {publication && related.length > 0 && (
           <section className="mt-9 border-t border-accent/25 pt-7">
