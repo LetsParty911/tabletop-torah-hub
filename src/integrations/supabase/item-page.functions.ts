@@ -187,14 +187,21 @@ export const getOriginalHtmlContent = createServerFn({ method: "GET" })
         .download(row.file_path as string);
       if (downloadError || !file) return null;
 
-      const bytes = Buffer.from(await file.arrayBuffer());
-      const { default: pdfParse } = await import("pdf-parse");
-      const parsed = await pdfParse(bytes);
-      const text = String(parsed.text ?? "")
-        .replace(/\r\n/g, "\n")
-        .replace(/[ \t]+\n/g, "\n")
-        .replace(/\n{3,}/g, "\n\n")
-        .trim();
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      const document = await pdfjs.getDocument({ data: bytes, disableWorker: true }).promise;
+      const pages: string[] = [];
+      for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
+        const page = await document.getPage(pageNumber);
+        const content = await page.getTextContent();
+        const text = content.items
+          .map((item: any) => ("str" in item ? item.str : ""))
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (text) pages.push(text);
+      }
+      const text = pages.join("\n\n").trim();
 
       if (text.length < 80) return null;
       return { text, extracted: true };
