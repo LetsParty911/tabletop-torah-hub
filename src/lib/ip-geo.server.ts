@@ -61,6 +61,7 @@ export type ApproximateGeo = {
 } & NetworkFlags;
 
 const SUCCESS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const PARTIAL_SUCCESS_TTL_MS = 10 * 60 * 1000;
 const FAILURE_TTL_MS = 10 * 60 * 1000;
 const LOOKUP_TIMEOUT_MS = 4000;
 
@@ -230,6 +231,10 @@ async function writeCache(supabase: any, ip: string, row: LookupResult) {
   } catch {
     /* cache is best-effort */
   }
+}
+
+function hasCity(r: { city: string | null } | null | undefined): boolean {
+  return !!r?.city;
 }
 
 function isUsable(r: { city: string | null; region: string | null } | null): boolean {
@@ -414,7 +419,10 @@ const FLAG_KEYS = ["is_mobile", "is_vpn", "is_proxy", "is_tor", "is_hosting", "i
 export function mergeLookups(results: (LookupResult | null | undefined)[]): LookupResult | null {
   const list = results.filter((r): r is LookupResult => !!r && r.lookup_ok);
   if (list.length === 0) return null;
-  const primary = list.find((r) => isUsable(r)) ?? list[0];
+  const primary =
+    list.find((r) => hasCity(r)) ??
+    list.find((r) => isUsable(r)) ??
+    list[0];
   const out: LookupResult = { ...primary };
   for (const r of list) {
     if (r === primary) continue;
@@ -516,7 +524,11 @@ export async function resolveApproximateGeo(
     const supabase = getSupabaseAdmin();
 
     const cached = await readCache(supabase, ip);
-    // Analytics reuses any fresh cache row so providers aren't re-queried per page/event.
+    let cachedPartial: LookupResult | null = null;
+    // A city-bearing success is reusable for 7 days. A region-only success is
+    // reusable only briefly because analytics should still try the city-specific
+    // fallbacks; this prevents a partial MaxMind result from suppressing them
+    // for a full week while also avoiding repeated provider calls on every event.
     if (cached) {
       if (!cached.lookup_ok) return countryOnly();
       const provider: GeoProvider =
@@ -524,7 +536,7 @@ export async function resolveApproximateGeo(
         cached.provider === "ipapi" || cached.provider === "ipapicom"
           ? cached.provider
           : "none";
-      return finalize({
+      const cachedFinal = () => finalize({
         country: cached.country ?? t.country,
         region: cached.region ?? null,
         city: cached.city ?? null,
@@ -536,22 +548,45 @@ export async function resolveApproximateGeo(
         isp: cached.isp ?? null,
         flags: flagsOf(cached),
       });
+      if (hasCity(cached as any)) return cachedFinal();
+
+      const age = Date.now() - Date.parse(cached.fetched_at ?? "");
+      if (Number.isFinite(age) && age <= PARTIAL_SUCCESS_TTL_MS) return cachedFinal();
+
+      cachedPartial = {
+        country: cached.country ?? t.country,
+        region: cached.region ?? null,
+        city: cached.city ?? null,
+        postal_code: cached.postal_code ?? null,
+        lookup_ok: true,
+        provider,
+        asn: cached.asn ?? t.asn ?? null,
+        as_organization: cached.as_organization ?? t.asOrganization ?? null,
+        isp: cached.isp ?? null,
+        is_mobile: explicitBool(cached.is_mobile),
+        is_vpn: explicitBool(cached.is_vpn),
+        is_proxy: explicitBool(cached.is_proxy),
+        is_tor: explicitBool(cached.is_tor),
+        is_hosting: explicitBool(cached.is_hosting),
+        is_relay: explicitBool(cached.is_relay),
+      };
     }
 
-    // Analytics: ipwho.is and MaxMind run concurrently (merge order unchanged:
-    // ipwho.is first), and ipapi.co only when neither yields a usable city/region.
+    // Analytics: ipwho.is and MaxMind run concurrently. City is the success
+    // criterion for analytics; a state/region-only result is retained but does
+    // not suppress ipapi.co / ip-api.com city fallbacks.
     // Blocking keeps the original serial chain ipwho.is -> MaxMind, no ipapi.co.
-    const results: LookupResult[] = [];
+    const results: LookupResult[] = cachedPartial ? [cachedPartial] : [];
     if (purpose === "analytics") {
       const [whois, mm] = await Promise.all([lookupIpWhoIs(ip), lookupMaxMind(ip)]);
       if (whois) results.push(whois);
       if (mm) results.push(mm);
-      if (!isUsable(whois) && !isUsable(mm)) {
+      if (!hasCity(whois) && !hasCity(mm)) {
         const ipapi = await lookupIpApi(ip);
         if (ipapi) results.push(ipapi);
         // Final analytics-only fallback: ip-api.com, only when ipapi.co also
-        // failed to yield a usable city/region.
-        if (!isUsable(ipapi)) {
+        // failed to yield a city.
+        if (!hasCity(ipapi)) {
           const ipapicom = await lookupIpApiCom(ip);
           if (ipapicom) results.push(ipapicom);
         }
@@ -571,7 +606,7 @@ export async function resolveApproximateGeo(
     // once, in parallel, after a short pause. This retry runs only when the entire
     // first provider chain produced no usable result, so normal requests are not
     // slowed down or doubled.
-    if (!fresh && purpose === "analytics") {
+    if ((!fresh || !hasCity(fresh)) && purpose === "analytics") {
       await new Promise((resolve) => setTimeout(resolve, 150));
       const retryResults = await Promise.all([lookupIpWhoIs(ip), lookupIpApi(ip), lookupIpApiCom(ip)]);
       fresh = mergeLookups(retryResults);
