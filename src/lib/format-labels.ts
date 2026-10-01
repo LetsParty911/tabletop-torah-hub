@@ -1,10 +1,9 @@
 /**
  * Display labels for stored format/content type values.
- * "Short Vorts" is the user-facing term for brief, quick-read Torah; the older
- * "Brief Insights" content-type value is shown under the same label so the
- * filters list one concept once.
+ * "Brief Insights" is the user-facing name for brief, quick-read Torah.
+ * Older stored values are normalized to this one public label.
  */
 export function formatTypeLabel(value: string | null | undefined): string | null {
   if (!value) return null;
-  return value === "Brief Insights" ? "Short Vorts" : value;
+  return value === "Short Vorts" || value === "Brief Insights" ? "Brief Insights" : value;
 }
