@@ -59,7 +59,7 @@ export const Route = createFileRoute("/short-vorts")({
   component: ShortVortsPage,
   loader: () => loadVortsWeek(),
   head: ({ loaderData }) => {
-    const title = "Short Vorts — Quick Insights for the Table";
+    const title = "Brief Insights — Quick Insights for the Table";
     const description =
       "Bite-sized Torah vorts on Parshas Hashavua — one-minute insights from Rashi, Midrash and Chazal, ready to share at the Shabbos table.";
     const url = "https://torahforthetable.com/short-vorts";
@@ -197,7 +197,7 @@ function ParshaSection({
           ) : /sukk/i.test(emptyLabel ?? heading) ? (
             <div className="parchment-frame">
               <div className="parchment-panel text-center">
-                <p className="font-serif text-lg font-bold text-primary">Short Vorts for Sukkos</p>
+                <p className="font-serif text-lg font-bold text-primary">Brief Insights for Sukkos</p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Available now in this week's collection — open it there to read or download.
                 </p>
@@ -229,7 +229,7 @@ function ParshaSection({
             <div className="parchment-frame">
               <div className="parchment-panel text-center">
                 <p className="text-sm text-muted-foreground">
-                  {`Original ${emptyLabel ?? heading} Short Vorts are being prepared. In the meantime, browse the full ${emptyLabel ?? heading} collection.`}
+                  {`Original ${emptyLabel ?? heading} Brief Insights are being prepared. In the meantime, browse the full ${emptyLabel ?? heading} collection.`}
                 </p>
                 <Link
                   to="/"
@@ -316,7 +316,7 @@ function ShortVortsPage() {
             Quick Insights for the Table
           </p>
           <h1 className="mt-4 font-serif text-3xl font-bold text-primary sm:text-4xl">
-            {isYomTov ? `Short Vorts for ${label}` : "Short Vorts on Parshas Hashavua"}
+            {isYomTov ? `Brief Insights for ${label}` : "Brief Insights on Parshas Hashavua"}
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
             One-minute Torah thoughts you can say over at the Shabbos table — drawn from Rashi,
