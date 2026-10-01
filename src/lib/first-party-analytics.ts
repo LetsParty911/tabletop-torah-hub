@@ -447,10 +447,26 @@ function send(events: WirePayload[]): void {
       headers: { "Content-Type": "application/json" },
       body,
       keepalive: true,
-    }).catch(() => {});
+    })
+      .then((r) => {
+        if (!r.ok) scheduleRetry(events);
+      })
+      .catch(() => scheduleRetry(events));
   } catch {
     /* analytics must never break the page */
   }
+}
+
+// One delayed, non-blocking retry for failed session_start writes. event_id is
+// unique server-side, so a retry can never double-count.
+const retried = new Set<string>();
+function scheduleRetry(events: WirePayload[]): void {
+  const pending = events.filter(
+    (e) => e["event_name"] === "session_start" && !retried.has(String(e["event_id"])),
+  );
+  if (!pending.length) return;
+  pending.forEach((e) => retried.add(String(e["event_id"])));
+  setTimeout(() => send(pending), 5000);
 }
 
 export function flushEvents(): void {
@@ -492,9 +508,8 @@ export function trackFp(name: FpEventName, input: FpEventInput = {}): void {
     // Any tracked activity refreshes the inactivity window. If that rolls the
     // session over, session_start is emitted first so the stream stays sane.
     const { sessionId, isNew } = touchSession();
-    if (isNew && name !== "session_start") {
-      emitSessionStart(path, visitorId, sessionId);
-    }
+    void isNew;
+    if (name !== "session_start") ensureSessionStart(path, visitorId, sessionId);
 
     const attribution = captureFirstTouch(path);
 
@@ -555,6 +570,19 @@ function emitSessionStart(path: string, visitorId: string, sessionId: string): v
     true,
   );
 }
+// Root cause of missing starts: other modules (legacy page-view tracker) call
+// getSessionId() first, which consumes touchSession()'s one-shot `isNew`, so
+// session_start was skipped. Track "start sent" per session id in shared
+// localStorage instead — exactly once per session across reloads and tabs.
+const SESSION_START_SENT_KEY = "tftt:fp-session-start-sent";
+
+function ensureSessionStart(path: string, visitorId: string, sessionId: string): void {
+  if (!sessionId || !visitorId) return;
+  if (lsGet(SESSION_START_SENT_KEY) === sessionId) return;
+  lsSet(SESSION_START_SENT_KEY, sessionId);
+  emitSessionStart(path, visitorId, sessionId);
+}
+
 // ---------------------------------------------------------------------------
 // Route lifecycle
 // ---------------------------------------------------------------------------
@@ -581,9 +609,9 @@ export function trackRouteView(path: string): void {
   currentPageViewId = randomId();
 
   const visitorId = getVisitorId();
-  const { sessionId, isNew } = touchSession();
+  const { sessionId } = touchSession();
   captureFirstTouch(path);
-  if (isNew) emitSessionStart(path, visitorId, sessionId);
+  ensureSessionStart(path, visitorId, sessionId);
 
   trackFp("page_view");
 }
