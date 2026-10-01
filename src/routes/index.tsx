@@ -53,6 +53,7 @@ type Resource = {
   summary_audio_path: string | null;
   primary_category: string | null;
   publication: string | null;
+  publication_id?: string | null;
   tags: string[];
   description: string | null;
   audience: string | null;
@@ -394,7 +395,7 @@ function Index() {
     medium: "share",
     campaign: "weekly-share",
   });
-  const shareText = `${resources.length} free, handpicked Divrei Torah for ${displayedLabel} — ready to download and print: ${shareLink}`;
+  const shareText = `${resources.length} free, handpicked Divrei Torah for ${isSukkosSeason ? "Sukkos, Shmini Atzeres & Simchas Torah" : displayedLabel} — ready to download and print: ${shareLink}`;
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
   const ShareButton = ({ className }: { className?: string }) => (

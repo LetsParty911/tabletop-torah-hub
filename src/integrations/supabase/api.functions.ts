@@ -336,10 +336,10 @@ async function buildResources(
         subtitle: standardizeCopy(r.subtitle),
         url: signed?.signedUrl ?? "#",
         summary_quick: r.summary_quick,
-        content_type: r.content_type,
         summary_audio_path: r.summary_audio_path ?? null,
         primary_category: (r.primary_category as string | null) ?? null,
         publication: (r.publication as string | null) ?? null,
+        publication_id: (r.publication_id as string | null) ?? null,
         tags: Array.isArray(r.tags) ? (r.tags as string[]) : [],
         description: standardizeCopy((r.description as string | null) ?? null),
         audience: (r.audience as string | null) ?? null,
@@ -603,6 +603,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
         description: standardizeCopy((r.description as string | null) ?? null),
         audience: (r.audience as string | null) ?? null,
         format_type: (r.format_type as string | null) ?? null,
+        content_type: (r.content_type as string | null) ?? null,
         page_count: typeof r.page_count === "number" ? r.page_count : null,
         badge: (r.badge as string | null) ?? null,
         created_at: r.created_at,
@@ -654,6 +655,7 @@ export type PublicPdf = {
   thumb_url: string | null;
   summary_quick: string | null;
   summary_full: string | null;
+  content_type?: string | null;
 };
 
 // First-page preview images live in the public `pdf-thumbs` bucket, keyed by
