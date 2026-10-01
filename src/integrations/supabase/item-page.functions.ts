@@ -170,43 +170,20 @@ export const getOriginalHtmlContent = createServerFn({ method: "GET" })
     const admin = getSupabaseAdmin();
     const { data: row, error } = await admin
       .from("pdfs")
-      .select("file_path, publication, publication_id")
+      .select("article_text, publication, publication_id")
       .eq("id", data.id)
       .eq("published", true)
       .maybeSingle();
 
-    if (error || !row?.file_path) return null;
+    if (error || !row) return null;
     const isOriginal =
       row.publication === "tftt_original" ||
       (row.publication_id && TFTT_ORIGINAL_PUBLICATION_IDS.has(row.publication_id as string));
     if (!isOriginal) return null;
 
-    try {
-      const { data: file, error: downloadError } = await admin.storage
-        .from("pdfs")
-        .download(row.file_path as string);
-      if (downloadError || !file) return null;
-
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-      const document = await pdfjs.getDocument({ data: bytes, disableWorker: true }).promise;
-      const pages: string[] = [];
-      for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
-        const page = await document.getPage(pageNumber);
-        const content = await page.getTextContent();
-        const text = content.items
-          .map((item: any) => ("str" in item ? item.str : ""))
-          .join(" ")
-          .replace(/\s+/g, " ")
-          .trim();
-        if (text) pages.push(text);
-      }
-      const text = pages.join("\n\n").trim();
-
-      if (text.length < 80) return null;
-      return { text, extracted: true };
-    } catch (e) {
-      console.error("getOriginalHtmlContent extraction error", e);
-      return null;
-    }
+    // Public item pages must never download and parse the full PDF.
+    // article_text is populated out-of-band and read here as a cheap DB lookup.
+    const text = typeof row.article_text === "string" ? row.article_text.trim() : "";
+    if (text.length < 80) return null;
+    return { text, extracted: true };
   });
