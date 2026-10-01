@@ -25,7 +25,7 @@ export function SiteFooter() {
           Publications
         </Link>
         <Link to="/short-vorts" className={linkClass}>
-          Short Vorts
+          Brief Insights
         </Link>
         <Link to="/resources" className={linkClass}>
           Resources
