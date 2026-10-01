@@ -6,7 +6,7 @@ export const Route = createFileRoute("/resources")({
   head: () => {
     const title = "Torah for the Table Originals — In-House Torah Learning Resources";
     const description =
-      "Original educational material created in-house for the Shabbos table: Short Vorts, Stories for the Shabbos Table and Parsha Questions & Answers — all free of charge.";
+      "Original educational material created in-house for the Shabbos table: Brief Insights, Stories for the Shabbos Table and Parsha Questions & Answers — all free of charge.";
     const url = "https://torahforthetable.com/resources";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -40,12 +40,12 @@ type SeriesCard = {
 
 const SERIES: SeriesCard[] = [
   {
-    title: "Short Vorts",
+    title: "Brief Insights",
     description:
       "Brief, focused divrei Torah written in-house each week. Each vort is drawn from a classical source — Rashi, Midrash, or Chazal — and rewritten in a few sentences so it can be said over at the table without preparation.",
     sample: "What to expect: one source, one clear idea, about a minute to say over.",
     linkTo: "/short-vorts",
-    cta: "Read this week's Short Vorts →",
+    cta: "Read this week's Brief Insights →",
   },
   {
     title: "Stories for the Shabbos Table",
