@@ -368,7 +368,7 @@ function Index() {
   const quickChoices = (["quick", "family", "kids", "story"] as const).map((key) => {
     const chooser = CHOOSERS.find((option) => option.key === key);
     const labels: Record<(typeof key), string> = {
-      quick: "Short Vorts",
+      quick: "Brief Insights",
       family: "Family Table",
       kids: "Children",
       story: "Stories",
