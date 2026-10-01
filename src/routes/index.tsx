@@ -281,7 +281,7 @@ function Index() {
   ].includes(normalizedCollectionKey);
   const isCurrentYomKippur = normalizedCollectionKey === "yom kippur";
   const isSukkosSeason = ["sukkos", "shemini atzeres", "simchas torah"].includes(normalizedCurrentKey);
-  const sukkosSeasonTitle = "Torah for Sukkos, Shmini Atzeres & Simchas Torah";
+  const sukkosSeasonTitle = "Divrei Torah for Sukkos, Shmini Atzeres & Simchas Torah";
   const upcomingParsha = isFallback
     ? (currentParshaKey ?? nextParshaAfter(displayedParshaKey) ?? upcomingAfterYomTovKey)
     : (nextParshaAfter(displayedParshaKey) ?? upcomingAfterYomTovKey);

@@ -30,3 +30,6 @@
 
 ## Archive publication filter
 - [x] Options from canonical publication only; no title fallback; match publication only
+
+## Sukkos heading wording
+- [x] Homepage seasonal heading: "Divrei Torah for Sukkos, Shmini Atzeres & Simchas Torah"
