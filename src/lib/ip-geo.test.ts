@@ -366,6 +366,28 @@ describe("resolveApproximateGeo concurrent primaries + diagnostics", () => {
     expect(geo.provider).toBe("ipapicom");
   });
 
+  it("analytics continues to a city fallback when MaxMind returns only a region", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: any) => {
+      const u = String(url); calls.push(u);
+      if (u.includes("geolite.info")) {
+        return new Response(JSON.stringify({
+          country: { iso_code: "US" },
+          subdivisions: [{ names: { en: "Washington" } }],
+        }), { status: 200 });
+      }
+      if (u.includes("ipapi.co")) {
+        return new Response(JSON.stringify({
+          country_code: "US", region: "Washington", city: "Seattle", postal: "98101",
+        }), { status: 200 });
+      }
+      return new Response("x", { status: 500 });
+    }));
+    const geo = await resolveApproximateGeo(telemetry, "analytics");
+    expect(calls.some((u) => u.includes("ipapi.co"))).toBe(true);
+    expect(geo.city).toBe("Seattle");
+    expect(geo.provider).toBe("ipapi");
+  });
+
   it("analytics skips ip-api.com when ipapi.co already resolved a place", async () => {
     vi.stubGlobal("fetch", vi.fn(async (url: any) => {
       const u = String(url); calls.push(u);
