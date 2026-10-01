@@ -24,7 +24,7 @@ export const Route = createFileRoute("/parsha/$slug")({
   head: ({ loaderData, params }) => {
     const label = loaderData?.label ?? "Parsha";
     const count = loaderData?.total_count ?? 0;
-    const title = `Divrei Torah on ${label} | Dvar Torah, Short Vorts & Printable PDFs`;
+    const title = `Divrei Torah on ${label} | Dvar Torah, Brief Insights & Printable PDFs`;
     const description =
       count > 0
         ? `Browse ${count} Divrei Torah on ${label}, including short vorts, printable Torah sheets, family-table material and deeper learning.`
@@ -201,7 +201,7 @@ function PermanentParshaPage() {
 
         {vorts.length > 0 && (
           <section className="mt-9">
-            <h2 className="font-serif text-2xl font-bold text-primary">Short Vorts on {page.label}</h2>
+            <h2 className="font-serif text-2xl font-bold text-primary">Brief Insights on {page.label}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Quick Torah thoughts that can be shared at the Shabbos table.
             </p>
