@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { isPostShabbosWindow } from "@/lib/post-shabbos";
 import { FileText, Share2 } from "lucide-react";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { PublicationCardTracker } from "@/components/PublicationCardTracker";
 import { trackFp } from "@/lib/first-party-analytics";
@@ -30,6 +31,8 @@ import {
   listHomepageWeek,
   getParshaOverride,
   getActiveSubscriberCount,
+  getAnnouncementBanner,
+  type AnnouncementBanner as AnnouncementBannerData,
 } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
@@ -69,9 +72,11 @@ type LoaderData = {
   subscriberCount: number | null;
   readingDate: string | null;
   upcomingAfterYomTovKey: string | null;
+  announcement: AnnouncementBannerData;
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
+  const announcementPromise = getAnnouncementBanner().catch(() => ({ enabled: false, text: null, linkUrl: null, linkLabel: null }));
   const subscriberCountPromise = getActiveSubscriberCount().catch((e) => {
     console.error("Failed to load subscriber count", e);
     return { count: 0 };
@@ -130,6 +135,8 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     upcomingAfterYomTovKey = next?.parshaKey ?? null;
   }
 
+  const announcement = await announcementPromise;
+
   return {
     label,
     parshaKey,
@@ -140,6 +147,7 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     subscriberCount,
     readingDate,
     upcomingAfterYomTovKey,
+    announcement,
   };
 }
 
@@ -450,6 +458,7 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background">
+      <AnnouncementBanner initialBanner={Route.useLoaderData().announcement} />
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
         <section className="parchment-frame">
           <div className="parchment-panel text-center">
