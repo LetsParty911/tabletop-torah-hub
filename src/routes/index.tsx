@@ -53,6 +53,7 @@ type Resource = {
   summary_audio_path: string | null;
   primary_category: string | null;
   publication: string | null;
+  publication_id?: string | null;
   tags: string[];
   description: string | null;
   audience: string | null;
