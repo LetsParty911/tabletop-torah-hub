@@ -12,6 +12,13 @@
 import { getRequestTelemetry, isAdminPath } from "./request-telemetry.server";
 import type { ApproximateGeo } from "./ip-geo.server";
 
+/**
+ * TEMPORARY master switch for city blocking. Set to true to re-enable the
+ * BLOCKED_CITIES rules below; false = every visitor passes through untouched.
+ * The list itself is intentionally left unchanged.
+ */
+export const GEO_BLOCKING_ENABLED = false;
+
 export const BLOCK_ACTION = "maintenance page served";
 
 export type BlockedCity = {
@@ -95,6 +102,8 @@ export function blockedResponse(): Response {
 
 /** Returns a block Response for blocked-city traffic, or null to continue. Never throws. */
 export async function checkGeoBlock(request: Request): Promise<Response | null> {
+  // Disabled — allow every visitor through without any lookup or logging.
+  if (!GEO_BLOCKING_ENABLED) return null;
   let path = "/";
   try {
     const url = new URL(request.url);
