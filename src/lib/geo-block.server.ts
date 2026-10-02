@@ -17,7 +17,7 @@ import type { ApproximateGeo } from "./ip-geo.server";
  * BLOCKED_CITIES rules below; false = every visitor passes through untouched.
  * The list itself is intentionally left unchanged.
  */
-export const GEO_BLOCKING_ENABLED = false;
+export const GEO_BLOCKING_ENABLED = true;
 
 export const BLOCK_ACTION = "maintenance page served";
 
