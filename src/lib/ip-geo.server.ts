@@ -603,13 +603,18 @@ export async function resolveApproximateGeo(
 
     // A single transient provider/network failure should not strand a visitor at
     // country_only. For analytics only, retry the two zero-config HTTPS providers
-    // once, in parallel, after a short pause. This retry runs only when the entire
-    // first provider chain produced no usable result, so normal requests are not
-    // slowed down or doubled.
+    // once, in parallel, after a short pause. This retry runs only when the first
+    // provider chain produced no city, so normal requests are not slowed down or
+    // doubled.
     if ((!fresh || !hasCity(fresh)) && purpose === "analytics") {
       await new Promise((resolve) => setTimeout(resolve, 150));
       const retryResults = await Promise.all([lookupIpWhoIs(ip), lookupIpApi(ip), lookupIpApiCom(ip)]);
-      fresh = mergeLookups(retryResults);
+      // Keep the first chain's answer in front of the retry answers: mergeLookups
+      // takes location from the first provider that has a city (so a retry city
+      // still wins) and only fills nulls from the rest, so a partial region or
+      // ASN from the first chain is never discarded when the retry fails or is
+      // less complete.
+      fresh = mergeLookups([fresh, ...retryResults]);
     }
 
     if (!fresh) {
