@@ -4,6 +4,7 @@ import { isPostShabbosWindow } from "@/lib/post-shabbos";
 import { FileText, Share2 } from "lucide-react";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { UpdateCountdown } from "@/components/UpdateCountdown";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { PublicationCardTracker } from "@/components/PublicationCardTracker";
 import { trackFp } from "@/lib/first-party-analytics";
@@ -480,6 +481,11 @@ function Index() {
     <div className="min-h-screen bg-background">
       <AnnouncementBanner initialBanner={Route.useLoaderData().announcement} />
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
+        <UpdateCountdown
+          contentLive={!isFallback && resources.length > 0}
+          liveParshaLabel={currentLabel}
+          readingDate={readingDate}
+        />
         <section className="parchment-frame">
           <div className="parchment-panel text-center">
             <p className="hidden font-sans text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-accent-readable sm:block sm:text-xs">
