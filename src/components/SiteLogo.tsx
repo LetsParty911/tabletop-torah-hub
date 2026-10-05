@@ -33,21 +33,16 @@ export function SiteLogoFooter({ className = "" }: { className?: string }) {
 
   return (
     <span
-      className={`block w-[min(80vw,460px)] overflow-hidden rounded-lg border border-white/5 bg-[#031b35] px-4 py-3 shadow-sm sm:w-[min(72vw,500px)] sm:px-6 sm:py-4 ${className}`}
+      className={`block w-[min(78vw,420px)] overflow-hidden rounded-lg border border-white/5 bg-[#031b35] px-4 py-2.5 shadow-sm sm:w-[min(64vw,440px)] sm:px-5 sm:py-3 ${className}`}
       aria-label="TorahForTheTable.com"
     >
-      <span className="block text-center font-serif font-semibold leading-[0.84] tracking-[-0.045em]">
-        <span className="block text-[1.7rem] sm:text-[2.5rem]" style={gold}>
-          TorahFor
-        </span>
-        <span className="mt-1 block text-[2rem] sm:text-[2.9rem]">
-          <span style={gold}>The</span>
-          <span className="text-white">Table</span>
-          <span className="text-[0.7em]" style={gold}>.com</span>
-        </span>
+      <span className="block whitespace-nowrap text-center font-serif text-[1.35rem] font-semibold leading-none tracking-[-0.035em] sm:text-[1.65rem]">
+        <span style={gold}>TorahFor</span>
+        <span className="text-white">TheTable</span>
+        <span className="text-[0.72em]" style={gold}>.com</span>
       </span>
       <span
-        className="mx-auto mt-2 block h-px w-[88%]"
+        className="mx-auto mt-1.5 block h-px w-[84%]"
         style={{ backgroundImage: "linear-gradient(90deg, transparent, #e0a334 18%, #fff1ad 50%, #e0a334 82%, transparent)" }}
       />
     </span>
