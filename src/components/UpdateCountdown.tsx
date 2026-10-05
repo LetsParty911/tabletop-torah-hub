@@ -1,4 +1,4 @@
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, ChevronRight, Mail } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 type UpdateCountdownProps = {
@@ -185,17 +185,28 @@ export function UpdateCountdown({
 
       {countdown ? (
         <div
-          className="mt-2 flex items-baseline justify-center gap-1.5 font-mono text-sm font-semibold text-primary sm:text-base"
+          className="mt-3 grid grid-cols-4 overflow-hidden rounded-xl border border-accent/30 bg-background/55 shadow-sm"
           aria-live="polite"
           aria-label={`${countdown.days} days, ${countdown.hours} hours, ${countdown.minutes} minutes, and ${countdown.seconds} seconds until the next collection`}
         >
-          <span>{countdown.days}d</span>
-          <span aria-hidden="true">·</span>
-          <span>{countdown.hours}h</span>
-          <span aria-hidden="true">·</span>
-          <span>{countdown.minutes}m</span>
-          <span aria-hidden="true">·</span>
-          <span>{countdown.seconds}s</span>
+          {[
+            ["Days", countdown.days],
+            ["Hours", countdown.hours],
+            ["Minutes", countdown.minutes],
+            ["Seconds", countdown.seconds],
+          ].map(([unit, value], index) => (
+            <div
+              key={unit}
+              className={`px-1.5 py-2.5 text-center sm:py-3 ${index > 0 ? "border-l border-accent/25" : ""}`}
+            >
+              <span className="block font-serif text-xl font-bold leading-none text-primary sm:text-2xl">
+                {value}
+              </span>
+              <span className="mt-1 block text-[0.58rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:text-[0.65rem]">
+                {unit}
+              </span>
+            </div>
+          ))}
         </div>
       ) : (
         <p className="mt-2 text-sm font-semibold text-primary" aria-live="polite">
@@ -203,16 +214,18 @@ export function UpdateCountdown({
         </p>
       )}
 
-      <p className="mt-3 text-sm text-muted-foreground">
-        Subscribe to be notified when this week&apos;s collection is published.
-      </p>
       <a
         href="#weekly-email-signup"
         onClick={scrollToSignup}
-        className="mt-2 inline-flex rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#b8790b] bg-gradient-to-b from-[#ffd96b] to-[#f1b52f] px-6 py-3 font-serif text-xl font-bold text-[#082c55] shadow-[0_5px_16px_rgba(184,121,11,0.22)] transition-transform hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:w-auto sm:min-w-72"
       >
-        Subscribe
+        <Mail className="h-5 w-5" aria-hidden="true" />
+        <span>Subscribe</span>
+        <ChevronRight className="h-5 w-5" aria-hidden="true" />
       </a>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Be the first to know when this week&apos;s collection is published.
+      </p>
     </section>
   );
 }
