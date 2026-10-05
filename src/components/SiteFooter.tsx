@@ -7,11 +7,11 @@ export function SiteFooter() {
     "hover:text-primary hover:underline transition-colors duration-150 after:content-['·'] after:mx-3 after:text-muted-foreground last:after:hidden";
 
   return (
-    <footer id="site-footer" className="space-y-2 px-4 pb-24 pt-4 md:pb-20">
-      <Link to="/" aria-label="Torah for the Table — home" className="mx-auto mb-6 flex w-fit">
+    <footer id="site-footer" className="space-y-1.5 px-4 pb-10 pt-3 sm:pb-12 md:pb-14">
+      <Link to="/" aria-label="Torah for the Table — home" className="mx-auto mb-4 flex w-fit">
         <SiteLogoFooter />
       </Link>
-      <div className="flex flex-wrap items-center justify-center gap-y-2 text-center text-sm text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-center gap-y-1.5 text-center text-[0.82rem] sm:text-sm text-muted-foreground">
         <Link to="/" className={linkClass}>
           Home
         </Link>
@@ -51,7 +51,7 @@ export function SiteFooter() {
           Torah For The Table is a registered 501(c)(3) nonprofit organization.
         </Link>
       </p>
-      <p className="text-center text-xs text-muted-foreground/80">
+      <p className="text-center text-[0.68rem] leading-relaxed text-muted-foreground/65 sm:text-xs">
         This product includes GeoLite Data created by{" "}
         <a
           href="https://www.maxmind.com"
