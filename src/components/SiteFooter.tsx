@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
-import { SiteLogoFooter } from "@/components/SiteLogo";
+import { SiteLogoHorizontal } from "@/components/SiteLogo";
 
 export function SiteFooter() {
   const linkClass =
@@ -8,8 +8,13 @@ export function SiteFooter() {
 
   return (
     <footer id="site-footer" className="space-y-1.5 px-4 pb-6 pt-2.5 sm:pb-8 md:pb-10">
-      <Link to="/" aria-label="Torah for the Table — home" className="mx-auto mb-3 flex w-fit">
-        <SiteLogoFooter />
+      <Link
+        to="/"
+        aria-label="Torah for the Table — home"
+        className="mx-auto mb-3 flex w-fit flex-col items-center gap-2"
+      >
+        <SiteLogoHorizontal className="!text-[1.15rem] sm:!text-[1.35rem]" />
+        <span aria-hidden="true" className="h-px w-40 bg-accent/45 sm:w-52" />
       </Link>
       <div className="flex flex-wrap items-center justify-center gap-y-1.5 text-center text-[0.82rem] sm:text-sm text-muted-foreground">
         <Link to="/" className={linkClass}>
