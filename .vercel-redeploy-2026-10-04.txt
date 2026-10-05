@@ -1,0 +1,1 @@
+Production redeploy trigger after restoring required Supabase server environment variables.
