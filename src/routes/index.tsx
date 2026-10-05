@@ -488,9 +488,13 @@ function Index() {
           readingDate={readingDate}
         />
         <section className="parchment-frame">
-          <div className="parchment-panel text-center">
-            <p className="hidden font-sans text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-accent-readable sm:block sm:text-xs">
-              {isCurrentYomKippur ? "Yom Kippur Resources" : "Weekly Divrei Torah"}
+          <div className="parchment-panel py-5 text-center sm:py-7">
+            <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
+              {isCurrentYomKippur
+                ? "Yom Kippur Resources"
+                : isFallback
+                  ? "This Week's Collection"
+                  : "Weekly Divrei Torah"}
             </p>
             <h1 className="mt-2 font-serif text-[1.6rem] leading-[1.1] font-bold tracking-tight text-primary sm:text-4xl md:text-5xl">
               <span>
@@ -506,7 +510,9 @@ function Index() {
               </span>
             </h1>
             <p className="mx-auto mt-2 max-w-md font-serif text-sm leading-relaxed text-primary sm:hidden">
-              Choose a Dvar Torah for your table — free, and ready to print.
+              {isFallback
+                ? "New Divrei Torah are being prepared for your Shabbos table."
+                : "Choose a Dvar Torah for your table — free, and ready to print."}
             </p>
             {!isFallback && (
               <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-accent-readable sm:hidden">
@@ -532,8 +538,7 @@ function Index() {
                 </>
               ) : isFallback ? (
                 <>
-                  This week&apos;s selections aren&apos;t live yet. More Divrei Torah will be added
-                  Thursday evening.
+                  New Divrei Torah are being prepared for your Shabbos table.
                 </>
               ) : (
                 <>
@@ -548,7 +553,7 @@ function Index() {
             </p>
 
             {isFallback && !isCurrentYomKippur ? (
-              <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <div className="mt-4 flex flex-col items-center justify-center gap-2.5 sm:flex-row">
                 <a
                   href="#weekly-email-signup"
                   onClick={(e) => {
@@ -559,13 +564,13 @@ function Index() {
                       preventScroll: true,
                     });
                   }}
-                  className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full border-2 border-primary bg-primary/5 px-6 py-2.5 font-serif text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground sm:w-auto"
                 >
-                  Notify me when {notificationReadingLabel} is published
+                  Get the {notificationReadingLabel} notification
                 </a>
                 <Link
                   to="/archive"
-                  className="inline-flex w-full items-center justify-center rounded-full border border-accent bg-transparent px-7 py-3 font-serif font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-accent/70 bg-transparent px-6 py-2.5 font-serif text-sm font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
                 >
                   Browse previous collections
                 </Link>
