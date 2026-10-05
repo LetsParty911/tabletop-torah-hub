@@ -33,11 +33,11 @@ export function SiteLogoFooter({ className = "" }: { className?: string }) {
 
   return (
     <span
-      className={`block w-[min(88vw,560px)] overflow-hidden rounded-lg border border-white/5 bg-[#031b35] px-5 py-4 shadow-sm sm:px-7 sm:py-5 ${className}`}
+      className={`block w-[min(80vw,460px)] overflow-hidden rounded-lg border border-white/5 bg-[#031b35] px-4 py-3 shadow-sm sm:w-[min(72vw,500px)] sm:px-6 sm:py-4 ${className}`}
       aria-label="TorahForTheTable.com"
     >
       <span className="block text-center font-serif font-semibold leading-[0.84] tracking-[-0.045em]">
-        <span className="block text-[2.35rem] sm:text-[3.35rem]" style={gold}>
+        <span className="block text-[1.7rem] sm:text-[2.5rem]" style={gold}>
           TorahFor
         </span>
         <span className="mt-1 block text-[2rem] sm:text-[2.9rem]">
@@ -47,7 +47,7 @@ export function SiteLogoFooter({ className = "" }: { className?: string }) {
         </span>
       </span>
       <span
-        className="mx-auto mt-3 block h-px w-[90%]"
+        className="mx-auto mt-2 block h-px w-[88%]"
         style={{ backgroundImage: "linear-gradient(90deg, transparent, #e0a334 18%, #fff1ad 50%, #e0a334 82%, transparent)" }}
       />
     </span>
