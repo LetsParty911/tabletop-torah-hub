@@ -401,6 +401,57 @@ describe("resolveApproximateGeo concurrent primaries + diagnostics", () => {
     expect(calls.some((u) => u.includes("ip-api.com"))).toBe(false);
   });
 
+  it("analytics retry keeps the first chain's partial region when the retry fails", async () => {
+    let whoisCalls = 0;
+    vi.stubGlobal("fetch", vi.fn(async (url: any) => {
+      const u = String(url); calls.push(u);
+      if (u.includes("ipwho.is")) {
+        whoisCalls++;
+        if (whoisCalls === 1) {
+          return new Response(
+            JSON.stringify({ success: true, country_code: "US", region: "New Jersey", city: "", postal: "" }),
+            { status: 200 },
+          );
+        }
+      }
+      return new Response("x", { status: 500 });
+    }));
+    const geo = await resolveApproximateGeo(telemetry, "analytics");
+    expect(geo.region).toBe("New Jersey");
+    expect(geo.city).toBeNull();
+    expect(geo.geoSource).toBe("ip_lookup");
+    expect(geo.provider).toBe("ipwhois");
+    // The partial result is cached as a usable lookup, not as a failure row.
+    expect(mockState.upserts).toHaveLength(1);
+    expect(mockState.upserts[0]).toMatchObject({ lookup_ok: true, region: "New Jersey" });
+  });
+
+  it("analytics retry still upgrades to a city from a later provider", async () => {
+    let ipapiCalls = 0;
+    vi.stubGlobal("fetch", vi.fn(async (url: any) => {
+      const u = String(url); calls.push(u);
+      if (u.includes("ipwho.is")) {
+        return new Response(
+          JSON.stringify({ success: true, country_code: "US", region: "New Jersey" }),
+          { status: 200 },
+        );
+      }
+      if (u.includes("ipapi.co")) {
+        ipapiCalls++;
+        if (ipapiCalls === 2) {
+          return new Response(
+            JSON.stringify({ country_code: "US", region: "New Jersey", city: "Bayonne" }),
+            { status: 200 },
+          );
+        }
+      }
+      return new Response("x", { status: 500 });
+    }));
+    const geo = await resolveApproximateGeo(telemetry, "analytics");
+    expect(geo.city).toBe("Bayonne");
+    expect(geo.provider).toBe("ipapi");
+  });
+
   it("blocking reuses a fresh cached ipapicom row without external lookups", async () => {
     mockState.cacheRow = {
       ip_address: "8.8.4.4", country: "US", region: "New Jersey", city: "Bayonne",
