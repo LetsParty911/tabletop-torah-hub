@@ -1,6 +1,11 @@
 // Run with: bunx bun test src/lib/hebcal.test.ts
 import { describe, expect, it } from "bun:test";
-import { resolveReadingFromHebcal, type HebcalShabbat } from "@/lib/hebcal";
+import {
+  resolveReadingFromHebcal,
+  upcomingShabbosDate,
+  hebcalShabbatUrlForDate,
+  type HebcalShabbat,
+} from "@/lib/hebcal";
 
 const NOW = new Date("2026-09-06T12:00:00Z"); // Sunday
 
@@ -38,5 +43,33 @@ describe("resolveReadingFromHebcal", () => {
     expect(r.parshaKey).toBeNull();
     expect(r.label).toBe("Parshas Hashavua");
     expect(r.isStaticFallback).toBe(true);
+  });
+
+  it("Bereishis after Simchas Torah: parashat wins over adjacent Yom Tov", () => {
+    const data: HebcalShabbat = {
+      range: { start: "2026-10-09", end: "2026-10-10" },
+      items: [
+        { title: "Simchat Torah", category: "holiday", subcat: "major", date: "2026-10-04", yomtov: true },
+        { title: "Parashat Bereshit", category: "parashat", date: "2026-10-10" },
+      ],
+    };
+    const r = resolveReadingFromHebcal(data, new Date("2026-10-04T16:00:00Z"));
+    expect(r.parshaKey).toBe("Bereishis");
+    expect(r.readingDate).toBe("2026-10-10");
+  });
+});
+
+describe("rollover-safe target date", () => {
+  it("Sunday Oct 4 2026 (Eastern) targets Shabbos Oct 10", () => {
+    expect(upcomingShabbosDate(new Date("2026-10-04T16:00:00Z"))).toBe("2026-10-10");
+    // Saturday night 11pm ET is still Shabbos Oct 3; just after midnight ET rolls over.
+    expect(upcomingShabbosDate(new Date("2026-10-04T03:00:00Z"))).toBe("2026-10-03");
+    expect(upcomingShabbosDate(new Date("2026-10-04T04:30:00Z"))).toBe("2026-10-10");
+  });
+
+  it("URL pins the explicit date and stays Diaspora", () => {
+    const url = hebcalShabbatUrlForDate("2026-10-10");
+    expect(url).toContain("gy=2026&gm=10&gd=10");
+    expect(url).not.toContain("i=on");
   });
 });
