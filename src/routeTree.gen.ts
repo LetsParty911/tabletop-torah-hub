@@ -9,116 +9,46 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AboutRouteImport } from './routes/about'
-import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AdminAnalyticsRouteImport } from './routes/admin-analytics'
-import { Route as ArchiveRouteImport } from './routes/archive'
-import { Route as ContactRouteImport } from './routes/contact'
-import { Route as DivreiTorahParshaRouteImport } from './routes/divrei-torah-parsha'
-import { Route as MissionRouteImport } from './routes/mission'
-import { Route as MyTableRouteImport } from './routes/my-table'
-import { Route as OfflineRouteImport } from './routes/offline'
-import { Route as OriginalsRouteImport } from './routes/originals'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as PublicationsRouteImport } from './routes/publications'
-import { Route as ResourcesRouteImport } from './routes/resources'
-import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
-import { Route as ShortVortsRouteImport } from './routes/short-vorts'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as ApiEnhancedFingerprintRouteImport } from './routes/api/enhanced-fingerprint'
-import { Route as ApiEventsRouteImport } from './routes/api/events'
-import { Route as ApiInternalDeviceRouteImport } from './routes/api/internal-device'
-import { Route as ApiPrivacyRegionRouteImport } from './routes/api/privacy-region'
-import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
-import { Route as ApiTrackSearchRouteImport } from './routes/api/track-search'
-import { Route as ApiTrackViewRouteImport } from './routes/api/track-view'
-import { Route as ManageTableTokenRouteImport } from './routes/manage-table.$token'
-import { Route as OgImageDotpngRouteImport } from './routes/og.image[.]png'
-import { Route as ParshaSlugRouteImport } from './routes/parsha.$slug'
-import { Route as PublicationSlugRouteImport } from './routes/publication.$slug'
+import { Route as ShortVortsRouteImport } from './routes/short-vorts'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as ResourcesRouteImport } from './routes/resources'
+import { Route as PublicationsRouteImport } from './routes/publications'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as OriginalsRouteImport } from './routes/originals'
+import { Route as OfflineRouteImport } from './routes/offline'
+import { Route as MyTableRouteImport } from './routes/my-table'
+import { Route as MissionRouteImport } from './routes/mission'
+import { Route as DivreiTorahParshaRouteImport } from './routes/divrei-torah-parsha'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as ArchiveRouteImport } from './routes/archive'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin-analytics'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as UnsubscribeIndexRouteImport } from './routes/unsubscribe.index'
-import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as ViewIdRouteImport } from './routes/view.$id'
-import { Route as ApiUnsubscribeTokenRouteImport } from './routes/api/unsubscribe.$token'
-import { Route as ParshaSlugYearRouteImport } from './routes/parsha.$slug.$year'
-import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
-import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
+import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
+import { Route as PublicationSlugRouteImport } from './routes/publication.$slug'
+import { Route as ParshaSlugRouteImport } from './routes/parsha.$slug'
+import { Route as OgImageDotpngRouteImport } from './routes/og.image[.]png'
+import { Route as ManageTableTokenRouteImport } from './routes/manage-table.$token'
+import { Route as ApiTrackViewRouteImport } from './routes/api/track-view'
+import { Route as ApiTrackSearchRouteImport } from './routes/api/track-search'
+import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
+import { Route as ApiPrivacyRegionRouteImport } from './routes/api/privacy-region'
+import { Route as ApiInternalDeviceRouteImport } from './routes/api/internal-device'
+import { Route as ApiEventsRouteImport } from './routes/api/events'
+import { Route as ApiEnhancedFingerprintRouteImport } from './routes/api/enhanced-fingerprint'
 import { Route as YomTovSlugYearRouteImport } from './routes/yom-tov.$slug.$year'
+import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
+import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
+import { Route as ParshaSlugYearRouteImport } from './routes/parsha.$slug.$year'
+import { Route as ApiUnsubscribeTokenRouteImport } from './routes/api/unsubscribe.$token'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
-  id: '/admin-analytics',
-  path: '/admin-analytics',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ArchiveRoute = ArchiveRouteImport.update({
-  id: '/archive',
-  path: '/archive',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContactRoute = ContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DivreiTorahParshaRoute = DivreiTorahParshaRouteImport.update({
-  id: '/divrei-torah-parsha',
-  path: '/divrei-torah-parsha',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MissionRoute = MissionRouteImport.update({
-  id: '/mission',
-  path: '/mission',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MyTableRoute = MyTableRouteImport.update({
-  id: '/my-table',
-  path: '/my-table',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OfflineRoute = OfflineRouteImport.update({
-  id: '/offline',
-  path: '/offline',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OriginalsRoute = OriginalsRouteImport.update({
-  id: '/originals',
-  path: '/originals',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PublicationsRoute = PublicationsRouteImport.update({
-  id: '/publications',
-  path: '/publications',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResourcesRoute = ResourcesRouteImport.update({
-  id: '/resources',
-  path: '/resources',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
-  id: '/robots.txt',
-  path: '/robots.txt',
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShortVortsRoute = ShortVortsRouteImport.update({
@@ -126,64 +56,79 @@ const ShortVortsRoute = ShortVortsRouteImport.update({
   path: '/short-vorts',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiEnhancedFingerprintRoute = ApiEnhancedFingerprintRouteImport.update({
-  id: '/api/enhanced-fingerprint',
-  path: '/api/enhanced-fingerprint',
+const ResourcesRoute = ResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiEventsRoute = ApiEventsRouteImport.update({
-  id: '/api/events',
-  path: '/api/events',
+const PublicationsRoute = PublicationsRouteImport.update({
+  id: '/publications',
+  path: '/publications',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiInternalDeviceRoute = ApiInternalDeviceRouteImport.update({
-  id: '/api/internal-device',
-  path: '/api/internal-device',
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPrivacyRegionRoute = ApiPrivacyRegionRouteImport.update({
-  id: '/api/privacy-region',
-  path: '/api/privacy-region',
+const OriginalsRoute = OriginalsRouteImport.update({
+  id: '/originals',
+  path: '/originals',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTrackDownloadRoute = ApiTrackDownloadRouteImport.update({
-  id: '/api/track-download',
-  path: '/api/track-download',
+const OfflineRoute = OfflineRouteImport.update({
+  id: '/offline',
+  path: '/offline',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTrackSearchRoute = ApiTrackSearchRouteImport.update({
-  id: '/api/track-search',
-  path: '/api/track-search',
+const MyTableRoute = MyTableRouteImport.update({
+  id: '/my-table',
+  path: '/my-table',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTrackViewRoute = ApiTrackViewRouteImport.update({
-  id: '/api/track-view',
-  path: '/api/track-view',
+const MissionRoute = MissionRouteImport.update({
+  id: '/mission',
+  path: '/mission',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ManageTableTokenRoute = ManageTableTokenRouteImport.update({
-  id: '/manage-table/$token',
-  path: '/manage-table/$token',
+const DivreiTorahParshaRoute = DivreiTorahParshaRouteImport.update({
+  id: '/divrei-torah-parsha',
+  path: '/divrei-torah-parsha',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OgImageDotpngRoute = OgImageDotpngRouteImport.update({
-  id: '/og/image.png',
-  path: '/og/image.png',
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ParshaSlugRoute = ParshaSlugRouteImport.update({
-  id: '/parsha/$slug',
-  path: '/parsha/$slug',
+const ArchiveRoute = ArchiveRouteImport.update({
+  id: '/archive',
+  path: '/archive',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PublicationSlugRoute = PublicationSlugRouteImport.update({
-  id: '/publication/$slug',
-  path: '/publication/$slug',
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/admin-analytics',
+  path: '/admin-analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UnsubscribeIndexRoute = UnsubscribeIndexRouteImport.update({
@@ -191,39 +136,94 @@ const UnsubscribeIndexRoute = UnsubscribeIndexRouteImport.update({
   path: '/unsubscribe/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const UnsubscribeTokenRoute = UnsubscribeTokenRouteImport.update({
-  id: '/unsubscribe/$token',
-  path: '/unsubscribe/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ViewIdRoute = ViewIdRouteImport.update({
   id: '/view/$id',
   path: '/view/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiUnsubscribeTokenRoute = ApiUnsubscribeTokenRouteImport.update({
-  id: '/api/unsubscribe/$token',
-  path: '/api/unsubscribe/$token',
+const UnsubscribeTokenRoute = UnsubscribeTokenRouteImport.update({
+  id: '/unsubscribe/$token',
+  path: '/unsubscribe/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ParshaSlugYearRoute = ParshaSlugYearRouteImport.update({
-  id: '/$year',
-  path: '/$year',
-  getParentRoute: () => ParshaSlugRoute,
+const PublicationSlugRoute = PublicationSlugRouteImport.update({
+  id: '/publication/$slug',
+  path: '/publication/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const ViewIdDownloadRoute = ViewIdDownloadRouteImport.update({
-  id: '/download',
-  path: '/download',
-  getParentRoute: () => ViewIdRoute,
+const ParshaSlugRoute = ParshaSlugRouteImport.update({
+  id: '/parsha/$slug',
+  path: '/parsha/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OgImageDotpngRoute = OgImageDotpngRouteImport.update({
+  id: '/og/image.png',
+  path: '/og/image.png',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManageTableTokenRoute = ManageTableTokenRouteImport.update({
+  id: '/manage-table/$token',
+  path: '/manage-table/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTrackViewRoute = ApiTrackViewRouteImport.update({
+  id: '/api/track-view',
+  path: '/api/track-view',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTrackSearchRoute = ApiTrackSearchRouteImport.update({
+  id: '/api/track-search',
+  path: '/api/track-search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTrackDownloadRoute = ApiTrackDownloadRouteImport.update({
+  id: '/api/track-download',
+  path: '/api/track-download',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPrivacyRegionRoute = ApiPrivacyRegionRouteImport.update({
+  id: '/api/privacy-region',
+  path: '/api/privacy-region',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInternalDeviceRoute = ApiInternalDeviceRouteImport.update({
+  id: '/api/internal-device',
+  path: '/api/internal-device',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEventsRoute = ApiEventsRouteImport.update({
+  id: '/api/events',
+  path: '/api/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEnhancedFingerprintRoute = ApiEnhancedFingerprintRouteImport.update({
+  id: '/api/enhanced-fingerprint',
+  path: '/api/enhanced-fingerprint',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const YomTovSlugYearRoute = YomTovSlugYearRouteImport.update({
+  id: '/yom-tov/$slug/$year',
+  path: '/yom-tov/$slug/$year',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ViewIdPdfRoute = ViewIdPdfRouteImport.update({
   id: '/pdf',
   path: '/pdf',
   getParentRoute: () => ViewIdRoute,
 } as any)
-const YomTovSlugYearRoute = YomTovSlugYearRouteImport.update({
-  id: '/yom-tov/$slug/$year',
-  path: '/yom-tov/$slug/$year',
+const ViewIdDownloadRoute = ViewIdDownloadRouteImport.update({
+  id: '/download',
+  path: '/download',
+  getParentRoute: () => ViewIdRoute,
+} as any)
+const ParshaSlugYearRoute = ParshaSlugYearRouteImport.update({
+  id: '/$year',
+  path: '/$year',
+  getParentRoute: () => ParshaSlugRoute,
+} as any)
+const ApiUnsubscribeTokenRoute = ApiUnsubscribeTokenRouteImport.update({
+  id: '/api/unsubscribe/$token',
+  path: '/api/unsubscribe/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -497,109 +497,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin-analytics': {
-      id: '/admin-analytics'
-      path: '/admin-analytics'
-      fullPath: '/admin-analytics'
-      preLoaderRoute: typeof AdminAnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/archive': {
-      id: '/archive'
-      path: '/archive'
-      fullPath: '/archive'
-      preLoaderRoute: typeof ArchiveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/divrei-torah-parsha': {
-      id: '/divrei-torah-parsha'
-      path: '/divrei-torah-parsha'
-      fullPath: '/divrei-torah-parsha'
-      preLoaderRoute: typeof DivreiTorahParshaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mission': {
-      id: '/mission'
-      path: '/mission'
-      fullPath: '/mission'
-      preLoaderRoute: typeof MissionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-table': {
-      id: '/my-table'
-      path: '/my-table'
-      fullPath: '/my-table'
-      preLoaderRoute: typeof MyTableRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/offline': {
-      id: '/offline'
-      path: '/offline'
-      fullPath: '/offline'
-      preLoaderRoute: typeof OfflineRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/originals': {
-      id: '/originals'
-      path: '/originals'
-      fullPath: '/originals'
-      preLoaderRoute: typeof OriginalsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/publications': {
-      id: '/publications'
-      path: '/publications'
-      fullPath: '/publications'
-      preLoaderRoute: typeof PublicationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/resources': {
-      id: '/resources'
-      path: '/resources'
-      fullPath: '/resources'
-      preLoaderRoute: typeof ResourcesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/robots.txt': {
-      id: '/robots.txt'
-      path: '/robots.txt'
-      fullPath: '/robots.txt'
-      preLoaderRoute: typeof RobotsDottxtRouteImport
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/short-vorts': {
@@ -609,88 +511,109 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShortVortsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/enhanced-fingerprint': {
-      id: '/api/enhanced-fingerprint'
-      path: '/api/enhanced-fingerprint'
-      fullPath: '/api/enhanced-fingerprint'
-      preLoaderRoute: typeof ApiEnhancedFingerprintRouteImport
+    '/resources': {
+      id: '/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/events': {
-      id: '/api/events'
-      path: '/api/events'
-      fullPath: '/api/events'
-      preLoaderRoute: typeof ApiEventsRouteImport
+    '/publications': {
+      id: '/publications'
+      path: '/publications'
+      fullPath: '/publications'
+      preLoaderRoute: typeof PublicationsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/internal-device': {
-      id: '/api/internal-device'
-      path: '/api/internal-device'
-      fullPath: '/api/internal-device'
-      preLoaderRoute: typeof ApiInternalDeviceRouteImport
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/privacy-region': {
-      id: '/api/privacy-region'
-      path: '/api/privacy-region'
-      fullPath: '/api/privacy-region'
-      preLoaderRoute: typeof ApiPrivacyRegionRouteImport
+    '/originals': {
+      id: '/originals'
+      path: '/originals'
+      fullPath: '/originals'
+      preLoaderRoute: typeof OriginalsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/track-download': {
-      id: '/api/track-download'
-      path: '/api/track-download'
-      fullPath: '/api/track-download'
-      preLoaderRoute: typeof ApiTrackDownloadRouteImport
+    '/offline': {
+      id: '/offline'
+      path: '/offline'
+      fullPath: '/offline'
+      preLoaderRoute: typeof OfflineRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/track-search': {
-      id: '/api/track-search'
-      path: '/api/track-search'
-      fullPath: '/api/track-search'
-      preLoaderRoute: typeof ApiTrackSearchRouteImport
+    '/my-table': {
+      id: '/my-table'
+      path: '/my-table'
+      fullPath: '/my-table'
+      preLoaderRoute: typeof MyTableRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/track-view': {
-      id: '/api/track-view'
-      path: '/api/track-view'
-      fullPath: '/api/track-view'
-      preLoaderRoute: typeof ApiTrackViewRouteImport
+    '/mission': {
+      id: '/mission'
+      path: '/mission'
+      fullPath: '/mission'
+      preLoaderRoute: typeof MissionRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/manage-table/$token': {
-      id: '/manage-table/$token'
-      path: '/manage-table/$token'
-      fullPath: '/manage-table/$token'
-      preLoaderRoute: typeof ManageTableTokenRouteImport
+    '/divrei-torah-parsha': {
+      id: '/divrei-torah-parsha'
+      path: '/divrei-torah-parsha'
+      fullPath: '/divrei-torah-parsha'
+      preLoaderRoute: typeof DivreiTorahParshaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/og/image.png': {
-      id: '/og/image.png'
-      path: '/og/image.png'
-      fullPath: '/og/image.png'
-      preLoaderRoute: typeof OgImageDotpngRouteImport
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/parsha/$slug': {
-      id: '/parsha/$slug'
-      path: '/parsha/$slug'
-      fullPath: '/parsha/$slug'
-      preLoaderRoute: typeof ParshaSlugRouteImport
+    '/archive': {
+      id: '/archive'
+      path: '/archive'
+      fullPath: '/archive'
+      preLoaderRoute: typeof ArchiveRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/publication/$slug': {
-      id: '/publication/$slug'
-      path: '/publication/$slug'
-      fullPath: '/publication/$slug'
-      preLoaderRoute: typeof PublicationSlugRouteImport
+    '/admin-analytics': {
+      id: '/admin-analytics'
+      path: '/admin-analytics'
+      fullPath: '/admin-analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/unsubscribe/': {
@@ -700,13 +623,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UnsubscribeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/unsubscribe/$token': {
-      id: '/unsubscribe/$token'
-      path: '/unsubscribe/$token'
-      fullPath: '/unsubscribe/$token'
-      preLoaderRoute: typeof UnsubscribeTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/view/$id': {
       id: '/view/$id'
       path: '/view/$id'
@@ -714,26 +630,96 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ViewIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/unsubscribe/$token': {
-      id: '/api/unsubscribe/$token'
-      path: '/api/unsubscribe/$token'
-      fullPath: '/api/unsubscribe/$token'
-      preLoaderRoute: typeof ApiUnsubscribeTokenRouteImport
+    '/unsubscribe/$token': {
+      id: '/unsubscribe/$token'
+      path: '/unsubscribe/$token'
+      fullPath: '/unsubscribe/$token'
+      preLoaderRoute: typeof UnsubscribeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/parsha/$slug/$year': {
-      id: '/parsha/$slug/$year'
-      path: '/$year'
-      fullPath: '/parsha/$slug/$year'
-      preLoaderRoute: typeof ParshaSlugYearRouteImport
-      parentRoute: typeof ParshaSlugRoute
+    '/publication/$slug': {
+      id: '/publication/$slug'
+      path: '/publication/$slug'
+      fullPath: '/publication/$slug'
+      preLoaderRoute: typeof PublicationSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/view/$id/download': {
-      id: '/view/$id/download'
-      path: '/download'
-      fullPath: '/view/$id/download'
-      preLoaderRoute: typeof ViewIdDownloadRouteImport
-      parentRoute: typeof ViewIdRoute
+    '/parsha/$slug': {
+      id: '/parsha/$slug'
+      path: '/parsha/$slug'
+      fullPath: '/parsha/$slug'
+      preLoaderRoute: typeof ParshaSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/og/image.png': {
+      id: '/og/image.png'
+      path: '/og/image.png'
+      fullPath: '/og/image.png'
+      preLoaderRoute: typeof OgImageDotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manage-table/$token': {
+      id: '/manage-table/$token'
+      path: '/manage-table/$token'
+      fullPath: '/manage-table/$token'
+      preLoaderRoute: typeof ManageTableTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/track-view': {
+      id: '/api/track-view'
+      path: '/api/track-view'
+      fullPath: '/api/track-view'
+      preLoaderRoute: typeof ApiTrackViewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/track-search': {
+      id: '/api/track-search'
+      path: '/api/track-search'
+      fullPath: '/api/track-search'
+      preLoaderRoute: typeof ApiTrackSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/track-download': {
+      id: '/api/track-download'
+      path: '/api/track-download'
+      fullPath: '/api/track-download'
+      preLoaderRoute: typeof ApiTrackDownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/privacy-region': {
+      id: '/api/privacy-region'
+      path: '/api/privacy-region'
+      fullPath: '/api/privacy-region'
+      preLoaderRoute: typeof ApiPrivacyRegionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal-device': {
+      id: '/api/internal-device'
+      path: '/api/internal-device'
+      fullPath: '/api/internal-device'
+      preLoaderRoute: typeof ApiInternalDeviceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/events': {
+      id: '/api/events'
+      path: '/api/events'
+      fullPath: '/api/events'
+      preLoaderRoute: typeof ApiEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/enhanced-fingerprint': {
+      id: '/api/enhanced-fingerprint'
+      path: '/api/enhanced-fingerprint'
+      fullPath: '/api/enhanced-fingerprint'
+      preLoaderRoute: typeof ApiEnhancedFingerprintRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/yom-tov/$slug/$year': {
+      id: '/yom-tov/$slug/$year'
+      path: '/yom-tov/$slug/$year'
+      fullPath: '/yom-tov/$slug/$year'
+      preLoaderRoute: typeof YomTovSlugYearRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/view/$id/pdf': {
       id: '/view/$id/pdf'
@@ -742,11 +728,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ViewIdPdfRouteImport
       parentRoute: typeof ViewIdRoute
     }
-    '/yom-tov/$slug/$year': {
-      id: '/yom-tov/$slug/$year'
-      path: '/yom-tov/$slug/$year'
-      fullPath: '/yom-tov/$slug/$year'
-      preLoaderRoute: typeof YomTovSlugYearRouteImport
+    '/view/$id/download': {
+      id: '/view/$id/download'
+      path: '/download'
+      fullPath: '/view/$id/download'
+      preLoaderRoute: typeof ViewIdDownloadRouteImport
+      parentRoute: typeof ViewIdRoute
+    }
+    '/parsha/$slug/$year': {
+      id: '/parsha/$slug/$year'
+      path: '/$year'
+      fullPath: '/parsha/$slug/$year'
+      preLoaderRoute: typeof ParshaSlugYearRouteImport
+      parentRoute: typeof ParshaSlugRoute
+    }
+    '/api/unsubscribe/$token': {
+      id: '/api/unsubscribe/$token'
+      path: '/api/unsubscribe/$token'
+      fullPath: '/api/unsubscribe/$token'
+      preLoaderRoute: typeof ApiUnsubscribeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
