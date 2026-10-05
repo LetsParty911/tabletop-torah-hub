@@ -11,7 +11,7 @@ type UpdateCountdownProps = {
 };
 
 const NEW_YORK_TIME_ZONE = "America/New_York";
-const RELEASE_HOUR = 8;
+const RELEASE_HOUR = 20;
 
 const YOM_TOV_LABELS = new Set([
   "Rosh Hashanah",
@@ -160,7 +160,7 @@ export function UpdateCountdown({
         We&apos;re preparing this week&apos;s Divrei Torah for your Shabbos table.
       </p>
       <p className="mt-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        Next collection publishes Thursday at 8:00 AM ET.
+        Next collection publishes Thursday at 8:00 PM ET.
       </p>
 
       {countdown ? (
