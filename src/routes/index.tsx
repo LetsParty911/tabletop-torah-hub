@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { isPostShabbosWindow } from "@/lib/post-shabbos";
 import { FileText, Share2 } from "lucide-react";
@@ -290,10 +290,26 @@ function Index() {
   // has newer published PDFs. A client-side server-function refresh ensures readers
   // see the current published collection without requiring a hard refresh.
   const [resources, setResources] = useState<Resource[]>(loaderData.resources ?? []);
+  const router = useRouter();
   useEffect(() => {
     let cancelled = false;
     const refreshCurrentCollection = async () => {
       try {
+        // Re-resolve the current reading first: if the server-rendered key is
+        // stale (e.g. across a Shabbos rollover), reload the whole route.
+        let freshKey: string | null = null;
+        try {
+          const o = await getParshaOverride();
+          if (o.override && o.isActive) freshKey = o.override;
+        } catch {
+          // ignore
+        }
+        if (!freshKey) freshKey = (await resolveHebcalParsha()).parshaKey;
+        if (cancelled) return;
+        if (freshKey && freshKey !== currentParshaKey) {
+          await router.invalidate();
+          return;
+        }
         const latest = await listHomepageWeek({ data: { parshaKey: currentParshaKey } });
         if (!cancelled) setResources(latest.resources as Resource[]);
       } catch (error) {
@@ -304,7 +320,10 @@ function Index() {
     return () => {
       cancelled = true;
     };
-  }, [currentParshaKey]);
+  }, [currentParshaKey, router]);
+  useEffect(() => {
+    setResources(loaderData.resources ?? []);
+  }, [loaderData.resources]);
 
   const [postShabbos, setPostShabbos] = useState(false);
   useEffect(() => {

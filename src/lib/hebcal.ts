@@ -34,8 +34,10 @@ export type HebcalShabbat = {
   range: { start?: string; end?: string } | null;
 };
 
-let cache: { at: number; data: HebcalShabbat } | null = null;
-let inFlight: Promise<HebcalShabbat> | null = null;
+// Cache keyed by the target Shabbos date, so a response for one week can never
+// be reused once the upcoming Shabbos (America/New_York) rolls over.
+const cache = new Map<string, { at: number; data: HebcalShabbat }>();
+const inFlight = new Map<string, Promise<HebcalShabbat>>();
 
 // Cloudflare Workers' fetch() accepts this extra `cf` option to cache a
 // subrequest at the edge, independent of any in-memory state. Ignored
@@ -44,22 +46,34 @@ type CfFetchInit = RequestInit & {
   cf?: { cacheTtl?: number; cacheEverything?: boolean };
 };
 
-/** Fetch this week's Shabbos payload (items + range), cached 24h. Throws on failure. */
-export async function fetchHebcalShabbatData(): Promise<HebcalShabbat> {
-  // First layer: this Worker instance's own memory - zero network cost, but
-  // only helps while the same isolate keeps handling requests.
-  if (cache && Date.now() - cache.at < CACHE_MS) return cache.data;
-  if (inFlight) return inFlight;
+/** Hebcal Shabbat URL pinned to an explicit date (Diaspora schedule). */
+export function hebcalShabbatUrlForDate(dateISO: string): string {
+  const [y, m, d] = dateISO.split("-");
+  return `${HEBCAL_SHABBAT_URL}&gy=${y}&gm=${Number(m)}&gd=${Number(d)}`;
+}
 
-  inFlight = (async () => {
-    const data = await fetchHebcalShabbatPayload(HEBCAL_SHABBAT_URL);
-    cache = { at: Date.now(), data };
+/**
+ * Fetch the Shabbos payload for the upcoming Shabbos (Eastern time) of `now`.
+ * The request URL carries that explicit date, so both the in-memory and edge
+ * caches are per-week and roll over safely. Throws on failure.
+ */
+export async function fetchHebcalShabbatData(now: Date = new Date()): Promise<HebcalShabbat> {
+  const target = upcomingShabbosDate(now);
+  const hit = cache.get(target);
+  if (hit && Date.now() - hit.at < CACHE_MS) return hit.data;
+  const pending = inFlight.get(target);
+  if (pending) return pending;
+
+  const p = (async () => {
+    const data = await fetchHebcalShabbatPayload(hebcalShabbatUrlForDate(target));
+    cache.clear();
+    cache.set(target, { at: Date.now(), data });
     return data;
   })().finally(() => {
-    inFlight = null;
+    inFlight.delete(target);
   });
-
-  return inFlight;
+  inFlight.set(target, p);
+  return p;
 }
 
 async function fetchHebcalShabbatPayload(url: string): Promise<HebcalShabbat> {
@@ -83,8 +97,7 @@ async function fetchHebcalShabbatPayload(url: string): Promise<HebcalShabbat> {
  */
 export async function resolveReadingForDate(dateISO: string): Promise<ResolvedReading | null> {
   try {
-    const [y, m, d] = dateISO.split("-");
-    const url = `${HEBCAL_SHABBAT_URL}&gy=${y}&gm=${Number(m)}&gd=${Number(d)}`;
+    const url = hebcalShabbatUrlForDate(dateISO);
     const data = await fetchHebcalShabbatPayload(url);
     const resolved = resolveReadingFromHebcal(data, new Date(`${dateISO}T12:00:00Z`));
     return resolved.parshaKey ? resolved : null;
