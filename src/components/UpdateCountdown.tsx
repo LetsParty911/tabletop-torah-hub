@@ -170,12 +170,16 @@ export function UpdateCountdown({
       aria-label="Weekly collection status"
       className="rounded-xl border border-accent/45 bg-accent/10 px-4 py-3 text-center shadow-sm sm:px-6"
     >
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent-readable">
-        Welcome to TorahForTheTable.com
-      </p>
-      <div className="mt-1 flex items-center justify-center gap-2 text-primary">
-        <CalendarDays className="h-4 w-4 shrink-0" aria-hidden="true" />
-        <p className="font-serif text-base font-bold sm:text-lg">
+      <div className="flex items-center justify-center gap-3 text-accent-readable">
+        <span aria-hidden="true" className="h-px w-10 bg-accent/55 sm:w-16" />
+        <p className="font-serif text-sm italic font-medium tracking-normal sm:text-base">
+          Welcome to TorahForTheTable.com
+        </p>
+        <span aria-hidden="true" className="h-px w-10 bg-accent/55 sm:w-16" />
+      </div>
+      <div className="mt-2 flex items-center justify-center gap-2 text-primary">
+        <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <p className="font-serif text-[1.05rem] font-bold leading-tight sm:text-xl">
           {label} is coming {releaseDateLabel} at 8:00 PM Eastern Time
         </p>
       </div>
@@ -186,7 +190,7 @@ export function UpdateCountdown({
       {countdown ? (
         <div
           className="mt-3 grid grid-cols-4 overflow-hidden rounded-xl border border-accent/30 bg-background/55 shadow-sm"
-          aria-live="polite"
+          role="timer"
           aria-label={`${countdown.days} days, ${countdown.hours} hours, ${countdown.minutes} minutes, and ${countdown.seconds} seconds until the next collection`}
         >
           {[
@@ -199,7 +203,7 @@ export function UpdateCountdown({
               key={unit}
               className={`px-1.5 py-2.5 text-center sm:py-3 ${index > 0 ? "border-l border-accent/25" : ""}`}
             >
-              <span className="block font-serif text-xl font-bold leading-none text-primary sm:text-2xl">
+              <span className="mx-auto block min-w-[2ch] font-serif text-[1.15rem] font-bold leading-none text-primary tabular-nums sm:text-[1.35rem]">
                 {value}
               </span>
               <span className="mt-1 block text-[0.58rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:text-[0.65rem]">
@@ -217,7 +221,7 @@ export function UpdateCountdown({
       <a
         href="#weekly-email-signup"
         onClick={scrollToSignup}
-        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#b8790b] bg-gradient-to-b from-[#ffd96b] to-[#f1b52f] px-6 py-3 font-serif text-xl font-bold text-[#082c55] shadow-[0_5px_16px_rgba(184,121,11,0.22)] transition-transform hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:w-auto sm:min-w-72"
+        className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-[#b8790b] bg-gradient-to-b from-[#ffd96b] to-[#f1b52f] px-6 py-3 font-serif text-lg font-bold text-[#082c55] shadow-[0_5px_16px_rgba(184,121,11,0.22)] transition-transform hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:w-auto sm:min-w-72"
       >
         <Mail className="h-5 w-5" aria-hidden="true" />
         <span>Subscribe</span>
