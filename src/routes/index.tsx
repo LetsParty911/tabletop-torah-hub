@@ -256,6 +256,7 @@ function Index() {
     .replace(/^Parshas\s+/i, "")
     .trim()
     .toLowerCase();
+  const notificationReadingLabel = currentLabel.replace(/^Parshas\s+/i, "").trim();
   const heroDateLine = readingDate
     ? new Date(`${readingDate}T12:00:00Z`)
         .toLocaleDateString("en-US", {
@@ -560,20 +561,14 @@ function Index() {
                   }}
                   className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
                 >
-                  Email me this week&apos;s collection
+                  Notify me when {notificationReadingLabel} is published
                 </a>
-                <a
-                  href="#this-weeks-collection"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    document
-                      .getElementById("this-weeks-collection")
-                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }}
+                <Link
+                  to="/archive"
                   className="inline-flex w-full items-center justify-center rounded-full border border-accent bg-transparent px-7 py-3 font-serif font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
                 >
-                  Browse {isSukkosSeason ? "Sukkos & Yom Tov" : displayedLabel} collection
-                </a>
+                  Browse previous collections
+                </Link>
               </div>
             ) : (
               <div className="mt-5 hidden justify-center sm:flex">
