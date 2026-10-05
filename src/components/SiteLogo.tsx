@@ -33,16 +33,16 @@ export function SiteLogoFooter({ className = "" }: { className?: string }) {
 
   return (
     <span
-      className={`block w-[min(78vw,420px)] overflow-hidden rounded-lg border border-white/5 bg-[#031b35] px-4 py-2.5 shadow-sm sm:w-[min(64vw,440px)] sm:px-5 sm:py-3 ${className}`}
+      className={`block w-[min(76vw,400px)] overflow-hidden rounded-lg border border-white/5 bg-[#031b35] px-4 py-2.5 shadow-sm sm:w-[min(62vw,420px)] sm:px-5 sm:py-3 ${className}`}
       aria-label="TorahForTheTable.com"
     >
-      <span className="block whitespace-nowrap text-center font-serif text-[1.35rem] font-semibold leading-none tracking-[-0.035em] sm:text-[1.65rem]">
+      <span className="block whitespace-nowrap text-center font-serif text-[1.28rem] font-semibold leading-none tracking-[-0.035em] sm:text-[1.55rem]">
         <span style={gold}>TorahFor</span>
         <span className="text-white">TheTable</span>
         <span className="text-[0.72em]" style={gold}>.com</span>
       </span>
       <span
-        className="mx-auto mt-1.5 block h-px w-[84%]"
+        className="mx-auto mt-1.5 block h-px w-[82%]"
         style={{ backgroundImage: "linear-gradient(90deg, transparent, #e0a334 18%, #fff1ad 50%, #e0a334 82%, transparent)" }}
       />
     </span>
