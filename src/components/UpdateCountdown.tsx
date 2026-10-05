@@ -89,11 +89,12 @@ function releaseDateForReading(readingDate?: string | null): Date | null {
 }
 
 function formatRemaining(ms: number) {
-  const totalMinutes = Math.max(0, Math.floor(ms / 60_000));
-  const days = Math.floor(totalMinutes / (24 * 60));
-  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
-  const minutes = totalMinutes % 60;
-  return { days, hours, minutes };
+  const totalSeconds = Math.max(0, Math.floor(ms / 1_000));
+  const days = Math.floor(totalSeconds / 86_400);
+  const hours = Math.floor((totalSeconds % 86_400) / 3_600);
+  const minutes = Math.floor((totalSeconds % 3_600) / 60);
+  const seconds = totalSeconds % 60;
+  return { days, hours, minutes, seconds };
 }
 
 export function UpdateCountdown({
@@ -104,7 +105,7 @@ export function UpdateCountdown({
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 30_000);
+    const id = window.setInterval(() => setNow(Date.now()), 1_000);
     return () => window.clearInterval(id);
   }, []);
 
@@ -160,20 +161,22 @@ export function UpdateCountdown({
         We&apos;re preparing this week&apos;s Divrei Torah for your Shabbos table.
       </p>
       <p className="mt-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        Next collection publishes Thursday at 8:00 PM ET.
+        Next collection publishes Thursday at 8:00 PM Eastern Time.
       </p>
 
       {countdown ? (
         <div
           className="mt-2 flex items-baseline justify-center gap-1.5 font-mono text-sm font-semibold text-primary sm:text-base"
           aria-live="polite"
-          aria-label={`${countdown.days} days, ${countdown.hours} hours, and ${countdown.minutes} minutes until the next collection`}
+          aria-label={`${countdown.days} days, ${countdown.hours} hours, ${countdown.minutes} minutes, and ${countdown.seconds} seconds until the next collection`}
         >
           <span>{countdown.days}d</span>
           <span aria-hidden="true">·</span>
           <span>{countdown.hours}h</span>
           <span aria-hidden="true">·</span>
           <span>{countdown.minutes}m</span>
+          <span aria-hidden="true">·</span>
+          <span>{countdown.seconds}s</span>
         </div>
       ) : (
         <p className="mt-2 text-sm font-semibold text-primary" aria-live="polite">
