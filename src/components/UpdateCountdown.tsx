@@ -88,6 +88,15 @@ function releaseDateForReading(readingDate?: string | null): Date | null {
   return newYorkWallTimeToUtc(thursday, RELEASE_HOUR);
 }
 
+function formatReleaseDate(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: NEW_YORK_TIME_ZONE,
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  }).format(date);
+}
+
 function formatRemaining(ms: number) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1_000));
   const days = Math.floor(totalSeconds / 86_400);
@@ -116,11 +125,19 @@ export function UpdateCountdown({
   const label = displayReadingLabel(liveParshaLabel);
   const remaining = releaseAt ? releaseAt.getTime() - now : null;
   const countdown = remaining !== null && remaining > 0 ? formatRemaining(remaining) : null;
+  const releaseDateLabel = releaseAt ? formatReleaseDate(releaseAt) : null;
 
   const scrollToCollection = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     document
       .getElementById("this-weeks-collection")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const scrollToSignup = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    document
+      .getElementById("weekly-email-signup")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -153,15 +170,17 @@ export function UpdateCountdown({
       aria-label="Weekly collection status"
       className="rounded-xl border border-accent/45 bg-accent/10 px-4 py-3 text-center shadow-sm sm:px-6"
     >
-      <div className="flex items-center justify-center gap-2 text-primary">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent-readable">
+        Welcome to TorahForTheTable.com
+      </p>
+      <div className="mt-1 flex items-center justify-center gap-2 text-primary">
         <CalendarDays className="h-4 w-4 shrink-0" aria-hidden="true" />
-        <p className="font-serif text-base font-bold sm:text-lg">{label} is coming this Thursday</p>
+        <p className="font-serif text-base font-bold sm:text-lg">
+          {label} is coming {releaseDateLabel} at 8:00 PM Eastern Time
+        </p>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
         We&apos;re preparing this week&apos;s Divrei Torah for your Shabbos table.
-      </p>
-      <p className="mt-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        Next collection publishes Thursday at 8:00 PM Eastern Time.
       </p>
 
       {countdown ? (
@@ -183,6 +202,17 @@ export function UpdateCountdown({
           Scheduled for today — the banner will switch to available as soon as the collection is live.
         </p>
       )}
+
+      <p className="mt-3 text-sm text-muted-foreground">
+        Subscribe to be notified when this week&apos;s collection is published.
+      </p>
+      <a
+        href="#weekly-email-signup"
+        onClick={scrollToSignup}
+        className="mt-2 inline-flex rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+      >
+        Subscribe
+      </a>
     </section>
   );
 }
