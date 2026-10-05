@@ -401,13 +401,15 @@ function SiteNav() {
             aria-expanded={mobileOpen}
             aria-controls="mobile-navigation"
             onClick={() => setMobileOpen((open) => !open)}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent/35 bg-background text-primary transition-colors hover:bg-accent/10 md:hidden"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center text-primary md:hidden"
           >
-            {mobileOpen ? (
-              <X className="h-5 w-5" aria-hidden="true" />
-            ) : (
-              <Menu className="h-5 w-5" aria-hidden="true" />
-            )}
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-accent/35 bg-background transition-colors hover:bg-accent/10">
+              {mobileOpen ? (
+                <X className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Menu className="h-4 w-4" aria-hidden="true" />
+              )}
+            </span>
           </button>
         </div>
 
