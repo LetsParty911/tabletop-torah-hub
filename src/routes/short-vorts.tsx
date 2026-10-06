@@ -59,9 +59,9 @@ export const Route = createFileRoute("/short-vorts")({
   component: ShortVortsPage,
   loader: () => loadVortsWeek(),
   head: ({ loaderData }) => {
-    const title = "Brief Insights — Quick Insights for the Table";
+    const title = "Brief Insights on the Weekly Parsha | Short Divrei Torah";
     const description =
-      "Bite-sized Torah vorts on Parshas Hashavua — one-minute insights from Rashi, Midrash and Chazal, ready to share at the Shabbos table.";
+      "Short Divrei Torah on the weekly parsha — one-minute insights from Rashi, Midrash and Chazal, ready to share at the Shabbos table.";
     const url = "https://torahforthetable.com/short-vorts";
     const image = "https://torahforthetable.com/og-image.png";
 
@@ -316,10 +316,10 @@ function ShortVortsPage() {
             Quick Insights for the Table
           </p>
           <h1 className="mt-4 font-serif text-3xl font-bold text-primary sm:text-4xl">
-            {isYomTov ? `Brief Insights for ${label}` : "Brief Insights on Parshas Hashavua"}
+            {isYomTov ? `Brief Insights: Short Divrei Torah for ${label}` : "Brief Insights: Short Divrei Torah on Parshas Hashavua"}
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            One-minute Torah thoughts you can say over at the Shabbos table — drawn from Rashi,
+            Short Divrei Torah for the weekly parsha that you can say over at the Shabbos table — drawn from Rashi,
             Midrash and Chazal. Short enough to remember, sharp enough to start a conversation.
           </p>
         </header>
