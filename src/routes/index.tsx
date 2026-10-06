@@ -683,6 +683,16 @@ function Index() {
                   ? `${displayedLabel} Collection — Still Available`
                   : "This Week's Collection"}
             </h2>
+            {!isFallback && resources.length > 0 && !postShabbos && (
+              <div className="mx-auto mt-4 max-w-2xl rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-center">
+                <p className="font-serif text-sm leading-relaxed text-primary sm:text-base">
+                  <span className="font-semibold">
+                    {resources.length} {resources.length === 1 ? "Dvar Torah is" : "Divrei Torah are"} already posted
+                  </span>
+                  {" — "}with many more being added Wednesday and Thursday. Check back for new additions.
+                </p>
+              </div>
+            )}
             {displayedParshaKey && !isYomTovCollection && !isYomTovReading(displayedParshaKey) && (
               <p className="mt-2 text-center text-sm text-muted-foreground">
                 <Link
