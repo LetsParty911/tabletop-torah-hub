@@ -158,7 +158,7 @@ function buildTree(
             textTransform: "uppercase",
             color: GOLD,
           },
-          children: "Torah for the Table",
+          children: "Torah For The Table",
         }),
         el("div", {
           style: { width: 150, height: 3, backgroundColor: GOLD, margin: "30px 0 44px" },
