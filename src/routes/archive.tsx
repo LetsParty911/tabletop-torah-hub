@@ -101,10 +101,10 @@ export const Route = createFileRoute("/archive")({
     const yearPart = search.year !== "all" ? ` ${search.year}` : "";
 
     const title = parshaLabel
-      ? `${parshaLabel}${yearPart} — Archive | Torah for the Table`
-      : "Archive — Torah for the Table";
+      ? `${parshaLabel}${yearPart} — Archive | Torah For The Table`
+      : "Archive — Torah For The Table";
     const description = parshaLabel
-      ? `Printable Divrei Torah for ${parshaLabel}${yearPart} from the Torah for the Table archive — free downloads for children, families, and adults.`
+      ? `Printable Divrei Torah for ${parshaLabel}${yearPart} from the Torah For The Table archive — free downloads for children, families, and adults.`
       : "Browse the archive of past weekly Divrei Torah collections for Shabbos and Yom Tov.";
 
     const base = "https://torahforthetable.com/archive";
@@ -137,7 +137,7 @@ export const Route = createFileRoute("/archive")({
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
         { property: "og:url", content: url },
-        { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:site_name", content: "Torah For The Table" },
         { property: "og:image", content: image },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },
@@ -156,7 +156,7 @@ export const Route = createFileRoute("/archive")({
             url,
             isPartOf: {
               "@type": "WebSite",
-              name: "Torah for the Table",
+              name: "Torah For The Table",
               url: "https://torahforthetable.com",
             },
             mainEntity: {
