@@ -21,9 +21,9 @@ export const Route = createFileRoute("/publication/$slug")({
     const name = publication?.name ?? "Publication";
     const description =
       publication?.default_description?.trim() ||
-      `Browse current and earlier editions of ${name} on Torah for the Table.`;
+      `Browse current and earlier editions of ${name} on Torah For The Table.`;
     const url = `https://torahforthetable.com/publication/${params.slug}`;
-    const title = `${name} — Divrei Torah & Printable Editions | Torah for the Table`;
+    const title = `${name} — Divrei Torah & Printable Editions | Torah For The Table`;
     const image = `https://torahforthetable.com/og/image.png?title=${encodeURIComponent(name)}`;
 
     return {
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/publication/$slug")({
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
         { property: "og:url", content: url },
-        { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:site_name", content: "Torah For The Table" },
         { property: "og:image", content: image },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: name },
@@ -53,7 +53,7 @@ export const Route = createFileRoute("/publication/$slug")({
             url,
             isPartOf: {
               "@type": "WebSite",
-              name: "Torah for the Table",
+              name: "Torah For The Table",
               url: "https://torahforthetable.com",
             },
             mainEntity: {
@@ -217,7 +217,7 @@ function PublicationPage() {
           <section className="mt-7 rounded-2xl border border-accent/25 bg-card/25 p-5 sm:p-6">
             <h2 className="font-serif text-2xl font-bold text-primary">About this Torah collection</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Torah for the Table currently has {editions.length} {editions.length === 1 ? "edition" : "editions"} of{" "}
+              Torah For The Table currently has {editions.length} {editions.length === 1 ? "edition" : "editions"} of{" "}
               <span className="font-semibold text-primary">{publication.name}</span>
               {publication.publisher ? `, published by ${publication.publisher}` : ""}. The available editions cover{" "}
               {new Set(editions.map((edition) => edition.parsha_key)).size}{" "}
