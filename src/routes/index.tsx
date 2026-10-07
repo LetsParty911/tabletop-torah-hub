@@ -177,9 +177,9 @@ export const Route = createFileRoute("/")({
     </div>
   ),
   head: () => {
-    const title = "Curated Divrei Torah for Your Shabbos Table | Torah For The Table";
+    const title = "Torah For The Table | Free Printable Weekly Divrei Torah";
     const description =
-      "Carefully selected Divrei Torah for children, families and adults — easy to find, print and bring to your Shabbos or Yom Tov table.";
+      "Free printable Divrei Torah for the weekly parsha and Yom Tov, curated for children, families, and adults. Choose, print, and bring Torah to your table.";
     const url = "https://torahforthetable.com/";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -190,7 +190,7 @@ export const Route = createFileRoute("/")({
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
         { property: "og:url", content: url },
-        { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:site_name", content: "Torah For The Table" },
         { property: "og:image", content: image },
         { property: "og:image:width", content: "1200" },
         { property: "og:image:height", content: "630" },
@@ -205,24 +205,35 @@ export const Route = createFileRoute("/")({
           type: "application/ld+json",
           children: JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "Organization",
-            name: "Torah for the Table",
-            url: "https://torahforthetable.com",
-            logo: "https://torahforthetable.com/favicon.png",
-            image,
-            description,
-            email: "hello@torahforthetable.com",
-            sameAs: ["https://torahforthetable.com"],
-          }),
-        },
-        {
-          type: "application/ld+json",
-          children: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            name: "Torah for the Table",
-            url: "https://torahforthetable.com",
-            description,
+            "@graph": [
+              {
+                "@type": "Organization",
+                "@id": "https://torahforthetable.com/#organization",
+                name: "Torah For The Table",
+                legalName: "Torah For The Table Inc.",
+                url: "https://torahforthetable.com/",
+                logo: {
+                  "@type": "ImageObject",
+                  url: "https://torahforthetable.com/favicon-180x180.png",
+                  width: 180,
+                  height: 180,
+                },
+                image,
+                description:
+                  "A nonprofit digital platform providing free printable Divrei Torah for the weekly parsha and Yom Tov for children, families, and adults.",
+                email: "hello@torahforthetable.com",
+              },
+              {
+                "@type": "WebSite",
+                "@id": "https://torahforthetable.com/#website",
+                url: "https://torahforthetable.com/",
+                name: "Torah For The Table",
+                alternateName: "torahforthetable.com",
+                publisher: {
+                  "@id": "https://torahforthetable.com/#organization",
+                },
+              },
+            ],
           }),
         },
       ],
@@ -506,7 +517,7 @@ function Index() {
                       ? currentLabel
                       : postShabbos
                         ? `Divrei Torah for ${displayedLabel}`
-                        : `Free Divrei Torah for Your ${isYomTovCollection ? "Yom Tov" : "Shabbos"} Table`}
+                        : "Torah For The Table — Free Weekly Divrei Torah"}
               </span>
             </h1>
             <p className="mx-auto mt-2 max-w-md font-serif text-sm leading-relaxed text-primary sm:hidden">
