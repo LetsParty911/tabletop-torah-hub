@@ -1093,7 +1093,7 @@ function Index() {
               ואהבת לרעך כמוך
             </p>
             <p className="mx-auto mt-2 max-w-lg font-serif text-sm leading-relaxed text-primary sm:text-base">
-              Enjoy Torah For The Table? Share this free resource with a friend or two. Thank you.
+              Share this free resource with a friend or two. Thank you.
             </p>
             <div className="mt-4 flex justify-center">
               <ShareButton className="w-full border-accent/45 px-5 py-3 text-base sm:w-auto sm:min-w-72" />
