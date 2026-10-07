@@ -4,7 +4,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 export const Route = createFileRoute("/offline")({
   head: () => ({
     meta: [
-      { title: "Offline — Torah for the Table" },
+      { title: "Offline — Torah For The Table" },
       { name: "description", content: "You appear to be offline." },
       { name: "robots", content: "noindex" },
     ],
@@ -17,7 +17,7 @@ function OfflinePage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
       <div className="max-w-md text-center parchment-panel">
         <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--accent)]">
-          Torah for the Table
+          Torah For The Table
         </p>
         <div className="gold-divider mt-4"><span className="gold-divider-dot" /></div>
         <h1 className="mt-4 font-serif text-3xl text-foreground">You're offline</h1>
