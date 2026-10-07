@@ -444,7 +444,7 @@ function Index() {
       className={`inline-flex items-center justify-center gap-2 rounded-full border border-accent bg-transparent px-5 py-2.5 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors ${className ?? ""}`}
     >
       <Share2 className="h-4 w-4" />
-      Share {displayedLabel} Divrei Torah
+      Share Torah For The Table
     </a>
   );
 
@@ -1084,17 +1084,28 @@ function Index() {
           </div>
         </section>
 
+        {resources.length > 0 && !isCurrentYomKippur && (
+          <section
+            aria-label="Share Torah For The Table"
+            className="mx-auto max-w-2xl rounded-2xl border border-accent/60 bg-card/60 px-5 py-5 text-center shadow-sm sm:px-7 sm:py-6"
+          >
+            <p dir="rtl" lang="he" className="font-serif text-2xl font-bold leading-tight text-primary sm:text-3xl">
+              ואהבת לרעך כמוך
+            </p>
+            <p className="mx-auto mt-2 max-w-lg font-serif text-sm leading-relaxed text-primary sm:text-base">
+              Enjoy Torah For The Table? Share this free resource with a friend or two. Thank you.
+            </p>
+            <div className="mt-4 flex justify-center">
+              <ShareButton className="w-full border-accent/45 px-5 py-3 text-base sm:w-auto sm:min-w-72" />
+            </div>
+          </section>
+        )}
+
         <section aria-label="Stay connected" className="mx-auto max-w-2xl">
           <WeeklyEmailSignup
             sourceId="homepage"
             heading="GET EACH NEW COLLECTION EVERY THURSDAY"
           />
-
-          {resources.length > 0 && !isCurrentYomKippur && (
-            <div className="mt-3 flex justify-center">
-              <ShareButton className="w-full border-accent/45 px-4 py-2 text-sm font-medium sm:w-auto" />
-            </div>
-          )}
         </section>
 
         <section className="mx-auto max-w-2xl text-center">
