@@ -8,9 +8,9 @@ import { SiteFooter } from "@/components/SiteFooter";
 export const Route = createFileRoute("/publications")({
   loader: () => listPublicationPages(),
   head: () => {
-    const title = "Browse Torah Publications | Torah for the Table";
+    const title = "Browse Torah Publications | Torah For The Table";
     const description =
-      "Browse recurring Torah publications curated by Torah for the Table and find current and earlier editions in one place.";
+      "Browse recurring Torah publications curated by Torah For The Table and find current and earlier editions in one place.";
     const url = "https://torahforthetable.com/publications";
     return {
       meta: [
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/publications")({
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
         { property: "og:url", content: url },
-        { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:site_name", content: "Torah For The Table" },
       ],
       links: [{ rel: "canonical", href: url }],
     };
