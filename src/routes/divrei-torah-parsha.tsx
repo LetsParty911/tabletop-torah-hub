@@ -6,7 +6,7 @@ import { listParshaSeoSummaries } from "@/integrations/supabase/parsha-seo.funct
 export const Route = createFileRoute("/divrei-torah-parsha")({
   loader: () => listParshaSeoSummaries(),
   head: () => {
-    const title = "Divrei Torah on the Parsha | Weekly Dvar Torah Library | Torah for the Table";
+    const title = "Divrei Torah on the Parsha | Weekly Dvar Torah Library | Torah For The Table";
     const description =
       "Browse Divrei Torah on every weekly parsha: short vorts, printable Torah sheets, family-table material, stories, essays and deeper learning.";
     const url = "https://torahforthetable.com/divrei-torah-parsha";
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/divrei-torah-parsha")({
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
         { property: "og:url", content: url },
-        { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:site_name", content: "Torah For The Table" },
         { name: "twitter:card", content: "summary" },
       ],
       links: [{ rel: "canonical", href: url }],
@@ -33,7 +33,7 @@ export const Route = createFileRoute("/divrei-torah-parsha")({
             url,
             isPartOf: {
               "@type": "WebSite",
-              name: "Torah for the Table",
+              name: "Torah For The Table",
               url: "https://torahforthetable.com",
             },
           }),

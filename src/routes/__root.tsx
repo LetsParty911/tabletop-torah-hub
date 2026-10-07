@@ -116,7 +116,7 @@ function NotFoundComponent() {
     if (typeof document === "undefined") return;
     trackFp("error", { metadata: { error_code: "not_found", status: 404 } });
     const previousTitle = document.title;
-    document.title = "Page Not Found — Torah for the Table";
+    document.title = "Page Not Found — Torah For The Table";
     let tag = document.querySelector('meta[name="robots"][data-notfound="1"]') as HTMLMetaElement | null;
 
     if (!tag) {
@@ -174,10 +174,10 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { property: "og:type", content: "website" },
       { name: "theme-color", content: "#1A365D" },
-      { name: "application-name", content: "Torah for the Table" },
+      { name: "application-name", content: "Torah For The Table" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
-      { name: "apple-mobile-web-app-title", content: "Torah Table" },
+      { name: "apple-mobile-web-app-title", content: "Torah For The Table" },
       { name: "mobile-web-app-capable", content: "yes" },
     ],
     links: [
@@ -197,27 +197,6 @@ export const Route = createRootRoute({
         rel: "sitemap",
         type: "application/xml",
         href: "https://torahforthetable.com/sitemap.xml",
-      },
-    ],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Organization",
-          name: "Torah for the Table",
-          url: "https://torahforthetable.com",
-          logo: "https://torahforthetable.com/favicon.png",
-        }),
-      },
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          name: "Torah for the Table",
-          url: "https://torahforthetable.com",
-        }),
       },
     ],
   }),
@@ -329,7 +308,7 @@ function SiteNav() {
     >
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
         <div className="flex items-center justify-between gap-3 py-1.5 md:py-2.5">
-          <Link to="/" aria-label="Torah for the Table — home" className="shrink-0">
+          <Link to="/" aria-label="Torah For The Table — home" className="shrink-0">
             <SiteLogoHorizontal />
           </Link>
 
@@ -386,7 +365,7 @@ function SiteNav() {
             </Link>
             <button
               type="button"
-              aria-label={searchOpen ? "Close site search" : "Search Torah for the Table"}
+              aria-label={searchOpen ? "Close site search" : "Search Torah For The Table"}
               aria-expanded={searchOpen}
               onClick={() => setSearchOpen((open) => !open)}
               className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent/35 text-primary transition-colors hover:bg-accent/10"

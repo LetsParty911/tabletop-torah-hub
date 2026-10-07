@@ -9,9 +9,9 @@ const CONTACT_EMAIL = "hello@torahforthetable.com";
 
 export const Route = createFileRoute("/contact")({
   head: () => {
-    const title = "Contact — Torah for the Table";
+    const title = "Contact — Torah For The Table";
     const description =
-      "Get in touch with Torah for the Table for questions, suggestions, submissions, or corrections.";
+      "Get in touch with Torah For The Table for questions, suggestions, submissions, or corrections.";
     const url = "https://torahforthetable.com/contact";
     const image =
       "https://torahforthetable.com/og-image.png";
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/contact")({
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
         { property: "og:url", content: url },
-        { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:site_name", content: "Torah For The Table" },
         { property: "og:image", content: image },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },

@@ -60,7 +60,7 @@ export function BrandBanner() {
       />
       <img
         src="/assets/brand-banner-1280.webp"
-        alt="Torah for the Table — Torah. For your table."
+        alt="Torah For The Table — Torah. For your table."
         width={1280}
         height={427}
         fetchPriority="high"
@@ -75,7 +75,7 @@ export function SiteLogoStacked({ className = "" }: { className?: string }) {
   return (
     <img
       src={LOGO_STACKED}
-      alt="Torah for the Table"
+      alt="Torah For The Table"
       width={1650}
       height={900}
       className={`h-16 w-auto object-contain sm:h-20 ${className}`}
@@ -94,7 +94,7 @@ export function SiteLogoIcon({
   return (
     <img
       src={LOGO_ICON}
-      alt="Torah for the Table"
+      alt="Torah For The Table"
       width={size}
       height={size}
       className={`object-contain ${className}`}

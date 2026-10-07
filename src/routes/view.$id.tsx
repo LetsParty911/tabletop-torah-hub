@@ -62,7 +62,7 @@ export const Route = createFileRoute("/view/$id")({
       : null;
 
     const shareTitle = parshaLabel ? `${title} — ${parshaLabel}` : title;
-    const pageTitle = `${shareTitle} | Torah for the Table`;
+    const pageTitle = `${shareTitle} | Torah For The Table`;
 
     const clamp = (v: string) => {
       if (v.length <= 160) return v;
@@ -74,8 +74,8 @@ export const Route = createFileRoute("/view/$id")({
       loaderData?.pdf?.description?.trim() ||
         subtitle?.trim() ||
         (parshaLabel
-          ? `A printable Dvar Torah for ${parshaLabel}, free from Torah for the Table.`
-          : "A printable Dvar Torah, free from Torah for the Table."),
+          ? `A printable Dvar Torah for ${parshaLabel}, free from Torah For The Table.`
+          : "A printable Dvar Torah, free from Torah For The Table."),
     );
 
     const url = `https://torahforthetable.com/view/${params.id}`;
@@ -104,7 +104,7 @@ export const Route = createFileRoute("/view/$id")({
       isPartOf: "https://torahforthetable.com",
       publisher: {
         "@type": "Organization",
-        name: "Torah for the Table",
+        name: "Torah For The Table",
         url: "https://torahforthetable.com",
         logo: "https://torahforthetable.com/favicon.png",
       },
@@ -126,7 +126,7 @@ export const Route = createFileRoute("/view/$id")({
         { property: "og:title", content: shareTitle },
         { property: "og:description", content: description },
         { property: "og:url", content: url },
-        { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:site_name", content: "Torah For The Table" },
         { property: "og:image", content: image },
         { property: "og:image:width", content: "1200" },
         { property: "og:image:height", content: "630" },

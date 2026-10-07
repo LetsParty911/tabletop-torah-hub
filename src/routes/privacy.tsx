@@ -27,8 +27,8 @@ const googlePrivacyLink = (
 export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
   head: () => {
-    const title = "Privacy Policy — Torah for the Table";
-    const description = "What information Torah for the Table collects and how it is used.";
+    const title = "Privacy Policy — Torah For The Table";
+    const description = "What information Torah For The Table collects and how it is used.";
     const url = "https://torahforthetable.com/privacy";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -39,7 +39,7 @@ export const Route = createFileRoute("/privacy")({
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
         { property: "og:url", content: url },
-        { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:site_name", content: "Torah For The Table" },
         { property: "og:image", content: image },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },
@@ -74,7 +74,7 @@ function PrivacyPage() {
 
             <div className="mt-8 space-y-6 font-serif text-base sm:text-lg text-foreground leading-relaxed max-w-2xl mx-auto text-left">
               <p>
-                Torah for the Table collects information you choose to provide, such as an email
+                Torah For The Table collects information you choose to provide, such as an email
                 address or contact message, and technical and usage information generated when you
                 use the site.
               </p>

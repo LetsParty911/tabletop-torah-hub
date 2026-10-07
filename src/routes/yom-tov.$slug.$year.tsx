@@ -29,7 +29,7 @@ export const Route = createFileRoute("/yom-tov/$slug/$year")({
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
         { property: "og:url", content: url },
-        { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:site_name", content: "Torah For The Table" },
         { property: "og:image", content: image },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: `${label} ${year} Divrei Torah` },
@@ -49,7 +49,7 @@ export const Route = createFileRoute("/yom-tov/$slug/$year")({
             numberOfItems: count,
             isPartOf: {
               "@type": "WebSite",
-              name: "Torah for the Table",
+              name: "Torah For The Table",
               url: "https://torahforthetable.com",
             },
           }),

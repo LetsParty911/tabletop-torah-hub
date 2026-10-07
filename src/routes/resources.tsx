@@ -4,7 +4,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 export const Route = createFileRoute("/resources")({
   component: ResourcesPage,
   head: () => {
-    const title = "Torah for the Table Originals — In-House Torah Learning Resources";
+    const title = "Torah For The Table Originals — In-House Torah Learning Resources";
     const description =
       "Original educational material created in-house for the Shabbos table: Brief Insights, Stories for the Shabbos Table and Parsha Questions & Answers — all free of charge.";
     const url = "https://torahforthetable.com/resources";
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/resources")({
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
         { property: "og:url", content: url },
-        { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:site_name", content: "Torah For The Table" },
         { property: "og:image", content: image },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },
@@ -114,7 +114,7 @@ function ResourcesPage() {
                 ← Back to Home
               </Link>
               <h1 className="mt-4 font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-primary">
-                Torah for the Table Originals
+                Torah For The Table Originals
               </h1>
               <p className="mt-3 font-serif italic text-base sm:text-lg text-accent">
                 In-house Torah learning material, made for the Shabbos table.

@@ -5,9 +5,9 @@ import { SiteLogoStacked } from "@/components/SiteLogo";
 export const Route = createFileRoute("/about")({
   component: AboutPage,
   head: () => {
-    const title = "About — Torah for the Table";
+    const title = "About Torah For The Table | Free Weekly Divrei Torah";
     const description =
-      "Torah for the Table is a 501(c)(3) nonprofit gathering weekly Divrei Torah for the Shabbos table — free resources for children, families, and adults.";
+      "Torah For The Table is a nonprofit digital platform providing free weekly Divrei Torah for Shabbos and Yom Tov, with printable resources for children, families, and adults.";
     const url = "https://torahforthetable.com/about";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/about")({
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
         { property: "og:url", content: url },
-        { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:site_name", content: "Torah For The Table" },
         { property: "og:image", content: image },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },
@@ -45,7 +45,7 @@ function AboutPage() {
               </Link>
               <SiteLogoStacked className="mx-auto mt-6" />
               <h1 className="mt-4 font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-primary">
-                About
+                About Torah For The Table
               </h1>
               <p className="mt-3 font-serif italic text-base sm:text-lg text-accent">
                 A weekly collection for the Shabbos table.
@@ -54,9 +54,7 @@ function AboutPage() {
 
             <div className="mt-8 space-y-5 font-serif text-base sm:text-lg text-foreground leading-relaxed max-w-2xl mx-auto">
               <p>
-                <span className="font-semibold text-primary">Torah for the Table</span> gathers
-                weekly Divrei Torah for Shabbos and Yom Tov in one quiet, uncluttered place — so you
-                can come to the table with something meaningful to share.
+                <span className="font-semibold text-primary">Torah For The Table</span> is a nonprofit digital platform providing free weekly Divrei Torah for Shabbos and Yom Tov. We gather them in one quiet, uncluttered place so you can come to the table with something meaningful to share.
               </p>
               <p>
                 Each week features a curated selection of downloadable PDFs, organized by parsha and
@@ -135,7 +133,7 @@ function AboutPage() {
               <section>
                 <h2 className="font-serif text-2xl font-bold text-primary">A Nonprofit Project</h2>
                 <p className="mt-2 font-serif text-base text-foreground leading-relaxed">
-                  Torah for the Table is a nonprofit Torah-distribution project. Third-party
+                  Torah For The Table is a nonprofit Torah-distribution project. Third-party
                   publications remain the property of their respective publishers and are displayed
                   with permission and proper attribution. Every PDF is offered free of charge for
                   the sake of Harbatzas HaTorah.
