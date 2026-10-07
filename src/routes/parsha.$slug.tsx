@@ -28,7 +28,7 @@ export const Route = createFileRoute("/parsha/$slug")({
     const description =
       count > 0
         ? `Browse ${count} Divrei Torah on ${label}, including short vorts, printable Torah sheets, family-table material and deeper learning.`
-        : `Divrei Torah on ${label}: short vorts, printable Torah sheets, family-table material and deeper learning from Torah for the Table.`;
+        : `Divrei Torah on ${label}: short vorts, printable Torah sheets, family-table material and deeper learning from Torah For The Table.`;
     const url = `https://torahforthetable.com/parsha/${params.slug}`;
     return {
       meta: [
@@ -39,7 +39,7 @@ export const Route = createFileRoute("/parsha/$slug")({
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
         { property: "og:url", content: url },
-        { property: "og:site_name", content: "Torah for the Table" },
+        { property: "og:site_name", content: "Torah For The Table" },
         { name: "twitter:card", content: "summary" },
       ],
       links: [{ rel: "canonical", href: url }],
@@ -55,7 +55,7 @@ export const Route = createFileRoute("/parsha/$slug")({
             numberOfItems: count,
             isPartOf: {
               "@type": "WebSite",
-              name: "Torah for the Table",
+              name: "Torah For The Table",
               url: "https://torahforthetable.com",
             },
           }),
@@ -143,7 +143,7 @@ function PermanentParshaPage() {
           </h1>
           <p className="mx-auto mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground">
             Looking for a Dvar Torah on {page.label}? This permanent library brings together the
-            Torah for the Table selections for {page.label} from every available year, including
+            Torah For The Table selections for {page.label} from every available year, including
             quick vorts, material for children and families, stories, printable Torah sheets and
             longer pieces for deeper learning. Choose an individual selection below to read more
             about it before opening or printing the PDF.
@@ -156,7 +156,7 @@ function PermanentParshaPage() {
               {page.label} Divrei Torah at a Glance
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              The Torah for the Table archive currently includes {page.total_count}{" "}
+              The Torah For The Table archive currently includes {page.total_count}{" "}
               {page.total_count === 1 ? "selection" : "selections"} for {page.label}
               {page.years.length > 0
                 ? ` across ${page.years.length} Jewish year${page.years.length === 1 ? "" : "s"}`
@@ -222,7 +222,7 @@ function PermanentParshaPage() {
             Printable Divrei Torah for {page.label}
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-            These selections are drawn from the Torah for the Table archive. Open any item to preview
+            These selections are drawn from the Torah For The Table archive. Open any item to preview
             it and, where available, print or download the PDF for your Shabbos table.
           </p>
 
