@@ -10,7 +10,7 @@ export function SiteFooter() {
     <footer id="site-footer" className="space-y-1.5 px-4 pb-6 pt-2.5 sm:pb-8 md:pb-10">
       <Link
         to="/"
-        aria-label="Torah for the Table — home"
+        aria-label="Torah For The Table — home"
         className="mx-auto mb-3 flex w-fit flex-col items-center gap-2"
       >
         <SiteLogoHorizontal className="!text-[1.15rem] sm:!text-[1.35rem]" />
@@ -46,7 +46,7 @@ export function SiteFooter() {
         </Link>
       </div>
       <p className="text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} Torah for the Table
+        © {new Date().getFullYear()} Torah For The Table
       </p>
       <p className="text-center text-xs text-muted-foreground">
         <Link
