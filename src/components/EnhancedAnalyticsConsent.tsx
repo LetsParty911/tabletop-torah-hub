@@ -84,7 +84,7 @@ export function EnhancedAnalyticsConsent() {
         Allow enhanced analytics?
       </h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        This helps Torah for the Table tell real visitors apart from automated traffic and
+        This helps Torah For The Table tell real visitors apart from automated traffic and
         understand browser and device compatibility. The site works the same either way.
       </p>
       <div className="mt-4 flex gap-2">
