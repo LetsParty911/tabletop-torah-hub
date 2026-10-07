@@ -497,6 +497,7 @@ function Index() {
           contentLive={!isFallback && resources.length > 0}
           liveParshaLabel={currentLabel}
           readingDate={readingDate}
+          availableCount={resources.length}
         />
         <section className="parchment-frame">
           <div className="parchment-panel py-5 text-center sm:py-7">
@@ -527,7 +528,7 @@ function Index() {
             </p>
             {!isFallback && (
               <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-accent-readable sm:hidden">
-                {resources.length} {resources.length === 1 ? "selection" : "selections"} for {isSukkosSeason ? "Sukkos, Shmini Atzeres & Simchas Torah" : displayedLabel}
+                {resources.length} available now • more coming this week
               </p>
             )}
             {heroDateLine && (
@@ -834,7 +835,7 @@ function Index() {
                       onClick={() => setFiltersOpen((open) => !open)}
                       className="flex-1 rounded-full border border-accent/45 bg-background px-4 py-2 text-left font-serif text-sm font-semibold text-primary shadow-sm"
                     >
-                      Filter {filteredResources.length} selections{activeFilterCount > 0 ? ` · ${activeFilterCount} active` : ""}
+                      Filter {filteredResources.length} available selections{activeFilterCount > 0 ? ` · ${activeFilterCount} active` : ""}
                     </button>
                     {activeFilterCount > 0 && (
                       <button
