@@ -8,6 +8,8 @@ type UpdateCountdownProps = {
   liveParshaLabel?: string | null;
   /** ISO date (YYYY-MM-DD) of the upcoming Shabbos, when available. */
   readingDate?: string | null;
+  /** Number of Divrei Torah currently published for the live collection. */
+  availableCount?: number | null;
 };
 
 const NEW_YORK_TIME_ZONE = "America/New_York";
@@ -110,6 +112,7 @@ export function UpdateCountdown({
   contentLive = false,
   liveParshaLabel,
   readingDate,
+  availableCount,
 }: UpdateCountdownProps) {
   const [now, setNow] = useState(() => Date.now());
 
@@ -151,7 +154,11 @@ export function UpdateCountdown({
           <CalendarDays className="h-4 w-4 shrink-0" aria-hidden="true" />
           <p className="font-serif text-base font-bold sm:text-lg">{label} is now available</p>
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">Choose. Print. Enjoy.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {remaining !== null && remaining > 0 && typeof availableCount === "number" && availableCount > 0
+            ? `${availableCount} ${availableCount === 1 ? "Dvar Torah posted" : "Divrei Torah posted"} so far — more coming Wednesday & Thursday.`
+            : "Choose. Print. Enjoy."}
+        </p>
         <a
           href="#this-weeks-collection"
           onClick={scrollToCollection}
