@@ -45,7 +45,7 @@ function AboutPage() {
               </Link>
               <SiteLogoStacked className="mx-auto mt-6" />
               <h1 className="mt-4 font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-primary">
-                About
+                About Torah For The Table
               </h1>
               <p className="mt-3 font-serif italic text-base sm:text-lg text-accent">
                 A weekly collection for the Shabbos table.
@@ -54,9 +54,7 @@ function AboutPage() {
 
             <div className="mt-8 space-y-5 font-serif text-base sm:text-lg text-foreground leading-relaxed max-w-2xl mx-auto">
               <p>
-                <span className="font-semibold text-primary">Torah For The Table</span> gathers
-                weekly Divrei Torah for Shabbos and Yom Tov in one quiet, uncluttered place — so you
-                can come to the table with something meaningful to share.
+                <span className="font-semibold text-primary">Torah For The Table</span> is a nonprofit digital platform providing free weekly Divrei Torah for Shabbos and Yom Tov. We gather them in one quiet, uncluttered place so you can come to the table with something meaningful to share.
               </p>
               <p>
                 Each week features a curated selection of downloadable PDFs, organized by parsha and
