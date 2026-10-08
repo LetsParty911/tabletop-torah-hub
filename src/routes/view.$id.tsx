@@ -3,7 +3,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { getPdfById, getParshaOverride } from "@/integrations/supabase/api.functions";
 import { getItemPublicationContext, getOriginalHtmlContent, getRelatedParshaItems } from "@/integrations/supabase/item-page.functions";
 import { resolveHebcalParsha } from "@/lib/hebcal";
@@ -13,15 +13,12 @@ import { trackFp } from "@/lib/first-party-analytics";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { formatReadingLabel } from "@/lib/parshiyos";
-import { buildDownloadFilename } from "@/lib/download-filename";
-import { publicationLabel } from "@/lib/badges";
 import { isYomTovReading, readingSlug } from "@/lib/reading-page";
-import { DownloadToPrintButton, trackDownloadAction } from "@/components/DownloadToPrintButton";
+import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
-import { TorasAvigdorPrintTest } from "@/components/TorasAvigdorPrintTest";
 
 
 export const Route = createFileRoute("/view/$id")({
@@ -159,22 +156,6 @@ export const Route = createFileRoute("/view/$id")({
 });
 
 function ViewPdf() {
-  // Pilot only: reuse this proven, existing route when /print-test is not
-  // recognized by an older site build or an embedded browser's cached router.
-  const { pdf } = Route.useLoaderData();
-  const [showPrintTest, setShowPrintTest] = useState(false);
-
-  useEffect(() => {
-    setShowPrintTest(
-      pdf.id === "6d30cd1b-77b9-4810-95d3-73653fa8c408" &&
-      new URLSearchParams(window.location.search).get("print_test") === "1",
-    );
-  }, [pdf.id]);
-
-  return showPrintTest ? <TorasAvigdorPrintTest /> : <ViewPdfOriginal />;
-}
-
-function ViewPdfOriginal() {
   const { pdf, isCurrentWeek, publicationContext, relatedParsha, originalHtml } = Route.useLoaderData();
   const publication = publicationContext.publication;
   const related = publicationContext.related;
@@ -220,24 +201,6 @@ function ViewPdfOriginal() {
     parsha: pdf.parsha_key ?? null,
   };
 
-  const handlePrint = () => {
-    trackFp("print_click", pubContext);
-    try {
-      const frame = iframeRef.current;
-      const win = canEmbed && iframeLoaded ? frame?.contentWindow : null;
-      if (win && typeof win.print === "function") {
-        win.focus();
-        win.print();
-        trackFp("print_initiated", pubContext);
-        return;
-      }
-    } catch {
-      /* Cross-origin or viewer access failed; fall through to the new-tab viewer. */
-    }
-    window.open(viewerSrc, "_blank", "noopener,noreferrer");
-    trackFp("print_fallback_open", pubContext);
-  };
-
   // Active, visible embedded-viewer time in 15-second intervals.
   useEffect(() => {
     const el = iframeRef.current;
@@ -269,22 +232,6 @@ function ViewPdfOriginal() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canEmbed, iframeLoaded, pdf.id]);
-
-  const trackFallbackDownload = () => {
-    trackEvent("pdf_download", {
-      file_id: pdf.id,
-      file_title: pdf.title,
-      source_name: pdf.title,
-    });
-    trackDownloadAction({
-      publicationId: pdf.id,
-      publicationName: publicationLabel(publication?.name || pdf.publication || pdf.title) || pdf.title,
-      publicationTitle: pdf.title,
-      parsha: pdf.parsha_key,
-      publisher: publication?.publisher ?? pdf.publisher,
-      publicationSeries: publication?.name ?? pdf.publication,
-    });
-  };
 
   const norm = (v: string | null | undefined) => (v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
   const chosenSummary = (pdf.summary_full?.trim() || pdf.summary_quick?.trim() || "") as string;
@@ -407,32 +354,15 @@ function ViewPdfOriginal() {
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <DownloadToPrintButton
-            href={`/view/${pdf.id}/download`}
+            href={`/view/${pdf.id}/pdf`}
             publicationId={pdf.id}
-            publicationName={publicationLabel(publication?.name || pdf.publication || pdf.title) || pdf.title}
+            publicationName={publication?.name ?? pdf.publication ?? pdf.title}
             publicationTitle={pdf.title}
             parsha={pdf.parsha_key}
             publisher={publication?.publisher ?? pdf.publisher}
             publicationSeries={publication?.name ?? pdf.publication}
-            filename={buildDownloadFilename(pdf.parsha_key, publication?.name || pdf.publication || pdf.title)}
-            onClick={() =>
-              trackEvent("pdf_download", {
-                file_id: pdf.id,
-                file_title: pdf.title,
-                source_name: pdf.title,
-              })
-            }
-            className="px-5 py-2.5"
+            className="min-w-[180px] px-5 py-2.5"
           />
-          <button
-            type="button"
-            onClick={handlePrint}
-            aria-label={`Print ${pdf.title}`}
-            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-primary/30 bg-background px-4 py-2 text-sm font-medium text-primary transition-colors duration-150 hover:border-accent hover:bg-accent/10 active:scale-[0.96] touch-manipulation"
-          >
-            <Printer className="h-4 w-4 shrink-0" />
-            Print PDF
-          </button>
           <SharePublicationButton
             pdfId={pdf.id}
             title={pdf.title}
@@ -457,18 +387,6 @@ function ViewPdfOriginal() {
                   trackCanonicalPdfOpen();
                 }}
               />
-              <p className="mt-2 text-sm text-muted-foreground">
-                Can't read the embedded viewer?{" "}
-                <a
-                  href={`/view/${pdf.id}/download`}
-                  rel="nofollow"
-                  download={buildDownloadFilename(pdf.parsha_key, publication?.name || pdf.publication || pdf.title)}
-                  onClick={trackFallbackDownload}
-                  className="font-medium text-accent underline hover:text-primary transition-colors duration-150"
-                >
-                  Download the PDF file for {pdf.title}
-                </a>
-              </p>
             </>
           ) : (
             <div className="rounded-lg border border-accent/40 bg-accent/10 p-6 text-center">
@@ -490,7 +408,7 @@ function ViewPdfOriginal() {
                 />
               ) : (
                 <p className="mt-3 text-sm text-foreground/80">
-                  Mobile browsers can't preview PDFs. Download it to read or print.
+                  Tap Open PDF above to read the full document in your browser. Use the browser menu if you want to print or save it.
                 </p>
               )}
             </div>
