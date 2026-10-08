@@ -457,6 +457,7 @@ function Index() {
     source: "whatsapp",
     medium: "share",
     campaign: "weekly-share",
+    content: "veahavta-home",
   });
   const shareText = `${resources.length} free, handpicked Divrei Torah for ${isSukkosSeason ? "Sukkos, Shmini Atzeres & Simchas Torah" : displayedLabel} — ready to read or print: ${shareLink}`;
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
@@ -466,12 +467,15 @@ function Index() {
       href={whatsappHref}
       target="_blank"
       rel="noopener noreferrer"
-      onClick={() =>
+      onClick={() => {
         trackEvent("share_whatsapp", {
           parsha: displayedParshaKey ?? displayedLabel,
           count: resources.length,
-        })
-      }
+        });
+        trackFp("share_click", {
+          metadata: { placement: "homepage_veahavta", share_method: "whatsapp" },
+        });
+      }}
       className={`inline-flex items-center justify-center gap-2 rounded-full border border-accent bg-transparent px-5 py-2.5 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors ${className ?? ""}`}
     >
       <Share2 className="h-4 w-4" />
