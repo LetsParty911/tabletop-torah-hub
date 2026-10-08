@@ -320,3 +320,29 @@ Computed in `src/lib/overview-analytics.ts` from human-qualified canonical rows 
 - **Funnels**: distinct sessions, each stage must occur at or after the previous stage. (1) any pageview → `publication_click` → publication access (`pdf_open` or `download`) → `download`. (2) pageview on `/` or a collection path (`/parsha`, `/yom-tov`, `/publications`, `/archive`, `/short-vorts`) → `publication_click`/`recommendation_click`/`chooser_select` → publication access (`pdf_open` or `download`) → `download`. `download_served` remains a separate server-side redirect-confirmation diagnostic and does not create a user download action or funnel conversion by itself.
 - **Recency**: latest canonical event and heartbeat; sessions whose last event is within 5 / 30 minutes.
 - **Not measurable**: completed CDN byte transfer, scroll on PDF viewers, time on the final page without heartbeats, and outbound navigation where the browser leaves before the beacon is sent.
+
+### Homepage “ואהבת לרעך כמוך” WhatsApp sharing
+
+The homepage's `Share Torah For The Table` button records `share_click` in
+`analytics_events` with `metadata.placement = "homepage_veahavta"` and
+`metadata.share_method = "whatsapp"`. The click is sent immediately and is
+**not** proof that WhatsApp sent or delivered a message. PDF share controls
+also emit `share_click` but do **not** have this placement marker and are
+excluded from the homepage button count.
+
+The button creates a canonical homepage link with
+`utm_source=whatsapp&utm_medium=share&utm_campaign=weekly-share`; new links
+also set `utm_content=veahavta-home`. Under
+`/admin-analytics` → **Website Sharing**, selected-period metrics use the
+same human-qualified canonical event rows as the other tabs:
+
+- **Button clicks:** homepage-placed `share_click` events; clicking browser IDs are deduplicated.
+- **Tagged-link sessions/visitors:** distinct session/visitor IDs with a `page_view` attributed to the specified UTM campaign.
+- **Tagged-link PDF opens/download actions:** canonical events in those tagged
+  sessions. Download actions are requests, not evidence of a saved file.
+
+Attribution is stored as *first touch* in the browser, so later visits may
+continue to carry the campaign tag. Tagged-link sessions therefore do not
+prove a fresh WhatsApp message, nor are they uniquely matchable to a particular
+button click. Historical campaign-tagged activity remains visible; homepage
+button-click counts begin only with this instrumentation.
