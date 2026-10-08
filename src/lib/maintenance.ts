@@ -17,6 +17,11 @@ export function isAdminPath(pathname: string): boolean {
 export function maintenanceResponse(): Response {
   return new Response("Closed for Maintenance", {
     status: 503,
-    headers: { "Retry-After": "3600", "X-Robots-Tag": "noindex", "Cache-Control": "no-store" },
+    headers: {
+      "Retry-After": "3600",
+      "X-Robots-Tag": "noindex",
+      "Cache-Control": "no-store",
+      "X-TFTT-Gate": "maintenance",
+    },
   });
 }
