@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { adminMiniDashboard } from "@/integrations/supabase/api.functions";
 import { adminCanonicalSinceLast } from "@/integrations/supabase/admin-analytics-canonical";
+import { hasAdminMiniActivity } from "@/lib/admin-mini-summary";
 
 type DashboardData = Awaited<ReturnType<typeof adminMiniDashboard>>;
 type CanonicalData = Awaited<ReturnType<typeof adminCanonicalSinceLast>>;
@@ -107,13 +108,17 @@ export default function AdminMiniDashboard({
 
 
   const remaining = Math.max(0, checklist.countableTotal - checklist.uploadedCount);
-  const nothingNew =
-    !!data &&
-    !!canonical &&
-    data.newSubscriberCount === 0 &&
-    canonical.downloadActions === 0 &&
-    data.newContactCount === 0 &&
-    canonical.sessions === 0;
+  const nothingNew = Boolean(
+    data &&
+      canonical &&
+      !hasAdminMiniActivity({
+        sessions: canonical.sessions,
+        openPdfClicks: canonical.openPdfClicks,
+        downloadActions: canonical.downloadActions,
+        newSubscriberCount: data.newSubscriberCount,
+        newContactCount: data.newContactCount,
+      }),
+  );
 
   return (
     <section className="parchment-frame">
@@ -152,7 +157,7 @@ export default function AdminMiniDashboard({
         {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
         {data && canonical && nothingNew && (
           <p className="mt-6 font-serif text-xl text-foreground">
-            No new visitor activity, downloads, subscribers, or contact messages in this period.
+            No new visitor activity, Open PDF clicks, separate download actions, subscribers, or contact messages in this period.
           </p>
         )}
         {data && !nothingNew && (
@@ -173,17 +178,27 @@ export default function AdminMiniDashboard({
               </Tile>
             )}
             {canonical && (
-            <Tile label="Download activity" quiet={canonical.downloadActions === 0}>
-
-              {canonical.downloadActions === 0 ? (
-                <Quiet>No download actions</Quiet>
+            <Tile
+              label="PDF activity"
+              quiet={canonical.openPdfClicks === 0 && canonical.downloadActions === 0}
+            >
+              {canonical.openPdfClicks === 0 && canonical.downloadActions === 0 ? (
+                <Quiet>No Open PDF clicks or separate download actions</Quiet>
               ) : (
                 <>
-                  <BigNumber>{canonical.downloadActions}</BigNumber>
-                  <p className="mt-3 text-sm">
-                    download actions · {canonical.downloadingSessions} downloading sessions ·{" "}
-                    {canonical.uniquePdfDownloads} unique session+PDF downloads
+                  <BigNumber>{canonical.openPdfClicks}</BigNumber>
+                  <p className="mt-2 font-serif text-lg text-foreground">
+                    Open PDF {canonical.openPdfClicks === 1 ? "click" : "clicks"}
                   </p>
+                  <p className="mt-3 text-sm leading-6">
+                    {canonical.uniquePdfsOpened} unique {canonical.uniquePdfsOpened === 1 ? "PDF" : "PDFs"} opened
+                    {" · "}{canonical.uniquePdfClickVisitors} {canonical.uniquePdfClickVisitors === 1 ? "visitor" : "visitors"} clicked
+                  </p>
+                  {canonical.downloadActions > 0 && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {canonical.downloadActions} separate {canonical.downloadActions === 1 ? "download action" : "download actions"}
+                    </p>
+                  )}
                 </>
               )}
             </Tile>
