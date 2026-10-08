@@ -528,7 +528,7 @@ function Index() {
             </p>
             {!isFallback && (
               <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-accent-readable sm:hidden">
-                {resources.length} available now • more coming this week
+                {resources.length} available now • more coming
               </p>
             )}
             {heroDateLine && (
@@ -701,7 +701,7 @@ function Index() {
                   <span className="font-semibold">
                     {resources.length} {resources.length === 1 ? "Dvar Torah is" : "Divrei Torah are"} already posted
                   </span>
-                  {" — "}with many more being added Wednesday and Thursday. Check back for new additions.
+                  {" — "}with many more coming. Check back for new additions.
                 </p>
               </div>
             )}
