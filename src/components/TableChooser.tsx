@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 
-import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { normalizeAudience } from "@/lib/audience";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { trackFp } from "@/lib/first-party-analytics";
@@ -250,7 +250,7 @@ export function TableChooser({
                     </p>
                   )}
                   <div className="mt-auto flex flex-col gap-2 pt-4">
-                    <DownloadToPrintButton
+                    <DownloadAndPrintButtons
                       href={`/view/${r.id}/download`}
                       publicationId={r.id}
                       publicationName={displayPublicationName(r)}
