@@ -54,6 +54,9 @@ export const MEANINGFUL_INTENT = new Set([
   "filter_change",
   "search",
   "share_click",
+  // print_click only: print_initiated / print_fallback_open / pdf_view_active
+  // follow from the same click or are passive, so they never add intent.
+  "print_click",
   "signup",
   "human_signal",
   // recommendation_view is intentionally absent: it is a render-time impression.

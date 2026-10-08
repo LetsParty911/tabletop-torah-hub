@@ -30,6 +30,10 @@ export type FpEventName =
   | "my_table_add"
   | "my_table_remove"
   | "my_table_open"
+  | "print_click"
+  | "print_initiated"
+  | "print_fallback_open"
+  | "pdf_view_active"
   | "error";
 
 export type PublicationContext = {
@@ -427,6 +431,9 @@ const IMMEDIATE: ReadonlySet<string> = new Set<string>([
   "signup",
   "error",
   "publication_click",
+  "print_click",
+  "print_initiated",
+  "print_fallback_open",
   // Sent right away: the browser is usually about to leave the site.
   "outbound_click",
 ]);
