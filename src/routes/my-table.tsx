@@ -3,6 +3,7 @@ import { Bookmark, CheckCircle2, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { SiteFooter } from "@/components/SiteFooter";
+import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { requestSubscriberPreferenceLink } from "@/integrations/supabase/subscriber-preferences.functions";
 import { audienceLabel, normalizeAudience } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
@@ -207,13 +208,12 @@ function MyTablePage() {
                           </div>
                           <div className="mt-0.5 text-xs text-muted-foreground">{itemMeta(item)}</div>
                         </div>
-                        <Link
-                          to="/view/$id"
-                          params={{ id: item.id }}
-                          className="shrink-0 rounded-full bg-primary px-4 py-2 text-center text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground"
-                        >
-                          View & Print
-                        </Link>
+                        <DownloadToPrintButton
+                          href={`/view/${item.id}/pdf`}
+                          publicationId={item.id}
+                          publicationTitle={item.title}
+                          className="shrink-0"
+                        />
                       </li>
                     ))}
                   </ol>
@@ -272,13 +272,11 @@ function MyTablePage() {
                               <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
                             )}
                             <div className="mt-4 flex flex-wrap gap-2">
-                              <Link
-                                to="/view/$id"
-                                params={{ id: item.id }}
-                                className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground"
-                              >
-                                View & Print
-                              </Link>
+                              <DownloadToPrintButton
+                                href={`/view/${item.id}/pdf`}
+                                publicationId={item.id}
+                                publicationTitle={item.title}
+                              />
                               <button
                                 type="button"
                                 onClick={() => removeFromMyTable(item.id)}
