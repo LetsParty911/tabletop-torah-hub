@@ -566,14 +566,16 @@ export function trackFp(name: FpEventName, input: FpEventInput = {}): void {
       publisher: input.publisher ?? null,
       parsha: input.parsha ?? null,
       jewish_year: input.jewish_year ?? null,
-      referrer_host: attribution.referrer_host,
-      referrer_url: attribution.referrer_url,
+      // referrer_* = this page's actual external referrer (page_view only,
+      // once per document load). First-touch stays in source_group / utm_* /
+      // landing_path and metadata.first_touch_referrer_host.
+      ...(name === "page_view" ? takePageReferrer() : { referrer_host: null, referrer_url: null }),
       utm_source: attribution.utm_source,
       utm_medium: attribution.utm_medium,
       utm_campaign: attribution.utm_campaign,
       utm_content: attribution.utm_content,
       source_group: attribution.source_group,
-      metadata: input.metadata ?? {},
+      metadata: { ...(input.metadata ?? {}), first_touch_referrer_host: attribution.referrer_host },
     };
 
     enqueue(payload, IMMEDIATE.has(name));
