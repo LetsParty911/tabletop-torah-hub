@@ -39,7 +39,7 @@ import {
   selectCollectionReportWindows,
 } from "@/lib/admin-reports";
 
-type EventRow = {
+export type EventRow = {
   event_id?: string | null;
   event_name: string | null;
   occurred_at: string;
@@ -238,7 +238,7 @@ async function fetchPriorVisitors(ids: string[], before: string): Promise<Set<st
 }
 
 
-function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>()) {
+export function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>()) {
   // Headline counts use ONLY high_confidence_human + likely_human sessions.
   const classified = classifySessions(rows);
   const allSessions = classified.sessions;
@@ -255,6 +255,7 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
 
   const kept = [...allSessions.values()].filter((session) => !excluded.has(session.id));
   const keptIds = new Set(kept.map((session) => session.id));
+  const openPdf = openPdfClicksForReport(rows, keptIds);
   const keptRows = rows.filter((row) => {
     const sid = row.session_id?.trim();
     return sid ? keptIds.has(sid) : false;
@@ -325,6 +326,10 @@ function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<string>())
     downloadingSessions,
     uniquePdfDownloads: uniquePdfDownloads.size,
     downloadActions: downloadActionIds.size,
+    openPdfClicks: openPdf.total,
+    uniquePdfsOpened: openPdf.uniquePublications,
+    uniquePdfClickVisitors: openPdf.uniqueVisitors,
+    rawOpenPdfClicks: openPdf.rawTotal,
     downloadConversion: kept.length ? downloadingSessions / kept.length : 0,
     sources: [...sourceSessions.entries()]
       .map(([label, set]) => ({ label, sessions: set.size }))
