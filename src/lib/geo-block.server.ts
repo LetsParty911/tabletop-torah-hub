@@ -112,10 +112,26 @@ export async function checkGeoBlock(request: Request): Promise<Response | null> 
     if (!shouldCheck(request, path)) return null;
 
     const t = getRequestTelemetry(request);
-    const { resolveApproximateGeo } = await import("./ip-geo.server");
-    // "blocking" keeps the original provider chain (edge -> ipwho.is -> MaxMind);
-    // the ipapi.co analytics fallback is never used for block decisions.
-    const geo: ApproximateGeo = await resolveApproximateGeo(t, "blocking");
+    const { memoGet, memoSet, withBudget, blockedCountries, BLOCK_LOOKUP_BUDGET_MS } = await import("./geo-block-memo");
+
+    // Fast path 1: the hosting edge already knows the country. No blocked city
+    // lies outside these countries, so skip every lookup for everyone else.
+    const edgeCountry = (t.country ?? "").trim().toLowerCase();
+    if (edgeCountry && !blockedCountries(BLOCKED_CITIES).has(edgeCountry)) return null;
+
+    // Fast path 2: same visitor seen recently by this server — reuse its result.
+    const memoKey = t.ipAddress || "";
+    let geo: ApproximateGeo | null | undefined = memoKey ? memoGet<ApproximateGeo | null>(memoKey) : undefined;
+    if (geo === undefined) {
+      const { resolveApproximateGeo } = await import("./ip-geo.server");
+      // "blocking" keeps the original provider chain (edge -> ipwho.is -> MaxMind);
+      // the ipapi.co analytics fallback is never used for block decisions.
+      // Time-boxed: a slow lookup lets the visitor through (fail open) and is
+      // retried shortly; the persistent blocking cache still fills in background.
+      geo = await withBudget(resolveApproximateGeo(t, "blocking"), BLOCK_LOOKUP_BUDGET_MS);
+      if (memoKey) memoSet(memoKey, geo, geo ? undefined : 60_000);
+    }
+    if (!geo) return null;
     const rule = matchBlockedCity(geo);
     if (!rule) return null;
 
