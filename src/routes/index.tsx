@@ -604,7 +604,9 @@ function Index() {
             {resources.length > 0 && !isCurrentYomKippur && (
               !isFallback && (
                 <p className="mt-3 hidden text-center font-sans text-sm text-muted-foreground sm:block sm:text-base">
-                  Your Sukkos, Shmini Atzeres & Simchas Torah collection is ready. New Divrei Torah are added every Thursday evening.
+                  {isSukkosSeason
+                    ? "Your Sukkos, Shmini Atzeres & Simchas Torah collection is ready."
+                    : `${resources.length} ${resources.length === 1 ? "selection is" : "selections are"} ready for ${displayedLabel}.`}
                 </p>
               )
             )}
@@ -824,7 +826,7 @@ function Index() {
 
             {resources.length === 0 ? (
               <p className="mt-6 text-center text-muted-foreground max-w-md mx-auto">
-                New Divrei Torah for {currentLabel} go up Thursday. Check back soon!
+                New Divrei Torah for {currentLabel} are being prepared. Check back soon!
               </p>
             ) : (
               <>
