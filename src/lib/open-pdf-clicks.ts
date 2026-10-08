@@ -124,7 +124,7 @@ export function formatNyClockSeconds(iso: string): string {
  * builder: base detail fields come from the shared builder, referrer is
  * overridden with the grounded click referrer, newest first.
  */
-export function shapeOpenPdfClickDetails<R extends OpenPdfRow & { referrer_host?: string | null }, D extends { at: string; referrer: string | null }>(
+export function shapeOpenPdfClickDetails<R extends OpenPdfRow & { referrer_host?: string | null }, D extends { at: string; referrer?: string | null }>(
   keptRows: R[],
   baseDetail: (row: R) => D,
 ): D[] {
