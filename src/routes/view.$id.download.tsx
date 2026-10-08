@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { waitUntil } from "@vercel/functions";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { buildDownloadFilename } from "@/lib/download-filename";
 
@@ -117,22 +118,16 @@ async function recordDownloadServed(
   }
 }
 
-// Keep the Worker alive for background work after the response is returned.
-// Falls back to awaiting (old behavior) where waitUntil is unavailable (dev).
-let waitUntilFn: ((p: Promise<unknown>) => void) | null | undefined;
-async function runInBackground(task: Promise<void>): Promise<void> {
-  if (waitUntilFn === undefined) {
-    try {
-      // Runtime-provided module on the Worker; kept out of the bundler graph.
-      const spec = "cloudflare:workers";
-      const mod: any = await import(/* @vite-ignore */ spec);
-      waitUntilFn = typeof mod?.waitUntil === "function" ? mod.waitUntil : null;
-    } catch {
-      waitUntilFn = null;
-    }
+// Cloudflare's waitUntil keeps tracking alive after the redirect without
+// making the visitor wait. Never fall back to awaiting analytics here: a slow
+// Supabase read/write must not delay or prevent delivery of a valid PDF.
+function queueDownloadTracking(request: Request, id: string, filename: string): void {
+  try {
+    waitUntil(recordDownloadServed(request, id, filename));
+  } catch (err) {
+    // Tracking is best-effort. Keep the download working if scheduling fails.
+    console.error("[view/download] unable to schedule tracking", err);
   }
-  if (waitUntilFn) waitUntilFn(task);
-  else await task;
 }
 
 export const Route = createFileRoute("/view/$id/download")({
@@ -140,6 +135,7 @@ export const Route = createFileRoute("/view/$id/download")({
     handlers: {
       GET: async ({ params, request }) => {
         const requestUrl = new URL(request.url);
+        const routeTimings: string[] = [];
         let adminBypass = false;
         if (requestUrl.searchParams.get("admin") === "1") {
           try {
@@ -161,7 +157,9 @@ export const Route = createFileRoute("/view/$id/download")({
         }
         if (!adminBypass) {
           const { maintenanceGate } = await import("@/lib/maintenance.server");
+          const maintenanceStarted = performance.now();
           const closed = await maintenanceGate(requestUrl.pathname);
+          routeTimings.push(`maintenance;dur=${(performance.now() - maintenanceStarted).toFixed(1)}`);
           if (closed) return closed;
         }
         const id = params.id;
@@ -173,14 +171,16 @@ export const Route = createFileRoute("/view/$id/download")({
           const admin = getSupabaseAdmin();
           // Always revalidate publication state and storage path. Admin replacements
           // and unpublishes must take effect on the very next download request.
+          const lookupStarted = performance.now();
           const { data: row, error } = await admin
             .from("pdfs")
             .select("title, file_path, published, parsha_key, publication")
             .eq("id", id)
             .maybeSingle();
+          routeTimings.push(`pdf_lookup;dur=${(performance.now() - lookupStarted).toFixed(1)}`);
 
           if (error || !row || !row.published || !row.file_path) {
-            return new Response("Not found", { status: 404, headers: NOINDEX });
+            return new Response("Not found", { status: 404, headers: { ...NOINDEX, "Server-Timing": routeTimings.join(", ") } });
           }
 
           const entry = {
@@ -191,14 +191,13 @@ export const Route = createFileRoute("/view/$id/download")({
             ),
           };
 
-          // Record download_served in the background: the redirect is issued
-          // immediately and the insert finishes after the response is sent.
-          // Semantics are unchanged (the server validated and issued the redirect).
-          await runInBackground(recordDownloadServed(request, id, entry.filename));
-
           const deliveryUrl = publicDownloadUrl(admin, entry.path, entry.filename);
+
+          // A validated redirect must never wait for analytics queries or writes.
+          // Cloudflare continues this task after the response is returned.
+          queueDownloadTracking(request, id, entry.filename);
           if (adminBypass && request.headers.get("X-Admin-Link") === "1") {
-            return Response.json({ url: deliveryUrl }, { headers: { ...NOINDEX, "Cache-Control": "no-store" } });
+            return Response.json({ url: deliveryUrl }, { headers: { ...NOINDEX, "Cache-Control": "no-store", "Server-Timing": routeTimings.join(", ") } });
           }
           return new Response(null, {
             status: 302,
@@ -209,6 +208,7 @@ export const Route = createFileRoute("/view/$id/download")({
               // public object, while publication/path changes take effect here.
               "Cache-Control": "no-store",
               "Timing-Allow-Origin": "*",
+              "Server-Timing": routeTimings.join(", "),
             },
           });
         } catch (err) {
