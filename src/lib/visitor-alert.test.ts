@@ -89,3 +89,19 @@ describe("staged visitor-alert function core", () => {
     expect((await handleAlert(H(AUTH), payload(rec), { webhookSecret: "s3cret" }, f)).code).toBe("not_configured");
   });
 });
+
+describe("staged rollout artifacts", () => {
+  it("uses the existing Pushover secret names", () => {
+    const src = readFileSync("docs/visitor-alert-fix/visitor-alert/index.ts", "utf8");
+    expect(src).toContain('"PUSHOVER_APP_TOKEN"');
+    expect(src).toContain('"PUSHOVER_USER_KEY"');
+    expect(src).not.toMatch(/"PUSHOVER_(TOKEN|USER)"/);
+  });
+  it("contains no city/region/country/ASN/IP rules", () => {
+    const sql = readFileSync("docs/visitor-alert-fix/migration.sql", "utf8");
+    const where = sql.slice(sql.indexOf("if new.session_id"), sql.indexOf("then"));
+    expect(where).not.toMatch(/city|region|country|asn|ip_address|network/i);
+    const cls = readFileSync("src/lib/visitor-alert-classifier.ts", "utf8");
+    expect(cls).not.toMatch(/\.(city|region|asn|ip_address)\b/);
+  });
+});
