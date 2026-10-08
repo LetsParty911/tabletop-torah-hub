@@ -40,6 +40,10 @@ Admin routes are excluded on both client and ingest server. `/admin`, `/admin/*`
 | `filter_change`          | Audience/length/content filter change                                                                   |
 | `search`                 | Submitted search                                                                                        |
 | `pdf_open`               | Embedded publication PDF viewer successfully loaded; a mobile detail-page visit alone is not a PDF open |
+| `print_click`            | User clicked "Print PDF" on a publication detail page (meaningful intent; sent immediately) |
+| `print_initiated`        | The app called `print()` on the loaded embedded PDF iframe from that click without a synchronous error. It means the print dialog was invoked — NOT proof that anything was printed |
+| `print_fallback_open`    | Embedded print was unavailable (mobile, not loaded, or threw) and the real PDF viewer was opened in a new tab for printing there. Never counted as `print_initiated` |
+| `pdf_view_active`        | Desktop embedded viewer only, after iframe load: emitted per 15 seconds of time while the viewer is ≥50% visible and the tab is visible/focused; `metadata.active_seconds = 15`. Batched. Measures active viewing intervals only; not intent by itself |
 | `download`               | User-initiated download action/request; one event per click/action                                      |
 | `share_click`            | Share action                                                                                            |
 | `signup`                 | Successful weekly-email subscription; email address is not stored in analytics_events                   |

@@ -40,6 +40,10 @@ const ALLOWED_EVENTS = new Set([
   "my_table_add",
   "my_table_remove",
   "my_table_open",
+  "print_click",
+  "print_initiated",
+  "print_fallback_open",
+  "pdf_view_active",
   "error",
 ]);
 

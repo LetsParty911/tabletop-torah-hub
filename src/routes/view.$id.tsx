@@ -3,7 +3,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import { getPdfById, getParshaOverride } from "@/integrations/supabase/api.functions";
 import { getItemPublicationContext, getOriginalHtmlContent, getRelatedParshaItems } from "@/integrations/supabase/item-page.functions";
 import { resolveHebcalParsha } from "@/lib/hebcal";
@@ -168,10 +168,9 @@ function ViewPdf() {
   const pdfOpenTrackedRef = useRef<string | null>(null);
   useEffect(() => setMounted(true), []);
 
-  useEffect(() => {
-    if (mounted && isMobile) trackCanonicalPdfOpen();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, isMobile, pdf.id]);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  useEffect(() => setIframeLoaded(false), [pdf.id]);
   const canEmbed = mounted && !isMobile;
 
   usePrewarmDownloads([pdf.id]);
@@ -195,6 +194,64 @@ function ViewPdf() {
       parsha: pdf.parsha_key ?? null,
     });
   };
+
+  const pubContext = {
+    publication_id: pdf.id,
+    publication_title: pdf.title,
+    publication_series: publication?.name ?? pdf.publication ?? null,
+    publisher: publication?.publisher ?? pdf.publisher ?? null,
+    parsha: pdf.parsha_key ?? null,
+  };
+
+  const handlePrint = () => {
+    trackFp("print_click", pubContext);
+    const frame = iframeRef.current;
+    const win = canEmbed && iframeLoaded ? frame?.contentWindow : null;
+    if (win && typeof win.print === "function") {
+      try {
+        win.focus();
+        win.print();
+        trackFp("print_initiated", pubContext);
+        return;
+      } catch {
+        /* fall through to the new-tab viewer */
+      }
+    }
+    window.open(viewerSrc, "_blank", "noopener,noreferrer");
+    trackFp("print_fallback_open", pubContext);
+  };
+
+  // Active, visible embedded-viewer time in 15-second intervals.
+  useEffect(() => {
+    const el = iframeRef.current;
+    if (!canEmbed || !iframeLoaded || !el || typeof IntersectionObserver === "undefined") return;
+    let visibleEnough = false;
+    let activeMs = 0;
+    let last = Date.now();
+    const isActive = () =>
+      visibleEnough && document.visibilityState === "visible" && (document.hasFocus() || document.activeElement === el);
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) visibleEnough = e.intersectionRatio >= 0.5;
+      },
+      { threshold: [0, 0.5, 1] },
+    );
+    io.observe(el);
+    const tick = window.setInterval(() => {
+      const now = Date.now();
+      if (isActive()) activeMs += now - last;
+      last = now;
+      if (activeMs >= 15000) {
+        activeMs -= 15000;
+        trackFp("pdf_view_active", { ...pubContext, metadata: { active_seconds: 15 } });
+      }
+    }, 1000);
+    return () => {
+      io.disconnect();
+      window.clearInterval(tick);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canEmbed, iframeLoaded, pdf.id]);
 
   const trackFallbackDownload = () => {
     trackEvent("pdf_download", {
@@ -350,6 +407,15 @@ function ViewPdf() {
             }
             className="px-5 py-2.5"
           />
+          <button
+            type="button"
+            onClick={handlePrint}
+            aria-label={`Print ${pdf.title}`}
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-primary/30 bg-background px-4 py-2 text-sm font-medium text-primary transition-colors duration-150 hover:border-accent hover:bg-accent/10 active:scale-[0.96] touch-manipulation"
+          >
+            <Printer className="h-4 w-4 shrink-0" />
+            Print PDF
+          </button>
           <SharePublicationButton
             pdfId={pdf.id}
             title={pdf.title}
@@ -368,7 +434,11 @@ function ViewPdf() {
                 src={viewerSrc}
                 title={`Embedded PDF viewer: ${pdf.title}`}
                 className="w-full border-0 bg-muted h-[80vh] rounded-lg"
-                onLoad={trackCanonicalPdfOpen}
+                ref={iframeRef}
+                onLoad={() => {
+                  setIframeLoaded(true);
+                  trackCanonicalPdfOpen();
+                }}
               />
               <p className="mt-2 text-sm text-muted-foreground">
                 Can't read the embedded viewer?{" "}
