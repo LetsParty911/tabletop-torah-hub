@@ -144,14 +144,7 @@ function PublicationPage() {
         </h3>
         {meta && <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{meta}</p>}
         {description && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>}
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          <Link
-            to="/view/$id"
-            params={{ id: edition.id }}
-            className="inline-flex items-center justify-center rounded-full border border-accent/50 px-4 py-2.5 font-serif font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
-          >
-            View & Preview
-          </Link>
+        <div className="mt-4">
           <DownloadAndPrintButtons
             href={`/view/${edition.id}/download`}
             publicationId={edition.id}
