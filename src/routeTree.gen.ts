@@ -22,6 +22,7 @@ import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as OriginalsRouteImport } from './routes/originals'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PublicationsRouteImport } from './routes/publications'
+import { Route as RRouteImport } from './routes/r'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ShortVortsRouteImport } from './routes/short-vorts'
@@ -110,6 +111,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const PublicationsRoute = PublicationsRouteImport.update({
   id: '/publications',
   path: '/publications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RRoute = RRouteImport.update({
+  id: '/r',
+  path: '/r',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResourcesRoute = ResourcesRouteImport.update({
@@ -247,6 +253,7 @@ export interface FileRoutesByFullPath {
   '/originals': typeof OriginalsRoute
   '/privacy': typeof PrivacyRoute
   '/publications': typeof PublicationsRoute
+  '/r': typeof RRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
@@ -286,6 +293,7 @@ export interface FileRoutesByTo {
   '/originals': typeof OriginalsRoute
   '/privacy': typeof PrivacyRoute
   '/publications': typeof PublicationsRoute
+  '/r': typeof RRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
@@ -326,6 +334,7 @@ export interface FileRoutesById {
   '/originals': typeof OriginalsRoute
   '/privacy': typeof PrivacyRoute
   '/publications': typeof PublicationsRoute
+  '/r': typeof RRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/short-vorts': typeof ShortVortsRoute
@@ -367,6 +376,7 @@ export interface FileRouteTypes {
     | '/originals'
     | '/privacy'
     | '/publications'
+    | '/r'
     | '/resources'
     | '/robots.txt'
     | '/short-vorts'
@@ -406,6 +416,7 @@ export interface FileRouteTypes {
     | '/originals'
     | '/privacy'
     | '/publications'
+    | '/r'
     | '/resources'
     | '/robots.txt'
     | '/short-vorts'
@@ -445,6 +456,7 @@ export interface FileRouteTypes {
     | '/originals'
     | '/privacy'
     | '/publications'
+    | '/r'
     | '/resources'
     | '/robots.txt'
     | '/short-vorts'
@@ -485,6 +497,7 @@ export interface RootRouteChildren {
   OriginalsRoute: typeof OriginalsRoute
   PrivacyRoute: typeof PrivacyRoute
   PublicationsRoute: typeof PublicationsRoute
+  RRoute: typeof RRoute
   ResourcesRoute: typeof ResourcesRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   ShortVortsRoute: typeof ShortVortsRoute
@@ -599,6 +612,13 @@ declare module '@tanstack/react-router' {
       path: '/publications'
       fullPath: '/publications'
       preLoaderRoute: typeof PublicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/r': {
+      id: '/r'
+      path: '/r'
+      fullPath: '/r'
+      preLoaderRoute: typeof RRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/resources': {
@@ -811,6 +831,7 @@ const rootRouteChildren: RootRouteChildren = {
   OriginalsRoute: OriginalsRoute,
   PrivacyRoute: PrivacyRoute,
   PublicationsRoute: PublicationsRoute,
+  RRoute: RRoute,
   ResourcesRoute: ResourcesRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   ShortVortsRoute: ShortVortsRoute,
