@@ -21,6 +21,7 @@ import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
+import { TorasAvigdorPrintTest } from "@/components/TorasAvigdorPrintTest";
 
 
 export const Route = createFileRoute("/view/$id")({
@@ -158,6 +159,22 @@ export const Route = createFileRoute("/view/$id")({
 });
 
 function ViewPdf() {
+  // Pilot only: reuse this proven, existing route when /print-test is not
+  // recognized by an older site build or an embedded browser's cached router.
+  const { pdf } = Route.useLoaderData();
+  const [showPrintTest, setShowPrintTest] = useState(false);
+
+  useEffect(() => {
+    setShowPrintTest(
+      pdf.id === "6d30cd1b-77b9-4810-95d3-73653fa8c408" &&
+      new URLSearchParams(window.location.search).get("print_test") === "1",
+    );
+  }, [pdf.id]);
+
+  return showPrintTest ? <TorasAvigdorPrintTest /> : <ViewPdfOriginal />;
+}
+
+function ViewPdfOriginal() {
   const { pdf, isCurrentWeek, publicationContext, relatedParsha, originalHtml } = Route.useLoaderData();
   const publication = publicationContext.publication;
   const related = publicationContext.related;
