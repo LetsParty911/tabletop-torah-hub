@@ -80,7 +80,7 @@ describe("poster short-link targets", () => {
       expect([...url.searchParams.keys()]).toEqual(
         expect.arrayContaining(["utm_source", "utm_medium", "utm_campaign"]),
       );
-      expect(url.searchParams.keys().length).toBe(3);
+      expect([...url.searchParams.keys()].length).toBe(3);
     }
   });
 });
