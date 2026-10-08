@@ -6,7 +6,7 @@ import { listArchiveAll, type ArchivePageInput } from "@/integrations/supabase/a
 import { trackEvent } from "@/lib/analytics";
 import { trackSearch } from "@/lib/site-analytics";
 import { trackFp } from "@/lib/first-party-analytics";
-import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { PublicationCardTracker } from "@/components/PublicationCardTracker";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { BackToTop } from "@/components/BackToTop";
@@ -681,7 +681,7 @@ function ArchivePage() {
                               </div>
 
                               <div className="mt-4">
-                                <DownloadToPrintButton
+                                <DownloadAndPrintButtons
                                   href={`/view/${r.id}/download`}
                                   publicationId={r.id}
                                   publicationName={publicationLabel(r.publication) || r.title}
