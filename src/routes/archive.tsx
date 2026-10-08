@@ -37,6 +37,11 @@ type ResolvedArchiveSearch = Required<ArchiveSearch>;
 const AUDIENCE_VALUES = ["All", "Children", "Families", "Adults"] as const;
 const LENGTH_VALUES = ["All", "short", "long", "study"] as const;
 
+const resourceType = (r: ArchivePdf) =>
+  r.content_type === "Questions & Answers"
+    ? "Questions & Answers"
+    : formatTypeLabel(r.format_type);
+
 /** Lenient parsing: any unexpected value falls back to the default. */
 function parseArchiveSearch(input: Record<string, unknown>): ResolvedArchiveSearch {
   const str = (v: unknown) =>
