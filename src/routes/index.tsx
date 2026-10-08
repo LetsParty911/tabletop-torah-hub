@@ -40,7 +40,7 @@ import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { TableChooser } from "@/components/TableChooser";
 import { MobileCollectionControlsBar } from "@/components/MobileCollectionControlsBar";
-import { CHOOSERS, chooseReason, type ChooserKey } from "@/lib/table-chooser";
+import { CHOOSERS, chooseReason, pickRecommendations, type ChooserKey } from "@/lib/table-chooser";
 
 type Resource = {
   id: string;
@@ -352,6 +352,7 @@ function Index() {
   // the full weekly collection (plus its filter controls) is hidden.
   const [activeChooser, setActiveChooser] = useState<string | null>(null);
   const [selectedChooser, setSelectedChooser] = useState<ChooserKey | null>(null);
+  const [mobileQuickChoice, setMobileQuickChoice] = useState<ChooserKey | null>(null);
 
   const sortedResources = resources;
   usePrewarmDownloads(sortedResources.map((r) => r.id));
@@ -383,9 +384,11 @@ function Index() {
     new Set(sortedResources.map((r) => resourceContentType(r)).filter((v): v is string => !!v)),
   ).sort((a, b) => a.localeCompare(b));
 
-  const filteredResources = sortedResources.filter(
-    (r) => matchesAudience(r) && matchesLength(r) && matchesContentType(r),
-  );
+  const filteredResources = mobileQuickChoice
+    ? pickRecommendations(sortedResources, mobileQuickChoice)
+    : sortedResources.filter(
+        (r) => matchesAudience(r) && matchesLength(r) && matchesContentType(r),
+      );
 
   const lengthHasChoice =
     sortedResources.some((r) => typeof r.page_count === "number" && r.page_count < 5) &&
@@ -426,8 +429,9 @@ function Index() {
     contentTypeOptions,
   ]);
 
-  const activeFilterCount =
-    Number(audienceFilter !== "All") + Number(lengthFilter !== "All") + Number(contentTypeFilter !== "All");
+  const activeFilterCount = mobileQuickChoice
+    ? 1
+    : Number(audienceFilter !== "All") + Number(lengthFilter !== "All") + Number(contentTypeFilter !== "All");
 
   const featuredPicks = FEATURED_SLOTS.map((slot) => ({
     ...slot,
@@ -519,6 +523,7 @@ function Index() {
     Boolean(r.publication_id && TFTT_ORIGINAL_PUBLICATION_IDS.has(r.publication_id));
 
   const clearFilters = () => {
+    setMobileQuickChoice(null);
     setAudienceFilter("All");
     setLengthFilter("All");
     setContentTypeFilter("All");
@@ -653,14 +658,7 @@ function Index() {
             <h2 id="mobile-quick-choices" className="sr-only">Choose what fits your table</h2>
             <div className="grid grid-cols-2 gap-2">
               {quickChoices.map((choice) => {
-                const active =
-                  choice.key === "family"
-                    ? audienceFilter === "Families" && contentTypeFilter === "All"
-                    : choice.key === "kids"
-                      ? audienceFilter === "Children" && contentTypeFilter === "All"
-                      : choice.key === "quick"
-                        ? contentTypeFilter === "Brief Insights" && audienceFilter === "All"
-                        : contentTypeFilter === "Stories" && audienceFilter === "All";
+                const active = mobileQuickChoice === choice.key;
                 return (
                   <button
                     key={choice.key}
@@ -668,23 +666,11 @@ function Index() {
                     aria-pressed={active}
                     onClick={() => {
                       setSelectedChooser(null);
-                      if (active) {
-                        setAudienceFilter("All");
-                        setContentTypeFilter("All");
-                      } else if (choice.key === "family") {
-                        setAudienceFilter("Families");
-                        setContentTypeFilter("All");
-                      } else if (choice.key === "kids") {
-                        setAudienceFilter("Children");
-                        setContentTypeFilter("All");
-                      } else if (choice.key === "quick") {
-                        setAudienceFilter("All");
-                        setContentTypeFilter("Brief Insights");
-                      } else {
-                        setAudienceFilter("All");
-                        setContentTypeFilter("Stories");
-                      }
+                      setActiveChooser(null);
+                      setAudienceFilter("All");
+                      setContentTypeFilter("All");
                       setLengthFilter("All");
+                      setMobileQuickChoice(active ? null : choice.key);
                       setFiltersOpen(false);
                       trackFp("filter_change", {
                         metadata: { filter: "mobile_quick_choice", value: active ? "All" : choice.key },
@@ -799,7 +785,6 @@ function Index() {
               </p>
             )}
 
-            {!activeChooser && (
             <>
             {featuredPicks.length > 0 && (
               <>
@@ -952,6 +937,7 @@ function Index() {
                                   aria-pressed={active}
                                   aria-label={`Filter by audience: ${audienceLabel(audience)}`}
                                   onClick={() => {
+                                    setMobileQuickChoice(null);
                                     const next = active ? "All" : audience;
                                     setAudienceFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "audience", value: next } });
@@ -1002,6 +988,7 @@ function Index() {
                                   aria-pressed={active}
                                   aria-label={`Filter by length: ${o.label}`}
                                   onClick={() => {
+                                    setMobileQuickChoice(null);
                                     const next = active ? "All" : o.key;
                                     setLengthFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "length", value: next } });
@@ -1043,6 +1030,7 @@ function Index() {
                                   aria-pressed={active}
                                   aria-label={`Filter by content type: ${o.label}`}
                                   onClick={() => {
+                                    setMobileQuickChoice(null);
                                     const next = active ? "All" : o.key;
                                     setContentTypeFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "content_type", value: next } });
@@ -1155,7 +1143,6 @@ function Index() {
               </>
             )}
             </>
-            )}
 
           </div>
         </section>
