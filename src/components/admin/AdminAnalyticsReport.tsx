@@ -12,6 +12,7 @@ import AnalyticsHealthPanel from "@/components/admin/AnalyticsHealthPanel";
 import CampaignLinkBuilder from "@/components/admin/CampaignLinkBuilder";
 import InternalDeviceControl from "@/components/admin/InternalDeviceControl";
 import AnalyticsControlCenter from "@/components/admin/AnalyticsControlCenter";
+import OpenPdfClicksPanel from "@/components/admin/OpenPdfClicksPanel";
 import WeeklyOperationsReport from "@/components/admin/WeeklyOperationsReport";
 import { adminAnalyticsReport, type AnalyticsReportRange } from "@/integrations/supabase/admin-analytics-canonical";
 import { buildTrackingUrl, formatCountRate } from "@/lib/admin-analytics-display";
@@ -45,8 +46,10 @@ function DetailSheet({ title, description, rows, open, onOpenChange }: { title: 
         {rows.map((row, index) => <li key={`${row.sessionId}-${row.at}-${index}`} className="border-b border-border pb-3 text-sm">
           <div className="font-medium text-foreground">{row.publication ?? row.path ?? row.event.replaceAll("_", " ")}</div>
           <div className="mt-1 text-xs text-muted-foreground">{dateTime(row.at)} ET · {row.source}</div>
+          {(row.publicationId || row.path) && <div className="mt-1 text-xs text-muted-foreground">{row.path ? `Page ${row.path}` : ""}{row.publicationId ? ` · ID ${row.publicationId}` : ""}</div>}
+          {(row.device || row.location || row.referrer) && <div className="mt-1 text-xs text-muted-foreground">{[row.device, row.referrer ? `via ${row.referrer}` : null, row.location ? `Approximate IP location: ${row.location}` : null].filter(Boolean).join(" · ")}</div>}
           {row.reason && <div className="mt-1 text-xs text-foreground/80">Qualified because: {row.reason}</div>}
-          <code className="mt-1 block break-all text-[11px] text-muted-foreground">Session {row.sessionId}</code>
+          <code className="mt-1 block break-all text-[11px] text-muted-foreground">Session {row.sessionId}{row.visitorId ? ` · Visitor ${row.visitorId}` : ""}</code>
         </li>)}
       </ol>}
     </SheetContent>
@@ -69,15 +72,16 @@ function ReportsSection({ accessToken }: { accessToken: string }) {
 function Overview({ data, accessToken, openDetail }: { data: ReportData; accessToken: string; openDetail: (key: DetailKey, title: string, description: string) => void }) {
   const { report, comparison } = data;
   const m = report.metrics;
-  const story = m.people === 0 ? "There has not been enough reader activity to summarize this period." : `${m.people} ${m.people === 1 ? "person visited" : "people visited"}; ${m.usedTorah} ${m.usedTorah === 1 ? "used" : "used"} Torah, with ${m.pdfOpens} PDF opens and ${m.downloads} download actions.`;
+  const story = m.people === 0 ? "There has not been enough reader activity to summarize this period." : `${m.people} ${m.people === 1 ? "person visited" : "people visited"}; ${m.usedTorah} ${m.usedTorah === 1 ? "used" : "used"} Torah, with ${m.openPdfClicks} Open PDF clicks, ${m.pdfOpens} PDF viewer opens and ${m.downloads} download actions.`;
   if (m.sessions === 0) return <div className="space-y-8"><EmptyState /><ReportsSection accessToken={accessToken} /></div>;
   return <div className="space-y-8">
     <section><p className="font-serif text-xl leading-relaxed text-foreground">{story}</p><p className="mt-2 text-sm text-muted-foreground">Compared with the prior matching period: {comparison.people} people and {comparison.downloads} download actions.</p></section>
 
-    <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
       <MetricButton label="Likely human visitors" value={m.people} note="High-confidence + likely human only" onClick={() => openDetail("people", "People", "The distinct browser visitors included in this report.")} />
       <MetricButton label="Used Torah" value={m.usedTorah} note="People who opened, downloaded, shared, or signed up" onClick={() => openDetail("usedTorah", "Used Torah", "Sessions with a qualifying Torah action and the reason each qualified.")} />
-      <MetricButton label="PDF Opens" value={m.pdfOpens} note="Viewer opens, not downloads" onClick={() => openDetail("pdfOpens", "PDF Opens", "Every canonical PDF-open event in this period.")} />
+      <MetricButton label="Open PDF clicks" value={m.openPdfClicks} note="Button taps, not previews or downloads" onClick={() => openDetail("openPdfClicks", "Open PDF button clicks", "Every deliberate Open PDF button click from likely-human visits, newest first.")} />
+      <MetricButton label="PDF viewer opens" value={m.pdfOpens} note="Embedded preview loads (automatic)" onClick={() => openDetail("pdfOpens", "PDF viewer opens", "Every embedded PDF-preview load in this period. Not a button click.")} />
       <MetricButton label="Download Actions" value={m.downloads} note="Requests, not verified saves" onClick={() => openDetail("downloads", "Download Actions", "Every canonical user-initiated download request in this period.")} />
     </section>
     <section className="grid gap-6 border-y border-border py-6 md:grid-cols-3">
@@ -85,6 +89,7 @@ function Overview({ data, accessToken, openDetail }: { data: ReportData; accessT
       <div><h3 className="font-serif text-lg font-semibold text-primary">How people arrived</h3><ul className="mt-3 space-y-2 text-sm">{report.sources.slice(0, 5).map((source) => <li key={source.label} className="flex justify-between"><span>{source.label}</span><span>{source.sessions} sessions</span></li>)}</ul></div>
       <div><h3 className="font-serif text-lg font-semibold text-primary">Top publication</h3>{report.publications[0] ? <div className="mt-3 text-sm"><p className="font-medium">{report.publications[0].title}</p><p className="mt-1 text-muted-foreground">{report.publications[0].pdfOpens} opens · {report.publications[0].downloadActions} download actions</p></div> : <p className="mt-3 text-sm text-muted-foreground">No publication activity yet.</p>}</div>
     </section>
+    <OpenPdfClicksPanel data={data} />
     <section><h3 className="font-serif text-lg font-semibold text-primary">Recent activity</h3><ul className="mt-3 divide-y divide-border text-sm">{report.recentActivity.slice(0, 8).map((row, index) => <li key={`${row.at}-${index}`} className="flex flex-col gap-1 py-2 sm:flex-row sm:justify-between"><span>{row.event.replaceAll("_", " ")}{row.publication ? ` · ${row.publication}` : row.path ? ` · ${row.path}` : ""}</span><span className="text-xs text-muted-foreground">{dateTime(row.at)} ET</span></li>)}</ul></section>
     <ReportsSection accessToken={accessToken} />
     <footer className="text-xs text-muted-foreground">Headline audience metrics are human-qualified: only high-confidence and likely human sessions count ({m.sessions} of {report.raw.sessions} raw sessions, {report.raw.visitors} raw visitors). Excluded but kept for diagnostics: {report.filteredUncertainSessions} uncertain · {report.filteredAutomationSessions} suspected automation · {report.filteredInternalSessions} internal/test. Any deliberate action or explicit human signal keeps a session counted.</footer>
@@ -98,7 +103,7 @@ function SukkahSignDownloadsSection({ data }: { data: ReportData }) {
 
 function Publications({ data }: { data: ReportData }) {
   const publications = data.report.publications;
-  return <div><h2 className="font-serif text-2xl font-bold text-primary">Publications</h2><p className="mt-1 text-sm text-muted-foreground">What readers saw, selected, opened, and requested to download.</p><SukkahSignDownloadsSection data={data} />{publications.length === 0 ? <div className="mt-6"><EmptyState /></div> : <div className="mt-6 space-y-4">{publications.map((p) => <article key={p.title} className="border-b border-border pb-5"><h3 className="font-serif text-lg font-semibold">{p.title}</h3><div className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-5"><div><b>{p.impressions}</b><span className="block text-xs text-muted-foreground">Shown</span></div><div><b>{p.clicks}</b><span className="block text-xs text-muted-foreground">Selected</span></div><div><b>{p.uniqueReaders}</b><span className="block text-xs text-muted-foreground">Readers</span></div><div><b>{p.pdfOpens}</b><span className="block text-xs text-muted-foreground">PDF opens</span></div><div><b>{p.downloadActions}</b><span className="block text-xs text-muted-foreground">Download actions</span></div></div><div className="mt-3 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2"><p>Selection rate: {formatCountRate(p.clickNumerator, p.clickDenominator)}</p><p>Access-to-download: {formatCountRate(p.downloadNumerator, p.downloadDenominator)}</p></div>{p.sources.length > 0 && <p className="mt-2 text-xs text-muted-foreground">Sources: {p.sources.slice(0, 4).map((s) => `${s.label} (${s.sessions})`).join(" · ")}</p>}</article>)}</div>}
+  return <div><h2 className="font-serif text-2xl font-bold text-primary">Publications</h2><p className="mt-1 text-sm text-muted-foreground">What readers saw, selected, opened, and requested to download.</p><SukkahSignDownloadsSection data={data} /><div className="mt-6"><OpenPdfClicksPanel data={data} /></div>{publications.length === 0 ? <div className="mt-6"><EmptyState /></div> : <div className="mt-6 space-y-4">{publications.map((p) => <article key={p.title} className="border-b border-border pb-5"><h3 className="font-serif text-lg font-semibold">{p.title}</h3><div className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-5"><div><b>{p.impressions}</b><span className="block text-xs text-muted-foreground">Shown</span></div><div><b>{p.clicks}</b><span className="block text-xs text-muted-foreground">Selected</span></div><div><b>{p.uniqueReaders}</b><span className="block text-xs text-muted-foreground">Readers</span></div><div><b>{p.pdfOpens}</b><span className="block text-xs text-muted-foreground">PDF viewer opens</span></div><div><b>{p.downloadActions}</b><span className="block text-xs text-muted-foreground">Download actions</span></div></div><div className="mt-3 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2"><p>Selection rate: {formatCountRate(p.clickNumerator, p.clickDenominator)}</p><p>Access-to-download: {formatCountRate(p.downloadNumerator, p.downloadDenominator)}</p></div>{p.sources.length > 0 && <p className="mt-2 text-xs text-muted-foreground">Sources: {p.sources.slice(0, 4).map((s) => `${s.label} (${s.sessions})`).join(" · ")}</p>}</article>)}</div>}
     <section className="mt-8"><h3 className="font-serif text-lg font-semibold text-primary">Search outcomes</h3>{data.report.searches.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No searches in this period.</p> : <ul className="mt-2 divide-y divide-border text-sm">{data.report.searches.map((search, index) => <li key={`${search.at}-${index}`} className="flex justify-between gap-3 py-2"><span>“{search.term}”</span><span className="text-xs text-muted-foreground">{search.ledToContent ? "Led to Torah" : "No later content action"}</span></li>)}</ul>}</section>
   </div>;
 }
