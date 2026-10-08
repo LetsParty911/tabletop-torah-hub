@@ -304,7 +304,7 @@ function SiteNav() {
   return (
     <nav
       aria-label="Primary"
-      className="sticky top-0 z-40 border-b border-accent/20 bg-background/95 backdrop-blur-sm"
+      className="sticky top-0 z-40 border-b border-accent/20 bg-background sm:bg-background/95 sm:backdrop-blur-sm"
     >
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
         <div className="flex items-center justify-between gap-3 py-1.5 md:py-2.5">
