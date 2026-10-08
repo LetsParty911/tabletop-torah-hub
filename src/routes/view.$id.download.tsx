@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { waitUntil } from "cloudflare:workers";
+import { waitUntil } from "@vercel/functions";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { buildDownloadFilename } from "@/lib/download-filename";
 
