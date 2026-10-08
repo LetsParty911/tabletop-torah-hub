@@ -420,12 +420,18 @@ function Index() {
     ) {
       setContentTypeFilter("All");
     }
+
+    // A quick selection with no matching PDFs must never leave an empty list.
+    if (mobileQuickChoice && pickRecommendations(sortedResources, mobileQuickChoice).length === 0) {
+      setMobileQuickChoice(null);
+    }
   }, [
     sortedResources,
     audienceFilter,
     lengthFilter,
     contentTypeFilter,
     contentTypeOptions,
+    mobileQuickChoice,
   ]);
 
   const activeFilterCount = mobileQuickChoice
@@ -520,6 +526,7 @@ function Index() {
 
   const clearFilters = () => {
     setSelectedChooser(null);
+    setMobileQuickChoice(null);
     setAudienceFilter("All");
     setLengthFilter("All");
     setContentTypeFilter("All");
@@ -924,6 +931,7 @@ function Index() {
                                   aria-label={`Filter by audience: ${audienceLabel(audience)}`}
                                   onClick={() => {
                                     setSelectedChooser(null);
+                                    setMobileQuickChoice(null);
                                     const next = active ? "All" : audience;
                                     setAudienceFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "audience", value: next } });
@@ -975,6 +983,7 @@ function Index() {
                                   aria-label={`Filter by length: ${o.label}`}
                                   onClick={() => {
                                     setSelectedChooser(null);
+                                    setMobileQuickChoice(null);
                                     const next = active ? "All" : o.key;
                                     setLengthFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "length", value: next } });
@@ -1017,6 +1026,7 @@ function Index() {
                                   aria-label={`Filter by content type: ${o.label}`}
                                   onClick={() => {
                                     setSelectedChooser(null);
+                                    setMobileQuickChoice(null);
                                     const next = active ? "All" : o.key;
                                     setContentTypeFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "content_type", value: next } });

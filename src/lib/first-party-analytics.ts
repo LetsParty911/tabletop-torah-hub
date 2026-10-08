@@ -352,7 +352,13 @@ export function normalizeSourceGroup(input: {
   return "Other Referral";
 }
 
-/** Records first-touch attribution for the session; never overwrites it. */
+type StoredAttribution = FpAttribution & { session_id?: string };
+
+/**
+ * Records first-touch attribution for the CURRENT session; never overwrites it
+ * within that session. A new session re-captures, so a visitor who once came
+ * from WhatsApp is not attributed to WhatsApp on every later visit.
+ */
 export function captureFirstTouch(path: string): FpAttribution {
   const empty: FpAttribution = {
     referrer_host: null,
@@ -366,40 +372,34 @@ export function captureFirstTouch(path: string): FpAttribution {
   };
   if (typeof window === "undefined") return empty;
 
+  const sessionId = getSessionId();
   const stored = lsGet(ATTRIBUTION_STORAGE_KEY);
   if (stored) {
     try {
-      return JSON.parse(stored) as FpAttribution;
+      const parsed = JSON.parse(stored) as StoredAttribution;
+      if (parsed.session_id === sessionId) return parsed;
     } catch {
       /* fall through and re-capture */
     }
   }
 
   const params = new URLSearchParams(window.location.search);
-  let referrerHost: string | null = null;
-  const referrer = document.referrer || null;
-  if (referrer) {
-    try {
-      const host = new URL(referrer).hostname;
-      referrerHost = host && host !== window.location.hostname ? host : null;
-    } catch {
-      referrerHost = null;
-    }
-  }
+  const { referrer_host: referrerHost, referrer_url: referrer } = externalDocumentReferrer();
 
   const base = {
     referrer_host: referrerHost,
-    referrer_url: referrerHost ? referrer : null,
+    referrer_url: referrer,
     utm_source: params.get("utm_source"),
     utm_medium: params.get("utm_medium"),
     utm_campaign: params.get("utm_campaign"),
     utm_content: params.get("utm_content"),
   };
 
-  const attribution: FpAttribution = {
+  const attribution: StoredAttribution = {
     ...base,
     landing_path: path,
     source_group: normalizeSourceGroup(base),
+    session_id: sessionId,
   };
   lsSet(ATTRIBUTION_STORAGE_KEY, JSON.stringify(attribution));
   return attribution;
@@ -413,6 +413,34 @@ export function getFirstTouch(): FpAttribution | null {
   } catch {
     return null;
   }
+}
+
+function externalDocumentReferrer(): { referrer_host: string | null; referrer_url: string | null } {
+  const referrer = typeof document !== "undefined" ? document.referrer || null : null;
+  if (!referrer) return { referrer_host: null, referrer_url: null };
+  try {
+    const host = new URL(referrer).hostname;
+    if (host && host !== window.location.hostname) return { referrer_host: host, referrer_url: referrer };
+  } catch {
+    /* ignore */
+  }
+  return { referrer_host: null, referrer_url: null };
+}
+
+// The page's ACTUAL referrer: document.referrer only describes how this
+// document was loaded, so it is reported once (first page_view of a fresh
+// navigation, not a reload). Later in-site pages carry no external referrer.
+let pageReferrerConsumed = false;
+export function takePageReferrer(): { referrer_host: string | null; referrer_url: string | null } {
+  if (pageReferrerConsumed || typeof window === "undefined") return { referrer_host: null, referrer_url: null };
+  pageReferrerConsumed = true;
+  try {
+    const nav = performance.getEntriesByType?.("navigation")?.[0] as PerformanceNavigationTiming | undefined;
+    if (nav?.type === "reload" || nav?.type === "back_forward") return { referrer_host: null, referrer_url: null };
+  } catch {
+    /* ignore */
+  }
+  return externalDocumentReferrer();
 }
 
 // ---------------------------------------------------------------------------
@@ -538,14 +566,16 @@ export function trackFp(name: FpEventName, input: FpEventInput = {}): void {
       publisher: input.publisher ?? null,
       parsha: input.parsha ?? null,
       jewish_year: input.jewish_year ?? null,
-      referrer_host: attribution.referrer_host,
-      referrer_url: attribution.referrer_url,
+      // referrer_* = this page's actual external referrer (page_view only,
+      // once per document load). First-touch stays in source_group / utm_* /
+      // landing_path and metadata.first_touch_referrer_host.
+      ...(name === "page_view" ? takePageReferrer() : { referrer_host: null, referrer_url: null }),
       utm_source: attribution.utm_source,
       utm_medium: attribution.utm_medium,
       utm_campaign: attribution.utm_campaign,
       utm_content: attribution.utm_content,
       source_group: attribution.source_group,
-      metadata: input.metadata ?? {},
+      metadata: { ...(input.metadata ?? {}), first_touch_referrer_host: attribution.referrer_host },
     };
 
     enqueue(payload, IMMEDIATE.has(name));

@@ -650,9 +650,9 @@ function ArchivePage() {
                                     <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">
                                       By {r.publisher}
                                     </p>
-                                  ) : r.publication && r.publication !== r.title ? (
+                                  ) : r.publication && publicationLabel(r.publication) !== r.title ? (
                                     <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">
-                                      From {r.publication}
+                                      From {publicationLabel(r.publication)}
                                     </p>
                                   ) : null}
                                   {r.subtitle && (

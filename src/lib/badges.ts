@@ -58,7 +58,18 @@ export function categoryLabel(key: string | null | undefined): string | null {
 
 export function publicationLabel(key: string | null | undefined): string | null {
   if (!key) return null;
-  return PUBLICATION_LABELS[key] ?? key;
+  const known = PUBLICATION_LABELS[key.trim().toLowerCase()];
+  if (known) return known;
+  // Never expose an internal code (e.g. "some_series" / "some-series"):
+  // humanize code-shaped values; human-readable names pass through unchanged.
+  if (/^[a-z0-9]+([_-][a-z0-9]+)+$/.test(key.trim())) {
+    return key
+      .trim()
+      .split(/[_-]+/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+  }
+  return key;
 }
 
 export function tagLabel(key: string): string {
