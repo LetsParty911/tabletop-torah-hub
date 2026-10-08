@@ -94,7 +94,7 @@ A session with a meaningful intent event (`download`, `pdf_open`, `publication_c
 
 ### Used Torah
 
-A separate owner-facing measure of distinct visitors with a session containing a `pdf_open`, `download`, `share_click`, or `signup`. It does not redefine historical engaged sessions. Search, filter, and publication-click events alone remain engagement signals but do not qualify as Used Torah without a later qualifying action.
+A separate owner-facing measure of distinct visitors with a session containing a `pdf_open`, `download`/`download_served`, a `publication_click` tagged `metadata.action = "open_pdf"` (reason "Clicked Open PDF"), `share_click`, or `signup`. It does not redefine historical engaged sessions. Search, filter, and untagged publication-click events alone remain engagement signals but do not qualify as Used Torah without a later qualifying action.
 
 ### PDF-accessing session
 
