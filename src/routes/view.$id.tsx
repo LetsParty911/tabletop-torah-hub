@@ -193,13 +193,6 @@ function ViewPdf() {
     });
   };
 
-  const pubContext = {
-    publication_id: pdf.id,
-    publication_title: pdf.title,
-    publication_series: publication?.name ?? pdf.publication ?? null,
-    publisher: publication?.publisher ?? pdf.publisher ?? null,
-    parsha: pdf.parsha_key ?? null,
-  };
 
   const norm = (v: string | null | undefined) => (v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
   const chosenSummary = (pdf.summary_full?.trim() || pdf.summary_quick?.trim() || "") as string;

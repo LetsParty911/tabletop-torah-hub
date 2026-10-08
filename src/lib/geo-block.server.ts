@@ -3,7 +3,7 @@
 // Flow: request -> resolve IP/geo (existing ip-geo system + cache) -> if the
 // visitor matches one of BLOCKED_CITIES, log the attempt to
 // public.blocked_visits (Lovable Cloud, separate from every analytics table)
-// and return a static 503 maintenance page. Everyone else continues through
+// and return a static 403 "not available from your location" page. Everyone else continues through
 // the normal pipeline. Blocked visitors never load the site, so no client
 // analytics fire for them.
 //
@@ -88,13 +88,12 @@ const PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta n
 
 export function blockedResponse(): Response {
   return new Response(PAGE, {
-    status: 503,
+    status: 403,
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
       Pragma: "no-cache",
       Expires: "0",
-      "Retry-After": "3600",
       "X-Robots-Tag": "noindex",
       "X-TFTT-Gate": "geo-block",
     },
