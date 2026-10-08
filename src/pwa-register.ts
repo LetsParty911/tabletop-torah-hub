@@ -62,9 +62,9 @@ export function registerPwa() {
     window.location.reload();
   });
 
-  window.addEventListener("load", () => {
+  const performRegistration = () => {
     navigator.serviceWorker
-      .register(SW_REGISTER_URL, { scope: "/" })
+      .register(SW_REGISTER_URL, { scope: "/", updateViaCache: "none" })
       .then((reg) => {
         const promote = (worker: ServiceWorker | null) => {
           if (!worker) return;
@@ -96,5 +96,13 @@ export function registerPwa() {
       .catch(() => {
         /* registration failure is non-fatal */
       });
-  });
+  };
+
+  // React hydration can finish after the window "load" event. In that case,
+  // a load-only listener never fires, leaving an old worker / app bundle active.
+  if (document.readyState === "complete") {
+    performRegistration();
+  } else {
+    window.addEventListener("load", performRegistration, { once: true });
+  }
 }
