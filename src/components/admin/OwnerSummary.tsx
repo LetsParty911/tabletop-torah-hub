@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import OpenPdfClicksPanel from "@/components/admin/OpenPdfClicksPanel";
 import {
   adminRetentionCohorts,
   type adminAnalyticsReport,
@@ -140,6 +141,8 @@ export default function OwnerSummary({
         </details>
       </Block>
 
+      <OpenPdfClicksPanel data={data} />
+
       <Block title="What they did">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Stat
@@ -155,10 +158,16 @@ export default function OwnerSummary({
             onClick={() => openDetail("usedTorah", "Used Torah", "Sessions with a qualifying Torah action.")}
           />
           <Stat
-            label="PDF opens"
+            label="Open PDF clicks"
+            value={m.openPdfClicks}
+            note="Button taps, not previews or downloads"
+            onClick={() => openDetail("openPdfClicks", "Open PDF button clicks", "Every deliberate Open PDF button click from likely-human visits, newest first.")}
+          />
+          <Stat
+            label="PDF viewer opens"
             value={m.pdfOpens}
-            note="Viewer opened, not a download"
-            onClick={() => openDetail("pdfOpens", "PDF Opens", "Every canonical PDF-open event in this period.")}
+            note="Embedded preview loaded (automatic)"
+            onClick={() => openDetail("pdfOpens", "PDF viewer opens", "Every embedded PDF-preview load in this period. Not a button click.")}
           />
           <Stat
             label="Download actions"
