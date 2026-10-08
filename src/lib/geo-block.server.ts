@@ -96,6 +96,7 @@ export function blockedResponse(): Response {
       Expires: "0",
       "Retry-After": "3600",
       "X-Robots-Tag": "noindex",
+      "X-TFTT-Gate": "geo-block",
     },
   });
 }
