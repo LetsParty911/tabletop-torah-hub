@@ -15,7 +15,7 @@ import {
   type VisitorTimeline,
 } from "@/lib/retention-cohorts";
 import { aggregatePublications } from "@/lib/publication-funnel";
-import { openPdfClicksForReport, shapeOpenPdfClickDetails } from "@/lib/open-pdf-clicks";
+import { isOpenPdfClick, openPdfClicksForReport, shapeOpenPdfClickDetails } from "@/lib/open-pdf-clicks";
 import { buildOverview } from "@/lib/overview-analytics";
 import { summarizeHomepageSharing } from "@/lib/homepage-sharing";
 import {
@@ -169,14 +169,37 @@ async function fetchEventsBetween(start: string, end: string): Promise<EventRow[
   return out;
 }
 
-export type UsedTorahReason = "Opened a PDF" | "Requested a download" | "Shared Torah" | "Signed up";
+export type UsedTorahReason = "Opened a PDF" | "Requested a download" | "Clicked Open PDF" | "Shared Torah" | "Signed up";
 
-export function usedTorahQualification(eventNames: string[]): UsedTorahReason | null {
-  if (eventNames.includes("download") || eventNames.includes("download_served")) return "Requested a download";
-  if (eventNames.includes("pdf_open")) return "Opened a PDF";
-  if (eventNames.includes("share_click")) return "Shared Torah";
-  if (eventNames.includes("signup")) return "Signed up";
+type UsedTorahEvent = string | { event_name: string | null; metadata?: Record<string, unknown> | null };
+
+/** True when an event record itself is a Used Torah qualifying action. */
+export function isUsedTorahEvent(event: { event_name: string | null; metadata?: Record<string, unknown> | null }): boolean {
+  const name = event.event_name ?? "";
+  return ["download", "download_served", "pdf_open", "share_click", "signup"].includes(name) || isOpenPdfClick({ event_name: name, metadata: event.metadata ?? null });
+}
+
+/**
+ * Used Torah reason from actual event records. Accepts bare event names for
+ * backwards compatibility (a bare name can never be a tagged Open PDF click,
+ * since that requires metadata.action === "open_pdf").
+ */
+export function usedTorahQualification(events: UsedTorahEvent[]): UsedTorahReason | null {
+  const recs = events.map((e) => (typeof e === "string" ? { event_name: e, metadata: null } : e));
+  const names = recs.map((r) => r.event_name ?? "");
+  if (names.includes("download") || names.includes("download_served")) return "Requested a download";
+  if (names.includes("pdf_open")) return "Opened a PDF";
+  if (recs.some((r) => isOpenPdfClick({ event_name: r.event_name, metadata: r.metadata ?? null }))) return "Clicked Open PDF";
+  if (names.includes("share_click")) return "Shared Torah";
+  if (names.includes("signup")) return "Signed up";
   return null;
+}
+
+/** Distinct visitors with at least one Used Torah session (each visitor counted once). */
+export function usedTorahVisitorIds(sessions: Array<{ visitorId: string | null; events: UsedTorahEvent[] }>): Set<string> {
+  const out = new Set<string>();
+  for (const s of sessions) if (s.visitorId && usedTorahQualification(s.events)) out.add(s.visitorId);
+  return out;
 }
 
 function visitorIds(rows: EventRow[]): string[] {
@@ -421,7 +444,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
 
   const sessionDetails = keptSessions.map((session) => {
     const events = rowsBySession.get(session.id) ?? [];
-    const reason = usedTorahQualification(events.map((row) => row.event_name ?? ""));
+    const reason = usedTorahQualification(events);
     return {
       sessionId: session.id,
       visitorId: session.visitorId,
@@ -436,7 +459,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
     };
   });
   const usedSessions = sessionDetails.filter((session) => session.usedTorah);
-  const usedVisitors = new Set(usedSessions.map((session) => session.visitorId).filter(Boolean));
+  const usedVisitors = usedTorahVisitorIds(keptSessions.map((session) => ({ visitorId: session.visitorId, events: rowsBySession.get(session.id) ?? [] })));
   const returning = new Set<string>();
   for (const row of keptRows) {
     const vid = row.visitor_id?.trim();
@@ -539,7 +562,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
   const metricDetails = {
     openPdfClicks: shapeOpenPdfClickDetails(openPdf.keptRows, (row) => detailFor(row, "Clicked the Open PDF button")),
     people: keptRows.filter((row, index, list) => row.visitor_id && list.findIndex((other) => other.visitor_id === row.visitor_id) === index).map((row) => detailFor(row)),
-    usedTorah: usedSessions.flatMap((session) => session.events.filter((event) => ["pdf_open", "download", "share_click", "signup"].includes(event.event))),
+    usedTorah: usedSessions.flatMap((session) => (rowsBySession.get(session.sessionId) ?? []).filter((row) => row.event_name !== "download_served" && isUsedTorahEvent(row)).map((row) => detailFor(row, session.usedTorahReason))),
     pdfOpens: keptRows.filter((row) => row.event_name === "pdf_open").map((row) => detailFor(row)),
     downloads: keptRows.filter((row) => row.event_name === "download").map((row) => detailFor(row)),
     returning: keptRows.filter((row, index, list) => row.visitor_id && returning.has(row.visitor_id) && list.findIndex((other) => other.visitor_id === row.visitor_id) === index).map((row) => detailFor(row)),

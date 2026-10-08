@@ -154,7 +154,7 @@ export default function OwnerSummary({
           <Stat
             label="Used Torah"
             value={m.usedTorah}
-            note="Opened, downloaded, shared or signed up"
+            note="Clicked Open PDF, opened, downloaded, shared or signed up"
             onClick={() => openDetail("usedTorah", "Used Torah", "Sessions with a qualifying Torah action.")}
           />
           <Stat
