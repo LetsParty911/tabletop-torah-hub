@@ -195,6 +195,13 @@ export function usedTorahQualification(events: UsedTorahEvent[]): UsedTorahReaso
   return null;
 }
 
+/** Distinct visitors with at least one Used Torah session (each visitor counted once). */
+export function usedTorahVisitorIds(sessions: Array<{ visitorId: string | null; events: UsedTorahEvent[] }>): Set<string> {
+  const out = new Set<string>();
+  for (const s of sessions) if (s.visitorId && usedTorahQualification(s.events)) out.add(s.visitorId);
+  return out;
+}
+
 function visitorIds(rows: EventRow[]): string[] {
   return [
     ...new Set(rows.map((row) => row.visitor_id?.trim()).filter((id): id is string => Boolean(id))),
@@ -452,7 +459,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
     };
   });
   const usedSessions = sessionDetails.filter((session) => session.usedTorah);
-  const usedVisitors = new Set(usedSessions.map((session) => session.visitorId).filter(Boolean));
+  const usedVisitors = usedTorahVisitorIds(keptSessions.map((session) => ({ visitorId: session.visitorId, events: rowsBySession.get(session.id) ?? [] })));
   const returning = new Set<string>();
   for (const row of keptRows) {
     const vid = row.visitor_id?.trim();
