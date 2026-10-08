@@ -3,13 +3,7 @@ import type { ReportData } from "@/components/admin/AnalyticsControlCenter";
 type Summary = ReportData["report"]["openPdfClicks"];
 type Detail = ReportData["report"]["details"]["openPdfClicks"][number];
 
-const fmt = (iso: string) =>
-  new Date(iso).toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", second: "2-digit" });
-
-function csvCell(value: unknown): string {
-  const s = value == null ? "" : String(value);
-  return /[",\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
-}
+import { csvCell, formatNyClockSeconds as fmt } from "@/lib/open-pdf-clicks";
 
 function exportCsv(rows: Detail[], rangeLabel: string) {
   const header = ["occurred_at_utc", "occurred_at_et", "publication_title", "publication_id", "source_page", "visitor_id", "session_id", "traffic_source", "referrer", "device", "approx_ip_location"];
@@ -37,7 +31,7 @@ export default function OpenPdfClicksPanel({ data }: { data: ReportData }) {
           <h3 className="font-serif text-lg font-semibold text-primary">Open PDF button clicks</h3>
           <p className="mt-1 text-xs text-muted-foreground">
             Deliberate taps on the public Open PDF button ({data.rangeLabel}). Separate from PDF viewer previews (automatic) and download actions.
-            {" "}{s.total} from likely-human visits · {s.rawTotal} raw ({s.excluded} excluded as internal/test or suspected automation) · {s.uniqueVisitors} visitors · {s.uniqueSessions} visits.
+            {" "}{s.total} from likely-human visits · {s.rawTotal} raw ({s.excluded} excluded from human headline, including uncertain, internal/test, automation, or unidentified visits) · {s.uniqueVisitors} visitors · {s.uniqueSessions} visits.
           </p>
         </div>
         <button type="button" onClick={() => exportCsv(rows, data.rangeLabel)} disabled={!rows.length} className="rounded-full border border-primary/40 px-3 py-1.5 text-xs font-medium text-primary hover:bg-accent/15 disabled:opacity-50">

@@ -98,3 +98,42 @@ export function openPdfClicksForReport<T extends OpenPdfRow>(allRows: T[], keptS
   const rawTotal = uniqueOpenPdfClicks(allRows).length;
   return { ...summary, rawTotal, excluded: Math.max(0, rawTotal - summary.total), keptRows: uniqueOpenPdfClicks(kept) };
 }
+
+/**
+ * Referrer shown for an Open PDF click. Click events are written with
+ * referrer_host = null by design (only page views carry an actual page
+ * referrer), but they retain the session's grounded first-touch referrer in
+ * metadata. Fall back to that recorded value only; never infer one.
+ */
+export function openPdfClickReferrer(row: Pick<OpenPdfRow, "metadata"> & { referrer_host?: string | null }): string | null {
+  const actual = row.referrer_host?.trim();
+  if (actual) return actual;
+  const first = row.metadata?.["first_touch_referrer_host"];
+  return typeof first === "string" && first.trim() ? first.trim() : null;
+}
+
+/** New York wall-clock timestamp to the second, e.g. "Oct 8, 3:27:05 PM". */
+export function formatNyClockSeconds(iso: string): string {
+  return new Date(iso).toLocaleString("en-US", {
+    timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", second: "2-digit",
+  });
+}
+
+/**
+ * Final shaping of the Open PDF click drilldown used by the real report
+ * builder: base detail fields come from the shared builder, referrer is
+ * overridden with the grounded click referrer, newest first.
+ */
+export function shapeOpenPdfClickDetails<R extends OpenPdfRow & { referrer_host?: string | null }, D extends { at: string; referrer: string | null }>(
+  keptRows: R[],
+  baseDetail: (row: R) => D,
+): D[] {
+  return keptRows
+    .map((row) => ({ ...baseDetail(row), referrer: openPdfClickReferrer(row) }))
+    .sort((a, b) => b.at.localeCompare(a.at));
+}
+
+export function csvCell(value: unknown): string {
+  const s = value == null ? "" : String(value);
+  return /[",\n\r]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
+}

@@ -15,7 +15,7 @@ import {
   type VisitorTimeline,
 } from "@/lib/retention-cohorts";
 import { aggregatePublications } from "@/lib/publication-funnel";
-import { openPdfClicksForReport } from "@/lib/open-pdf-clicks";
+import { openPdfClicksForReport, shapeOpenPdfClickDetails } from "@/lib/open-pdf-clicks";
 import { buildOverview } from "@/lib/overview-analytics";
 import { summarizeHomepageSharing } from "@/lib/homepage-sharing";
 import {
@@ -537,7 +537,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
 
   const openPdf = openPdfClicksForReport(rows, keptIds);
   const metricDetails = {
-    openPdfClicks: openPdf.keptRows.map((row) => detailFor(row, "Clicked the Open PDF button")).sort((a, b) => b.at.localeCompare(a.at)),
+    openPdfClicks: shapeOpenPdfClickDetails(openPdf.keptRows, (row) => detailFor(row, "Clicked the Open PDF button")),
     people: keptRows.filter((row, index, list) => row.visitor_id && list.findIndex((other) => other.visitor_id === row.visitor_id) === index).map((row) => detailFor(row)),
     usedTorah: usedSessions.flatMap((session) => session.events.filter((event) => ["pdf_open", "download", "share_click", "signup"].includes(event.event))),
     pdfOpens: keptRows.filter((row) => row.event_name === "pdf_open").map((row) => detailFor(row)),
