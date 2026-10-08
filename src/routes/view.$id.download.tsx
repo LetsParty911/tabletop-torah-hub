@@ -2,12 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { buildDownloadFilename } from "@/lib/download-filename";
 
-// Per-worker-instance in-memory cache of the row lookup (path + filename).
-// Warm instances skip the DB round trip entirely.
-type CacheEntry = { path: string; filename: string; expiresAt: number };
-const ROW_CACHE_TTL_MS = 10 * 60 * 1000;
-const rowCache = new Map<string, CacheEntry>();
-
 // File-delivery endpoint must never be indexed.
 const NOINDEX = { "X-Robots-Tag": "noindex" } as const;
 
@@ -177,30 +171,25 @@ export const Route = createFileRoute("/view/$id/download")({
 
         try {
           const admin = getSupabaseAdmin();
-          const now = Date.now();
+          // Always revalidate publication state and storage path. Admin replacements
+          // and unpublishes must take effect on the very next download request.
+          const { data: row, error } = await admin
+            .from("pdfs")
+            .select("title, file_path, published, parsha_key, publication")
+            .eq("id", id)
+            .maybeSingle();
 
-          let entry = rowCache.get(id);
-          if (!entry || entry.expiresAt <= now) {
-            const { data: row, error } = await admin
-              .from("pdfs")
-              .select("title, file_path, published, parsha_key, publication")
-              .eq("id", id)
-              .maybeSingle();
-
-            if (error || !row || !row.published || !row.file_path) {
-              return new Response("Not found", { status: 404, headers: NOINDEX });
-            }
-
-            entry = {
-              path: row.file_path as string,
-              filename: buildDownloadFilename(
-                row.parsha_key,
-                row.publication || row.title,
-              ),
-              expiresAt: now + ROW_CACHE_TTL_MS,
-            };
-            rowCache.set(id, entry);
+          if (error || !row || !row.published || !row.file_path) {
+            return new Response("Not found", { status: 404, headers: NOINDEX });
           }
+
+          const entry = {
+            path: row.file_path as string,
+            filename: buildDownloadFilename(
+              row.parsha_key,
+              row.publication || row.title,
+            ),
+          };
 
           // Record download_served in the background: the redirect is issued
           // immediately and the insert finishes after the response is sent.
