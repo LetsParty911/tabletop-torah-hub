@@ -34,7 +34,7 @@
 ## Sukkos heading wording
 - [x] Homepage seasonal heading: "Divrei Torah for Sukkos, Shmini Atzeres & Simchas Torah"
 
-## Admin since-last PDF activity (unpublished)
+## Admin since-last PDF activity (published Oct 8, 2026)
 - [x] Replace the misleading download-only tile with deliberate Open PDF click metrics
 - [x] Include unique PDFs, clicking visitors, and separate download actions
 - [x] Make Open PDF clicks prevent a false empty summary
