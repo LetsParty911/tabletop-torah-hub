@@ -16,6 +16,7 @@ import {
 } from "@/lib/retention-cohorts";
 import { aggregatePublications } from "@/lib/publication-funnel";
 import { buildOverview } from "@/lib/overview-analytics";
+import { summarizeHomepageSharing } from "@/lib/homepage-sharing";
 import {
   buildSessions,
   classifyAutomation,
@@ -544,6 +545,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
 
   return {
     overview,
+    homepageSharing: summarizeHomepageSharing(keptRows),
     metrics: {
       people: canonical.uniqueVisitors,
       usedTorah: usedVisitors.size,
