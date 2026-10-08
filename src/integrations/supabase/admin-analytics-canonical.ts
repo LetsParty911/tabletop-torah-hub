@@ -544,13 +544,11 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
     .map((session) => {
       const events = session.events;
       const titles = [...new Set(events.map((event) => event.publication).filter(Boolean))].slice(0, 2);
-      const opened = events.some((event) => event.event === "pdf_open");
-      const downloaded = events.some((event) => event.event === "download");
-      const did = downloaded
-        ? "requested a download"
-        : opened
-          ? "opened a PDF"
-          : `viewed ${session.pageviews} ${session.pageviews === 1 ? "page" : "pages"}`;
+      const did = describeRecentStoryAction({
+        usedTorahReason: session.usedTorahReason,
+        pageviews: session.pageviews,
+        events: session.events,
+      });
       const confidenceLabel = CONFIDENCE_LABELS[confidenceBySession.get(session.sessionId) ?? "uncertain"];
       return {
         at: session.startedAt,
