@@ -39,7 +39,8 @@ const LENGTH_VALUES = ["All", "short", "long", "study"] as const;
 
 /** Lenient parsing: any unexpected value falls back to the default. */
 function parseArchiveSearch(input: Record<string, unknown>): ResolvedArchiveSearch {
-  const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  const str = (v: unknown) =>
+    typeof v === "string" || typeof v === "number" ? String(v).trim() : "";
   const audience = str(input['audience']) as NonNullable<ArchiveSearch["audience"]>;
   const length = str(input['length']) as NonNullable<ArchiveSearch["length"]>;
   return {
