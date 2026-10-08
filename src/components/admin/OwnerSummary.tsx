@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import OpenPdfClicksPanel from "@/components/admin/OpenPdfClicksPanel";
 import {
   adminRetentionCohorts,
   type adminAnalyticsReport,
@@ -139,6 +140,8 @@ export default function OwnerSummary({
           </p>
         </details>
       </Block>
+
+      <OpenPdfClicksPanel data={data} />
 
       <Block title="What they did">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
