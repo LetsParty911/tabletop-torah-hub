@@ -45,6 +45,10 @@ export type OpenPdfSummary = {
   total: number;
   uniqueSessions: number;
   uniqueVisitors: number;
+  /** Distinct non-empty publication IDs across qualified clicks. Never inferred from titles. */
+  uniquePublications: number;
+  /** Qualified clicks with no publication ID (excluded from uniquePublications). */
+  clicksMissingPublicationId: number;
   byPublication: Array<{ publicationId: string | null; title: string; clicks: number; sessions: number; lastAt: string }>;
   byPage: Array<{ page: string; clicks: number }>;
 };
@@ -67,7 +71,8 @@ export function summarizeOpenPdfClicks(rows: OpenPdfRow[]): OpenPdfSummary {
   for (const row of clicks) {
     const id = row.publication_id?.trim() || null;
     const title = row.publication_title?.trim() || id || "Unknown publication";
-    const key = id ?? `title:${title}`;
+    // Missing IDs are never merged by title: each such click stays its own row.
+    const key = id ? `id:${id}` : `missing:${row.event_id ?? ""}|${row.session_id}|${row.occurred_at}`;
     const entry = pubs.get(key) ?? { publicationId: id, title, clicks: 0, sessions: new Set<string>(), lastAt: row.occurred_at };
     entry.clicks += 1;
     if (row.session_id) entry.sessions.add(row.session_id);
@@ -80,11 +85,23 @@ export function summarizeOpenPdfClicks(rows: OpenPdfRow[]): OpenPdfSummary {
     total: clicks.length,
     uniqueSessions: new Set(clicks.map((r) => r.session_id).filter(Boolean)).size,
     uniqueVisitors: new Set(clicks.map((r) => r.visitor_id).filter(Boolean)).size,
+    uniquePublications: uniqueOpenedPublicationIds(clicks).size,
+    clicksMissingPublicationId: clicks.filter((r) => !r.publication_id?.trim()).length,
     byPublication: [...pubs.values()]
       .map((p) => ({ publicationId: p.publicationId, title: p.title, clicks: p.clicks, sessions: p.sessions.size, lastAt: p.lastAt }))
       .sort((a, b) => b.clicks - a.clicks || b.lastAt.localeCompare(a.lastAt)),
     byPage: [...pages.entries()].map(([page, clicks]) => ({ page, clicks })).sort((a, b) => b.clicks - a.clicks),
   };
+}
+
+/** Distinct publication IDs among tagged Open PDF clicks (deduplicated by event). */
+export function uniqueOpenedPublicationIds(rows: OpenPdfRow[]): Set<string> {
+  const ids = new Set<string>();
+  for (const row of uniqueOpenPdfClicks(rows)) {
+    const id = row.publication_id?.trim();
+    if (id) ids.add(id);
+  }
+  return ids;
 }
 
 /**
@@ -96,7 +113,8 @@ export function openPdfClicksForReport<T extends OpenPdfRow>(allRows: T[], keptS
   const kept = allRows.filter((row) => Boolean(row.session_id && keptSessionIds.has(row.session_id.trim())));
   const summary = summarizeOpenPdfClicks(kept);
   const rawTotal = uniqueOpenPdfClicks(allRows).length;
-  return { ...summary, rawTotal, excluded: Math.max(0, rawTotal - summary.total), keptRows: uniqueOpenPdfClicks(kept) };
+  const rawUniquePublications = uniqueOpenedPublicationIds(allRows).size;
+  return { ...summary, rawTotal, rawUniquePublications, excluded: Math.max(0, rawTotal - summary.total), keptRows: uniqueOpenPdfClicks(kept) };
 }
 
 /**

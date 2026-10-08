@@ -12,7 +12,7 @@ import AnalyticsHealthPanel from "@/components/admin/AnalyticsHealthPanel";
 import CampaignLinkBuilder from "@/components/admin/CampaignLinkBuilder";
 import InternalDeviceControl from "@/components/admin/InternalDeviceControl";
 import AnalyticsControlCenter from "@/components/admin/AnalyticsControlCenter";
-import OpenPdfClicksPanel from "@/components/admin/OpenPdfClicksPanel";
+import OpenPdfClicksPanel, { scrollToOpenPdfPublications } from "@/components/admin/OpenPdfClicksPanel";
 import { formatNyClockSeconds } from "@/lib/open-pdf-clicks";
 import WeeklyOperationsReport from "@/components/admin/WeeklyOperationsReport";
 import { adminAnalyticsReport, type AnalyticsReportRange } from "@/integrations/supabase/admin-analytics-canonical";
@@ -73,15 +73,16 @@ function ReportsSection({ accessToken }: { accessToken: string }) {
 function Overview({ data, accessToken, openDetail }: { data: ReportData; accessToken: string; openDetail: (key: DetailKey, title: string, description: string) => void }) {
   const { report, comparison } = data;
   const m = report.metrics;
-  const story = m.people === 0 ? "There has not been enough reader activity to summarize this period." : `${m.people} ${m.people === 1 ? "person visited" : "people visited"}; ${m.usedTorah} ${m.usedTorah === 1 ? "used" : "used"} Torah, with ${m.openPdfClicks} Open PDF clicks, ${m.pdfOpens} PDF viewer opens and ${m.downloads} download actions.`;
+  const story = m.people === 0 ? "There has not been enough reader activity to summarize this period." : `${m.people} ${m.people === 1 ? "person visited" : "people visited"}; ${m.usedTorah} ${m.usedTorah === 1 ? "used" : "used"} Torah, with ${m.openPdfClicks} Open PDF clicks on ${m.uniquePdfsOpened} unique PDFs, ${m.pdfOpens} PDF viewer opens and ${m.downloads} download actions.`;
   if (m.sessions === 0) return <div className="space-y-8"><EmptyState /><OpenPdfClicksPanel data={data} /><ReportsSection accessToken={accessToken} /></div>;
   return <div className="space-y-8">
     <section><p className="font-serif text-xl leading-relaxed text-foreground">{story}</p><p className="mt-2 text-sm text-muted-foreground">Compared with the prior matching period: {comparison.people} people and {comparison.downloads} download actions.</p></section>
 
-    <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+    <section className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
       <MetricButton label="Likely human visitors" value={m.people} note="High-confidence + likely human only" onClick={() => openDetail("people", "People", "The distinct browser visitors included in this report.")} />
       <MetricButton label="Used Torah" value={m.usedTorah} note="People who clicked Open PDF, opened, downloaded, shared, or signed up" onClick={() => openDetail("usedTorah", "Used Torah", "Sessions with a qualifying Torah action and the reason each qualified.")} />
       <MetricButton label="Open PDF clicks" value={m.openPdfClicks} note="Button taps, not previews or downloads" onClick={() => openDetail("openPdfClicks", "Open PDF button clicks", "Every deliberate Open PDF button click from likely-human visits, newest first.")} />
+      <MetricButton label="Unique PDFs opened" value={m.uniquePdfsOpened} note="Distinct PDFs with an Open PDF click — attempted opens, not verified reading" onClick={scrollToOpenPdfPublications} />
       <MetricButton label="PDF viewer opens" value={m.pdfOpens} note="Embedded preview loads (automatic)" onClick={() => openDetail("pdfOpens", "PDF viewer opens", "Every embedded PDF-preview load in this period. Not a button click.")} />
       <MetricButton label="Download Actions" value={m.downloads} note="Requests, not verified saves" onClick={() => openDetail("downloads", "Download Actions", "Every canonical user-initiated download request in this period.")} />
     </section>
