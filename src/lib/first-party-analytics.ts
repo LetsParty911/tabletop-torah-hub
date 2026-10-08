@@ -431,6 +431,8 @@ const IMMEDIATE: ReadonlySet<string> = new Set<string>([
   "signup",
   "error",
   "publication_click",
+  // Ensure share clicks are recorded even when WhatsApp opens immediately.
+  "share_click",
   "print_click",
   "print_initiated",
   "print_fallback_open",
