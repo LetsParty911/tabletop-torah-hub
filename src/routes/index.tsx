@@ -523,7 +523,7 @@ function Index() {
     Boolean(r.publication_id && TFTT_ORIGINAL_PUBLICATION_IDS.has(r.publication_id));
 
   const clearFilters = () => {
-    setMobileQuickChoice(null);
+    setSelectedChooser(null);
     setAudienceFilter("All");
     setLengthFilter("All");
     setContentTypeFilter("All");
@@ -937,7 +937,7 @@ function Index() {
                                   aria-pressed={active}
                                   aria-label={`Filter by audience: ${audienceLabel(audience)}`}
                                   onClick={() => {
-                                    setMobileQuickChoice(null);
+                                    setSelectedChooser(null);
                                     const next = active ? "All" : audience;
                                     setAudienceFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "audience", value: next } });
@@ -988,7 +988,7 @@ function Index() {
                                   aria-pressed={active}
                                   aria-label={`Filter by length: ${o.label}`}
                                   onClick={() => {
-                                    setMobileQuickChoice(null);
+                                    setSelectedChooser(null);
                                     const next = active ? "All" : o.key;
                                     setLengthFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "length", value: next } });
@@ -1030,7 +1030,7 @@ function Index() {
                                   aria-pressed={active}
                                   aria-label={`Filter by content type: ${o.label}`}
                                   onClick={() => {
-                                    setMobileQuickChoice(null);
+                                    setSelectedChooser(null);
                                     const next = active ? "All" : o.key;
                                     setContentTypeFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "content_type", value: next } });
