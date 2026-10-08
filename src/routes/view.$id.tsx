@@ -16,7 +16,7 @@ import { formatReadingLabel } from "@/lib/parshiyos";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { publicationLabel } from "@/lib/badges";
 import { isYomTovReading, readingSlug } from "@/lib/reading-page";
-import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
+import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -389,7 +389,7 @@ function ViewPdf() {
         )}
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <DownloadAndPrintButtons
+          <DownloadToPrintButton
             href={`/view/${pdf.id}/download`}
             publicationId={pdf.id}
             publicationName={publicationLabel(publication?.name || pdf.publication || pdf.title) || pdf.title}
