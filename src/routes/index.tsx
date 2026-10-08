@@ -391,6 +391,41 @@ function Index() {
     sortedResources.some((r) => typeof r.page_count === "number" && r.page_count < 5) &&
     sortedResources.some((r) => typeof r.page_count === "number" && r.page_count >= 5);
   const contentTypeHasChoice = contentTypeOptions.length > 1;
+
+  // Keep filter state valid when the weekly collection refreshes after hydration.
+  // A stale selection can otherwise hide every card while its option disappears.
+  useEffect(() => {
+    if (
+      audienceFilter !== "All" &&
+      !sortedResources.some((r) => normalizeAudience(r.audience, r.title) === audienceFilter)
+    ) {
+      setAudienceFilter("All");
+    }
+
+    if (lengthFilter !== "All") {
+      const hasSelectedLength = sortedResources.some((r) => {
+        if (typeof r.page_count !== "number") return false;
+        if (lengthFilter === "short") return r.page_count < 5;
+        if (lengthFilter === "study") return r.page_count >= 20;
+        return r.page_count >= 5;
+      });
+      if (!hasSelectedLength) setLengthFilter("All");
+    }
+
+    if (
+      contentTypeFilter !== "All" &&
+      !contentTypeOptions.includes(contentTypeFilter)
+    ) {
+      setContentTypeFilter("All");
+    }
+  }, [
+    sortedResources,
+    audienceFilter,
+    lengthFilter,
+    contentTypeFilter,
+    contentTypeOptions,
+  ]);
+
   const activeFilterCount =
     Number(audienceFilter !== "All") + Number(lengthFilter !== "All") + Number(contentTypeFilter !== "All");
 
