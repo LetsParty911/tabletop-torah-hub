@@ -2,7 +2,7 @@
  * Strategy:
  *  - App shell (navigations): network-first, fallback to cache, then /offline
  *  - Supabase API + dynamic data: network-first with cache fallback
- *  - Static assets (fonts, images, icons, JS/CSS): cache-first
+ *  - Fonts and images: cache-first; JS/CSS: network-first, cache fallback
  *  - PDFs and audio: bypass (do NOT cache)
  */
 const VERSION =
@@ -11,7 +11,7 @@ const SHELL_CACHE = `tftt-shell-${VERSION}`;
 const STATIC_CACHE = `tftt-static-${VERSION}`;
 const DATA_CACHE = `tftt-data-${VERSION}`;
 const OFFLINE_URL = "/offline";
-const PRECACHE_URLS = ["/", OFFLINE_URL, "/manifest.webmanifest", "/favicon.png", "/icon-192.png"];
+const PRECACHE_URLS = [OFFLINE_URL, "/manifest.webmanifest", "/favicon.png", "/icon-192.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -84,13 +84,11 @@ async function cacheFirst(req, cacheName) {
 
 async function handleNavigation(req) {
   try {
-    // Always network-first and never store per-URL navigations: a cached HTML
-    // document would otherwise resurface an old build after a deploy.
-    return await fetch(req);
+    // Never reuse an older HTML app shell after a deployment. Going offline
+    // should display the offline notice, not old Download/Print controls.
+    return await fetch(req, { cache: "no-store" });
   } catch {
     const cache = await caches.open(SHELL_CACHE);
-    const cached = (await cache.match(req)) || (await cache.match("/"));
-    if (cached) return cached;
     const offline = await cache.match(OFFLINE_URL);
     if (offline) return offline;
     return new Response("Offline", { status: 503, statusText: "Offline" });
@@ -113,7 +111,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   if (isStaticAsset(url, req)) {
-    event.respondWith(cacheFirst(req, STATIC_CACHE));
+    // A cached JS/CSS file can keep the previous interface visible even
+    // when the HTML is fresh. Check the network first for those resources;
+    // retain a cache fallback if the device goes offline.
+    const needsFreshCode =
+      req.destination === "script" ||
+      req.destination === "style" ||
+      /\.(js|mjs|css)$/i.test(url.pathname);
+    event.respondWith(needsFreshCode ? networkFirst(req, STATIC_CACHE) : cacheFirst(req, STATIC_CACHE));
     return;
   }
 });
