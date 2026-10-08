@@ -19,7 +19,7 @@ import type { ApproximateGeo } from "./ip-geo.server";
  */
 export const GEO_BLOCKING_ENABLED = true;
 
-export const BLOCK_ACTION = "maintenance page served";
+export const BLOCK_ACTION = "location-restricted page served";
 
 export type BlockedCity = {
   /** Lower-case city name as reported by the geo provider. */
@@ -84,7 +84,7 @@ export function shouldCheck(request: Request, path: string): boolean {
   return (request.headers.get("accept") ?? "").includes("text/html");
 }
 
-const PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>TorahForTheTable.com — Temporarily unavailable</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f7f2e7;color:#1b2a4a;font-family:Georgia,serif;text-align:center;padding:24px}h1{font-size:1.1rem;letter-spacing:.08em;color:#b08a3e;margin:0 0 16px}h2{font-size:2rem;margin:0 0 12px}p{font-family:system-ui,sans-serif;color:#4a5570;margin:0}</style></head><body><main><h1>TorahForTheTable.com</h1><h2>Temporarily unavailable</h2><p>The site is currently undergoing maintenance. Please check back later.</p></main></body></html>`;
+const PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>TorahForTheTable.com — Not available from your location</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f7f2e7;color:#1b2a4a;font-family:Georgia,serif;text-align:center;padding:24px}h1{font-size:1.1rem;letter-spacing:.08em;color:#b08a3e;margin:0 0 16px}h2{font-size:2rem;margin:0 0 12px}p{font-family:system-ui,sans-serif;color:#4a5570;margin:0}</style></head><body><main><h1>TorahForTheTable.com</h1><h2>Not available from your location</h2><p>Access to this site is restricted from your current network location. The site is not under maintenance.</p></main></body></html>`;
 
 export function blockedResponse(): Response {
   return new Response(PAGE, {
@@ -110,6 +110,10 @@ export async function checkGeoBlock(request: Request): Promise<Response | null> 
     const url = new URL(request.url);
     path = url.pathname;
     if (!shouldCheck(request, path)) return null;
+
+    // The owner's admin-marked device (signed HttpOnly cookie) is never blocked.
+    const { isInternalRequest } = await import("./internal-marker.server");
+    if (await isInternalRequest(request)) return null;
 
     const t = getRequestTelemetry(request);
     const { memoGet, memoSet, withBudget, blockedCountries, BLOCK_LOOKUP_BUDGET_MS } = await import("./geo-block-memo");

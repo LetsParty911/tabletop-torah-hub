@@ -201,38 +201,6 @@ function ViewPdf() {
     parsha: pdf.parsha_key ?? null,
   };
 
-  // Active, visible embedded-viewer time in 15-second intervals.
-  useEffect(() => {
-    const el = iframeRef.current;
-    if (!canEmbed || !iframeLoaded || !el || typeof IntersectionObserver === "undefined") return;
-    let visibleEnough = false;
-    let activeMs = 0;
-    let last = Date.now();
-    const isActive = () =>
-      visibleEnough && document.visibilityState === "visible" && (document.hasFocus() || document.activeElement === el);
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) visibleEnough = e.intersectionRatio >= 0.5;
-      },
-      { threshold: [0, 0.5, 1] },
-    );
-    io.observe(el);
-    const tick = window.setInterval(() => {
-      const now = Date.now();
-      if (isActive()) activeMs += now - last;
-      last = now;
-      if (activeMs >= 15000) {
-        activeMs -= 15000;
-        trackFp("pdf_view_active", { ...pubContext, metadata: { active_seconds: 15 } });
-      }
-    }, 1000);
-    return () => {
-      io.disconnect();
-      window.clearInterval(tick);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canEmbed, iframeLoaded, pdf.id]);
-
   const norm = (v: string | null | undefined) => (v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
   const chosenSummary = (pdf.summary_full?.trim() || pdf.summary_quick?.trim() || "") as string;
   const showSummary = chosenSummary.length > 0 && norm(chosenSummary) !== norm(pdf.description);
