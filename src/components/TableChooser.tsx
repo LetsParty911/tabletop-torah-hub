@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 
 import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { normalizeAudience } from "@/lib/audience";
-import { buildDownloadFilename } from "@/lib/download-filename";
 import { trackFp } from "@/lib/first-party-analytics";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
@@ -251,32 +250,15 @@ export function TableChooser({
                   )}
                   <div className="mt-auto flex flex-col gap-2 pt-4">
                     <DownloadAndPrintButtons
-                      href={`/view/${r.id}/download`}
+                      href={`/view/${r.id}/pdf`}
                       publicationId={r.id}
                       publicationName={displayPublicationName(r)}
                       publicationTitle={r.title}
                       publisher={r.publisher}
                       publicationSeries={r.publication}
                       parsha={parshaKey}
-                      filename={buildDownloadFilename(parshaKey, r.publication || r.title)}
-                      label="Download PDF"
                       className="w-full px-4 py-2.5 text-sm font-semibold"
                     />
-                    <Link
-                      to="/view/$id"
-                      params={{ id: r.id }}
-                      onClick={() =>
-                        trackFp("recommendation_click", {
-                          publication_id: r.id,
-                          publication_title: r.title,
-                          parsha: parshaKey,
-                          metadata: { chooser: selected, action: "view" },
-                        })
-                      }
-                      className="inline-flex w-full items-center justify-center rounded-full border border-accent/45 px-4 py-2 font-serif text-xs font-semibold text-primary transition-colors hover:bg-accent/10"
-                    >
-                      Read details first
-                    </Link>
                   </div>
                 </div>
               ))}

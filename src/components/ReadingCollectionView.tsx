@@ -7,7 +7,6 @@ import type {
 } from "@/integrations/supabase/reading-pages.functions";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
-import { buildDownloadFilename } from "@/lib/download-filename";
 import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -235,21 +234,18 @@ export function ReadingCollectionView({
                     <FileText className="h-5 w-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    {resource.publication_name && resource.publication_slug ? (
-                      <Link
-                        to="/publication/$slug"
-                        params={{ slug: resource.publication_slug }}
-                        className="font-serif text-lg font-bold leading-snug text-primary hover:text-accent hover:underline"
-                      >
-                        {resource.publication_name}
-                      </Link>
-                    ) : (
-                      <h2 className="font-serif text-lg font-bold leading-snug text-primary">
+                    <h2 className="font-serif text-lg font-bold leading-snug text-primary">
+                      <Link to="/view/$id" params={{ id: resource.id }} className="hover:text-accent hover:underline">
                         {resource.title}
-                      </h2>
-                    )}
-                    {resource.title !== resource.publication_name && resource.publication_name && (
-                      <p className="mt-0.5 text-xs text-muted-foreground">{resource.title}</p>
+                      </Link>
+                    </h2>
+                    {resource.publication_name && resource.publication_slug && resource.publication_name !== resource.title && (
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        From{" "}
+                        <Link to="/publication/$slug" params={{ slug: resource.publication_slug }} className="hover:text-accent hover:underline">
+                          {resource.publication_name}
+                        </Link>
+                      </p>
                     )}
                     {resource.publisher && (
                       <p className="mt-0.5 text-xs text-muted-foreground">Published by {resource.publisher}</p>
@@ -268,26 +264,15 @@ export function ReadingCollectionView({
                 </div>
 
                 <div className="mt-auto pt-4">
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <Link
-                      to="/view/$id"
-                      params={{ id: resource.id }}
-                      className="inline-flex items-center justify-center rounded-full border border-accent/50 px-4 py-2.5 font-serif font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
-                    >
-                      View & Preview
-                    </Link>
+                  <div>
                     <DownloadAndPrintButtons
-                      href={`/view/${resource.id}/download`}
+                      href={`/view/${resource.id}/pdf`}
                       publicationId={resource.id}
                       publicationName={resource.publication_name || resource.title}
                       publicationTitle={resource.title}
                       publisher={resource.publisher}
                       publicationSeries={resource.publication_name}
                       parsha={resource.parsha_key}
-                      filename={buildDownloadFilename(
-                        resource.parsha_key,
-                        resource.publication_name || resource.title,
-                      )}
                       className="w-full px-4 py-2.5"
                     />
                   </div>

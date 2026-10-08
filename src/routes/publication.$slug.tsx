@@ -5,7 +5,6 @@ import { formatReadingLabel } from "@/lib/parshiyos";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
-import { buildDownloadFilename } from "@/lib/download-filename";
 import { isYomTovReading, readingSlug } from "@/lib/reading-page";
 import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -144,23 +143,15 @@ function PublicationPage() {
         </h3>
         {meta && <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{meta}</p>}
         {description && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>}
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          <Link
-            to="/view/$id"
-            params={{ id: edition.id }}
-            className="inline-flex items-center justify-center rounded-full border border-accent/50 px-4 py-2.5 font-serif font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
-          >
-            View & Preview
-          </Link>
+        <div className="mt-4">
           <DownloadAndPrintButtons
-            href={`/view/${edition.id}/download`}
+            href={`/view/${edition.id}/pdf`}
             publicationId={edition.id}
             publicationName={publication.name}
             publicationTitle={edition.title}
             publisher={publication.publisher}
             publicationSeries={publication.name}
             parsha={edition.parsha_key}
-            filename={buildDownloadFilename(edition.parsha_key, publication.name)}
             className="w-full px-4 py-2.5"
           />
         </div>
@@ -227,7 +218,7 @@ function PublicationPage() {
                 : ""}.
             </p>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Open an edition below to preview the Dvar Torah, read its description and print or download the PDF. Parsha labels link to the permanent Divrei Torah page for that parsha.
+              Open an edition’s PDF directly in your browser, or tap its title to read more details. You can print or save the PDF using your browser controls. Parsha labels link to the permanent Divrei Torah page for that parsha.
             </p>
           </section>
         )}

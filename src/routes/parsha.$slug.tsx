@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, FileText } from "lucide-react";
 import { SiteFooter } from "@/components/SiteFooter";
+import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { getParshaSeoPage } from "@/integrations/supabase/parsha-seo.functions";
 import { VORTS } from "@/data/vorts";
 import { readingSlug } from "@/lib/reading-page";
@@ -222,8 +223,8 @@ function PermanentParshaPage() {
             Printable Divrei Torah for {page.label}
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-            These selections are drawn from the Torah For The Table archive. Open any item to preview
-            it and, where available, print or download the PDF for your Shabbos table.
+            These selections are drawn from the Torah For The Table archive. Open any PDF directly in
+            your browser to read it, then use the browser menu if you wish to print or save it.
           </p>
 
           {page.resources.length > 0 ? (
@@ -252,7 +253,9 @@ function PermanentParshaPage() {
                       <FileText className="mt-1 h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
                       <div>
                         <h3 className="font-serif text-lg font-bold leading-snug text-primary">
-                          {resource.title}
+                          <Link to="/view/$id" params={{ id: resource.id }} className="hover:text-accent hover:underline">
+                            {resource.title}
+                          </Link>
                         </h3>
                         {meta && (
                           <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -266,13 +269,14 @@ function PermanentParshaPage() {
                         )}
                       </div>
                     </div>
-                    <Link
-                      to="/view/$id"
-                      params={{ id: resource.id }}
-                      className="mt-auto pt-4 text-sm font-semibold text-primary underline decoration-accent/60 underline-offset-4 hover:text-accent"
-                    >
-                      View this Dvar Torah
-                    </Link>
+                    <div className="mt-auto pt-4">
+                      <DownloadToPrintButton
+                        href={`/view/${resource.id}/pdf`}
+                        publicationId={resource.id}
+                        publicationTitle={resource.title}
+                        className="w-full"
+                      />
+                    </div>
                   </article>
                 );
               })}

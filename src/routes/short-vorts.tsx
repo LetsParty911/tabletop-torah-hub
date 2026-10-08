@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ChevronDown, Sparkles } from "lucide-react";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
+import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { resolveHebcalParsha } from "@/lib/hebcal";
 import { getParshaOverride, listPublishedPdfs } from "@/integrations/supabase/api.functions";
 import { VORTS, getVortsForParsha, type Vort } from "@/data/vorts";
@@ -199,7 +200,7 @@ function ParshaSection({
               <div className="parchment-panel text-center">
                 <p className="font-serif text-lg font-bold text-primary">Brief Insights for Sukkos</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Available now in this week's collection — open it there to read or download.
+                  Available now in this week's collection — open the PDF there to read or print.
                 </p>
                 <Link
                   to="/"
@@ -215,13 +216,11 @@ function ParshaSection({
                 <p className="font-serif text-lg font-bold text-primary">{publishedPdf.title}</p>
                 <p className="mt-1 text-sm text-muted-foreground">Now available — ready to print for your table.</p>
                 <div className="mt-4 flex flex-col items-center justify-center gap-2 sm:flex-row">
-                  <Link
-                    to="/view/$id"
-                    params={{ id: publishedPdf.id }}
-                    className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                  >
-                    View & Download PDF
-                  </Link>
+                  <DownloadToPrintButton
+                    href={`/view/${publishedPdf.id}/pdf`}
+                    publicationId={publishedPdf.id}
+                    publicationTitle={publishedPdf.title}
+                  />
                 </div>
               </div>
             </div>
