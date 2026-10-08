@@ -24,30 +24,31 @@ export function MobileCollectionControlsBar({ anchorId, count, activeFilterCount
 
   useEffect(() => {
     const anchor = document.getElementById(anchorId);
-    if (!anchor) return;
-    const update = () => {
-      if (window.innerWidth >= 640) {
-        setShow(false);
-        return;
-      }
-      const rect = anchor.getBoundingClientRect();
-      // While its section is in view the in-flow bar stays stuck at top-14 (56px).
-      // Once the section ends it scrolls away — that's when we take over.
-      setShow(rect.top < 50);
-    };
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
+    if (!anchor || typeof IntersectionObserver === "undefined") return;
+
+    // Avoid a scroll handler + getBoundingClientRect() on every frame. The
+    // in-flow controls remain intersecting while sticky; once they leave the
+    // viewport above the header, the fixed clone takes over.
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        if (window.innerWidth >= 640) {
+          setShow(false);
+          return;
+        }
+        setShow(!entry.isIntersecting && entry.boundingClientRect.top < 50);
+      },
+      { rootMargin: "-50px 0px 0px 0px", threshold: 0 },
+    );
+
+    observer.observe(anchor);
+    return () => observer.disconnect();
   }, [anchorId]);
 
   if (!mounted || !show) return null;
 
   return createPortal(
-    <div className="fixed inset-x-0 top-14 z-[70] border-b border-accent/20 bg-background/95 px-3 py-2 backdrop-blur sm:hidden">
+    <div className="fixed inset-x-0 top-14 z-[70] border-b border-accent/20 bg-background px-3 py-2 sm:hidden">
       <div className="flex items-center gap-2">
         <button
           type="button"
