@@ -15,6 +15,7 @@ import {
   type VisitorTimeline,
 } from "@/lib/retention-cohorts";
 import { aggregatePublications } from "@/lib/publication-funnel";
+import { openPdfClicksForReport } from "@/lib/open-pdf-clicks";
 import { buildOverview } from "@/lib/overview-analytics";
 import { summarizeHomepageSharing } from "@/lib/homepage-sharing";
 import {
@@ -38,6 +39,7 @@ import {
 } from "@/lib/admin-reports";
 
 type EventRow = {
+  event_id?: string | null;
   event_name: string | null;
   occurred_at: string;
   visitor_id: string | null;
@@ -125,7 +127,7 @@ function buildCollectionWindows(
 }
 
 const BASE_COLUMNS =
-  "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, publication_series, publisher, device_type, source_group, country, region, city, postal_code, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign, metadata, user_agent";
+  "event_id, event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, publication_series, publisher, device_type, source_group, country, region, city, postal_code, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign, metadata, user_agent";
 
 // Newer columns. Some environments may not have every one of them yet, so the
 // first query probes once and the answer is cached for the worker instance.
@@ -324,6 +326,10 @@ type ReportDetail = {
   publication: string | null;
   source: string;
   reason: string | null;
+  publicationId?: string | null;
+  device?: string | null;
+  location?: string | null;
+  referrer?: string | null;
 };
 
 function reportWindow(range: AnalyticsReportRange, collection: WindowDef | null, custom?: { start?: string; end?: string }) {
@@ -407,6 +413,10 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
     publication: row.publication_title?.trim() || row.publication_id?.trim() || null,
     source: row.source_group?.trim() || "Direct",
     reason,
+    publicationId: row.publication_id?.trim() || null,
+    device: row.device_type?.trim() || null,
+    location: [row.city, row.region, row.country].map((part) => part?.trim()).filter(Boolean).join(", ") || null,
+    referrer: row.referrer_host?.trim() || null,
   });
 
   const sessionDetails = keptSessions.map((session) => {
@@ -525,7 +535,9 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
       };
     });
 
+  const openPdf = openPdfClicksForReport(rows, keptIds);
   const metricDetails = {
+    openPdfClicks: openPdf.keptRows.map((row) => detailFor(row, "Clicked the Open PDF button")).sort((a, b) => b.at.localeCompare(a.at)),
     people: keptRows.filter((row, index, list) => row.visitor_id && list.findIndex((other) => other.visitor_id === row.visitor_id) === index).map((row) => detailFor(row)),
     usedTorah: usedSessions.flatMap((session) => session.events.filter((event) => ["pdf_open", "download", "share_click", "signup"].includes(event.event))),
     pdfOpens: keptRows.filter((row) => row.event_name === "pdf_open").map((row) => detailFor(row)),
@@ -550,6 +562,8 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
       people: canonical.uniqueVisitors,
       usedTorah: usedVisitors.size,
       pdfOpens: metricDetails.pdfOpens.length,
+      openPdfClicks: openPdf.total,
+      openPdfClicksRaw: openPdf.rawTotal,
       downloads: canonical.downloadActions,
       sessions: canonical.sessions,
       engagedSessions: canonical.engagedSessions,
@@ -596,6 +610,15 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
       .sort((a, b) => b.sessions - a.sessions),
     locations: [...locations.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions).slice(0, 20),
     searches: searches.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 50),
+    openPdfClicks: {
+      total: openPdf.total,
+      rawTotal: openPdf.rawTotal,
+      excluded: openPdf.excluded,
+      uniqueSessions: openPdf.uniqueSessions,
+      uniqueVisitors: openPdf.uniqueVisitors,
+      byPublication: openPdf.byPublication,
+      byPage: openPdf.byPage,
+    },
   };
 }
 

@@ -86,3 +86,15 @@ export function summarizeOpenPdfClicks(rows: OpenPdfRow[]): OpenPdfSummary {
     byPage: [...pages.entries()].map(([page, clicks]) => ({ page, clicks })).sort((a, b) => b.clicks - a.clicks),
   };
 }
+
+/**
+ * Human headline uses only rows from sessions the shared classifier kept
+ * (internal/test and suspected automation excluded); the raw count is kept
+ * alongside for audit.
+ */
+export function openPdfClicksForReport<T extends OpenPdfRow>(allRows: T[], keptSessionIds: Set<string>) {
+  const kept = allRows.filter((row) => Boolean(row.session_id && keptSessionIds.has(row.session_id.trim())));
+  const summary = summarizeOpenPdfClicks(kept);
+  const rawTotal = uniqueOpenPdfClicks(allRows).length;
+  return { ...summary, rawTotal, excluded: Math.max(0, rawTotal - summary.total), keptRows: uniqueOpenPdfClicks(kept) };
+}
