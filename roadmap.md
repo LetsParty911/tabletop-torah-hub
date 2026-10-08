@@ -39,3 +39,11 @@
 - [x] Include unique PDFs, clicking visitors, and separate download actions
 - [x] Make Open PDF clicks prevent a false empty summary
 - [x] Run typecheck, build, and all runnable tests
+
+## Poster short links (unpublished, awaiting owner review)
+- [x] /r — OurKehilla poster (unchanged)
+- [x] /s — shul poster: 302 to utm_source=shul / medium=poster / campaign=evergreen_poster_oct2026
+- [x] /j — workplace poster: 302 to utm_source=workplace / medium=poster / campaign=evergreen_poster_oct2026
+- [x] Focused tests, typecheck, local-only verification; sitemap confirmed to omit all four aliases
+- [ ] Publish (owner approval) and then re-verify /r, /s, /j on the live domain
+

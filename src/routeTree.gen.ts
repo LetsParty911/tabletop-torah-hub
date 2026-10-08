@@ -16,6 +16,7 @@ import { Route as AdminAnalyticsRouteImport } from './routes/admin-analytics'
 import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DivreiTorahParshaRouteImport } from './routes/divrei-torah-parsha'
+import { Route as JRouteImport } from './routes/j'
 import { Route as MissionRouteImport } from './routes/mission'
 import { Route as MyTableRouteImport } from './routes/my-table'
 import { Route as OfflineRouteImport } from './routes/offline'
@@ -25,6 +26,7 @@ import { Route as PublicationsRouteImport } from './routes/publications'
 import { Route as RRouteImport } from './routes/r'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as SRouteImport } from './routes/s'
 import { Route as ShortVortsRouteImport } from './routes/short-vorts'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as WaRouteImport } from './routes/wa'
@@ -83,6 +85,11 @@ const DivreiTorahParshaRoute = DivreiTorahParshaRouteImport.update({
   path: '/divrei-torah-parsha',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JRoute = JRouteImport.update({
+  id: '/j',
+  path: '/j',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MissionRoute = MissionRouteImport.update({
   id: '/mission',
   path: '/mission',
@@ -126,6 +133,11 @@ const ResourcesRoute = ResourcesRouteImport.update({
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   id: '/robots.txt',
   path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SRoute = SRouteImport.update({
+  id: '/s',
+  path: '/s',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShortVortsRoute = ShortVortsRouteImport.update({
@@ -247,6 +259,7 @@ export interface FileRoutesByFullPath {
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
+  '/j': typeof JRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
   '/offline': typeof OfflineRoute
@@ -256,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/r': typeof RRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/s': typeof SRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wa': typeof WaRoute
@@ -287,6 +301,7 @@ export interface FileRoutesByTo {
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
+  '/j': typeof JRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
   '/offline': typeof OfflineRoute
@@ -296,6 +311,7 @@ export interface FileRoutesByTo {
   '/r': typeof RRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/s': typeof SRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wa': typeof WaRoute
@@ -328,6 +344,7 @@ export interface FileRoutesById {
   '/archive': typeof ArchiveRoute
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
+  '/j': typeof JRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
   '/offline': typeof OfflineRoute
@@ -337,6 +354,7 @@ export interface FileRoutesById {
   '/r': typeof RRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/s': typeof SRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wa': typeof WaRoute
@@ -370,6 +388,7 @@ export interface FileRouteTypes {
     | '/archive'
     | '/contact'
     | '/divrei-torah-parsha'
+    | '/j'
     | '/mission'
     | '/my-table'
     | '/offline'
@@ -379,6 +398,7 @@ export interface FileRouteTypes {
     | '/r'
     | '/resources'
     | '/robots.txt'
+    | '/s'
     | '/short-vorts'
     | '/sitemap.xml'
     | '/wa'
@@ -410,6 +430,7 @@ export interface FileRouteTypes {
     | '/archive'
     | '/contact'
     | '/divrei-torah-parsha'
+    | '/j'
     | '/mission'
     | '/my-table'
     | '/offline'
@@ -419,6 +440,7 @@ export interface FileRouteTypes {
     | '/r'
     | '/resources'
     | '/robots.txt'
+    | '/s'
     | '/short-vorts'
     | '/sitemap.xml'
     | '/wa'
@@ -450,6 +472,7 @@ export interface FileRouteTypes {
     | '/archive'
     | '/contact'
     | '/divrei-torah-parsha'
+    | '/j'
     | '/mission'
     | '/my-table'
     | '/offline'
@@ -459,6 +482,7 @@ export interface FileRouteTypes {
     | '/r'
     | '/resources'
     | '/robots.txt'
+    | '/s'
     | '/short-vorts'
     | '/sitemap.xml'
     | '/wa'
@@ -491,6 +515,7 @@ export interface RootRouteChildren {
   ArchiveRoute: typeof ArchiveRoute
   ContactRoute: typeof ContactRoute
   DivreiTorahParshaRoute: typeof DivreiTorahParshaRoute
+  JRoute: typeof JRoute
   MissionRoute: typeof MissionRoute
   MyTableRoute: typeof MyTableRoute
   OfflineRoute: typeof OfflineRoute
@@ -500,6 +525,7 @@ export interface RootRouteChildren {
   RRoute: typeof RRoute
   ResourcesRoute: typeof ResourcesRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
+  SRoute: typeof SRoute
   ShortVortsRoute: typeof ShortVortsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WaRoute: typeof WaRoute
@@ -572,6 +598,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DivreiTorahParshaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/j': {
+      id: '/j'
+      path: '/j'
+      fullPath: '/j'
+      preLoaderRoute: typeof JRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mission': {
       id: '/mission'
       path: '/mission'
@@ -633,6 +666,13 @@ declare module '@tanstack/react-router' {
       path: '/robots.txt'
       fullPath: '/robots.txt'
       preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/s': {
+      id: '/s'
+      path: '/s'
+      fullPath: '/s'
+      preLoaderRoute: typeof SRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/short-vorts': {
@@ -825,6 +865,7 @@ const rootRouteChildren: RootRouteChildren = {
   ArchiveRoute: ArchiveRoute,
   ContactRoute: ContactRoute,
   DivreiTorahParshaRoute: DivreiTorahParshaRoute,
+  JRoute: JRoute,
   MissionRoute: MissionRoute,
   MyTableRoute: MyTableRoute,
   OfflineRoute: OfflineRoute,
@@ -834,6 +875,7 @@ const rootRouteChildren: RootRouteChildren = {
   RRoute: RRoute,
   ResourcesRoute: ResourcesRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
+  SRoute: SRoute,
   ShortVortsRoute: ShortVortsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WaRoute: WaRoute,
