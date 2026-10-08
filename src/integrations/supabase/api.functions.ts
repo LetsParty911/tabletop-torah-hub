@@ -325,16 +325,13 @@ async function buildResources(
 
   return Promise.all(
     sorted.map(async (r: any) => {
-      const { data: signed } = await admin.storage
-        .from("pdfs")
-        .createSignedUrl(r.file_path, 60 * 60);
       return {
         id: r.id,
         parsha_key: (r.parsha_key as string | null) ?? null,
         title: displayTitle(r),
         publisher: canonical.get(r.id as string)?.publisher ?? null,
         subtitle: standardizeCopy(r.subtitle),
-        url: signed?.signedUrl ?? "#",
+        url: `/view/${r.id}/download`,
         summary_quick: r.summary_quick,
         summary_audio_path: r.summary_audio_path ?? null,
         primary_category: (r.primary_category as string | null) ?? null,
