@@ -5,7 +5,7 @@ import { FileText, Share2 } from "lucide-react";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
-import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { PublicationCardTracker } from "@/components/PublicationCardTracker";
 import { trackFp } from "@/lib/first-party-analytics";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
@@ -840,7 +840,7 @@ function Index() {
                               </p>
                             )}
                             <div className="mt-auto pt-4">
-                              <DownloadToPrintButton
+                              <DownloadAndPrintButtons
                                 href={`/view/${r.id}/download`}
                                 publicationId={r.id}
                                 publicationName={displayPublicationName(r)}
@@ -1113,7 +1113,7 @@ function Index() {
                       </div>
 
                       <div className="mt-auto pt-4">
-                        <DownloadToPrintButton
+                        <DownloadAndPrintButtons
                           href={`/view/${r.id}/download`}
                           publicationId={r.id}
                           publicationName={displayPublicationName(r)}
