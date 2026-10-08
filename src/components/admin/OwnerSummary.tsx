@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import OpenPdfClicksPanel from "@/components/admin/OpenPdfClicksPanel";
+import OpenPdfClicksPanel, { scrollToOpenPdfPublications } from "@/components/admin/OpenPdfClicksPanel";
 import {
   adminRetentionCohorts,
   type adminAnalyticsReport,
@@ -162,6 +162,12 @@ export default function OwnerSummary({
             value={m.openPdfClicks}
             note="Button taps, not previews or downloads"
             onClick={() => openDetail("openPdfClicks", "Open PDF button clicks", "Every deliberate Open PDF button click from likely-human visits, newest first.")}
+          />
+          <Stat
+            label="Unique PDFs opened"
+            value={m.uniquePdfsOpened}
+            note="Distinct PDFs with an Open PDF click — attempted opens, not verified reading"
+            onClick={scrollToOpenPdfPublications}
           />
           <Stat
             label="PDF viewer opens"

@@ -19,6 +19,11 @@ function exportCsv(rows: Detail[], rangeLabel: string) {
   URL.revokeObjectURL(url);
 }
 
+/** Scrolls to the per-publication table inside the panel on the current tab. */
+export function scrollToOpenPdfPublications() {
+  document.getElementById("open-pdf-by-publication")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 /** Owner-only breakdown of Open PDF button clicks (not viewer previews, not downloads). */
 export default function OpenPdfClicksPanel({ data }: { data: ReportData }) {
   const s: Summary | undefined = data.report.openPdfClicks;
@@ -33,6 +38,13 @@ export default function OpenPdfClicksPanel({ data }: { data: ReportData }) {
             Deliberate taps on the public Open PDF button ({data.rangeLabel}). Separate from PDF viewer previews (automatic) and download actions.
             {" "}{s.total} from likely-human visits · {s.rawTotal} raw ({s.excluded} excluded from human headline, including uncertain, internal/test, automation, or unidentified visits) · {s.uniqueVisitors} visitors · {s.uniqueSessions} visits.
           </p>
+          <p className="mt-2 text-sm">
+            <b>{s.total}</b> Open PDF clicks on <b>{s.uniquePublications}</b> unique {s.uniquePublications === 1 ? "PDF" : "PDFs"} by <b>{s.uniqueVisitors}</b> {s.uniqueVisitors === 1 ? "visitor" : "visitors"}
+            <span className="text-xs text-muted-foreground"> · raw: {s.rawUniquePublications} unique PDFs. Attempted opens, not verified reading or saved downloads.</span>
+          </p>
+          {s.clicksMissingPublicationId > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">{s.clicksMissingPublicationId} {s.clicksMissingPublicationId === 1 ? "click has" : "clicks have"} no publication ID and {s.clicksMissingPublicationId === 1 ? "is" : "are"} not included in the unique PDF count.</p>
+          )}
         </div>
         <button type="button" onClick={() => exportCsv(rows, data.rangeLabel)} disabled={!rows.length} className="rounded-full border border-primary/40 px-3 py-1.5 text-xs font-medium text-primary hover:bg-accent/15 disabled:opacity-50">
           Export CSV
@@ -42,13 +54,13 @@ export default function OpenPdfClicksPanel({ data }: { data: ReportData }) {
         <p className="mt-3 text-sm text-muted-foreground">No Open PDF clicks in this period.</p>
       ) : (
         <div className="mt-4 grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 overflow-x-auto">
-            <h4 className="text-sm font-semibold">By publication</h4>
+          <div id="open-pdf-by-publication" className="lg:col-span-2 overflow-x-auto scroll-mt-24">
+            <h4 className="text-sm font-semibold">By publication ({s.uniquePublications} unique PDFs)</h4>
             <table className="mt-2 w-full min-w-[420px] text-left text-xs">
               <thead className="text-muted-foreground"><tr><th className="py-1">Publication</th><th>Clicks</th><th>Visits</th><th>Last click (ET)</th></tr></thead>
               <tbody className="divide-y divide-border">
                 {s.byPublication.map((p) => (
-                  <tr key={p.publicationId ?? p.title}><td className="py-1 pr-2">{p.title}{p.publicationId && <code className="block text-[10px] text-muted-foreground">{p.publicationId}</code>}</td><td>{p.clicks}</td><td>{p.sessions}</td><td>{fmt(p.lastAt)}</td></tr>
+                  <tr key={p.publicationId ?? `missing-${p.title}-${p.lastAt}`}><td className="py-1 pr-2">{p.title}{p.publicationId ? <code className="block text-[10px] text-muted-foreground">{p.publicationId}</code> : <span className="block text-[10px] text-muted-foreground">No publication ID</span>}</td><td>{p.clicks}</td><td>{p.sessions}</td><td>{fmt(p.lastAt)}</td></tr>
                 ))}
               </tbody>
             </table>

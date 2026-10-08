@@ -72,3 +72,54 @@ describe("Open PDF click detail shaping", () => {
     expect(csvCell("plain")).toBe("plain");
   });
 });
+
+describe("Unique PDFs opened", () => {
+  it("repeated clicks on one doc + one on another: 4 clicks, 2 PDFs, 1 reader", () => {
+    const s = summarizeOpenPdfClicks([row({}), row({}), row({}), row({ publication_id: "p2", publication_title: "Other" })]);
+    expect(s.total).toBe(4);
+    expect(s.uniquePublications).toBe(2);
+    expect(s.uniqueVisitors).toBe(1);
+  });
+  it("same title, different IDs stay distinct", () => {
+    const s = summarizeOpenPdfClicks([row({ publication_id: "a" }), row({ publication_id: "b" })]);
+    expect(s.uniquePublications).toBe(2);
+    expect(s.byPublication).toHaveLength(2);
+  });
+  it("retried transport with same event_id counts once", () => {
+    const s = summarizeOpenPdfClicks([row({ event_id: "x" }), row({ event_id: "x" }), row({ event_id: "y", publication_id: "p2" })]);
+    expect(s.total).toBe(2);
+    expect(s.uniquePublications).toBe(2);
+  });
+  it("missing IDs are not guessed from titles and are reported", () => {
+    const s = summarizeOpenPdfClicks([row({ publication_id: null }), row({ publication_id: "  " }), row({})]);
+    expect(s.total).toBe(3);
+    expect(s.uniquePublications).toBe(1);
+    expect(s.clicksMissingPublicationId).toBe(2);
+    expect(s.byPublication.filter((p) => p.publicationId === null)).toHaveLength(2);
+  });
+  it("ignores automatic previews, untagged selections, downloads", () => {
+    const s = summarizeOpenPdfClicks([
+      row({ event_name: "pdf_open", publication_id: "z1" }),
+      row({ metadata: {}, publication_id: "z2" }),
+      row({ event_name: "download", publication_id: "z3" }),
+    ]);
+    expect(s.total).toBe(0);
+    expect(s.uniquePublications).toBe(0);
+  });
+  it("bot/internal sessions excluded from headline but kept in raw", () => {
+    const r = openPdfClicksForReport([row({ session_id: "human" }), row({ session_id: "bot", publication_id: "p9" })], new Set(["human"]));
+    expect(r.uniquePublications).toBe(1);
+    expect(r.rawUniquePublications).toBe(2);
+    expect(r.excluded).toBe(1);
+  });
+  it("period filtering: only rows passed in are counted (range applied upstream)", () => {
+    const all = [row({ occurred_at: "2026-10-01T00:00:00Z", publication_id: "old" }), row({ occurred_at: "2026-10-08T00:00:00Z" })];
+    const inRange = all.filter((r) => r.occurred_at >= "2026-10-05");
+    expect(summarizeOpenPdfClicks(inRange).uniquePublications).toBe(1);
+  });
+  it("matches byPublication rows with IDs and sums to total", () => {
+    const s = summarizeOpenPdfClicks([row({}), row({}), row({ publication_id: "p2" }), row({ publication_id: null })]);
+    expect(s.byPublication.filter((p) => p.publicationId).length).toBe(s.uniquePublications);
+    expect(s.byPublication.reduce((n, p) => n + p.clicks, 0)).toBe(s.total);
+  });
+});
