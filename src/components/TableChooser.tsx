@@ -262,21 +262,6 @@ export function TableChooser({
                       label="Download PDF"
                       className="w-full px-4 py-2.5 text-sm font-semibold"
                     />
-                    <Link
-                      to="/view/$id"
-                      params={{ id: r.id }}
-                      onClick={() =>
-                        trackFp("recommendation_click", {
-                          publication_id: r.id,
-                          publication_title: r.title,
-                          parsha: parshaKey,
-                          metadata: { chooser: selected, action: "view" },
-                        })
-                      }
-                      className="inline-flex w-full items-center justify-center rounded-full border border-accent/45 px-4 py-2 font-serif text-xs font-semibold text-primary transition-colors hover:bg-accent/10"
-                    >
-                      Read details first
-                    </Link>
                   </div>
                 </div>
               ))}
