@@ -156,7 +156,7 @@ export function UpdateCountdown({
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
           {remaining !== null && remaining > 0 && typeof availableCount === "number" && availableCount > 0
-            ? `${availableCount} ${availableCount === 1 ? "Dvar Torah posted" : "Divrei Torah posted"} so far — more coming Wednesday & Thursday.`
+            ? `${availableCount} ${availableCount === 1 ? "Dvar Torah posted" : "Divrei Torah posted"} so far — more coming.`
             : "Choose. Print. Enjoy."}
         </p>
         <a
