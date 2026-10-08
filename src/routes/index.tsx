@@ -14,7 +14,6 @@ import { withUtm } from "@/lib/utm";
 
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
-import { buildDownloadFilename } from "@/lib/download-filename";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
@@ -448,13 +447,6 @@ function Index() {
     return { key, label: labels[key], trackingLabel: chooser?.label ?? labels[key] };
   });
 
-  const pdfParams = (r: Resource) => ({
-    file_id: r.id,
-    file_title: r.title,
-    source_name: r.title,
-    parsha: displayedParshaKey ?? undefined,
-  });
-
   const pageCountLabel = (r: Resource) => {
     if (typeof r.page_count !== "number") return null;
     const pages = `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`;
@@ -466,7 +458,7 @@ function Index() {
     medium: "share",
     campaign: "weekly-share",
   });
-  const shareText = `${resources.length} free, handpicked Divrei Torah for ${isSukkosSeason ? "Sukkos, Shmini Atzeres & Simchas Torah" : displayedLabel} — ready to download and print: ${shareLink}`;
+  const shareText = `${resources.length} free, handpicked Divrei Torah for ${isSukkosSeason ? "Sukkos, Shmini Atzeres & Simchas Torah" : displayedLabel} — ready to read or print: ${shareLink}`;
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
   const ShareButton = ({ className }: { className?: string }) => (
@@ -598,7 +590,7 @@ function Index() {
                     {resources.length} {resources.length === 1 ? "selection" : "selections"}
                   </span>{" "}
                   {postShabbos
-                    ? "still available to download below"
+                    ? "still available to open below"
                     : `for ${isSukkosSeason ? "Sukkos, Shmini Atzeres & Simchas Torah" : displayedLabel}`}
                 </>
               )}
@@ -826,23 +818,13 @@ function Index() {
                             )}
                             <div className="mt-auto pt-4">
                               <DownloadAndPrintButtons
-                                href={`/view/${r.id}/download`}
+                                href={`/view/${r.id}/pdf`}
                                 publicationId={r.id}
                                 publicationName={displayPublicationName(r)}
                                 publicationTitle={r.title}
                                 publisher={r.publisher}
                                 publicationSeries={r.publication}
                                 parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
-                                filename={buildDownloadFilename(
-                                  (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
-                                  r.publication || r.title,
-                                )}
-                                onClick={() => {
-                                  trackEvent("pdf_download", pdfParams(r));
-                                  if (typeof window !== "undefined") {
-                                    window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
-                                  }
-                                }}
                                 className="w-full px-3 py-2.5 lg:py-2"
                               />
                                <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
@@ -1102,23 +1084,13 @@ function Index() {
 
                       <div className="mt-auto pt-4">
                         <DownloadAndPrintButtons
-                          href={`/view/${r.id}/download`}
+                          href={`/view/${r.id}/pdf`}
                           publicationId={r.id}
                           publicationName={displayPublicationName(r)}
                           publicationTitle={r.title}
                           publisher={r.publisher}
                           publicationSeries={r.publication}
                           parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
-                          filename={buildDownloadFilename(
-                            (r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey,
-                            r.publication || r.title,
-                          )}
-                          onClick={() => {
-                            trackEvent("pdf_download", pdfParams(r));
-                            if (typeof window !== "undefined") {
-                              window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
-                            }
-                          }}
                           className="w-full px-3 py-2.5 lg:py-2"
                         />
                         <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
