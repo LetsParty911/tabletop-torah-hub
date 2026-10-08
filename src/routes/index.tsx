@@ -653,28 +653,50 @@ function Index() {
             <h2 id="mobile-quick-choices" className="sr-only">Choose what fits your table</h2>
             <div className="grid grid-cols-2 gap-2">
               {quickChoices.map((choice) => {
-                const active = selectedChooser === choice.key;
+                const active =
+                  choice.key === "family"
+                    ? audienceFilter === "Families" && contentTypeFilter === "All"
+                    : choice.key === "kids"
+                      ? audienceFilter === "Children" && contentTypeFilter === "All"
+                      : choice.key === "quick"
+                        ? contentTypeFilter === "Brief Insights" && audienceFilter === "All"
+                        : contentTypeFilter === "Stories" && audienceFilter === "All";
                 return (
                   <button
                     key={choice.key}
                     type="button"
                     aria-pressed={active}
                     onClick={() => {
-                      const next = active ? null : choice.key;
-                      setSelectedChooser(next);
-                      if (next) {
-                        trackFp("chooser_select", {
-                          metadata: { chooser: next, label: choice.trackingLabel },
-                        });
-                        window.requestAnimationFrame(() => {
-                          document.getElementById("shabbos-table-chooser")?.scrollIntoView({
-                            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                              ? "auto"
-                              : "smooth",
-                            block: "start",
-                          });
-                        });
+                      setSelectedChooser(null);
+                      if (active) {
+                        setAudienceFilter("All");
+                        setContentTypeFilter("All");
+                      } else if (choice.key === "family") {
+                        setAudienceFilter("Families");
+                        setContentTypeFilter("All");
+                      } else if (choice.key === "kids") {
+                        setAudienceFilter("Children");
+                        setContentTypeFilter("All");
+                      } else if (choice.key === "quick") {
+                        setAudienceFilter("All");
+                        setContentTypeFilter("Brief Insights");
+                      } else {
+                        setAudienceFilter("All");
+                        setContentTypeFilter("Stories");
                       }
+                      setLengthFilter("All");
+                      setFiltersOpen(false);
+                      trackFp("filter_change", {
+                        metadata: { filter: "mobile_quick_choice", value: active ? "All" : choice.key },
+                      });
+                      window.requestAnimationFrame(() => {
+                        document.getElementById("this-weeks-collection")?.scrollIntoView({
+                          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                            ? "auto"
+                            : "smooth",
+                          block: "start",
+                        });
+                      });
                     }}
                     className={`min-w-0 rounded-lg border px-3 py-2.5 font-serif text-sm font-semibold transition-colors ${
                       active
