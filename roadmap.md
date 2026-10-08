@@ -38,4 +38,4 @@
 - [x] Replace the misleading download-only tile with deliberate Open PDF click metrics
 - [x] Include unique PDFs, clicking visitors, and separate download actions
 - [x] Make Open PDF clicks prevent a false empty summary
-- [ ] Run typecheck, build, and all runnable tests
+- [x] Run typecheck, build, and all runnable tests
