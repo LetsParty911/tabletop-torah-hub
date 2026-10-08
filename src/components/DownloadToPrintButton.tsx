@@ -2,7 +2,7 @@ import { getAttribution, getSessionId } from "@/lib/site-analytics";
 import { getSessionId as getFpSessionId, getVisitorId, newActionId, trackFp } from "@/lib/first-party-analytics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { AlertCircle, Download, Loader2 } from "lucide-react";
+import { AlertCircle, Download, Loader2, Printer } from "lucide-react";
 
 /** Public storage host that /view/:id/download redirects to (public bucket). */
 const PDF_STORAGE_ORIGIN = "https://kwdeyzumetmjcvtbqnzl.supabase.co";
@@ -133,6 +133,7 @@ export function DownloadToPrintButton({
 }: DownloadToPrintButtonProps) {
   const displayName = publicationName ?? publicationTitle;
   const buttonLabel = label ?? "Download PDF";
+  const printHref = publicationId ? `/view/${publicationId}/pdf` : href.replace(/\/download(?:\?.*)?$/, "/pdf");
 
   type DownloadPhase = "idle" | "starting" | "error";
   const [phase, setPhase] = useState<DownloadPhase>("idle");
