@@ -8,7 +8,7 @@ import type {
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { buildDownloadFilename } from "@/lib/download-filename";
-import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { SiteFooter } from "@/components/SiteFooter";
 
@@ -276,7 +276,7 @@ export function ReadingCollectionView({
                     >
                       View & Preview
                     </Link>
-                    <DownloadToPrintButton
+                    <DownloadAndPrintButtons
                       href={`/view/${resource.id}/download`}
                       publicationId={resource.id}
                       publicationName={resource.publication_name || resource.title}
