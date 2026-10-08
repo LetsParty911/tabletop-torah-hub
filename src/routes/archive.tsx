@@ -3,7 +3,6 @@ import { FileText, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
 import { listArchiveAll, type ArchivePageInput } from "@/integrations/supabase/archive-all.functions";
-import { trackEvent } from "@/lib/analytics";
 import { trackSearch } from "@/lib/site-analytics";
 import { trackFp } from "@/lib/first-party-analytics";
 import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
@@ -11,7 +10,6 @@ import { PublicationCardTracker } from "@/components/PublicationCardTracker";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
-import { buildDownloadFilename } from "@/lib/download-filename";
 import { normalizeAudience, audienceLabel, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
@@ -111,7 +109,7 @@ export const Route = createFileRoute("/archive")({
       ? `${parshaLabel}${yearPart} — Archive | Torah For The Table`
       : "Archive — Torah For The Table";
     const description = parshaLabel
-      ? `Printable Divrei Torah for ${parshaLabel}${yearPart} from the Torah For The Table archive — free downloads for children, families, and adults.`
+      ? `Printable Divrei Torah for ${parshaLabel}${yearPart} from the Torah For The Table archive — free PDFs for children, families, and adults.`
       : "Browse the archive of past weekly Divrei Torah collections for Shabbos and Yom Tov.";
 
     const base = "https://torahforthetable.com/archive";
@@ -682,29 +680,13 @@ function ArchivePage() {
 
                               <div className="mt-4">
                                 <DownloadAndPrintButtons
-                                  href={`/view/${r.id}/download`}
+                                  href={`/view/${r.id}/pdf`}
                                   publicationId={r.id}
                                   publicationName={publicationLabel(r.publication) || r.title}
                                   publicationTitle={r.title}
                                   publisher={r.publisher}
                                   publicationSeries={r.publication}
                                   parsha={p.parshaKey}
-                                  filename={buildDownloadFilename(
-                                    p.parshaKey,
-                                    (r as { publication?: string | null }).publication || r.title,
-                                  )}
-                                  onClick={() => {
-                                    trackEvent("pdf_download", {
-                                      file_id: r.id,
-                                      file_title: r.title,
-                                      source_name: r.title,
-                                      parsha: p.parshaKey,
-                                      jewish_year: y.year,
-                                    });
-                                    if (typeof window !== "undefined") {
-                                      window.dispatchEvent(new CustomEvent("tftt:download-clicked"));
-                                    }
-                                  }}
                                   className="w-full"
                                 />
                                 <div className="mt-2 flex justify-center">
