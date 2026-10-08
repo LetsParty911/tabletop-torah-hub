@@ -7,7 +7,6 @@ import type {
 } from "@/integrations/supabase/reading-pages.functions";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
-import { buildDownloadFilename } from "@/lib/download-filename";
 import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -267,17 +266,13 @@ export function ReadingCollectionView({
                 <div className="mt-auto pt-4">
                   <div>
                     <DownloadAndPrintButtons
-                      href={`/view/${resource.id}/download`}
+                      href={`/view/${resource.id}/pdf`}
                       publicationId={resource.id}
                       publicationName={resource.publication_name || resource.title}
                       publicationTitle={resource.title}
                       publisher={resource.publisher}
                       publicationSeries={resource.publication_name}
                       parsha={resource.parsha_key}
-                      filename={buildDownloadFilename(
-                        resource.parsha_key,
-                        resource.publication_name || resource.title,
-                      )}
                       className="w-full px-4 py-2.5"
                     />
                   </div>
