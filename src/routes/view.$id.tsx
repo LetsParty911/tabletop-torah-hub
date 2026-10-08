@@ -205,17 +205,17 @@ function ViewPdf() {
 
   const handlePrint = () => {
     trackFp("print_click", pubContext);
-    const frame = iframeRef.current;
-    const win = canEmbed && iframeLoaded ? frame?.contentWindow : null;
-    if (win && typeof win.print === "function") {
-      try {
+    try {
+      const frame = iframeRef.current;
+      const win = canEmbed && iframeLoaded ? frame?.contentWindow : null;
+      if (win && typeof win.print === "function") {
         win.focus();
         win.print();
         trackFp("print_initiated", pubContext);
         return;
-      } catch {
-        /* fall through to the new-tab viewer */
       }
+    } catch {
+      /* Cross-origin or viewer access failed; fall through to the new-tab viewer. */
     }
     window.open(viewerSrc, "_blank", "noopener,noreferrer");
     trackFp("print_fallback_open", pubContext);
