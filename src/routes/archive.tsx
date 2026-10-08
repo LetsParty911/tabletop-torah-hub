@@ -2,7 +2,7 @@ import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack
 import { FileText, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
-import { listArchiveAll } from "@/integrations/supabase/archive-all.functions";
+import { listArchiveAll, type ArchivePageInput } from "@/integrations/supabase/archive-all.functions";
 import { trackEvent } from "@/lib/analytics";
 import { trackSearch } from "@/lib/site-analytics";
 import { trackFp } from "@/lib/first-party-analytics";
@@ -71,7 +71,8 @@ function stripDefaults(s: ResolvedArchiveSearch) {
 
 export const Route = createFileRoute("/archive")({
   component: ArchivePage,
-  loader: () => listArchiveAll(),
+  loaderDeps: ({ search }) => parseArchiveSearch(search as Record<string, unknown>),
+  loader: ({ deps }) => listArchiveAll({ data: deps as ArchivePageInput }),
   validateSearch: (search: Record<string, unknown>): ArchiveSearch =>
     parseArchiveSearch(search),
   search: {
@@ -197,7 +198,18 @@ export const Route = createFileRoute("/archive")({
 });
 
 function ArchivePage() {
-  const { years } = Route.useLoaderData() as { years: ArchiveYear[] };
+  const {
+    years,
+    yearOptions,
+    allParshiyos,
+    typeOptions,
+    publicationOptions,
+    audienceCounts,
+    totalPdfs,
+    totalPages,
+    safePage,
+    archiveTotal,
+  } = Route.useLoaderData();
   const rawSearch = Route.useSearch();
   const search = parseArchiveSearch(rawSearch as Record<string, unknown>);
   const navigate = useNavigate({ from: Route.fullPath });
@@ -246,162 +258,18 @@ function ArchivePage() {
     return () => clearTimeout(t);
   }, [queryDraft, query]);
 
-  const allParshiyos = useMemo(() => {
-    const set = new Set<string>();
-    for (const y of years) for (const p of y.parshiyos) set.add(p.parshaKey);
-    return Array.from(set).sort();
-  }, [years]);
-
-  const matchesLength = (r: ArchivePdf) =>
-    lengthFilter === "All"
-      ? true
-      : typeof r.page_count === "number"
-        ? lengthFilter === "short"
-          ? r.page_count < 5
-          : lengthFilter === "study"
-            ? r.page_count >= 20
-            : r.page_count >= 5
-        : false;
-  const resourceType = (r: ArchivePdf) =>
-    r.content_type === "Questions & Answers"
-      ? "Questions & Answers"
-      : formatTypeLabel(r.format_type);
-  const matchesType = (r: ArchivePdf) =>
-    typeFilter === "All" || resourceType(r) === typeFilter;
-  // Publication filter uses only the canonical publication value — never the
-  // PDF title — so unlinked one-off PDFs don't become fake publications.
-  const canonicalPub = (r: ArchivePdf) => {
-    const p = r.publication?.trim();
-    return p ? p : null;
-  };
-  const matchesPub = (r: ArchivePdf) =>
-    pubFilter === "All" || canonicalPub(r) === pubFilter;
-
-  const allPdfs = useMemo(
-    () => years.flatMap((y) => y.parshiyos.flatMap((p) => p.pdfs)),
-    [years],
-  );
-  const typeOptions = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          allPdfs
-            .map((r) => resourceType(r))
-            .filter((v): v is string => !!v),
-        ),
-      ).sort((a, b) => a.localeCompare(b)),
-    [allPdfs],
-  );
-  const publicationOptions = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          allPdfs
-            .map((r) => canonicalPub(r))
-            .filter((v): v is string => !!v),
-        ),
-      ).sort(
-        (a, b) => a.localeCompare(b),
-      ),
-    [allPdfs],
-  );
-
-  const filteredYears = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const out: ArchiveYear[] = [];
-    for (const y of years) {
-      if (yearFilter !== "all" && String(y.year) !== yearFilter) continue;
-      const parshiyos: ArchiveParsha[] = [];
-      for (const p of y.parshiyos) {
-        if (parshaFilter !== "all" && p.parshaKey !== parshaFilter) continue;
-        let pdfs = q
-          ? p.pdfs.filter((r) =>
-              [r.title, r.publication, r.publisher, r.subtitle, r.description]
-                .filter(Boolean)
-                .some((v) => (v as string).toLowerCase().includes(q)),
-            )
-          : p.pdfs;
-        if (audienceFilter !== "All") {
-          pdfs = pdfs.filter(
-            (r) => normalizeAudience(r.audience, r.title) === audienceFilter,
-          );
-        }
-        pdfs = pdfs.filter((r) => matchesLength(r) && matchesType(r) && matchesPub(r));
-        if (pdfs.length) parshiyos.push({ ...p, pdfs });
-      }
-      if (parshiyos.length) out.push({ ...y, parshiyos });
-    }
-    return out;
-  }, [years, yearFilter, parshaFilter, query, audienceFilter, lengthFilter, typeFilter, pubFilter]);
+  const filteredYears = years as ArchiveYear[];
+  const pagedYears = filteredYears;
 
   usePrewarmDownloads(
     useMemo(
       () =>
-        filteredYears
+        pagedYears
           .flatMap((y) => y.parshiyos.flatMap((p) => p.pdfs.map((r) => r.id)))
           .slice(0, 6),
-      [filteredYears],
+      [pagedYears],
     ),
   );
-
-  const audienceCounts = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const counts: Record<"All" | AudienceKey, number> = {
-      All: 0,
-      Children: 0,
-      Families: 0,
-      Adults: 0,
-    };
-    for (const y of years) {
-      if (yearFilter !== "all" && String(y.year) !== yearFilter) continue;
-      for (const p of y.parshiyos) {
-        if (parshaFilter !== "all" && p.parshaKey !== parshaFilter) continue;
-        for (const r of p.pdfs) {
-          if (
-            q &&
-            ![r.title, r.publication, r.publisher, r.subtitle, r.description]
-              .filter(Boolean)
-              .some((v) => (v as string).toLowerCase().includes(q))
-          )
-            continue;
-          if (!matchesLength(r) || !matchesType(r) || !matchesPub(r)) continue;
-          counts.All += 1;
-          const a = normalizeAudience(r.audience, r.title);
-          if (a) counts[a] += 1;
-        }
-      }
-    }
-    return counts;
-  }, [years, yearFilter, parshaFilter, query, lengthFilter, typeFilter, pubFilter]);
-
-  const totalPdfs = filteredYears.reduce(
-    (sum: number, y: ArchiveYear) =>
-      sum + y.parshiyos.reduce((s: number, p: ArchiveParsha) => s + p.pdfs.length, 0),
-    0,
-  );
-
-  const totalPages = Math.max(1, Math.ceil(totalPdfs / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const pagedYears = useMemo(() => {
-    const start = (safePage - 1) * PAGE_SIZE;
-    const end = start + PAGE_SIZE;
-    let cursor = 0;
-    const out: ArchiveYear[] = [];
-    for (const y of filteredYears) {
-      const parshiyos: ArchiveParsha[] = [];
-      for (const p of y.parshiyos) {
-        const next = cursor + p.pdfs.length;
-        const from = Math.max(0, start - cursor);
-        const to = Math.min(p.pdfs.length, end - cursor);
-        if (from < to) parshiyos.push({ ...p, pdfs: p.pdfs.slice(from, to) });
-        cursor = next;
-        if (cursor >= end) break;
-      }
-      if (parshiyos.length) out.push({ ...y, parshiyos });
-      if (cursor >= end) break;
-    }
-    return out;
-  }, [filteredYears, safePage]);
 
   const loggedQuery = useRef<string | null>(null);
   useEffect(() => {
@@ -436,7 +304,7 @@ function ArchivePage() {
             <div className="mt-6 flex items-center justify-center gap-3 sm:gap-4 text-accent">
               <span aria-hidden className="h-px w-8 sm:w-16 bg-accent/60" />
               <span className="font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em]">
-                {totalPdfs} {totalPdfs === 1 ? "Dvar" : "Divrei"} Torah
+                {archiveTotal} {archiveTotal === 1 ? "Dvar" : "Divrei"} Torah
               </span>
               <span aria-hidden className="h-px w-8 sm:w-16 bg-accent/60" />
             </div>
@@ -508,9 +376,9 @@ function ArchivePage() {
                     className="w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
                   >
                     <option value="all">All years</option>
-                    {years.map((y) => (
-                      <option key={y.year} value={String(y.year)}>
-                        {y.year}
+                    {yearOptions.map((year) => (
+                      <option key={year} value={String(year)}>
+                        {year}
                       </option>
                     ))}
                   </select>
