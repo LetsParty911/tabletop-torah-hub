@@ -7,7 +7,7 @@ import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { isYomTovReading, readingSlug } from "@/lib/reading-page";
-import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { SiteFooter } from "@/components/SiteFooter";
 
 export const Route = createFileRoute("/publication/$slug")({
@@ -152,7 +152,7 @@ function PublicationPage() {
           >
             View & Preview
           </Link>
-          <DownloadToPrintButton
+          <DownloadAndPrintButtons
             href={`/view/${edition.id}/download`}
             publicationId={edition.id}
             publicationName={publication.name}
