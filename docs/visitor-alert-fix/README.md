@@ -33,19 +33,46 @@ loads (e.g. owner-identified Lovable test sessions
   secondary metadata and "not proof of a human".
 
 ## Rollout (manual, after approval)
-0. Save current source: `select pg_get_functiondef('public.queue_visitor_alert'::regproc);`,
-   the current `visitor-alert` function code, and the webhook config.
-1. Generate a random secret; add `VISITOR_ALERT_WEBHOOK_SECRET` to the external
-   project's function secrets. Confirm Pushover secret names match `index.ts`.
-2. Deploy `visitor-alert/` with `VISITOR_ALERT_DRY_RUN=1`.
+### Verified current production pieces (external project)
+- Trigger function: `public.queue_visitor_alert()` (AFTER INSERT on `analytics_events`)
+- Raw queue table: `public.visitor_alert_queue`
+- Database webhook: `visitor_alert_push` (INSERT on `visitor_alert_queue` →
+  `visitor-alert`), sends an `Authorization: Bearer …` header
+- Edge Function `visitor-alert`: `verify_jwt = true`
+- Existing secrets: `PUSHOVER_APP_TOKEN` (app token), `PUSHOVER_USER_KEY` (user key).
+  The staged function reads these exact names — **no renaming needed**.
+
+### Steps
+0. Save current state: `select pg_get_functiondef('public.queue_visitor_alert'::regproc);`,
+   the deployed `visitor-alert` source, and the `visitor_alert_push` webhook config
+   (headers redacted when copied anywhere).
+1. Create one strong random value (password manager / `openssl rand -hex 32`) and
+   store it only as function secret `VISITOR_ALERT_WEBHOOK_SECRET`. Never commit it
+   or paste it into files/chat. Leave `PUSHOVER_APP_TOKEN` / `PUSHOVER_USER_KEY` as-is.
+2. Set `VISITOR_ALERT_DRY_RUN=1`, then deploy `visitor-alert/` keeping
+   `verify_jwt = true` (do not disable JWT verification).
+   **Outage note:** from this moment the old `visitor_alert_push` webhook's payloads
+   (table `visitor_alert_queue`, no `x-webhook-secret`) are rejected
+   (`unauthorized` / `wrong_table`), so no Pushover alerts are sent until step 5
+   ends dry-run. Brief, expected, intentional.
 3. Run `migration.sql`.
-4. Change the database webhook: table `engaged_visitor_alert_queue`, INSERT,
-   header `x-webhook-secret: <secret>`. Remove the old visitor_alert_queue webhook.
-5. Click a PDF on the site from a non-internal device; check function logs for
-   `dry_run`. Then unset `VISITOR_ALERT_DRY_RUN` to go live.
+4. Create the new webhook on `engaged_visitor_alert_queue` (INSERT) → `visitor-alert`.
+   Keep the same `Authorization: Bearer …` header the current webhook uses (needed
+   for `verify_jwt`), and add header `x-webhook-secret: <value from step 1>`, entered
+   only in the webhook settings. Then disable/delete `visitor_alert_push`.
+5. Trigger a real deliberate action on the live site from a non-internal device;
+   confirm `dry_run` in function logs; then unset `VISITOR_ALERT_DRY_RUN`.
+
+**What changes and what doesn't:** `queue_visitor_alert()` stays installed, so
+`visitor_alert_queue` **keeps filling** with raw first page views. Only the old
+*push notifications* stop, once `visitor_alert_push` is switched off.
 
 ## Rollback
-Run `rollback.sql`, restore the old webhook and redeploy the saved function.
+Run `rollback.sql`, re-enable `visitor_alert_push` (with its original Bearer header),
+and redeploy the saved original function.
 
 ## Tests
-`src/lib/visitor-alert.test.ts` (Vitest, mock fetch, no network).
+`src/lib/visitor-alert.test.ts` (Vitest, mocked fetch, no network, no database).
+**Never test by inserting events into the live `analytics_events` table** — the
+triggers would fire real queue rows and, after rollout, real Pushover alerts.
+No city, region, ASN, Microsoft or IP-range rules exist anywhere in this fix.
