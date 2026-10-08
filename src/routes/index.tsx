@@ -717,6 +717,23 @@ function Index() {
               </p>
             )}
 
+            {resources.length > 0 && !isCurrentYomKippur && (
+              <section
+                aria-label="Share Torah For The Table"
+                className="mx-auto mt-5 max-w-2xl rounded-2xl border border-accent/60 bg-card/60 px-5 py-5 text-center shadow-sm sm:px-7 sm:py-6"
+              >
+                <p dir="rtl" lang="he" className="font-serif text-2xl font-bold leading-tight text-primary sm:text-3xl">
+                  ואהבת לרעך כמוך
+                </p>
+                <p className="mx-auto mt-2 max-w-lg font-serif text-sm leading-relaxed text-primary sm:text-base">
+                  Share this free resource with a friend or two. Thank you.
+                </p>
+                <div className="mt-4 flex justify-center">
+                  <ShareButton className="w-full border-accent/45 px-5 py-3 text-base sm:w-auto sm:min-w-72" />
+                </div>
+              </section>
+            )}
+
             {featuredPicks.length > 0 && !activeChooser && (
               <p className="mt-5 text-center font-sans text-sm text-muted-foreground">
                 Start with four curated choices, or choose what fits your table.
@@ -1083,23 +1100,6 @@ function Index() {
 
           </div>
         </section>
-
-        {resources.length > 0 && !isCurrentYomKippur && (
-          <section
-            aria-label="Share Torah For The Table"
-            className="mx-auto max-w-2xl rounded-2xl border border-accent/60 bg-card/60 px-5 py-5 text-center shadow-sm sm:px-7 sm:py-6"
-          >
-            <p dir="rtl" lang="he" className="font-serif text-2xl font-bold leading-tight text-primary sm:text-3xl">
-              ואהבת לרעך כמוך
-            </p>
-            <p className="mx-auto mt-2 max-w-lg font-serif text-sm leading-relaxed text-primary sm:text-base">
-              Share this free resource with a friend or two. Thank you.
-            </p>
-            <div className="mt-4 flex justify-center">
-              <ShareButton className="w-full border-accent/45 px-5 py-3 text-base sm:w-auto sm:min-w-72" />
-            </div>
-          </section>
-        )}
 
         <section aria-label="Stay connected" className="mx-auto max-w-2xl">
           <WeeklyEmailSignup
