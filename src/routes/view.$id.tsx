@@ -16,7 +16,7 @@ import { formatReadingLabel } from "@/lib/parshiyos";
 import { buildDownloadFilename } from "@/lib/download-filename";
 import { publicationLabel } from "@/lib/badges";
 import { isYomTovReading, readingSlug } from "@/lib/reading-page";
-import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
+import { DownloadToPrintButton, trackDownloadAction } from "@/components/DownloadToPrintButton";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
