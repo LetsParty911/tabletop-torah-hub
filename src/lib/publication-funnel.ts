@@ -153,7 +153,9 @@ export function aggregatePublications(
   // to the new primary measure. Automatic viewer previews remain in pdfOpens.
   const counted = new Map<string, { opens: number; visitors: Set<string>; sources: Map<string, number>; lastAt: string | null }>();
   for (const row of countedPdfRows) {
-    const key = publicationKey(row);
+    // A missing publication ID still contributes to the headline, but it
+    // cannot be assigned reliably to one publication in the ranked table.
+    const key = row.publication_id?.trim();
     if (!key) continue;
     const current = counted.get(key) ?? { opens: 0, visitors: new Set<string>(), sources: new Map<string, number>(), lastAt: null };
     current.opens++;
