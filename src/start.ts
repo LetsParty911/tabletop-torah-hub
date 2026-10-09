@@ -81,9 +81,11 @@ const cacheControl = createMiddleware().server(async ({ next, request }) => {
 });
 
 /**
- * Ashburn, Virginia visitor block: resolve IP geo server-side, log the attempt
- * to blocked_visits, and serve a static 503 maintenance page. All logic lives
- * in geo-block.server.ts; normal visitors fall through to next().
+ * Blocked-city visitor gate (exact city + region + country rules in
+ * BLOCKED_CITIES): resolve approximate IP location server-side (memoized,
+ * single-flight, time-boxed, fail open), log the attempt to blocked_visits,
+ * and serve a static 403 "not available from your location" page. All logic
+ * lives in geo-block.server.ts; everyone else falls through to next().
  */
 const geoBlock = createMiddleware().server(async ({ next, request }) => {
   const { checkGeoBlock } = await import("@/lib/geo-block.server");
