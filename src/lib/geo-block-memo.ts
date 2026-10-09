@@ -51,3 +51,60 @@ export function withBudget<T>(p: Promise<T>, ms = BLOCK_LOOKUP_BUDGET_MS): Promi
 export function blockedCountries(list: { country: string }[]): Set<string> {
   return new Set(list.map((c) => c.country.toLowerCase()));
 }
+
+// Single-flight: concurrent requests for the same key share ONE in-progress
+// lookup instead of each starting their own provider calls.
+const inflight = new Map<string, Promise<unknown>>();
+
+export function singleFlight<T>(key: string, factory: () => Promise<T>): Promise<T> {
+  const existing = inflight.get(key);
+  if (existing) return existing as Promise<T>;
+  const p = (async () => {
+    try {
+      return await factory();
+    } finally {
+      inflight.delete(key);
+    }
+  })();
+  inflight.set(key, p);
+  return p;
+}
+
+export function inflightCount(): number {
+  return inflight.size;
+}
+
+export const NEGATIVE_MEMO_TTL_MS = 5 * 60 * 1000;
+export const TIMEOUT_RETRY_MS = 60 * 1000;
+
+/**
+ * Memoized, coalesced, time-boxed lookup. The underlying lookup keeps running
+ * after the budget expires and stores its real result when it lands, so the
+ * visitor's NEXT navigation reuses it instead of paying for providers again.
+ * A timeout lets the visitor through (fail open) and is never treated as blocked.
+ */
+export async function memoizedLookup<T>(
+  key: string,
+  lookup: () => Promise<T | null>,
+  budgetMs = BLOCK_LOOKUP_BUDGET_MS,
+): Promise<T | null> {
+  const hit = memoGet<T | null>(key);
+  if (hit !== undefined) return hit;
+  const shared = singleFlight(key, async () => {
+    let v: T | null = null;
+    try {
+      v = await lookup();
+    } catch {
+      v = null;
+    }
+    memoSet(key, v, v ? BLOCK_MEMO_TTL_MS : NEGATIVE_MEMO_TTL_MS);
+    return v;
+  });
+  const result = await withBudget(shared, budgetMs);
+  if (result === null && memoGet(key) === undefined) {
+    // Still running (or failed before storing): short retry window so a slow
+    // provider is not re-called on every navigation.
+    memoSet(key, null, TIMEOUT_RETRY_MS);
+  }
+  return result;
+}
