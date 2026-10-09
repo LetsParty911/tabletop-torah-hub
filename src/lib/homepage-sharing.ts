@@ -19,7 +19,11 @@ export type HomepageSharingEvent = {
 
 const norm = (value?: string | null) => (value ?? "").trim().toLowerCase();
 
-export function summarizeHomepageSharing(rows: HomepageSharingEvent[]) {
+export function summarizeHomepageSharing(
+  rows: HomepageSharingEvent[],
+  /** Rows counted as PDF opens by summarizePdfAccess (identity match). */
+  countedPdfAccess: ReadonlySet<HomepageSharingEvent> = new Set(),
+) {
   let buttonClicks = 0;
   const clickingBrowsers = new Set<string>();
   const linkSessions = new Set<string>();
@@ -52,10 +56,12 @@ export function summarizeHomepageSharing(rows: HomepageSharingEvent[]) {
 
   let linkDownloads = 0;
   let linkPdfOpens = 0;
+  let linkCountedPdfOpens = 0;
   for (const row of rows) {
     if (!row.session_id || !linkSessions.has(row.session_id) || !isTagged(row)) continue;
     if (row.event_name === "download") linkDownloads += 1;
     if (row.event_name === "pdf_open") linkPdfOpens += 1;
+    if (countedPdfAccess.has(row)) linkCountedPdfOpens += 1;
   }
 
   return {
@@ -63,7 +69,11 @@ export function summarizeHomepageSharing(rows: HomepageSharingEvent[]) {
     clickingBrowsers: clickingBrowsers.size,
     linkSessions: linkSessions.size,
     linkVisitors: linkVisitors.size,
+    /** Counted PDF opens (canonical, capped) in tagged-link sessions. */
+    linkCountedPdfOpens,
+    /** Historical audit only. */
     linkDownloads,
+    /** Automatic previews — not deliberate. */
     linkPdfOpens,
     lastClickAt,
     lastLinkVisitAt,

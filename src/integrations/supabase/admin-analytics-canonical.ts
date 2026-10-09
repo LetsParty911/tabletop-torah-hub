@@ -628,7 +628,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
 
   return {
     overview,
-    homepageSharing: summarizeHomepageSharing(keptRows),
+    homepageSharing: summarizeHomepageSharing(keptRows, countedRows),
     metrics: {
       people: canonical.uniqueVisitors,
       usedTorah: usedVisitors.size,
