@@ -70,4 +70,36 @@ describe("aggregatePublications", () => {
     expect(result[0].id).toBeNull();
     expect(result[0].title).toBe("Parshas Vayeitzei Booklet");
   });
+  it("ranks by the already-capped counted open actions rather than automatic viewer loads", () => {
+    const raw = [
+      row({ event_name: "publication_impression" }),
+      row({ event_name: "pdf_open" }),
+      row({ event_name: "pdf_open" }),
+      row({ event_name: "pdf_open" }),
+      row({ event_name: "publication_click", metadata: { action: "open_pdf" }, occurred_at: "2026-10-08T12:00:00Z" }),
+      row({ event_name: "publication_click", publication_id: "other-id", publication_title: "Other", metadata: { action: "open_pdf" }, occurred_at: "2026-10-08T12:01:00Z" }),
+      row({ event_name: "publication_click", publication_id: "other-id", publication_title: "Other", metadata: { action: "open_pdf" }, occurred_at: "2026-10-08T12:02:00Z" }),
+    ];
+    const counted = raw.filter((r) => r.event_name === "publication_click");
+    const result = aggregatePublications(raw, new Set(), counted);
+    expect(result[0]!.id).toBe("other-id");
+    expect(result[0]!.countedPdfOpens).toBe(2);
+    expect(result[1]!.countedPdfOpens).toBe(1);
+    expect(result[1]!.pdfOpens).toBe(3); // viewer previews are separate
+    expect(result.reduce((total, publication) => total + publication.countedPdfOpens, 0)).toBe(counted.length);
+  });
+
+  it("keeps browser identities separate and does not assign missing-ID actions to a ranked publication", () => {
+    const raw = [
+      row({ event_name: "publication_click", visitor_id: "browser-a", metadata: { action: "open_pdf" }, occurred_at: "2026-10-08T12:00:00Z" }),
+      row({ event_name: "publication_click", visitor_id: "browser-b", metadata: { action: "open_pdf" }, occurred_at: "2026-10-08T12:01:00Z" }),
+      row({ event_name: "publication_click", publication_id: null, publication_title: "Parshas Vayeitzei Booklet", metadata: { action: "open_pdf" }, occurred_at: "2026-10-08T12:02:00Z" }),
+    ];
+    const result = aggregatePublications(raw, new Set(), raw);
+    const identified = result.find((p) => p.id === PUB_ID);
+    expect(identified?.countedPdfOpens).toBe(2);
+    expect(identified?.countedVisitors).toBe(2);
+    expect(result.reduce((sum, p) => sum + p.countedPdfOpens, 0)).toBe(2);
+  });
+
 });
