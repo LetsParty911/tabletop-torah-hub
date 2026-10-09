@@ -5,28 +5,16 @@
 // Keep ENGAGED_ALERT_EVENTS identical to src/lib/visitor-alert-classifier.ts
 // and to the SQL allowlist in ../migration.sql (enforced by tests).
 
-export const ENGAGED_ALERT_EVENTS = [
-  "publication_click",
-  "filter_change",
-  "search",
-  "pdf_open",
-  "download",
-  "share_click",
-  "signup",
-  "chooser_select",
-  "recommendation_click",
-  "my_table_add",
-  "my_table_open",
-  "my_table_remove",
-] as const;
+import { ENGAGED_ALERT_EVENTS, isDeliberateAlertAction, qualifiesForEngagedAlert, type AlertSessionRow } from "../../../src/lib/visitor-alert-classifier";
+export { ENGAGED_ALERT_EVENTS };
+
+export type SessionLoader = (sessionId: string) => Promise<AlertSessionRow[] | null>;
 
 export const EXPECTED_TABLE = "engaged_visitor_alert_queue";
 
 const REASON: Record<string, string> = {
-  publication_click: "selected a publication",
+  publication_click: "clicked Open PDF",
   filter_change: "changed a filter",
-  search: "searched",
-  pdf_open: "loaded a PDF preview",
   download: "requested a download",
   share_click: "clicked share",
   signup: "signed up",
@@ -45,6 +33,7 @@ export type AlertResultCode =
   | "bad_payload"
   | "wrong_table"
   | "not_engaged"
+  | "unverified"
   | "internal"
   | "push_failed";
 
@@ -89,6 +78,7 @@ export async function handleAlert(
   body: unknown,
   env: AlertEnv,
   fetchImpl: typeof fetch,
+  loadSession?: SessionLoader,
 ): Promise<AlertResult> {
   if (!env.webhookSecret) return { status: 503, code: "not_configured", detail: "webhook secret missing" };
   const got = headers.get("x-webhook-secret") ?? "";
@@ -104,6 +94,21 @@ export async function handleAlert(
   if (!ev || !(ENGAGED_ALERT_EVENTS as readonly string[]).includes(ev) || !s(r.session_id))
     return { status: 422, code: "not_engaged" };
   if (r.is_internal === true) return { status: 200, code: "internal" };
+
+  const candidate = {
+    event_name: ev!, session_id: s(r.session_id), event_id: s(r.trigger_event_id),
+    metadata: r.trigger_metadata as Record<string, unknown> | null,
+  };
+  if (!isDeliberateAlertAction(candidate)) return { status: 422, code: "not_engaged" };
+  // Fail closed on absent/incomplete evidence or lookup failure. Never trust a
+  // confidence label or session snapshot supplied by the webhook caller.
+  let rows: AlertSessionRow[] | null;
+  try { rows = loadSession ? await loadSession(candidate.session_id!) : null; }
+  catch { return { status: 503, code: "unverified" }; }
+  if (!rows || !candidate.event_id || !rows.some((row) =>
+    row.event_id === candidate.event_id && row.session_id?.trim() === candidate.session_id &&
+    row.event_name === candidate.event_name && isDeliberateAlertAction(row)) ||
+    !qualifiesForEngagedAlert(candidate, rows)) return { status: 200, code: "unverified" };
 
   const msg = buildMessage(r);
   const dry = env.dryRun || r.dry_run === true || headers.get("x-dry-run") === "1";
