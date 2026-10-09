@@ -69,6 +69,17 @@ describe("infrastructure automation rule", () => {
     expect(classifySession({ ...base, infrastructureNetwork: true, meaningfulIntent: true })).toBe("likely_human");
   });
 
+  it("flags infrastructure-only one-page sessions even when cards render", () => {
+    expect(classifySession({ ...base, infrastructureNetwork: true, impressions: 2, durationMs: 15_000 })).toBe("suspected_automation");
+    expect(classifySession({ ...base, infrastructureNetwork: true, impressions: 2, humanSignal: true })).toBe("likely_human");
+    expect(classifySession({ ...base, infrastructureNetwork: true, impressions: 2, meaningfulIntent: true })).toBe("likely_human");
+  });
+
+  it("keeps engaged OVH hosted-network sessions distinct from proven bots", () => {
+    expect(isInfrastructureOrganization("OVH SAS")).toBe(true);
+    expect(classifySession({ ...base, infrastructureNetwork: true, humanSignal: true, meaningfulIntent: true })).toBe("high_confidence_human");
+  });
+
   it("does not flag sustained multi-page infrastructure browsing", () => {
     expect(classifySession({ ...base, infrastructureNetwork: true, pageviews: 3, durationMs: 60_000 })).toBe("likely_human");
   });
