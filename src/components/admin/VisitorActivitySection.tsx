@@ -127,8 +127,8 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
         <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-foreground/80">
           <span>{visitor.sessionsInRange} sessions</span>
           <span>{visitor.pageviews} pageviews</span>
-          <span>{visitor.pdfOpens} PDF opens</span>
-          <span>{visitor.downloads} downloads</span>
+          <span>{visitor.countedPdfOpens} counted PDF opens</span>
+          <span>{visitor.pdfOpens} auto previews · {visitor.downloads} legacy requests</span>
           <span className="text-muted-foreground">{shortId(visitor.visitorId)}</span>
         </div>
       </button>
@@ -501,8 +501,8 @@ export default function VisitorActivitySection({ accessToken, embedded = false }
             <Stat label="Visitors" value={totals.visitors} />
             <Stat label="Sessions" value={totals.sessions} />
             <Stat label="Pageviews" value={totals.pageviews} />
-            <Stat label="PDF opens" value={totals.pdfOpens} />
-            <Stat label="Downloads" value={totals.downloads} />
+            <Stat label="Counted PDF opens" value={totals.countedPdfOpens} />
+            <Stat label="Over-cap opens" value={totals.overCapPdfOpens} />
             <Stat label="Signups" value={totals.signups} />
             <Stat label="Suspected" value={totals.suspectedSessions} />
           </div>
@@ -511,7 +511,7 @@ export default function VisitorActivitySection({ accessToken, embedded = false }
         <p className="mt-3 text-xs text-muted-foreground">
           IP address and browser details are only available for traffic recorded after the recent
           collection update; older events show “{NOT_CAPTURED}”. Showing the most recent{" "}
-          {data?.cap ?? 100} visitors.
+          {data?.cap ?? 100} visitors. Counted PDF opens are qualified deliberate requests capped at five per browser in this time window. Automatic previews and legacy request counters remain visible only in the visitor audit.
         </p>
 
         {loading && !data ? (
