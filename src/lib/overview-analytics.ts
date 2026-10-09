@@ -107,7 +107,7 @@ function num(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export function headlineOf(rows: OverviewRow[], sessions: OverviewSession[], returningVisitors: Set<string>) {
+export function headlineOf(rows: OverviewRow[], sessions: OverviewSession[], returningVisitors: Set<string>, countedPdfRows: OverviewRow[] = []) {
   const visitors = new Set<string>();
   const activeSeconds = new Map<string, number>();
   let pageviews = 0;
@@ -139,6 +139,9 @@ export function headlineOf(rows: OverviewRow[], sessions: OverviewSession[], ret
   const engagedDurations = engaged.map((s) => activeSeconds.get(s.id) ?? 0).filter((v) => v > 0);
   const returning = [...visitors].filter((v) => returningVisitors.has(v)).length;
   const downloading = sessions.filter((s) => s.downloaded).length;
+  const countedPdfSessions = new Set(countedPdfRows.map((row) => row.session_id?.trim()).filter(Boolean));
+  const countedPdfVisitors = new Set(countedPdfRows.map((row) => row.visitor_id?.trim()).filter(Boolean));
+  const countedPublicationIds = new Set(countedPdfRows.map((row) => row.publication_id?.trim()).filter(Boolean));
   return {
     visitors: visitors.size,
     sessions: sessions.length,
@@ -154,6 +157,11 @@ export function headlineOf(rows: OverviewRow[], sessions: OverviewSession[], ret
     newVisitors: visitors.size - returning,
     returningVisitors: returning,
     pdfAccessingSessions: sessions.filter((s) => s.accessedPdf).length,
+    countedPdfOpens: countedPdfRows.length,
+    countedPdfSessions: countedPdfSessions.size,
+    countedPdfVisitors: countedPdfVisitors.size,
+    countedUniquePdfs: countedPublicationIds.size,
+    pdfOpenRate: sessions.length ? countedPdfSessions.size / sessions.length : 0,
     downloadingSessions: downloading,
     uniqueSessionPublicationDownloads: uniqueDownloads.size,
     downloadActions: downloadActions.size,
@@ -164,6 +172,8 @@ export type Headline = ReturnType<typeof headlineOf>;
 
 export function buildOverview(input: {
   rows: OverviewRow[];
+  /** Canonical deliberate actions: human-qualified, earliest five per visitor within this window. */
+  countedPdfRows?: OverviewRow[];
   sessions: OverviewSession[];
   returningVisitors: Set<string>;
   windowStart: string;
@@ -182,25 +192,28 @@ export function buildOverview(input: {
     bySession.set(sid, list);
   }
 
-  const headline = headlineOf(rows, input.sessions, input.returningVisitors);
+  const countedPdfRows = input.countedPdfRows ?? [];
+  const countedRowSet = new Set<OverviewRow>(countedPdfRows);
+  const headline = headlineOf(rows, input.sessions, input.returningVisitors, countedPdfRows);
 
   // ---- Trend ------------------------------------------------------------
   const bucketing = bucketingFor(Date.parse(input.windowEnd) - Date.parse(input.windowStart));
-  const trendMap = new Map<string, { visitors: Set<string>; sessions: Set<string>; pageviews: number; downloads: number }>();
+  const trendMap = new Map<string, { visitors: Set<string>; sessions: Set<string>; pageviews: number; downloads: number; pdfOpens: number }>();
   for (const row of rows) {
     const sid = row.session_id?.trim();
     if (!sid) continue;
     const key = bucketKey(row.occurred_at, bucketing);
-    const b = trendMap.get(key) ?? { visitors: new Set(), sessions: new Set(), pageviews: 0, downloads: 0 };
+    const b = trendMap.get(key) ?? { visitors: new Set(), sessions: new Set(), pageviews: 0, downloads: 0, pdfOpens: 0 };
     if (row.visitor_id) b.visitors.add(row.visitor_id);
     b.sessions.add(sid);
     if (row.event_name === "page_view") b.pageviews += 1;
     if (row.event_name === "download") b.downloads += 1;
+    if (countedRowSet.has(row)) b.pdfOpens += 1;
     trendMap.set(key, b);
   }
   const trend = [...trendMap.entries()]
     .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([bucket, b]) => ({ bucket, visitors: b.visitors.size, sessions: b.sessions.size, pageviews: b.pageviews, downloads: b.downloads }));
+    .map(([bucket, b]) => ({ bucket, visitors: b.visitors.size, sessions: b.sessions.size, pageviews: b.pageviews, downloads: b.downloads, pdfOpens: b.pdfOpens }));
 
   // ---- Pages / landing / exit ------------------------------------------
   const pages = new Map<string, { pageviews: number; sessions: Set<string> }>();
@@ -349,16 +362,14 @@ export function buildOverview(input: {
     }
     return stages;
   };
-  // A canonical publication access is either a viewer open or a direct
-  // download action. A served redirect alone is not a user action.
-  const isAccess = (r: OverviewRow) => r.event_name === "pdf_open" || r.event_name === "download";
-  const isDownload = (r: OverviewRow) => r.event_name === "download";
+  // The last funnel stage is strictly capped deliberate PDF-open actions;
+  // automatic iframe previews are not evidence of a deliberate request.
+  const isCountedAccess = (r: OverviewRow) => countedRowSet.has(r);
   const landingFunnel = funnel(
     (list) => list.findIndex((r) => r.event_name === "page_view" || r.event_name === "session_start"),
     [
       { label: "Selected a publication", match: (r) => r.event_name === "publication_click" },
-      { label: "Accessed the publication", match: isAccess },
-      { label: "Requested a download", match: isDownload },
+      { label: "Requested a PDF open (counted)", match: isCountedAccess },
     ],
     "Landed on the site",
   );
@@ -366,8 +377,7 @@ export function buildOverview(input: {
     (list) => list.findIndex((r) => r.event_name === "page_view" && (r.path === "/" || COLLECTION_PATH.test(r.path ?? ""))),
     [
       { label: "Interacted with a publication", match: (r) => INTERACTION.has(r.event_name ?? "") },
-      { label: "Accessed the publication", match: isAccess },
-      { label: "Requested a download", match: isDownload },
+      { label: "Requested a PDF open (counted)", match: isCountedAccess },
     ],
     "Viewed home or a collection page",
   );
@@ -424,6 +434,7 @@ export function buildOverview(input: {
         device: list[0]?.device_type || "unknown",
         pageviews: list.filter((r) => r.event_name === "page_view").length,
         downloads: downloadIds.size,
+        countedPdfOpens: list.filter((r) => countedRowSet.has(r)).length,
         maxScroll,
         steps: steps.slice(0, 60),
       };
@@ -467,8 +478,8 @@ export function buildOverview(input: {
       targets: [...outboundTargets.entries()].map(([label, v]) => ({ label, count: v.clicks, sessions: v.sessions.size })).sort((a, b) => b.count - a.count).slice(0, TOP),
     },
     funnels: [
-      { id: "landing", title: "Landing → selection → PDF → download", stages: drill(landingFunnel) },
-      { id: "collection", title: "Home / collection → interaction → PDF → download", stages: drill(collectionFunnel) },
+      { id: "landing", title: "Landing → publication selection → counted PDF open", stages: drill(landingFunnel) },
+      { id: "collection", title: "Home / collection → interaction → counted PDF open", stages: drill(collectionFunnel) },
     ],
     journeys,
     recency: {
