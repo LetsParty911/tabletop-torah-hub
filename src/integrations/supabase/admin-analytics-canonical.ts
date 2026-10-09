@@ -442,7 +442,7 @@ export function describeLocation(place: string, row: Pick<EventRow, "geo_reliabi
   return `${place} — approximate network location`;
 }
 
-function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, window?: { start: string; end: string }) {
+export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, window?: { start: string; end: string }) {
   // Shared classifier: only high_confidence_human + likely_human count.
   const classified = classifySessions(rows);
   const allSessions = classified.sessions;
