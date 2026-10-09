@@ -144,10 +144,10 @@ export default function TrafficAnalytics({ accessToken }: { accessToken: string 
               note={`${pct(cur.engagedSessions, cur.sessions)} engaged now`}
             />
             <ComparisonCard
-              label="Download conversion"
-              current={pctRatio(cur.downloadConversion)}
-              previous={pctRatio(prev.downloadConversion)}
-              note={`${cur.downloadingSessions} downloading sessions now`}
+              label="PDF-open rate"
+              current={pctRatio(cur.pdfOpenRate)}
+              previous={pctRatio(prev.pdfOpenRate)}
+              note={`${cur.pdfOpenSessions} visits with a counted PDF open now`}
             />
             <ComparisonCard
               label="New subscribers"
@@ -161,10 +161,10 @@ export default function TrafficAnalytics({ accessToken }: { accessToken: string 
               previous={`${prev.returningVisitors} · ${pct(prev.returningVisitors, prev.uniqueVisitors)}`}
             />
             <ComparisonCard
-              label="PDF activity"
-              current={`${cur.uniquePdfDownloads} unique PDF downloads`}
-              previous={`${prev.uniquePdfDownloads} unique PDF downloads`}
-              note={`${cur.downloadActions} download actions · ${cur.pdfAccessingSessions} PDF-accessing sessions now`}
+              label="Counted PDF opens"
+              current={`${cur.countedPdfOpens} opens · ${cur.uniqueAccessedPdfs} PDFs`}
+              previous={`${prev.countedPdfOpens} opens · ${prev.uniqueAccessedPdfs} PDFs`}
+              note={`${cur.pdfOpenVisitors} opening browsers · ${cur.overCapPdfOpens} additional opens above cap now`}
             />
           </div>
 
@@ -204,16 +204,13 @@ export default function TrafficAnalytics({ accessToken }: { accessToken: string 
                 denominators use that same interval.
               </p>
               <p>
-                <b className="text-foreground">Download conversion:</b> sessions with at least one
-                canonical download action / all sessions in that collection window.
+                <b className="text-foreground">PDF-open rate:</b> human sessions with at least one counted deliberate PDF-open request / all human sessions in that collection window.
               </p>
               <p>
-                <b className="text-foreground">Unique PDF download:</b> one session+publication
-                pair, deduplicating repeated clicks on the same PDF inside a session.
+                <b className="text-foreground">Unique accessed PDF:</b> one publication ID with one or more counted open requests.
               </p>
               <p>
-                <b className="text-foreground">Download action:</b> every recorded user-initiated
-                download request, including repeats.
+                <b className="text-foreground">Counted PDF open:</b> a deliberate Open PDF button request or historical canonical download action, filtered for likely human browsers, earliest five requests per browser in each collection window. Additional attempts remain in the raw audit. A click does not prove reading.
               </p>
             </div>
           </details>
