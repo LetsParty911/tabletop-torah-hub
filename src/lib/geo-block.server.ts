@@ -115,25 +115,31 @@ export async function checkGeoBlock(request: Request): Promise<Response | null> 
     if (await isInternalRequest(request)) return null;
 
     const t = getRequestTelemetry(request);
-    const { memoGet, memoSet, withBudget, blockedCountries, BLOCK_LOOKUP_BUDGET_MS } = await import("./geo-block-memo");
+    const { memoizedLookup, blockedCountries, NEGATIVE_MEMO_TTL_MS, BLOCK_MEMO_TTL_MS } = await import("./geo-block-memo");
 
     // Fast path 1: the hosting edge already knows the country. No blocked city
     // lies outside these countries, so skip every lookup for everyone else.
     const edgeCountry = (t.country ?? "").trim().toLowerCase();
     if (edgeCountry && !blockedCountries(BLOCKED_CITIES).has(edgeCountry)) return null;
 
-    // Fast path 2: same visitor seen recently by this server — reuse its result.
+    // Without an IP there is nothing to look up: fail open.
     const memoKey = t.ipAddress || "";
-    let geo: ApproximateGeo | null | undefined = memoKey ? memoGet<ApproximateGeo | null>(memoKey) : undefined;
-    if (geo === undefined) {
-      const { resolveApproximateGeo } = await import("./ip-geo.server");
-      // "blocking" keeps the original provider chain (edge -> ipwho.is -> MaxMind);
-      // the ipapi.co analytics fallback is never used for block decisions.
-      // Time-boxed: a slow lookup lets the visitor through (fail open) and is
-      // retried shortly; the persistent blocking cache still fills in background.
-      geo = await withBudget(resolveApproximateGeo(t, "blocking"), BLOCK_LOOKUP_BUDGET_MS);
-      if (memoKey) memoSet(memoKey, geo, geo ? undefined : 60_000);
-    }
+    if (!memoKey) return null;
+
+    // Memoized per isolate, single-flight for concurrent navigations, and
+    // time-boxed (fail open). The "blocking" provider chain and its own
+    // persistent cache (geo_block_cache) are unchanged; analytics-only
+    // providers are never consulted. A result without a city (provider
+    // failure / country-only) is kept only briefly so it is retried soon.
+    const geo: ApproximateGeo | null = await memoizedLookup<ApproximateGeo>(
+      memoKey,
+      async () => {
+        const { resolveApproximateGeo } = await import("./ip-geo.server");
+        return resolveApproximateGeo(t, "blocking");
+      },
+      undefined,
+      (v) => (v && v.city ? BLOCK_MEMO_TTL_MS : NEGATIVE_MEMO_TTL_MS),
+    );
     if (!geo) return null;
     const rule = matchBlockedCity(geo);
     if (!rule) return null;

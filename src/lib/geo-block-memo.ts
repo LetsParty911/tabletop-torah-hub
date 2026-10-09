@@ -28,6 +28,7 @@ export function memoSet(key: string, value: unknown, ttl = BLOCK_MEMO_TTL_MS, no
 
 export function memoClear(): void {
   memo.clear();
+  inflight.clear();
 }
 
 /** Resolves to the promise result, or `null` if it takes longer than `ms`. */
@@ -87,6 +88,7 @@ export async function memoizedLookup<T>(
   key: string,
   lookup: () => Promise<T | null>,
   budgetMs = BLOCK_LOOKUP_BUDGET_MS,
+  ttlFor: (v: T | null) => number = (v) => (v ? BLOCK_MEMO_TTL_MS : NEGATIVE_MEMO_TTL_MS),
 ): Promise<T | null> {
   const hit = memoGet<T | null>(key);
   if (hit !== undefined) return hit;
@@ -97,7 +99,7 @@ export async function memoizedLookup<T>(
     } catch {
       v = null;
     }
-    memoSet(key, v, v ? BLOCK_MEMO_TTL_MS : NEGATIVE_MEMO_TTL_MS);
+    memoSet(key, v, ttlFor(v));
     return v;
   });
   const result = await withBudget(shared, budgetMs);
