@@ -34,8 +34,8 @@ export function Kpi({ label, value, note }: { label: string; value: string | num
 /** Plain-language owner summary built only from canonical headline numbers. */
 export function ownerSentence(data: ReportData) {
   const h = data.report.overview.headline;
-  const conv = shouldShowRate(h.sessions) ? `${Math.round((h.downloadingSessions / h.sessions) * 100)}% of visits` : `${h.downloadingSessions} of ${h.sessions} visits`;
-  return `${data.rangeLabel}: ${h.visitors} human visitors made ${h.sessions} visits and viewed ${h.pageviews} pages. ${conv} downloaded a PDF (${h.downloadActions} download actions). ${h.returningVisitors} visitors were returning.`;
+  const conv = shouldShowRate(h.sessions) ? `${Math.round((h.pdfOpenSessions / h.sessions) * 100)}% of visits` : `${h.pdfOpenSessions} of ${h.sessions} visits`;
+  return `${data.rangeLabel}: ${h.visitors} human visitors made ${h.sessions} visits and viewed ${h.pageviews} pages. ${conv} opened a PDF (${h.countedPdfOpens} counted PDF opens, max ${data.report.metrics.pdfAccessCap} per visitor). ${h.returningVisitors} visitors were returning.`;
 }
 
 export function KpiRow({ data }: { data: ReportData }) {
@@ -45,8 +45,8 @@ export function KpiRow({ data }: { data: ReportData }) {
     <Kpi label="Human visitors" value={h.visitors} note={delta(h.visitors, p?.visitors)} />
     <Kpi label="Visits" value={h.sessions} note={delta(h.sessions, p?.sessions)} />
     <Kpi label="Pageviews" value={h.pageviews} note={delta(h.pageviews, p?.pageviews)} />
-    <Kpi label="PDF downloads" value={h.downloadActions} note={`${h.uniqueSessionPublicationDownloads} unique`} />
-    <Kpi label="Download rate" value={formatCountRate(h.downloadingSessions, h.sessions).split(" · ")[0]!} note="visits that downloaded" />
+    <Kpi label="Counted PDF opens" value={h.countedPdfOpens} note={delta(h.countedPdfOpens, p?.countedPdfOpens)} />
+    <Kpi label="PDF-open rate" value={formatCountRate(h.pdfOpenSessions, h.sessions).split(" · ")[0]!} note="visits with a counted open" />
     <Kpi label="Avg engaged time" value={secs(h.averageEngagedSeconds)} note={`median ${secs(h.medianEngagedSeconds)}`} />
     <Kpi label="New / returning" value={`${h.newVisitors} / ${h.returningVisitors}`} />
     <Kpi label="Active now" value={data.report.overview.recency.activeLast5Min} note={`${data.report.overview.recency.activeLast30Min} in last 30 min`} />
@@ -60,7 +60,7 @@ function RecentVisitors({ data }: { data: ReportData }) {
     <p className="text-xs text-muted-foreground">Most recent human visits (bots, internal devices and blocked visits never appear here). Locations are approximate network locations. Time is ET.</p>
     {rows.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No human visits in this period.</p> :
       <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[760px] text-left text-xs">
-        <thead className="text-muted-foreground"><tr><th className="py-1 pr-2">Started</th><th className="pr-2">Location</th><th className="pr-2">Visitor</th><th className="pr-2">Device</th><th className="pr-2">Source</th><th className="pr-2">Span</th><th className="pr-2">Last</th><th className="pr-2">Pages</th><th className="pr-2">DL</th><th>Scroll</th></tr></thead>
+        <thead className="text-muted-foreground"><tr><th className="py-1 pr-2">Started</th><th className="pr-2">Location</th><th className="pr-2">Visitor</th><th className="pr-2">Device</th><th className="pr-2">Source</th><th className="pr-2">Span</th><th className="pr-2">Last</th><th className="pr-2">Pages</th><th className="pr-2" title="Counted PDF opens">PDF</th><th>Scroll</th></tr></thead>
         <tbody className="divide-y divide-border">{rows.map((j) => <tr key={j.sessionId}>
           <td className="py-1 pr-2 whitespace-nowrap">{etTime(j.startedAt)}</td>
           <td className="pr-2">{j.location}</td>
@@ -70,7 +70,7 @@ function RecentVisitors({ data }: { data: ReportData }) {
           <td className="pr-2">{secs(j.durationSeconds)}</td>
           <td className="pr-2 whitespace-nowrap">{etTime(j.lastAt)}</td>
           <td className="pr-2">{j.pageviews}</td>
-          <td className="pr-2">{j.downloads}</td>
+          <td className="pr-2">{j.pdfOpens}</td>
           <td>{j.maxScroll === null ? "—" : `${j.maxScroll}%`}</td>
         </tr>)}</tbody>
       </table></div>}
@@ -111,17 +111,17 @@ export function SupportingTables({ data }: { data: ReportData }) {
 }
 
 export default function AnalyticsControlCenter({ data, accessToken }: { data: ReportData; accessToken: string }) {
-  const pubs = data.report.publications.slice(0, 12);
+  const pubs = data.report.pdfAccess.byPublication.slice(0, 12);
   return <div className="space-y-8">
     <p className="rounded-md bg-muted/50 p-3 text-sm">{ownerSentence(data)}</p>
     <KpiRow data={data} />
     <RecentVisitors data={data} />
     <section>
       <h3 className="font-serif text-lg font-semibold text-primary">Publications</h3>
-      <p className="text-xs text-muted-foreground">Shown → selected → downloaded, human visits only.</p>
-      {pubs.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No publication activity.</p> :
-        <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[560px] text-left text-xs"><thead className="text-muted-foreground"><tr><th className="py-1">Publication</th><th>Shown</th><th>Selected</th><th>PDF opens</th><th>Downloads</th><th>Access → download</th></tr></thead>
-          <tbody className="divide-y divide-border">{pubs.map((p) => <tr key={p.title}><td className="py-1 pr-2">{p.title}</td><td>{p.impressions}</td><td>{p.clicks}</td><td>{p.pdfOpens}</td><td>{p.downloadActions}</td><td>{formatCountRate(p.downloadNumerator, p.downloadDenominator)}</td></tr>)}</tbody></table></div>}
+      <p className="text-xs text-muted-foreground">Ranked by counted PDF opens (human only, max {data.report.metrics.pdfAccessCap} per visitor).</p>
+      {pubs.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No counted PDF opens.</p> :
+        <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[560px] text-left text-xs"><thead className="text-muted-foreground"><tr><th className="py-1">Publication</th><th>Series</th><th>Parsha</th><th>Counted opens</th><th>Visitors</th><th>Top source</th></tr></thead>
+          <tbody className="divide-y divide-border">{pubs.map((p) => <tr key={p.publicationId}><td className="py-1 pr-2">{p.title}</td><td>{p.series ?? "—"}</td><td>{p.parsha ?? "—"}</td><td>{p.opens}</td><td>{p.uniqueVisitors}</td><td>{p.topSource ?? "—"}</td></tr>)}</tbody></table></div>}
     </section>
     <section>
       <h3 className="font-serif text-lg font-semibold text-primary">Search terms</h3>
