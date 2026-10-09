@@ -28,8 +28,11 @@ function plainText(report: AnyReport): string {
     "",
     `People: ${m.people}`,
     `Used Torah: ${m.usedTorah}`,
-    `PDF opens: ${m.pdfOpens}`,
-    `Download actions: ${m.downloads}`,
+    `Counted PDF opens: ${m.countedPdfOpens}`,
+    `PDF-opening browsers: ${m.pdfOpenVisitors}`,
+    `Distinct PDFs with counted opens: ${m.uniqueAccessedPdfs}`,
+    `Automatic viewer previews (audit): ${m.pdfOpens}`,
+    `Historical download actions (audit): ${m.downloads}`,
     `Returning readers: ${m.returningReaders}`,
     `Signups: ${m.signups}`,
     "",
@@ -38,7 +41,7 @@ function plainText(report: AnyReport): string {
     lines.push("Top publications:");
     for (const publication of report.publications.slice(0, 5)) {
       lines.push(
-        `- ${publication.title}: seen ${publication.impressions}, opens ${publication.pdfOpens}, downloads ${publication.downloadActions}`,
+        `- ${publication.title}: seen ${publication.impressions}, counted PDF opens ${publication.countedPdfOpens}, opening browsers ${publication.countedVisitors}` ,
       );
     }
     lines.push("");
@@ -59,7 +62,7 @@ function plainText(report: AnyReport): string {
   if (report.comparisonMetrics) {
     lines.push("", `Compared with ${report.comparisonLabel}:`);
     lines.push(
-      `People ${report.comparisonMetrics.people} → ${m.people}; download actions ${report.comparisonMetrics.downloads} → ${m.downloads}`,
+      `People ${report.comparisonMetrics.people} → ${m.people}; counted PDF opens ${report.comparisonMetrics.countedPdfOpens} → ${m.countedPdfOpens}`,
     );
   }
   if (report.changes.length) lines.push("", "What changed:", ...report.changes.map((change) => `- ${change}`));
@@ -82,7 +85,7 @@ function MetricRow({ items }: { items: Array<{ label: string; value: number }> }
 
 function ReportBody({ report }: { report: AnyReport }) {
   const m = report.metrics;
-  const quiet = m.people === 0 && m.pdfOpens === 0 && m.downloads === 0;
+  const quiet = m.people === 0 && m.countedPdfOpens === 0;
   return (
     <div className="space-y-6">
       <header>
@@ -92,12 +95,12 @@ function ReportBody({ report }: { report: AnyReport }) {
 
       {quiet ? (
         <p className="text-sm text-foreground">
-          This period was quiet: no recorded visitors, PDF opens or download actions.
+          This period was quiet: no recorded visitors or counted PDF-open requests.
         </p>
       ) : (
         <p className="font-serif text-lg leading-relaxed text-foreground">
           {m.people} {m.people === 1 ? "person" : "people"} visited, {m.usedTorah} used Torah,{" "}
-          {m.pdfOpens} PDF opens and {m.downloads} download actions.
+          {m.countedPdfOpens} counted PDF opens by {m.pdfOpenVisitors} browsers.
         </p>
       )}
 
@@ -105,8 +108,8 @@ function ReportBody({ report }: { report: AnyReport }) {
         items={[
           line("People", m.people),
           line("Used Torah", m.usedTorah),
-          line("PDF opens", m.pdfOpens),
-          line("Downloads", m.downloads),
+          line("Counted PDF opens", m.countedPdfOpens),
+          line("Opening browsers", m.pdfOpenVisitors),
           line("Returning", m.returningReaders),
           line("Signups", m.signups),
         ]}
@@ -120,9 +123,8 @@ function ReportBody({ report }: { report: AnyReport }) {
               <li key={publication.title} className="py-2">
                 <span className="font-medium">{publication.title}</span>
                 <span className="block text-xs text-muted-foreground">
-                  Seen {publication.impressions} · Opens {publication.pdfOpens} · Download actions{" "}
-                  {publication.downloadActions} · Open→download:{" "}
-                  {formatRate(publication.downloadNumerator, publication.downloadDenominator)}
+                  Seen {publication.impressions} · Counted PDF opens {publication.countedPdfOpens} · Unique opening browsers{" "}
+                  {publication.countedVisitors} · Automatic previews (audit) {publication.pdfOpens}
                 </span>
               </li>
             ))}
@@ -180,6 +182,7 @@ function ReportBody({ report }: { report: AnyReport }) {
       </section>
 
       <section>
+        <p className="text-xs text-muted-foreground">A counted PDF open is a deliberate, human-qualified access request, capped at five per browser during the selected report window. A click is not proof a PDF finished loading. Legacy downloads and embedded previews are separate audits.</p>
         <h4 className="font-serif text-base font-semibold text-primary">Searches that went nowhere</h4>
         {report.searches.length === 0 ? (
           <p className="mt-1 text-sm text-muted-foreground">No searches in this period.</p>
@@ -203,8 +206,8 @@ function ReportBody({ report }: { report: AnyReport }) {
           <h4 className="font-serif text-base font-semibold text-primary">Compared with {report.comparisonLabel}</h4>
           <p className="mt-1 text-sm text-muted-foreground">
             People {report.comparisonMetrics.people} → {m.people} · Used Torah{" "}
-            {report.comparisonMetrics.usedTorah} → {m.usedTorah} · Download actions{" "}
-            {report.comparisonMetrics.downloads} → {m.downloads}
+            {report.comparisonMetrics.usedTorah} → {m.usedTorah} · Counted PDF opens{" "}
+            {report.comparisonMetrics.countedPdfOpens} → {m.countedPdfOpens}
           </p>
         </section>
       )}
