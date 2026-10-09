@@ -5,7 +5,7 @@ import {
   adminCollectionReport,
   adminDailyReport,
 } from "@/integrations/supabase/admin-analytics-canonical";
-import { formatDayLabel, formatRate } from "@/lib/admin-reports";
+import { formatDayLabel } from "@/lib/admin-reports";
 
 type DailyReport = Awaited<ReturnType<typeof adminDailyReport>>;
 type CollectionReport = Awaited<ReturnType<typeof adminCollectionReport>>;
