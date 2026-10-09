@@ -230,6 +230,33 @@ Canonical events may store hosting-provider, network-derived `country`, `region`
 
 ## Canonical automation handling
 
+### Infrastructure and hosted browser reporting (October 9, 2026)
+
+Reston, Virginia traffic was reviewed against the canonical event stream and ASN
+organizations. The classification is a **network-and-behavior heuristic**, not
+an assertion that everyone in Reston is a bot or that a Lovable edit caused any
+particular session. No city-based ban, Cloudflare rule, network block, event
+delete, IP reassignment or notification change is part of this update.
+
+- Cloud/security infrastructure sessions with **at most one page view, under
+  30 seconds of measured event span, and no human_signal or deliberate action**
+  are classified **suspected automation**. Automatic publication-card impressions
+  do **not** count as a gesture and do not rescue these one-page sessions.
+- OVH SAS is recognized as dedicated hosting. Even when a hosted browser emits
+  human_signal or deliberate click/open events, its reader status is **uncertain**
+  rather than presumed human or presumed robotic, because the browser could be
+  controlled by automation. Events remain in the raw audit and PDF activity
+  timeline, and are excluded from qualified-human headline counts until better
+  independent evidence exists.
+- A session on another infrastructure provider (including Cisco OpenDNS or
+  Cloudflare) that records deliberate interaction remains eligible for the
+  existing likely-human confidence rules. Network ownership alone is not a bot
+  verdict. Human fingerprints are not merged or inferred from approximate city.
+- Visitor Activity is explicitly **raw** and shows both suspected and unverified
+  statuses. Headline audience/conversion reporting continues to include only
+  high-confidence and likely-human sessions. All historical events remain intact.
+
+
 Obvious crawler and preview User-Agents are rejected before ingest. Accepted raw rows are preserved. Headline reporting excludes sessions matching the canonical high-confidence burst or impossible-heartbeat rules, plus the narrowly time-boxed September 18, 2026 incident rule. It also excludes Lovable editor/preview test sessions identified by a `lovable.dev` / `lovable.app` referrer or the Lovable app User-Agent. These internal sessions remain in raw analytics for diagnostics and are reported separately from suspected automation. Any session with meaningful intent or `human_signal` is protected from the general automation classifier, preserving legitimate PDF opens and download actions. Visitor Activity keeps suspected sessions visible and labels the reason.
 
 
