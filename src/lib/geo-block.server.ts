@@ -115,31 +115,30 @@ export async function checkGeoBlock(request: Request): Promise<Response | null> 
     if (await isInternalRequest(request)) return null;
 
     const t = getRequestTelemetry(request);
-    const { memoizedLookup, blockedCountries, NEGATIVE_MEMO_TTL_MS, BLOCK_MEMO_TTL_MS } = await import("./geo-block-memo");
+    const { memoizedLookup, withBudget, blockedCountries, NEGATIVE_MEMO_TTL_MS, BLOCK_MEMO_TTL_MS } = await import("./geo-block-memo");
 
     // Fast path 1: the hosting edge already knows the country. No blocked city
     // lies outside these countries, so skip every lookup for everyone else.
     const edgeCountry = (t.country ?? "").trim().toLowerCase();
     if (edgeCountry && !blockedCountries(BLOCKED_CITIES).has(edgeCountry)) return null;
 
-    // Without an IP there is nothing to look up: fail open.
     const memoKey = t.ipAddress || "";
-    if (!memoKey) return null;
 
     // Memoized per isolate, single-flight for concurrent navigations, and
     // time-boxed (fail open). The "blocking" provider chain and its own
     // persistent cache (geo_block_cache) are unchanged; analytics-only
     // providers are never consulted. A result without a city (provider
     // failure / country-only) is kept only briefly so it is retried soon.
-    const geo: ApproximateGeo | null = await memoizedLookup<ApproximateGeo>(
-      memoKey,
-      async () => {
-        const { resolveApproximateGeo } = await import("./ip-geo.server");
-        return resolveApproximateGeo(t, "blocking");
-      },
-      undefined,
-      (v) => (v && v.city ? BLOCK_MEMO_TTL_MS : NEGATIVE_MEMO_TTL_MS),
-    );
+    const lookup = async () => {
+      const { resolveApproximateGeo } = await import("./ip-geo.server");
+      return resolveApproximateGeo(t, "blocking");
+    };
+    // No IP (edge-only geo): nothing to key a memo on — time-boxed direct call.
+    const geo: ApproximateGeo | null = memoKey
+      ? await memoizedLookup<ApproximateGeo>(memoKey, lookup, undefined, (v) =>
+          v && v.city ? BLOCK_MEMO_TTL_MS : NEGATIVE_MEMO_TTL_MS,
+        )
+      : await withBudget(lookup());
     if (!geo) return null;
     const rule = matchBlockedCity(geo);
     if (!rule) return null;
