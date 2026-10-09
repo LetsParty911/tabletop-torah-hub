@@ -7,7 +7,8 @@ This document describes the analytics definitions used by `/admin` and `/admin-a
 Primary audience, engagement, funnel, source, device, and conversion metrics use `public.analytics_events` in the external Supabase analytics project.
 
 **Client:** `src/lib/first-party-analytics.ts`  
-**Ingest:** `POST /api/events` (`src/routes/api/events.ts`)
+**Ingest:** `POST /api/events` (`src/routes/api/events.ts`)  
+**Counting implementation:** `src/lib/pdf-access.ts` (also used by canonical server reports).
 
 Legacy `page_views`, `search_events`, `download_events`, and `download_attribution` remain available for historical/raw audit views. They are not the preferred source for primary conversion rates, and legacy rows are never mixed into canonical totals. Admin sections built on them are labelled "Legacy raw page views".
 
@@ -18,6 +19,55 @@ Legacy `page_views`, `search_events`, `download_events`, and `download_attributi
 `POST /api/track-view` now applies the same exclusions as `/api/events`: obvious automated agents are rejected, admin routes (`/admin`, `/admin/*`, `/admin-analytics*`) are excluded, Lovable editor/preview traffic is skipped, and any device carrying the signed internal-device cookie is skipped. A client-supplied internal flag is never trusted.
 
 **Historical rows written before this change still carry legacy ids and must never be joined to `analytics_events` by `visitor_id` or `session_id`.** Treat pre-change `page_views` strictly as a raw audit feed.
+
+## Primary PDF engagement KPI (from October 2026)
+
+**Counted PDF opens** is the primary admin PDF-engagement count across /admin,
+Control Center, Overview, Owner Summary, Visitors, Publications, daily reports,
+completed collection comparisons and weekly reports. All of these consume the
+same window-specific first-party event rows. This is a **deliberate access
+request**, not verification that the file fully loaded, that any PDF bytes were
+read, or that a download was saved.
+
+Calculation, in order:
+
+1. Candidate actions: `publication_click` with
+   `metadata.action = "open_pdf"` (current public Open PDF button); historical
+   canonical `download` requests; or an unmatched `download_served` event
+   **only** if it has an `action_id`. Pair `download` and `download_served`
+   by `action_id` so they never add two actions. Collapse duplicate event
+   deliveries by `event_id`; separate, genuine repeated clicks count separately.
+2. Keep only sessions classified `high_confidence_human` or `likely_human`
+   by the shared session classifier. Internal/test, suspected automation and
+   uncertain sessions remain in raw audit, outside the headline.
+3. Exclude actions without a non-empty first-party browser `visitor_id` from
+   the headline. Never merge visitor IDs by IP, fingerprint or geographic area.
+4. Chronologically sort eligible actions and count **at most the earliest five
+   actions per browser visitor ID across all sessions and publications within the
+   selected report window**. A sixth or later event is retained but is `overCap`.
+   Capping is calculated independently for each compared window, NOT once per
+   individual day when looking at a seven-day report.
+
+The result is `countedPdfOpens`. **PDF-opening browsers** counts unique browser
+visitor IDs with one or more counted actions. **PDF-open sessions** counts unique
+sessions containing counted actions; **PDF-open rate** is PDF-open sessions /
+all qualified sessions in that same period (only show a percentage with a
+sufficient denominator). **Distinct accessed PDFs** counts publication IDs with
+counted actions, not clicks. Rankings count only actions carrying a publication
+ID; missing IDs remain in the headline and are separately reported as
+`countedMissingPublicationId`. Ranked publication totals plus counted missing
+IDs must equal the headline.
+
+**Keep diagnostics separate:** uncapped/raw deliberate Open PDF button clicks;
+automatic embedded `pdf_open` viewer/iframe loads, which do not represent
+deliberate action; historical download events and served redirect audits;
+over-cap events and visitor counts; unidentified and non-human candidate events.
+Never add those diagnostics to the new headline. Do not use the legacy
+`download_events` table as a second canonical source.
+
+**Attribution:** campaign-linked sessions convert only when the same qualified,
+capped PDF-open actions carry the matched first-touch session attribution.
+A tagged visit is not proof a WhatsApp message was sent.
 
 ## Identity
 
@@ -39,7 +89,7 @@ Admin routes are excluded on both client and ingest server. `/admin`, `/admin/*`
 | `publication_click`      | Publication card interaction                                                                            |
 | `filter_change`          | Audience/length/content filter change                                                                   |
 | `search`                 | Submitted search                                                                                        |
-| `pdf_open`               | Embedded publication PDF viewer successfully loaded; a mobile detail-page visit alone is not a PDF open |
+| `pdf_open`               | Desktop iframe `onLoad` (automatic PDF viewer preview), not a deliberate open or proof all PDF bytes rendered; excluded from Counted PDF opens |
 | `download`               | User-initiated download action/request; one event per click/action                                      |
 | `share_click`            | Share action                                                                                            |
 | `signup`                 | Successful weekly-email subscription; email address is not stored in analytics_events                   |
@@ -96,27 +146,20 @@ A session with a meaningful intent event (`download`, `pdf_open`, `publication_c
 
 A separate owner-facing measure of distinct visitors with a session containing a `pdf_open`, `download`/`download_served`, a `publication_click` tagged `metadata.action = "open_pdf"` (reason "Clicked Open PDF"), `share_click`, or `signup`. It does not redefine historical engaged sessions. Search, filter, and untagged publication-click events alone remain engagement signals but do not qualify as Used Torah without a later qualifying action.
 
-### PDF-accessing session
+### PDF-open sessions, browsers, actions and conversion (primary)
 
-A session containing at least one `pdf_open` or `download` event.
+Use the **Primary PDF engagement KPI** above. In particular, the primary
+metric is deliberate requests capped to five per browser in the entire
+selected interval, excluding automatic previews.
 
-### Downloading session
+### Historical-only PDF and download metrics (diagnostics)
 
-A session containing at least one canonical `download` action.
-
-### Unique PDF download
-
-One distinct **session + publication** pair with a download action. Repeat download clicks on the same publication in the same session count once for this metric.
-
-### Download action
-
-Every canonical or legacy raw download event, depending on the labeled section. A person can generate multiple download actions. This is a user-initiated request/click metric, not a verified completed-transfer metric.
-
-### Session download conversion
-
-`downloading sessions / total sessions`
-
-The numerator and denominator must use the same reporting interval.
+Older names such as *PDF-accessing session* (a session with `pdf_open` or
+`download`), *Downloading session*, *Unique session+publication download*,
+*Download action*, and *Session download conversion* refer to the pre-switch
+download/viewer pipeline. Preserve them in legacy or technical-audit sections,
+but they are **not** the primary admin conversion KPI. They must not
+silently substitute for `countedPdfOpens` when the site uses Open PDF.
 
 ### New-subscriber conversion on the collection dashboard
 
@@ -128,65 +171,53 @@ The numerator and denominator use identical collection-window timestamps.
 
 `distinct session+publication click pairs / distinct session+publication impression pairs`
 
-### Publication access-to-download conversion
+### Publication engagement and ranked PDF opens
 
-`distinct session+publication download pairs / distinct session+publication access pairs`
-
-A PDF access is a `pdf_open` or `download`; a viewer open followed by a download remains one session+publication access pair.
+Publication CTR remains distinct session+publication click pairs divided by
+impression pairs. **Primary publication ranking** is the number of *counted*
+PDF access actions for that publication ID, irrespective of how many sessions
+or distinct PDFs generated those actions. Attribution to a publication,
+its series, source and last-counted request is displayed when recorded.
+Legacy access-to-download conversion is a historical diagnostic only.
 
 ## Collection-window analytics (`/admin`)
 
 Collection windows are derived from the first upload timestamp of each collection/parsha and the start of the next collection. Because these are upload-derived periods, the UI labels them **collection windows**, not calendar weeks.
 
-For a selected collection, the following all use the same `[start, end)` timestamp interval:
-
-- canonical page views
-- canonical sessions
-- canonical unique visitors
-- canonical engaged sessions
-- canonical PDF-accessing sessions
-- canonical downloading sessions
-- canonical unique PDF downloads
-- canonical download actions
-- new subscriber rows
-
-This avoids the previous invalid calculation where traffic was window-filtered but downloads were counted by PDF parsha regardless of download timestamp.
+For a selected collection, pageviews, unique visitors, human sessions,
+engagement, **counted PDF opens**, distinct accessed PDFs, PDF-opening
+browser IDs, PDF-open sessions and PDF-open rate all use the same
+`[start, end)` timestamps. The earliest-five-per-browser cap is applied
+across this entire collection interval. Current and prior collections
+each receive the cap independently. Subscriber counts come from the
+authoritative subscriber table.
 
 Top pages show both raw page views and unique sessions containing the page.
 
 ## Since-you-were-last-here (`/admin`)
 
-Audience and download activity are canonical and show:
-
-- unique visitors
-- sessions
-- engaged sessions
-- top session source
-- downloading sessions
-- unique session+publication downloads
-- raw canonical download actions
+Audience and PDF activity use the canonical stream and show unique
+visitors, sessions, engaged sessions, top source, **counted PDF opens**
+(max five per identified human browser since last visit), distinct
+accessed PDFs, opening browser IDs, and the raw/over-cap audit.
 
 Subscriber and contact-message counts still come from their authoritative application tables. The legacy collection-to-collection raw download comparison is retained only as an explicitly labeled supplemental/audit statistic.
 
 ## Readable report (`/admin-analytics`)
 
-The primary report offers **Last Hour**, **Today** (America/New_York), **This Collection**, and **7 Days**. This Collection uses the latest upload-derived collection window. It reports:
+The primary report offers last hour, today and yesterday (America/New_York
+calendar days), current collection, seven and thirty days and custom
+periods. Every view exposes human visitors, sessions, Used Torah, **counted
+PDF opens**, PDF-opening browsers, PDF-open sessions and rate, distinct
+publication IDs requested, and returning visitors. Raw Open PDF clicks,
+automatic viewer previews and historical downloads are separately labeled
+audits. Reports compare against the prior matching interval by applying
+the cap independently on both intervals.
 
-- unique visitors
-- sessions
-- engaged sessions
-- returning visitors
-- PDF-accessing sessions
-- downloading sessions
-- unique PDF downloads
-- raw download actions
-- session download conversion
-- low-confidence sessions
-- Used Torah
-
-By-source and by-device download rates use **downloading sessions / sessions**. They do not divide downloaded-PDF counts by sessions.
-
-Publication performance uses the CTR and access-to-download definitions above.
+Sources, device mix, locations and UTM acquisition remain independent
+dimensions. Publications are sorted by counted PDF opens, not by automatic
+previews or historical served requests. Daily and collection export text
+uses the same counted values as the UI.
 
 Every headline number opens its contributing sessions or events. Percentages are withheld when the denominator is below 10; the interface shows numerator and denominator counts instead. Quiet periods show a neutral insufficient-activity state rather than a trend claim.
 
@@ -313,7 +344,7 @@ Computed in `src/lib/overview-analytics.ts` from human-qualified canonical rows 
 - **Acquisition & geography & device**: session level, from the session's first-touch values (first row with a value). Location is approximate network location; raw IP stays in admin forensic views only. Browser/OS come from the stored user agent via `ua-parse`.
 - **Scroll depth**: `scroll_depth` carries `percent` (25/50/75/100), `max_scroll_percent` and `page_view_id` (new per route view, so each threshold fires once per page view). Reported as distinct sessions that viewed the page and reached each threshold ÷ distinct sessions that viewed it. A session is counted at most once per threshold in the displayed rate even if it has multiple page views. `rawEvents` is retained only as a health/debug count; `uniqueThresholdEvents` deduplicates by session + page_view_id + threshold, with session + path as the fallback for historical rows without a page_view_id.
 - **Outbound clicks**: `outbound_click` counts and distinct sessions by host and host+path. Only HTTP(S) links to a different normalized hostname are eligible. Stored target metadata is hostname plus pathname only; query strings and fragments are discarded before the event is created.
-- **Funnels**: distinct sessions, each stage must occur at or after the previous stage. (1) any pageview → `publication_click` → publication access (`pdf_open` or `download`) → `download`. (2) pageview on `/` or a collection path (`/parsha`, `/yom-tov`, `/publications`, `/archive`, `/short-vorts`) → `publication_click`/`recommendation_click`/`chooser_select` → publication access (`pdf_open` or `download`) → `download`. `download_served` remains a separate server-side redirect-confirmation diagnostic and does not create a user download action or funnel conversion by itself.
+- **Funnels**: distinct sessions, each stage at/after the previous one. (1) site landing → publication selection → *counted deliberate PDF-open request*; (2) collection page → interaction → *counted deliberate PDF-open request*. Automatic iframe `pdf_open` preview events do not satisfy the final stage. Historic `download_served` redirects only qualify as counted access requests when uniquely identified and unmatched, as explained above. A funnel request is not a verified PDF read.
 - **Recency**: latest canonical event and heartbeat; sessions whose last event is within 5 / 30 minutes.
 - **Not measurable**: completed CDN byte transfer, scroll on PDF viewers, time on the final page without heartbeats, and outbound navigation where the browser leaves before the beacon is sent.
 
@@ -334,8 +365,7 @@ same human-qualified canonical event rows as the other tabs:
 
 - **Button clicks:** homepage-placed `share_click` events; clicking browser IDs are deduplicated.
 - **Tagged-link sessions/visitors:** distinct session/visitor IDs with a `page_view` attributed to the specified UTM campaign.
-- **Tagged-link PDF opens/download actions:** canonical events in those tagged
-  sessions. Download actions are requests, not evidence of a saved file.
+- **Tagged-link counted PDF opens:** the same human-qualified, earliest-five-per-browser actions used for all admin headlines, from tagged sessions. Automatic embedded previews and older download-only actions remain separate legacy audits. Requests do not prove reading or completed file delivery.
 
 Attribution is stored as *first touch* in the browser, so later visits may
 continue to carry the campaign tag. Tagged-link sessions therefore do not
