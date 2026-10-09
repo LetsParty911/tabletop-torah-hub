@@ -128,7 +128,7 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
           <span>{visitor.sessionsInRange} sessions</span>
           <span>{visitor.pageviews} pageviews</span>
           <span>{visitor.pdfOpens} PDF opens</span>
-          <span>{visitor.downloads} downloads</span>
+          <span title="Deliberate Open PDF clicks + historical downloads, before the human filter and per-visitor cap">{visitor.pdfAccessActionsRaw} PDF-access actions (raw){visitor.overPdfAccessCap ? ` · over cap, ${totals.pdfAccessCap} counted at most` : ""}</span>
           <span className="text-muted-foreground">{shortId(visitor.visitorId)}</span>
         </div>
       </button>
@@ -502,7 +502,7 @@ export default function VisitorActivitySection({ accessToken, embedded = false }
             <Stat label="Sessions" value={totals.sessions} />
             <Stat label="Pageviews" value={totals.pageviews} />
             <Stat label="PDF opens" value={totals.pdfOpens} />
-            <Stat label="Downloads" value={totals.downloads} />
+            <Stat label="PDF-access actions (raw)" value={totals.pdfAccessActionsRaw} />
             <Stat label="Signups" value={totals.signups} />
             <Stat label="Suspected" value={totals.suspectedSessions} />
           </div>
