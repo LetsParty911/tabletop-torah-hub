@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifySession, describePossibleRelationship, isInfrastructureOrganization } from "./traffic-confidence";
+import { classifySession, describePossibleRelationship, isInfrastructureOrganization, isDedicatedHostingOrganization } from "./traffic-confidence";
 
 const base = {
   internal: false,
@@ -75,8 +75,12 @@ describe("infrastructure automation rule", () => {
     expect(classifySession({ ...base, infrastructureNetwork: true, impressions: 2, meaningfulIntent: true })).toBe("likely_human");
   });
 
-  it("keeps engaged OVH hosted-network sessions distinct from proven bots", () => {
+  it("keeps OVH hosted-browser engagement unverified rather than calling it human or bot", () => {
     expect(isInfrastructureOrganization("OVH SAS")).toBe(true);
+    expect(isDedicatedHostingOrganization("OVH SAS")).toBe(true);
+    expect(classifySession({ ...base, infrastructureNetwork: true, dedicatedHostingNetwork: true, humanSignal: true, meaningfulIntent: true })).toBe("uncertain");
+    expect(classifySession({ ...base, infrastructureNetwork: true, dedicatedHostingNetwork: true, meaningfulIntent: true })).toBe("uncertain");
+    // Legitimate readers coming through security networks retain their evidence-based classification.
     expect(classifySession({ ...base, infrastructureNetwork: true, humanSignal: true, meaningfulIntent: true })).toBe("high_confidence_human");
   });
 
