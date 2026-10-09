@@ -73,10 +73,10 @@ export default function PlausibleOverview({ overview, prior, rangeLabel }: { ove
       <Card label="Bounce rate" value={shouldShowRate(h.sessions) ? `${Math.round((h.bouncedSessions / h.sessions) * 100)}%` : `${h.bouncedSessions} of ${h.sessions}`} />
       <Card label="Median engaged time" value={secs(h.medianEngagedSeconds)} note={`avg ${secs(h.averageEngagedSeconds)} · ${h.engagedSessionsWithTime} timed`} />
       <Card label="New / returning" value={`${h.newVisitors} / ${h.returningVisitors}`} />
-      <Card label="PDF-accessing sessions" value={h.pdfAccessingSessions} note={change(h.pdfAccessingSessions, prior?.pdfAccessingSessions)} />
-      <Card label="Downloading sessions" value={h.downloadingSessions} note={formatCountRate(h.downloadingSessions, h.sessions) + " conversion"} />
-      <Card label="Unique downloads" value={h.uniqueSessionPublicationDownloads} note="session + publication" />
-      <Card label="Download actions" value={h.downloadActions} note={change(h.downloadActions, prior?.downloadActions)} />
+      <Card label="Counted PDF opens" value={h.countedPdfOpens} note={change(h.countedPdfOpens, prior?.countedPdfOpens)} />
+      <Card label="PDF-open rate" value={formatCountRate(h.countedPdfSessions, h.sessions)} note="Visits with a counted open" />
+      <Card label="PDF-opening browsers" value={h.countedPdfVisitors} note="Distinct browser visitor IDs" />
+      <Card label="Unique PDFs accessed" value={h.countedUniquePdfs} note="Distinct publication IDs in counted actions" />
     </section>
 
     <section>
@@ -84,11 +84,11 @@ export default function PlausibleOverview({ overview, prior, rangeLabel }: { ove
       <p className="text-xs text-muted-foreground">Visitors per {overview.bucketing === "day" ? "day" : overview.bucketing === "hour" ? "hour" : "5 minutes"} (New York time).</p>
       {overview.trend.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No activity.</p> : <>
         <div className="mt-3 flex h-32 items-end gap-0.5 border-b border-border">
-          {overview.trend.map((t) => <div key={t.bucket} title={`${t.bucket}: ${t.visitors} visitors, ${t.pageviews} pageviews, ${t.downloads} downloads`} className="flex-1 rounded-t bg-primary/70" style={{ height: `${(t.visitors / maxTrend) * 100}%` }} />)}
+          {overview.trend.map((t) => <div key={t.bucket} title={`${t.bucket}: ${t.visitors} visitors, ${t.pageviews} pageviews, ${t.pdfOpens} counted PDF opens`} className="flex-1 rounded-t bg-primary/70" style={{ height: `${(t.visitors / maxTrend) * 100}%` }} />)}
         </div>
         <details className="mt-2 text-xs"><summary className="cursor-pointer text-muted-foreground">Show table</summary>
-          <table className="mt-2 w-full text-left"><thead><tr className="text-muted-foreground"><th>Period</th><th>Visitors</th><th>Sessions</th><th>Pageviews</th><th>Downloads</th></tr></thead>
-            <tbody>{overview.trend.map((t) => <tr key={t.bucket}><td>{t.bucket}</td><td>{t.visitors}</td><td>{t.sessions}</td><td>{t.pageviews}</td><td>{t.downloads}</td></tr>)}</tbody></table>
+          <table className="mt-2 w-full text-left"><thead><tr className="text-muted-foreground"><th>Period</th><th>Visitors</th><th>Sessions</th><th>Pageviews</th><th>Counted PDF opens</th></tr></thead>
+            <tbody>{overview.trend.map((t) => <tr key={t.bucket}><td>{t.bucket}</td><td>{t.visitors}</td><td>{t.sessions}</td><td>{t.pageviews}</td><td>{t.pdfOpens}</td></tr>)}</tbody></table>
         </details>
       </>}
     </section>
@@ -163,7 +163,7 @@ export default function PlausibleOverview({ overview, prior, rangeLabel }: { ove
       <p className="text-xs text-muted-foreground">Most recent 30 counted sessions. Visitor IDs are first-party browser IDs and can reset; they are not people.</p>
       <ul className="mt-2 divide-y divide-border text-sm">
         {overview.journeys.map((j) => <li key={j.sessionId} className="py-2">
-          <button className="w-full text-left" onClick={() => setJourney(journey === j.sessionId ? null : j.sessionId)}>{time(j.startedAt)} · {j.source} · {j.device} · {j.steps.length} steps</button>
+          <button className="w-full text-left" onClick={() => setJourney(journey === j.sessionId ? null : j.sessionId)}>{time(j.startedAt)} · {j.source} · {j.device} · {j.countedPdfOpens} counted PDF opens · {j.steps.length} steps</button>
           {journey === j.sessionId && <ol className="mt-2 space-y-0.5 pl-4 text-xs text-muted-foreground">{j.steps.map((s, i) => <li key={i}>{time(s.at)} — {s.event.replaceAll("_", " ")}{s.label ? ` · ${s.label}` : ""}</li>)}</ol>}
         </li>)}
       </ul>
