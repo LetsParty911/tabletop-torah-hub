@@ -178,7 +178,9 @@ export function buildObservations(input: ObservationInput): string[] {
     notes.push(
       input.searchesWithoutContent === 0
         ? "No searches failed to lead to content."
-        : `${input.searchesWithoutContent} of ${input.searchesTotal} searches led to no publication or PDF-open request.`,
+        : input.mode === "counted_pdf_opens"
+          ? `${input.searchesWithoutContent} of ${input.searchesTotal} searches led to no publication or PDF-open request.`
+          : `${input.searchesWithoutContent} of ${input.searchesTotal} searches led to no publication, open or download.`,
     );
   }
   if (notes.length < 3 && input.signups > 0) {
