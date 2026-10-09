@@ -140,6 +140,7 @@ export function hasComparableBaseline(metrics: { people: number; sessions: numbe
 }
 
 export type ObservationInput = {
+  mode?: "legacy" | "counted_pdf_opens";
   people: number;
   usedTorah: number;
   pdfOpens: number;
@@ -161,19 +162,23 @@ export function buildObservations(input: ObservationInput): string[] {
   const notes: string[] = [];
   if (input.topSourceDownloads && input.downloads > 0 && input.topSourceDownloads.downloads > 0) {
     notes.push(
-      `${input.topSourceDownloads.label} produced ${input.topSourceDownloads.downloads} of ${input.downloads} download actions.`,
+      input.mode === "counted_pdf_opens"
+        ? `${input.topSourceDownloads.label} produced ${input.topSourceDownloads.downloads} of ${input.downloads} counted PDF opens.`
+        : `${input.topSourceDownloads.label} produced ${input.topSourceDownloads.downloads} of ${input.downloads} download actions.`,
     );
   }
   if (input.topPublication) {
     notes.push(
-      `${input.topPublication.title} led with ${input.topPublication.downloadActions} download actions and ${input.topPublication.pdfOpens} PDF opens.`,
+      input.mode === "counted_pdf_opens"
+        ? `${input.topPublication.title} led with ${input.topPublication.pdfOpens} counted PDF opens.`
+        : `${input.topPublication.title} led with ${input.topPublication.downloadActions} download actions and ${input.topPublication.pdfOpens} PDF opens.`,
     );
   }
   if (input.searchesTotal > 0) {
     notes.push(
       input.searchesWithoutContent === 0
         ? "No searches failed to lead to content."
-        : `${input.searchesWithoutContent} of ${input.searchesTotal} searches led to no publication, open or download.`,
+        : `${input.searchesWithoutContent} of ${input.searchesTotal} searches led to no publication or PDF-open request.`,
     );
   }
   if (notes.length < 3 && input.signups > 0) {
