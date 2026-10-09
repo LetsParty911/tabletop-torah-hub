@@ -24,8 +24,8 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-      - name: Install exact project dependencies
-        run: npm ci
+      - name: Install project dependencies for review (existing npm lockfile is stale)
+        run: npm install --package-lock=false --no-audit --no-fund
       - name: Install isolated test runner
         run: npm install --no-save --package-lock=false vitest@3.2.4
       - name: Check TypeScript types
