@@ -15,6 +15,7 @@ import {
   type VisitorTimeline,
 } from "@/lib/retention-cohorts";
 import { aggregatePublications } from "@/lib/publication-funnel";
+import { isTaggedOpenPdfClick, summarizePdfAccess } from "@/lib/pdf-access";
 import { isOpenPdfClick, openPdfClicksForReport, shapeOpenPdfClickDetails } from "@/lib/open-pdf-clicks";
 import { describeRecentStoryAction } from "@/lib/recent-story";
 import { buildOverview } from "@/lib/overview-analytics";
@@ -256,6 +257,7 @@ export function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<str
   const kept = [...allSessions.values()].filter((session) => !excluded.has(session.id));
   const keptIds = new Set(kept.map((session) => session.id));
   const openPdf = openPdfClicksForReport(rows, keptIds);
+  const pdfAccess = summarizePdfAccess(rows, keptIds);
   const keptRows = rows.filter((row) => {
     const sid = row.session_id?.trim();
     return sid ? keptIds.has(sid) : false;
@@ -327,6 +329,15 @@ export function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<str
     uniquePdfDownloads: uniquePdfDownloads.size,
     downloadActions: downloadActionIds.size,
     openPdfClicks: openPdf.total,
+    countedPdfOpens: pdfAccess.counted,
+    pdfOpenVisitors: pdfAccess.visitors,
+    pdfOpenSessions: pdfAccess.sessionsWithAccess.size,
+    pdfOpenRate: kept.length ? pdfAccess.sessionsWithAccess.size / kept.length : 0,
+    uniqueAccessedPdfs: pdfAccess.uniquePublications,
+    rawPdfAccessActions: pdfAccess.rawActions,
+    humanPdfActionsBeforeCap: pdfAccess.humanBeforeCap,
+    overCapPdfOpens: pdfAccess.overCap,
+    overCapVisitors: pdfAccess.visitorsOverCap,
     uniquePdfsOpened: openPdf.uniquePublications,
     uniquePdfClickVisitors: openPdf.uniqueVisitors,
     rawOpenPdfClicks: openPdf.rawTotal,
@@ -424,6 +435,8 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
   const markedInternalSessions = [...allSessions.values()].filter((s) => s.markedInternal).length;
   const keptRows = rows.filter((row) => Boolean(row.session_id && keptIds.has(row.session_id.trim())));
   const canonical = summarizeCanonical(rows, priorVisitors);
+  const pdfAccess = summarizePdfAccess(rows, keptIds);
+  const countedPdfRows = pdfAccess.countedActions.map((action) => action.row);
   const rowsBySession = new Map<string, EventRow[]>();
   for (const row of keptRows) {
     const sid = row.session_id?.trim();
@@ -472,7 +485,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
     if (vid && (priorVisitors.has(vid) || row.is_new_visitor === false)) returning.add(vid);
   }
 
-  const publications = aggregatePublications(keptRows, priorVisitors);
+  const publications = aggregatePublications(keptRows, priorVisitors, countedPdfRows);
   const campaigns = new Map<string, { sessions: Set<string>; variants: Map<string, Set<string>> }>();
   const utmSources = new Map<string, Set<string>>();
   const locations = new Map<string, Set<string>>();
@@ -568,6 +581,7 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
     people: keptRows.filter((row, index, list) => row.visitor_id && list.findIndex((other) => other.visitor_id === row.visitor_id) === index).map((row) => detailFor(row)),
     usedTorah: usedSessions.flatMap((session) => (rowsBySession.get(session.sessionId) ?? []).filter((row) => row.event_name !== "download_served" && isUsedTorahEvent(row)).map((row) => detailFor(row, session.usedTorahReason))),
     pdfOpens: keptRows.filter((row) => row.event_name === "pdf_open").map((row) => detailFor(row)),
+    countedPdfOpens: pdfAccess.countedActions.map((action) => detailFor(action.row, action.kind === "open_pdf_click" ? "Clicked Open PDF (attempted access)" : "Historical PDF request")),
     downloads: keptRows.filter((row) => row.event_name === "download").map((row) => detailFor(row)),
     returning: keptRows.filter((row, index, list) => row.visitor_id && returning.has(row.visitor_id) && list.findIndex((other) => other.visitor_id === row.visitor_id) === index).map((row) => detailFor(row)),
     engaged: sessionDetails.filter((session) => session.engaged).flatMap((session) => session.events.slice(0, 1)),
@@ -580,15 +594,25 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
     returningVisitors: returning,
     windowStart: window?.start ?? rows[0]?.occurred_at ?? new Date().toISOString(),
     windowEnd: window?.end ?? new Date().toISOString(),
+    countedPdfRows,
   });
 
   return {
     overview,
-    homepageSharing: summarizeHomepageSharing(keptRows),
+    homepageSharing: summarizeHomepageSharing(keptRows, countedPdfRows),
     metrics: {
       people: canonical.uniqueVisitors,
       usedTorah: usedVisitors.size,
       pdfOpens: metricDetails.pdfOpens.length,
+      countedPdfOpens: pdfAccess.counted,
+      pdfOpenVisitors: pdfAccess.visitors,
+      pdfOpenSessions: pdfAccess.sessionsWithAccess.size,
+      pdfOpenRate: canonical.sessions ? pdfAccess.sessionsWithAccess.size / canonical.sessions : 0,
+      uniqueAccessedPdfs: pdfAccess.uniquePublications,
+      rawPdfAccessActions: pdfAccess.rawActions,
+      humanPdfActionsBeforeCap: pdfAccess.humanBeforeCap,
+      overCapPdfOpens: pdfAccess.overCap,
+      overCapVisitors: pdfAccess.visitorsOverCap,
       openPdfClicks: openPdf.total,
       openPdfClicksRaw: openPdf.rawTotal,
       uniquePdfsOpened: openPdf.uniquePublications,
@@ -608,6 +632,18 @@ function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, wind
       recommendationClicks: keptRows.filter((row) => row.event_name === "recommendation_click").length,
       myTableAdds: keptRows.filter((row) => row.event_name === "my_table_add").length,
       myTableOpens: keptRows.filter((row) => row.event_name === "my_table_open").length,
+    },
+    pdfAccessAudit: {
+      rawActions: pdfAccess.rawActions,
+      humanBeforeCap: pdfAccess.humanBeforeCap,
+      counted: pdfAccess.counted,
+      excludedNonHuman: pdfAccess.excludedNonHuman,
+      excludedUnidentified: pdfAccess.excludedNoVisitorId,
+      overCap: pdfAccess.overCap,
+      visitorsOverCap: pdfAccess.visitorsOverCap,
+      missingPublicationIds: pdfAccess.countedMissingPublicationId,
+      automaticPreviews: pdfAccess.automaticPreviews,
+      legacyDownloadActions: pdfAccess.byKind.download + pdfAccess.byKind.download_served,
     },
     confidence: {
       counts: confidenceCounts,
@@ -902,7 +938,7 @@ type VisitorEventRow = EventRow & {
 };
 
 const VISITOR_SELECT_BASE =
-  "event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, source_group, device_type, country, region, city, postal_code, metadata, ip_address, user_agent, accept_language, sec_ch_ua, sec_ch_platform, sec_ch_mobile, asn, as_organization, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign";
+  "event_id, event_name, occurred_at, visitor_id, session_id, is_new_visitor, path, publication_id, publication_title, source_group, device_type, country, region, city, postal_code, metadata, ip_address, user_agent, accept_language, sec_ch_ua, sec_ch_platform, sec_ch_mobile, asn, as_organization, referrer_host, referrer_url, utm_source, utm_medium, utm_campaign";
 
 // Extended geo columns may not exist yet in the analytics project; the fetcher
 // falls back to the base projection when they are missing.
@@ -1076,6 +1112,8 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
     const end = new Date(endMs).toISOString();
 
     const rows = await fetchVisitorEvents(start, end);
+    const qualifiedPdfAccess = summarizePdfAccess(rows, classifySessions(rows).humanIds);
+    const countedVisitorRows = new Set(qualifiedPdfAccess.countedActions.map((action) => action.row));
 
     // Reuse the EXISTING canonical session/automation rules — no new bot filter.
     const sessions = buildSessions(rows);
@@ -1107,6 +1145,7 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       pageviews: number;
       publicationClicks: number;
       pdfOpens: number;
+      countedPdfOpens: number;
       downloads: number;
       searches: number;
       signups: number;
@@ -1171,6 +1210,7 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
           pageviews: 0,
           publicationClicks: 0,
           pdfOpens: 0,
+          countedPdfOpens: 0,
           downloads: 0,
           searches: 0,
           signups: 0,
@@ -1260,11 +1300,11 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       }
       if (name === "publication_click") {
         v.publicationClicks += 1;
-        if (publication) v.publicationActions.push({ at, action: "Clicked", publication });
+        if (publication) v.publicationActions.push({ at, action: isTaggedOpenPdfClick(row) ? (countedVisitorRows.has(row) ? "Counted Open PDF request" : "Open PDF request (excluded or above cap)") : "Clicked", publication });
       }
       if (name === "pdf_open") {
         v.pdfOpens += 1;
-        if (publication) v.publicationActions.push({ at, action: "Opened PDF", publication });
+        if (publication) v.publicationActions.push({ at, action: "Automatic viewer preview", publication });
       }
       if (name === "download") {
         v.downloads += 1;
@@ -1323,6 +1363,11 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
           });
         }
       }
+    }
+
+    for (const action of qualifiedPdfAccess.countedActions) {
+      const visitor = visitors.get(action.row.visitor_id?.trim() ?? "");
+      if (visitor) visitor.countedPdfOpens += 1;
     }
 
     // Enhanced fingerprint snapshots for the sessions in this window, plus
@@ -1445,6 +1490,7 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
         pageviews: v.pageviews,
         publicationClicks: v.publicationClicks,
         pdfOpens: v.pdfOpens,
+        countedPdfOpens: v.countedPdfOpens,
         downloads: v.downloads,
         searches: v.searches,
         signups: v.signups,
@@ -1486,6 +1532,8 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       sessions: sessions.size,
       pageviews: rows.filter((r) => r.event_name === "page_view").length,
       pdfOpens: rows.filter((r) => r.event_name === "pdf_open").length,
+      countedPdfOpens: qualifiedPdfAccess.counted,
+      overCapPdfOpens: qualifiedPdfAccess.overCap,
       downloads: rows.filter((r) => r.event_name === "download").length,
       signups: rows.filter((r) => r.event_name === "signup").length,
       suspectedSessions: new Set([...burstOrHeartbeat, ...knownIncident]).size,
@@ -1517,7 +1565,7 @@ async function reportForWindow(start: string, end: string): Promise<BuiltReport>
 
 function downloadsBySource(report: BuiltReport) {
   const totals = new Map<string, number>();
-  for (const detail of report.details.downloads) {
+  for (const detail of report.details.countedPdfOpens) {
     totals.set(detail.source, (totals.get(detail.source) ?? 0) + 1);
   }
   const top = [...totals.entries()].sort((a, b) => b[1] - a[1])[0];
@@ -1535,12 +1583,12 @@ function shapeReport(report: BuiltReport, limit: number) {
   const observations = buildObservations({
     people: report.metrics.people,
     usedTorah: report.metrics.usedTorah,
-    pdfOpens: report.metrics.pdfOpens,
-    downloads: report.metrics.downloads,
+    pdfOpens: report.metrics.countedPdfOpens,
+    downloads: report.metrics.countedPdfOpens,
     signups: report.metrics.signups,
     returningReaders: report.metrics.returningReaders,
     topPublication: topPublication
-      ? { title: topPublication.title, downloadActions: topPublication.downloadActions, pdfOpens: topPublication.pdfOpens }
+      ? { title: topPublication.title, downloadActions: topPublication.countedPdfOpens, pdfOpens: topPublication.countedPdfOpens }
       : null,
     topSourceDownloads: sources.top,
     searchesWithoutContent: failedSearches.length,
@@ -1575,7 +1623,7 @@ function changeLines(current: BuiltReport, previous: BuiltReport | null) {
   return buildChangeObservations([
     { label: "People", current: current.metrics.people, previous: previous.metrics.people },
     { label: "Used Torah", current: current.metrics.usedTorah, previous: previous.metrics.usedTorah },
-    { label: "Download actions", current: current.metrics.downloads, previous: previous.metrics.downloads },
+    { label: "Counted PDF opens", current: current.metrics.countedPdfOpens, previous: previous.metrics.countedPdfOpens },
   ]);
 }
 
@@ -1918,7 +1966,7 @@ export const adminAnalyticsHealth = createServerFn({ method: "POST" })
           : `${taggedSessions.size} of ${sessions.size} sessions carry a utm_source; ${contentSessions.size} also carry a utm_content variant.`,
     });
 
-    // 7. Download action -> served matching
+    // 7. Legacy download action -> served matching
     const actions = new Set<string>();
     const served = new Set<string>();
     for (const row of rows) {
@@ -1930,7 +1978,7 @@ export const adminAnalyticsHealth = createServerFn({ method: "POST" })
     }
     const matched = [...actions].filter((id) => served.has(id)).length;
     checks.push({
-      name: "Download request matching",
+      name: "Legacy download request matching",
       status:
         actions.size < 10
           ? "not_enough_data"
@@ -1940,5 +1988,20 @@ export const adminAnalyticsHealth = createServerFn({ method: "POST" })
       detail: `${matched} of ${actions.size} tagged download actions have a matching served request. A served request means the file redirect was issued, not that the download completed.`,
     });
 
+    const classifiedPdfSessions = classifySessions(rows).humanIds;
+    const pdfAccess = summarizePdfAccess(rows, classifiedPdfSessions);
+    const recentOpenClicks = rows.filter((row) => isTaggedOpenPdfClick(row));
+    const clickMissingId = recentOpenClicks.filter((row) => !row.publication_id?.trim()).length;
+    const openDevices = recentOpenClicks.reduce((out, row) => {
+      const device = row.device_type?.trim().toLowerCase();
+      if (device === "mobile") out.mobile += 1;
+      if (device === "desktop") out.desktop += 1;
+      return out;
+    }, { mobile: 0, desktop: 0 });
+    checks.unshift({
+      name: "Open PDF tracking",
+      status: recentOpenClicks.length === 0 ? "not_enough_data" : clickMissingId === 0 ? "healthy" : "warning",
+      detail: `${recentOpenClicks.length} deliberate Open PDF clicks observed, ${pdfAccess.counted} counted after human filtering and the five-per-visitor cap; ${pdfAccess.overCap} above cap; ${clickMissingId} missing publication IDs; mobile ${openDevices.mobile}, desktop ${openDevices.desktop}. Clicks do not prove a PDF fully loaded.`,
+    });
     return { windowStart: start, windowEnd: end, events: total, checks };
   });
