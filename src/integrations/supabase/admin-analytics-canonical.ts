@@ -1308,7 +1308,7 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       }
       if (name === "download") {
         v.downloads += 1;
-        if (publication) v.publicationActions.push({ at, action: "Downloaded", publication });
+        if (publication) v.publicationActions.push({ at, action: countedVisitorRows.has(row) ? "Counted historical PDF request" : "Historical download request (excluded or above cap)", publication });
       }
       if (name === "search") {
         v.searches += 1;
@@ -1563,7 +1563,7 @@ async function reportForWindow(start: string, end: string): Promise<BuiltReport>
   return buildAnalyticsReport(rows, priorVisitors);
 }
 
-function downloadsBySource(report: BuiltReport) {
+function pdfOpensBySource(report: BuiltReport) {
   const totals = new Map<string, number>();
   for (const detail of report.details.countedPdfOpens) {
     totals.set(detail.source, (totals.get(detail.source) ?? 0) + 1);
@@ -1578,9 +1578,10 @@ function downloadsBySource(report: BuiltReport) {
 function shapeReport(report: BuiltReport, limit: number) {
   const searches = report.searches;
   const failedSearches = searches.filter((search) => !search.ledToContent);
-  const sources = downloadsBySource(report);
+  const sources = pdfOpensBySource(report);
   const topPublication = report.publications[0] ?? null;
   const observations = buildObservations({
+    mode: "counted_pdf_opens",
     people: report.metrics.people,
     usedTorah: report.metrics.usedTorah,
     pdfOpens: report.metrics.countedPdfOpens,
@@ -1606,7 +1607,7 @@ function shapeReport(report: BuiltReport, limit: number) {
     // Computed before the top-N slice so the signs are counted even when not in the top list.
     sukkahSignDownloads: countSukkahSignDownloads(report.publications),
     sources: report.sources.slice(0, limit),
-    downloadSources: sources.breakdown.slice(0, limit),
+    pdfOpenSources: sources.breakdown.slice(0, limit).map(({ label, downloads }) => ({ label, pdfOpens: downloads })),
     campaigns: report.campaigns.slice(0, limit),
     locations: report.locations.slice(0, limit),
     searches: searches.slice(0, limit * 2),
