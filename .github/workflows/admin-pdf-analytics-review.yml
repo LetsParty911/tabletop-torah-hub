@@ -1,0 +1,36 @@
+name: Admin PDF analytics review
+
+on:
+  push:
+    branches:
+      - feature/pdf-opens-admin-reporting-20261009
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Typecheck, PDF-open reporting tests, and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out changes
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install exact project dependencies
+        run: npm ci
+      - name: Install isolated test runner
+        run: npm install --no-save --package-lock=false vitest@3.2.4
+      - name: Check TypeScript types
+        run: npx tsc --noEmit
+      - name: Run PDF-open and canonical analytics regression tests
+        run: npx vitest run src/lib/pdf-access.test.ts src/lib/publication-funnel.test.ts src/lib/homepage-sharing.test.ts src/lib/overview-counted-pdf.test.ts src/integrations/supabase/admin-analytics-canonical.test.ts
+      - name: Build application
+        run: npm run build
