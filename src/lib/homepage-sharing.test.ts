@@ -53,4 +53,17 @@ describe("homepage sharing analytics", () => {
     expect(result.linkSessions).toBe(0);
     expect(result.linkDownloads).toBe(0);
   });
+  it("attributes only the same counted, capped PDF actions and never automatic previews", () => {
+    const page = at("page_view", { ...tagged });
+    const click = at("publication_click", { ...tagged, metadata: { action: "open_pdf" } });
+    const preview = at("pdf_open", { ...tagged });
+    const ignored = at("publication_click", { session_id: "no-tagged-page", metadata: { action: "open_pdf" } });
+    const result = summarizeHomepageSharing(
+      [page, click, preview, ignored],
+      [click, ignored], // already human-filtered, capped actions
+    );
+    expect(result.linkPdfOpens).toBe(1); // automatic preview audit only
+    expect(result.linkCountedPdfOpens).toBe(1); // qualified deliberate request
+  });
+
 });
