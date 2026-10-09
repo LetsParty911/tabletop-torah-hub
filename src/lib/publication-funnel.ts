@@ -13,6 +13,8 @@ export type PublicationEventRow = {
   is_new_visitor?: boolean | null;
   publication_id?: string | null;
   publication_title?: string | null;
+  publication_series?: string | null;
+  occurred_at?: string;
   source_group?: string | null;
   device_type?: string | null;
   metadata?: Record<string, unknown> | null;
@@ -25,6 +27,11 @@ export type PublicationFunnelRow = {
   clicks: number;
   uniqueReaders: number;
   pdfOpens: number;
+  countedPdfOpens: number;
+  countedVisitors: number;
+  countedSources: Array<{ label: string; opens: number }>;
+  series: string | null;
+  lastCountedOpenAt: string | null;
   downloadActions: number;
   downloadsServed: number;
   newVisitorSessions: number;
@@ -44,6 +51,7 @@ type Agg = {
   clicks: Set<string>;
   readers: Set<string>;
   opens: number;
+  series: string | null;
   downloads: number;
   served: number;
   downloadActionIds: Set<string>;
@@ -63,6 +71,7 @@ export function publicationKey(row: PublicationEventRow): string | null {
 export function aggregatePublications(
   rows: PublicationEventRow[],
   priorVisitors: Set<string> = new Set(),
+  countedPdfRows: PublicationEventRow[] = [],
 ): PublicationFunnelRow[] {
   const publications = new Map<string, Agg>();
 
@@ -81,6 +90,7 @@ export function aggregatePublications(
       clicks: new Set<string>(),
       readers: new Set<string>(),
       opens: 0,
+      series: row.publication_series?.trim() || null,
       downloads: 0,
       served: 0,
       downloadActionIds: new Set<string>(),
@@ -92,6 +102,7 @@ export function aggregatePublications(
       sources: new Map<string, Set<string>>(),
     };
     if (pubTitle) publication.title = pubTitle;
+    if (row.publication_series?.trim()) publication.series = row.publication_series.trim();
 
     const pair = `${sid}::${key}`;
     if (row.event_name === "publication_impression") publication.impressions.add(pair);
@@ -138,6 +149,21 @@ export function aggregatePublications(
     publications.set(key, publication);
   }
 
+  // Only the already human-filtered, five-per-visitor capped actions contribute
+  // to the new primary measure. Automatic viewer previews remain in pdfOpens.
+  const counted = new Map<string, { opens: number; visitors: Set<string>; sources: Map<string, number>; lastAt: string | null }>();
+  for (const row of countedPdfRows) {
+    const key = publicationKey(row);
+    if (!key) continue;
+    const current = counted.get(key) ?? { opens: 0, visitors: new Set<string>(), sources: new Map<string, number>(), lastAt: null };
+    current.opens++;
+    if (row.visitor_id?.trim()) current.visitors.add(row.visitor_id.trim());
+    const src = row.source_group?.trim() || "Direct";
+    current.sources.set(src, (current.sources.get(src) ?? 0) + 1);
+    if (row.occurred_at && (!current.lastAt || row.occurred_at > current.lastAt)) current.lastAt = row.occurred_at;
+    counted.set(key, current);
+  }
+
   return [...publications.values()]
     .map((publication) => ({
       id: publication.id,
@@ -146,6 +172,13 @@ export function aggregatePublications(
       clicks: publication.clicks.size,
       uniqueReaders: publication.readers.size,
       pdfOpens: publication.opens,
+      countedPdfOpens: counted.get(publication.id ?? publication.title)?.opens ?? 0,
+      countedVisitors: counted.get(publication.id ?? publication.title)?.visitors.size ?? 0,
+      countedSources: [...(counted.get(publication.id ?? publication.title)?.sources.entries() ?? [])]
+        .map(([label, opens]) => ({ label, opens }))
+        .sort((a, b) => b.opens - a.opens),
+      series: publication.series,
+      lastCountedOpenAt: counted.get(publication.id ?? publication.title)?.lastAt ?? null,
       downloadActions: publication.downloadActionIds.size,
       downloadsServed: publication.served,
       newVisitorSessions: publication.newVisitorSessions.size,
@@ -161,5 +194,5 @@ export function aggregatePublications(
         .map(([label, set]) => ({ label, sessions: set.size }))
         .sort((a, b) => b.sessions - a.sessions),
     }))
-    .sort((a, b) => b.pdfOpens + b.downloadActions - (a.pdfOpens + a.downloadActions));
+    .sort((a, b) => b.countedPdfOpens - a.countedPdfOpens || b.clicks - a.clicks || a.title.localeCompare(b.title));
 }
