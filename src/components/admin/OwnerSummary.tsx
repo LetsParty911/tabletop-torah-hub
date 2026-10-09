@@ -142,7 +142,7 @@ export default function OwnerSummary({
         </details>
       </Block>
 
-      <CountedPdfOpens data={data} showRanking={false} />
+      <CountedPdfOpens data={data} />
 
       <OpenPdfClicksPanel data={data} />
 
