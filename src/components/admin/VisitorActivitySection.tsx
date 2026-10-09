@@ -128,7 +128,7 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
           <span>{visitor.sessionsInRange} sessions</span>
           <span>{visitor.pageviews} pageviews</span>
           <span>{visitor.pdfOpens} PDF opens</span>
-          <span title="Deliberate Open PDF clicks + historical downloads, before the human filter and per-visitor cap">{visitor.pdfAccessActionsRaw} PDF-access actions (raw){visitor.overPdfAccessCap ? ` · over cap, ${totals.pdfAccessCap} counted at most` : ""}</span>
+          <span title="Deliberate Open PDF clicks + historical downloads, before the human filter and per-visitor cap">{visitor.pdfAccessActionsRaw} PDF-access actions (raw){visitor.overPdfAccessCap ? ` · over the per-visitor cap` : ""}</span>
           <span className="text-muted-foreground">{shortId(visitor.visitorId)}</span>
         </div>
       </button>
