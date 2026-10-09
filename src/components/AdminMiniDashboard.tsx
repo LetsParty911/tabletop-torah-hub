@@ -113,8 +113,8 @@ export default function AdminMiniDashboard({
       canonical &&
       !hasAdminMiniActivity({
         sessions: canonical.sessions,
-        openPdfClicks: canonical.openPdfClicks,
-        downloadActions: canonical.downloadActions,
+        openPdfClicks: canonical.countedPdfOpens,
+        downloadActions: 0,
         newSubscriberCount: data.newSubscriberCount,
         newContactCount: data.newContactCount,
       }),
@@ -157,7 +157,7 @@ export default function AdminMiniDashboard({
         {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
         {data && canonical && nothingNew && (
           <p className="mt-6 font-serif text-xl text-foreground">
-            No new visitor activity, Open PDF clicks, separate download actions, subscribers, or contact messages in this period.
+            No new qualifying visitor activity, counted PDF opens, subscribers, or contact messages in this period.
           </p>
         )}
         {data && !nothingNew && (
@@ -180,25 +180,22 @@ export default function AdminMiniDashboard({
             {canonical && (
             <Tile
               label="PDF activity"
-              quiet={canonical.openPdfClicks === 0 && canonical.downloadActions === 0}
+              quiet={canonical.countedPdfOpens === 0}
             >
-              {canonical.openPdfClicks === 0 && canonical.downloadActions === 0 ? (
-                <Quiet>No Open PDF clicks or separate download actions</Quiet>
+              {canonical.countedPdfOpens === 0 ? (
+                <Quiet>No counted PDF opens</Quiet>
               ) : (
                 <>
-                  <BigNumber>{canonical.openPdfClicks}</BigNumber>
+                  <BigNumber>{canonical.countedPdfOpens}</BigNumber>
                   <p className="mt-2 font-serif text-lg text-foreground">
-                    Open PDF {canonical.openPdfClicks === 1 ? "click" : "clicks"}
+                    Counted PDF {canonical.countedPdfOpens === 1 ? "open" : "opens"}
                   </p>
                   <p className="mt-3 text-sm leading-6">
-                    {canonical.uniquePdfsOpened} unique {canonical.uniquePdfsOpened === 1 ? "PDF" : "PDFs"} opened
-                    {" · "}{canonical.uniquePdfClickVisitors} {canonical.uniquePdfClickVisitors === 1 ? "visitor" : "visitors"} clicked
+                    {canonical.uniqueAccessedPdfs} distinct {canonical.uniqueAccessedPdfs === 1 ? "PDF" : "PDFs"} requested
+                    {" · "}{canonical.pdfOpenVisitors} {canonical.pdfOpenVisitors === 1 ? "browser" : "browsers"} opened PDFs
                   </p>
-                  {canonical.downloadActions > 0 && (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      {canonical.downloadActions} separate {canonical.downloadActions === 1 ? "download action" : "download actions"}
-                    </p>
-                  )}
+                  <p className="mt-2 text-xs text-muted-foreground">Deliberate Open PDF clicks and historical download requests; earliest 5 per browser in this period after human filtering. Clicks do not verify PDF reading.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{canonical.rawPdfAccessActions} raw access actions · {canonical.humanPdfActionsBeforeCap} identified human actions · {canonical.overCapPdfOpens} above the cap ({canonical.overCapVisitors} browsers)</p>
                 </>
               )}
             </Tile>
