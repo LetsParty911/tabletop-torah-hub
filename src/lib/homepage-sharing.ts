@@ -19,7 +19,7 @@ export type HomepageSharingEvent = {
 
 const norm = (value?: string | null) => (value ?? "").trim().toLowerCase();
 
-export function summarizeHomepageSharing(rows: HomepageSharingEvent[]) {
+export function summarizeHomepageSharing(rows: HomepageSharingEvent[], countedPdfRows: HomepageSharingEvent[] = []) {
   let buttonClicks = 0;
   const clickingBrowsers = new Set<string>();
   const linkSessions = new Set<string>();
@@ -52,12 +52,18 @@ export function summarizeHomepageSharing(rows: HomepageSharingEvent[]) {
 
   let linkDownloads = 0;
   let linkPdfOpens = 0;
+  let linkCountedPdfOpens = 0;
   for (const row of rows) {
     if (!row.session_id || !linkSessions.has(row.session_id) || !isTagged(row)) continue;
     if (row.event_name === "download") linkDownloads += 1;
     if (row.event_name === "pdf_open") linkPdfOpens += 1;
   }
 
+  // Campaign conversions only count the same qualified PDF opens as all
+  // other admin reports. An attributed visit is not proof a share was sent.
+  for (const row of countedPdfRows) {
+    if (row.session_id && linkSessions.has(row.session_id) && isTagged(row)) linkCountedPdfOpens += 1;
+  }
   return {
     buttonClicks,
     clickingBrowsers: clickingBrowsers.size,
@@ -65,6 +71,7 @@ export function summarizeHomepageSharing(rows: HomepageSharingEvent[]) {
     linkVisitors: linkVisitors.size,
     linkDownloads,
     linkPdfOpens,
+    linkCountedPdfOpens,
     lastClickAt,
     lastLinkVisitAt,
   };
