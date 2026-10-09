@@ -73,10 +73,9 @@ export default function PlausibleOverview({ overview, prior, rangeLabel }: { ove
       <Card label="Bounce rate" value={shouldShowRate(h.sessions) ? `${Math.round((h.bouncedSessions / h.sessions) * 100)}%` : `${h.bouncedSessions} of ${h.sessions}`} />
       <Card label="Median engaged time" value={secs(h.medianEngagedSeconds)} note={`avg ${secs(h.averageEngagedSeconds)} · ${h.engagedSessionsWithTime} timed`} />
       <Card label="New / returning" value={`${h.newVisitors} / ${h.returningVisitors}`} />
-      <Card label="PDF-accessing sessions" value={h.pdfAccessingSessions} note={change(h.pdfAccessingSessions, prior?.pdfAccessingSessions)} />
-      <Card label="Downloading sessions" value={h.downloadingSessions} note={formatCountRate(h.downloadingSessions, h.sessions) + " conversion"} />
-      <Card label="Unique downloads" value={h.uniqueSessionPublicationDownloads} note="session + publication" />
-      <Card label="Download actions" value={h.downloadActions} note={change(h.downloadActions, prior?.downloadActions)} />
+      <Card label="Counted PDF opens" value={h.countedPdfOpens} note={change(h.countedPdfOpens, prior?.countedPdfOpens)} />
+      <Card label="Visits with a PDF open" value={h.pdfOpenSessions} note={formatCountRate(h.pdfOpenSessions, h.sessions) + " PDF-open rate"} />
+      <Card label="Download actions (historical)" value={h.downloadActions} note="Audit only — already inside counted opens" />
     </section>
 
     <section>
@@ -84,11 +83,11 @@ export default function PlausibleOverview({ overview, prior, rangeLabel }: { ove
       <p className="text-xs text-muted-foreground">Visitors per {overview.bucketing === "day" ? "day" : overview.bucketing === "hour" ? "hour" : "5 minutes"} (New York time).</p>
       {overview.trend.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No activity.</p> : <>
         <div className="mt-3 flex h-32 items-end gap-0.5 border-b border-border">
-          {overview.trend.map((t) => <div key={t.bucket} title={`${t.bucket}: ${t.visitors} visitors, ${t.pageviews} pageviews, ${t.downloads} downloads`} className="flex-1 rounded-t bg-primary/70" style={{ height: `${(t.visitors / maxTrend) * 100}%` }} />)}
+          {overview.trend.map((t) => <div key={t.bucket} title={`${t.bucket}: ${t.visitors} visitors, ${t.pageviews} pageviews, ${t.pdfOpens} counted PDF opens`} className="flex-1 rounded-t bg-primary/70" style={{ height: `${(t.visitors / maxTrend) * 100}%` }} />)}
         </div>
         <details className="mt-2 text-xs"><summary className="cursor-pointer text-muted-foreground">Show table</summary>
-          <table className="mt-2 w-full text-left"><thead><tr className="text-muted-foreground"><th>Period</th><th>Visitors</th><th>Sessions</th><th>Pageviews</th><th>Downloads</th></tr></thead>
-            <tbody>{overview.trend.map((t) => <tr key={t.bucket}><td>{t.bucket}</td><td>{t.visitors}</td><td>{t.sessions}</td><td>{t.pageviews}</td><td>{t.downloads}</td></tr>)}</tbody></table>
+          <table className="mt-2 w-full text-left"><thead><tr className="text-muted-foreground"><th>Period</th><th>Visitors</th><th>Sessions</th><th>Pageviews</th><th>Counted PDF opens</th><th>Historical downloads</th></tr></thead>
+            <tbody>{overview.trend.map((t) => <tr key={t.bucket}><td>{t.bucket}</td><td>{t.visitors}</td><td>{t.sessions}</td><td>{t.pageviews}</td><td>{t.pdfOpens}</td><td>{t.downloads}</td></tr>)}</tbody></table>
         </details>
       </>}
     </section>

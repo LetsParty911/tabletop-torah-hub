@@ -21,8 +21,8 @@ export default function WeeklyOperationsReport({ accessToken }: { accessToken: s
     <section>
       <h3 className="font-serif text-lg font-semibold text-primary">Day by day (New York time)</h3>
       <p className="text-xs text-muted-foreground">Thursday is release day and Friday is follow-up; both are highlighted. The oldest and today's rows may be partial days.</p>
-      <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[480px] text-left text-sm"><thead className="text-xs text-muted-foreground"><tr><th className="py-1">Day</th><th>Visitors</th><th>Visits</th><th>Pageviews</th><th>Downloads</th></tr></thead>
-        <tbody className="divide-y divide-border">{days.map((d) => <tr key={d.bucket} className={d.wd === 4 || d.wd === 5 ? "bg-accent/15 font-medium" : ""}><td className="py-1">{WEEKDAY[d.wd]} {d.bucket.slice(5, 10)}</td><td>{d.visitors}</td><td>{d.sessions}</td><td>{d.pageviews}</td><td>{d.downloads}</td></tr>)}</tbody></table></div>
+      <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[480px] text-left text-sm"><thead className="text-xs text-muted-foreground"><tr><th className="py-1">Day</th><th>Visitors</th><th>Visits</th><th>Pageviews</th><th>Counted PDF opens</th></tr></thead>
+        <tbody className="divide-y divide-border">{days.map((d) => <tr key={d.bucket} className={d.wd === 4 || d.wd === 5 ? "bg-accent/15 font-medium" : ""}><td className="py-1">{WEEKDAY[d.wd]} {d.bucket.slice(5, 10)}</td><td>{d.visitors}</td><td>{d.sessions}</td><td>{d.pageviews}</td><td>{d.pdfOpens}</td></tr>)}</tbody></table></div>
     </section>
     <AnalyticsControlCenter data={data} accessToken={accessToken} />
   </div>;

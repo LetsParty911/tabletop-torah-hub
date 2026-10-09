@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import CountedPdfOpens from "@/components/admin/CountedPdfOpens";
 import OpenPdfClicksPanel, { scrollToOpenPdfPublications } from "@/components/admin/OpenPdfClicksPanel";
 import {
   adminRetentionCohorts,
@@ -141,6 +142,8 @@ export default function OwnerSummary({
         </details>
       </Block>
 
+      <CountedPdfOpens data={data} />
+
       <OpenPdfClicksPanel data={data} />
 
       <Block title="What they did">
@@ -150,6 +153,12 @@ export default function OwnerSummary({
             value={m.engagedSessions}
             note="Real intent or 2+ pages"
             onClick={() => openDetail("engaged", "Engaged Sessions", "Sessions with meaningful intent or at least two pageviews.")}
+          />
+          <Stat
+            label="Counted PDF opens"
+            value={m.countedPdfOpens}
+            note={`Human only, max ${m.pdfAccessCap} per visitor`}
+            onClick={() => openDetail("countedPdfOpens", "Counted PDF opens", "Deliberate Open PDF clicks and historical download actions from likely-human visitors, earliest five per visitor.")}
           />
           <Stat
             label="Used Torah"
@@ -176,13 +185,13 @@ export default function OwnerSummary({
             onClick={() => openDetail("pdfOpens", "PDF viewer opens", "Every embedded PDF-preview load in this period. Not a button click.")}
           />
           <Stat
-            label="Download actions"
+            label="Download actions (historical)"
             value={m.downloads}
-            note="Someone tapped download"
+            note="Audit only — already inside counted opens"
             onClick={() => openDetail("downloads", "Download Actions", "Every user-initiated download request.")}
           />
           <Stat
-            label="Served download requests"
+            label="Served download requests (historical)"
             value={m.downloadsServed}
             note="File redirect issued — not proof the file finished"
             onClick={() =>
@@ -272,12 +281,11 @@ export default function OwnerSummary({
                 <p className="font-medium text-foreground">{publication.title}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {publication.impressions} shown → {publication.clicks} selected →{" "}
-                  {publication.pdfOpens} PDF opens → {publication.downloadActions} download actions →{" "}
+                  {publication.pdfOpens} automatic previews · historical: {publication.downloadActions} download actions,{" "}
                   {publication.downloadsServed} served
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Selection rate: {formatCountRate(publication.clickNumerator, publication.clickDenominator)} ·
-                  Access to download: {formatCountRate(publication.downloadNumerator, publication.downloadDenominator)}
+                  Selection rate: {formatCountRate(publication.clickNumerator, publication.clickDenominator)}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {publication.newVisitorSessions} new · {publication.returningSessions} returning ·{" "}

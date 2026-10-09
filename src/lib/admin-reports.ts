@@ -142,12 +142,14 @@ export function hasComparableBaseline(metrics: { people: number; sessions: numbe
 export type ObservationInput = {
   people: number;
   usedTorah: number;
+  /** Automatic embedded previews — context only, never a headline. */
   pdfOpens: number;
-  downloads: number;
+  /** Counted PDF opens (canonical, human-filtered, capped per visitor). */
+  countedPdfOpens: number;
   signups: number;
   returningReaders: number;
-  topPublication: { title: string; downloadActions: number; pdfOpens: number } | null;
-  topSourceDownloads: { label: string; downloads: number } | null;
+  topPublication: { title: string; countedPdfOpens: number; uniqueVisitors: number } | null;
+  topSourcePdfOpens: { label: string; opens: number } | null;
   searchesWithoutContent: number;
   searchesTotal: number;
   suspectedSessions: number;
@@ -155,25 +157,25 @@ export type ObservationInput = {
 
 /** Deterministic, factual notes (max 3). Never speculative. */
 export function buildObservations(input: ObservationInput): string[] {
-  if (input.people === 0 && input.pdfOpens === 0 && input.downloads === 0) {
+  if (input.people === 0 && input.pdfOpens === 0 && input.countedPdfOpens === 0) {
     return ["No recorded visitor activity in this period."];
   }
   const notes: string[] = [];
-  if (input.topSourceDownloads && input.downloads > 0 && input.topSourceDownloads.downloads > 0) {
+  if (input.topSourcePdfOpens && input.countedPdfOpens > 0 && input.topSourcePdfOpens.opens > 0) {
     notes.push(
-      `${input.topSourceDownloads.label} produced ${input.topSourceDownloads.downloads} of ${input.downloads} download actions.`,
+      `${input.topSourcePdfOpens.label} produced ${input.topSourcePdfOpens.opens} of ${input.countedPdfOpens} counted PDF opens.`,
     );
   }
-  if (input.topPublication) {
+  if (input.topPublication && input.topPublication.countedPdfOpens > 0) {
     notes.push(
-      `${input.topPublication.title} led with ${input.topPublication.downloadActions} download actions and ${input.topPublication.pdfOpens} PDF opens.`,
+      `${input.topPublication.title} led with ${input.topPublication.countedPdfOpens} counted PDF opens from ${input.topPublication.uniqueVisitors} visitor${input.topPublication.uniqueVisitors === 1 ? "" : "s"}.`,
     );
   }
   if (input.searchesTotal > 0) {
     notes.push(
       input.searchesWithoutContent === 0
         ? "No searches failed to lead to content."
-        : `${input.searchesWithoutContent} of ${input.searchesTotal} searches led to no publication, open or download.`,
+        : `${input.searchesWithoutContent} of ${input.searchesTotal} searches led to no publication or PDF open.`,
     );
   }
   if (notes.length < 3 && input.signups > 0) {

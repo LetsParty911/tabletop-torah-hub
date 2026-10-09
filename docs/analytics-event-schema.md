@@ -313,7 +313,7 @@ Computed in `src/lib/overview-analytics.ts` from human-qualified canonical rows 
 - **Acquisition & geography & device**: session level, from the session's first-touch values (first row with a value). Location is approximate network location; raw IP stays in admin forensic views only. Browser/OS come from the stored user agent via `ua-parse`.
 - **Scroll depth**: `scroll_depth` carries `percent` (25/50/75/100), `max_scroll_percent` and `page_view_id` (new per route view, so each threshold fires once per page view). Reported as distinct sessions that viewed the page and reached each threshold ÷ distinct sessions that viewed it. A session is counted at most once per threshold in the displayed rate even if it has multiple page views. `rawEvents` is retained only as a health/debug count; `uniqueThresholdEvents` deduplicates by session + page_view_id + threshold, with session + path as the fallback for historical rows without a page_view_id.
 - **Outbound clicks**: `outbound_click` counts and distinct sessions by host and host+path. Only HTTP(S) links to a different normalized hostname are eligible. Stored target metadata is hostname plus pathname only; query strings and fragments are discarded before the event is created.
-- **Funnels**: distinct sessions, each stage must occur at or after the previous stage. (1) any pageview → `publication_click` → publication access (`pdf_open` or `download`) → `download`. (2) pageview on `/` or a collection path (`/parsha`, `/yom-tov`, `/publications`, `/archive`, `/short-vorts`) → `publication_click`/`recommendation_click`/`chooser_select` → publication access (`pdf_open` or `download`) → `download`. `download_served` remains a separate server-side redirect-confirmation diagnostic and does not create a user download action or funnel conversion by itself.
+- **Funnels**: distinct sessions, each stage must occur at or after the previous stage. (1) any pageview → `publication_click` → **counted PDF open**. (2) pageview on `/` or a collection path (`/parsha`, `/yom-tov`, `/publications`, `/archive`, `/short-vorts`) → `publication_click`/`recommendation_click`/`chooser_select` → **counted PDF open**. Automatic `pdf_open` previews and `download_served` never complete a funnel by themselves.
 - **Recency**: latest canonical event and heartbeat; sessions whose last event is within 5 / 30 minutes.
 - **Not measurable**: completed CDN byte transfer, scroll on PDF viewers, time on the final page without heartbeats, and outbound navigation where the browser leaves before the beacon is sent.
 
@@ -342,3 +342,20 @@ continue to carry the campaign tag. Tagged-link sessions therefore do not
 prove a fresh WhatsApp message, nor are they uniquely matchable to a particular
 button click. Historical campaign-tagged activity remains visible; homepage
 button-click counts begin only with this instrumentation.
+
+
+## Counted PDF opens (headline PDF metric)
+
+Single source: `src/lib/pdf-access.ts` (`summarizePdfAccess`), used by every admin surface (/admin since-last tile, /admin-analytics Control Center, Weekly Ops, Owner Summary, Overview, Publications, Website Sharing, daily/collection reports, health check).
+
+- **Counts:** tagged `publication_click` with `metadata.action = "open_pdf"`, and historical user-initiated `download` actions. A `download_served` row counts only when its `metadata.action_id` matches no `download` row (then it stands in for that action); otherwise it pairs with the action and is not counted again. Duplicate deliveries (same `event_id`) collapse.
+- **Never counts:** automatic `pdf_open` previews, untagged selections, impressions, page views.
+- **Order of filters:** dedupe → shared human classifier (uncertain, internal/test, suspected automation excluded) → require `visitor_id` → per `visitor_id`, keep the **earliest 5** actions by `occurred_at` across all sessions and publications in the selected range. Never per session or IP.
+- **Audit fields:** `pdfAccessRaw`, `pdfAccessExcludedNonHuman`, `pdfAccessExcludedNoVisitorId`, `pdfAccessOverCap`, `pdfAccessVisitorsOverCap`, `pdfAccessMissingPublicationId`, `pdfAccessByKind`. Raw events are never altered.
+- **PDF-open rate:** human sessions with ≥1 counted open ÷ human sessions.
+- **Rankings / attribution:** `report.pdfAccess.byPublication` (id, title, series, parsha, opens, uniqueVisitors, topSource, lastAt), `bySource`, `byCampaign`. Missing publication IDs are excluded from rankings, never guessed from titles.
+- **CSV (`counted-pdf-opens-*.csv`):** `publication_id, title, series, parsha, counted_pdf_opens, unique_visitors, top_source, last_at_utc`.
+- Timestamps are stored in UTC; days and collection windows are New York time.
+- It is an attempted open — not proof the file bytes loaded or that anyone read it.
+- **Historical audit:** `metrics.downloads`, `downloadsServed`, per-publication `downloadActions` remain visible, labeled historical, and are never added to the counted total a second time. "Download rate" and "Open→download" headlines were removed.
+- The raw Open PDF clicks panel (every human click, uncapped) and automatic previews remain separate diagnostics.

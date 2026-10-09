@@ -104,11 +104,11 @@ describe("deterministic observations", () => {
     people: 0,
     usedTorah: 0,
     pdfOpens: 0,
-    downloads: 0,
+    countedPdfOpens: 0,
     signups: 0,
     returningReaders: 0,
     topPublication: null,
-    topSourceDownloads: null,
+    topSourcePdfOpens: null,
     searchesWithoutContent: 0,
     searchesTotal: 0,
     suspectedSessions: 0,
@@ -122,15 +122,16 @@ describe("deterministic observations", () => {
     const notes = buildObservations({
       ...base,
       people: 20,
-      downloads: 8,
+      countedPdfOpens: 8,
       pdfOpens: 12,
       searchesTotal: 4,
       searchesWithoutContent: 0,
-      topPublication: { title: "Artscroll by the Shabbos Table", downloadActions: 5, pdfOpens: 7 },
-      topSourceDownloads: { label: "Email", downloads: 5 },
+      topPublication: { title: "Artscroll by the Shabbos Table", countedPdfOpens: 5, uniqueVisitors: 3 },
+      topSourcePdfOpens: { label: "Email", opens: 5 },
     });
     expect(notes).toHaveLength(3);
-    expect(notes[0]).toBe("Email produced 5 of 8 download actions.");
+    expect(notes[0]).toBe("Email produced 5 of 8 counted PDF opens.");
+    expect(notes[1]).toBe("Artscroll by the Shabbos Table led with 5 counted PDF opens from 3 visitors.");
     expect(notes[2]).toBe("No searches failed to lead to content.");
   });
 });
