@@ -44,6 +44,7 @@ export const INFRASTRUCTURE_ORGANIZATIONS = [
   "fastly",
   "latitude.sh",
   "microsoft corporation",
+  "ovh sas",
 ];
 
 export function isInfrastructureOrganization(org: string | null | undefined): boolean {
@@ -52,7 +53,7 @@ export function isInfrastructureOrganization(org: string | null | undefined): bo
   return INFRASTRUCTURE_ORGANIZATIONS.some((needle) => value.includes(needle));
 }
 
-/** Low-signal: at most one page, no card impressions, under 30 seconds. */
+/** Low-signal: at most one page view, under 30 seconds, with no deliberate action. */
 export const INFRASTRUCTURE_MAX_DURATION_MS = 30_000;
 
 export const CONFIDENCE_LABELS: Record<TrafficConfidence, string> = {
@@ -94,7 +95,7 @@ export function classifySession(input: ConfidenceInput): TrafficConfidence {
   if (
     input.infrastructureNetwork &&
     input.pageviews <= 1 &&
-    input.impressions === 0 &&
+    // Publication impressions fire on card visibility and do not prove human intent.
     input.durationMs < INFRASTRUCTURE_MAX_DURATION_MS
   )
     return "suspected_automation";
