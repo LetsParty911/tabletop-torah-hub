@@ -6,7 +6,7 @@ export function MaintenancePage() {
       <SiteLogoHorizontal />
       <h1 className="font-serif text-4xl sm:text-5xl font-bold text-primary">Closed for Maintenance</h1>
       <p className="max-w-xl text-base sm:text-lg text-muted-foreground">
-        TorahForTheTable.com is closed for maintenance until further notice.
+        We’re closed for maintenance. We’ll reopen soon.
       </p>
     </main>
   );
