@@ -17,7 +17,7 @@ import {
 import { aggregatePublications } from "@/lib/publication-funnel";
 import { isOpenPdfClick, openPdfClicksForReport, shapeOpenPdfClickDetails } from "@/lib/open-pdf-clicks";
 import { describeRecentStoryAction } from "@/lib/recent-story";
-import { summarizePdfAccess, pdfOpenRate, PDF_ACCESS_CAP_PER_VISITOR, type PdfAccessSummary } from "@/lib/pdf-access";
+import { pdfAccessActions, summarizePdfAccess, pdfOpenRate, PDF_ACCESS_CAP_PER_VISITOR, type PdfAccessSummary } from "@/lib/pdf-access";
 import { buildOverview } from "@/lib/overview-analytics";
 import { summarizeHomepageSharing } from "@/lib/homepage-sharing";
 import {
@@ -1408,6 +1408,14 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       b.lastSeenInRange.localeCompare(a.lastSeenInRange),
     );
     const capped = all.slice(0, VISITOR_CAP);
+    // Raw deliberate PDF-access actions per visitor (deduplicated; before the
+    // human filter and the per-visitor cap used by Counted PDF opens).
+    const rawPdfAccess = pdfAccessActions(rows.map((r) => ({ ...r, event_id: null })));
+    const rawPdfAccessByVisitor = new Map<string, number>();
+    for (const a of rawPdfAccess) {
+      const vid = a.row.visitor_id?.trim();
+      if (vid) rawPdfAccessByVisitor.set(vid, (rawPdfAccessByVisitor.get(vid) ?? 0) + 1);
+    }
 
     const shaped = capped.map((v) => {
       const sessionDetails = [...v.sessionDetails.values()].sort((a, b) =>
@@ -1500,6 +1508,8 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
         publicationClicks: v.publicationClicks,
         pdfOpens: v.pdfOpens,
         downloads: v.downloads,
+        pdfAccessActionsRaw: rawPdfAccessByVisitor.get(v.visitorId) ?? 0,
+        overPdfAccessCap: (rawPdfAccessByVisitor.get(v.visitorId) ?? 0) > PDF_ACCESS_CAP_PER_VISITOR,
         searches: v.searches,
         signups: v.signups,
         shares: v.shares,
@@ -1541,6 +1551,8 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       pageviews: rows.filter((r) => r.event_name === "page_view").length,
       pdfOpens: rows.filter((r) => r.event_name === "pdf_open").length,
       downloads: rows.filter((r) => r.event_name === "download").length,
+      pdfAccessActionsRaw: rawPdfAccess.length,
+      pdfAccessCap: PDF_ACCESS_CAP_PER_VISITOR,
       signups: rows.filter((r) => r.event_name === "signup").length,
       suspectedSessions: new Set([...burstOrHeartbeat, ...knownIncident]).size,
       eventsScanned: rows.length,
@@ -1948,6 +1960,19 @@ export const adminAnalyticsHealth = createServerFn({ method: "POST" })
             : "warning",
       detail: `${recentSessionsWithGeo.size} of ${recentSessions.size} sessions in the last 24 hours carry an approximate country, region or city; ${recentSessionsLowReliability.size} flagged low reliability and ${recentSessionsWithNetwork.size} carry network context (carrier, VPN or hosting). Older events from before geo enrichment rolled out are not counted.`,
     });
+
+    // 4b. Counted PDF opens — integrity of the canonical PDF-access metric.
+    {
+      const healthClass = classifySessions(rows);
+      const access = summarizePdfAccess(rows, healthClass.humanIds);
+      checks.push({
+        name: "Counted PDF opens",
+        status: access.rawActions === 0 ? "not_enough_data" : access.countedMissingPublicationId === 0 ? "healthy" : "warning",
+        detail: access.rawActions === 0
+          ? "No deliberate Open PDF clicks or historical download actions in the last 7 days."
+          : `${access.rawActions} deduplicated PDF-access actions; ${access.counted} counted after excluding ${access.excludedNonHuman} non-human, ${access.excludedNoVisitorId} without a visitor ID and ${access.overCap} over the ${access.cap}-per-visitor cap. ${access.countedMissingPublicationId} counted actions lack a publication ID. ${access.automaticPreviews} automatic previews are never counted.`,
+      });
+    }
 
     // 5. Human signal
     const humanSignals = rows.filter((row) => row.event_name === "human_signal").length;
