@@ -141,6 +141,7 @@ export default function OwnerSummary({
         </details>
       </Block>
 
+      <p className="text-xs text-muted-foreground">Counted opens include deliberate requests and historical download actions from likely-human, identified browsers, max five per browser per period. Not proof of reading. The raw button-click audit below is uncapped.</p>
       <OpenPdfClicksPanel data={data} />
 
       <Block title="What they did">
@@ -158,28 +159,27 @@ export default function OwnerSummary({
             onClick={() => openDetail("usedTorah", "Used Torah", "Sessions with a qualifying Torah action.")}
           />
           <Stat
-            label="Open PDF clicks"
-            value={m.openPdfClicks}
-            note="Button taps, not previews or downloads"
-            onClick={() => openDetail("openPdfClicks", "Open PDF button clicks", "Every deliberate Open PDF button click from likely-human visits, newest first.")}
+            label="Counted PDF opens"
+            value={m.countedPdfOpens}
+            note="Deliberate requests, max 5 per browser per period"
+            onClick={() => openDetail("countedPdfOpens", "Counted PDF opens", "Human-qualified deliberate requests including historical download actions, earliest five per browser.")}
           />
           <Stat
-            label="Unique PDFs opened"
-            value={m.uniquePdfsOpened}
-            note="Distinct PDFs with an Open PDF click — attempted opens, not verified reading"
-            onClick={scrollToOpenPdfPublications}
+            label="Unique PDFs accessed"
+            value={m.uniqueAccessedPdfs}
+            note="Distinct publication IDs with counted opens"
           />
           <Stat
-            label="PDF viewer opens"
+            label="Automatic viewer previews"
             value={m.pdfOpens}
-            note="Embedded preview loaded (automatic)"
+            note="Desktop iframe loads, excluded from counted opens"
             onClick={() => openDetail("pdfOpens", "PDF viewer opens", "Every embedded PDF-preview load in this period. Not a button click.")}
           />
           <Stat
-            label="Download actions"
-            value={m.downloads}
-            note="Someone tapped download"
-            onClick={() => openDetail("downloads", "Download Actions", "Every user-initiated download request.")}
+            label="Raw Open PDF clicks"
+            value={m.openPdfClicks}
+            note="Uncapped button audit, human-filtered"
+            onClick={() => openDetail("openPdfClicks", "Raw Open PDF button clicks", "Every deliberate Open PDF button click from qualified sessions, before the five-per-browser cap.")}
           />
           <Stat
             label="Served download requests"
@@ -192,6 +192,12 @@ export default function OwnerSummary({
                 "The application validated the publication and issued the redirect to the file. It does not prove every byte transferred.",
               )
             }
+          />
+          <Stat
+            label="Historical download actions"
+            value={m.downloads}
+            note="Legacy user requests (audit)"
+            onClick={() => openDetail("downloads", "Legacy Download Actions", "Legacy download requests; not an additional headline PDF-open total.")}
           />
           <Stat
             label="Unmatched actions"
@@ -272,12 +278,11 @@ export default function OwnerSummary({
                 <p className="font-medium text-foreground">{publication.title}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {publication.impressions} shown → {publication.clicks} selected →{" "}
-                  {publication.pdfOpens} PDF opens → {publication.downloadActions} download actions →{" "}
-                  {publication.downloadsServed} served
+                  <strong>{publication.countedPdfOpens} counted PDF opens</strong> from {publication.countedVisitors} browsers
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Selection rate: {formatCountRate(publication.clickNumerator, publication.clickDenominator)} ·
-                  Access to download: {formatCountRate(publication.downloadNumerator, publication.downloadDenominator)}
+                  {publication.pdfOpens} automatic previews · {publication.downloadActions} legacy downloads (audit)
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {publication.newVisitorSessions} new · {publication.returningSessions} returning ·{" "}
