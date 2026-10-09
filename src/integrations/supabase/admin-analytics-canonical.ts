@@ -1566,7 +1566,7 @@ type BuiltReport = ReturnType<typeof buildAnalyticsReport>;
 async function reportForWindow(start: string, end: string): Promise<BuiltReport> {
   const rows = await fetchEventsBetween(start, end);
   const priorVisitors = await fetchPriorVisitors(visitorIds(rows), start);
-  return buildAnalyticsReport(rows, priorVisitors);
+  return buildAnalyticsReport(rows, priorVisitors, { start, end });
 }
 
 /** Historical audit: download actions by grouped source (not a headline). */
