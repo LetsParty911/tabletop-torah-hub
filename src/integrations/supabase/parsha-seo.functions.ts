@@ -90,7 +90,7 @@ export const getParshaSeoPage = createServerFn({ method: "GET" })
       if (type) type_counts[type] = (type_counts[type] ?? 0) + 1;
     }
 
-    const resources: ParshaSeoResource[] = matches.slice(0, 18).map((row: any) => ({
+    const resources: ParshaSeoResource[] = matches.map((row: any) => ({
       id: row.id as string,
       title: row.title as string,
       description: standardizeCopy((row.description as string | null) ?? null),
