@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { checkIsAdmin } from "@/integrations/supabase/api.functions";
 import AdminAnalyticsReport from "@/components/admin/AdminAnalyticsReport";
+import MaintenanceTrafficSection from "@/components/admin/MaintenanceTrafficSection";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin-analytics")({
@@ -106,6 +107,7 @@ function AdminAnalyticsPage() {
         </header>
 
         <main className="parchment-frame"><div className="parchment-panel"><AdminAnalyticsReport accessToken={accessToken ?? ""} /></div></main>
+        <MaintenanceTrafficSection accessToken={accessToken ?? ""} />
       </div>
     </div>
   );
