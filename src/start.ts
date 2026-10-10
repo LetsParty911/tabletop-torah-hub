@@ -94,7 +94,25 @@ const geoBlock = createMiddleware().server(async ({ next, request }) => {
   return next();
 });
 
+/**
+ * Maintenance traffic: after the response exists, log a sanitized row when a
+ * real public HTML navigation was served while persistent maintenance is ON.
+ * Runs after geoBlock, so blocked-city requests stay only in blocked_visits.
+ * Best-effort and fail-open; see maintenance-traffic.server.ts.
+ */
+const maintenanceTraffic = createMiddleware().server(async ({ next, request }) => {
+  const result = await next();
+  try {
+    const response = (result as { response?: Response }).response;
+    const { recordMaintenanceVisitFromMiddleware } = await import("@/lib/maintenance-traffic.server");
+    await recordMaintenanceVisitFromMiddleware(request, response);
+  } catch {
+    /* never break the request */
+  }
+  return result;
+});
+
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [dotOrgRedirect, geoBlock, cacheControl],
+  requestMiddleware: [dotOrgRedirect, geoBlock, maintenanceTraffic, cacheControl],
 }));
