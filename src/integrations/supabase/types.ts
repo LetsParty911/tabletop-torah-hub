@@ -149,6 +149,48 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_visits: {
+        Row: {
+          city: string | null
+          classification: string
+          country: string | null
+          created_at: string
+          device: string
+          id: string
+          path: string
+          referrer_domain: string | null
+          region: string | null
+          visitor_key: string | null
+          visitor_key_source: string | null
+        }
+        Insert: {
+          city?: string | null
+          classification?: string
+          country?: string | null
+          created_at?: string
+          device?: string
+          id?: string
+          path: string
+          referrer_domain?: string | null
+          region?: string | null
+          visitor_key?: string | null
+          visitor_key_source?: string | null
+        }
+        Update: {
+          city?: string | null
+          classification?: string
+          country?: string | null
+          created_at?: string
+          device?: string
+          id?: string
+          path?: string
+          referrer_domain?: string | null
+          region?: string | null
+          visitor_key?: string | null
+          visitor_key_source?: string | null
+        }
+        Relationships: []
+      }
       site_maintenance: {
         Row: {
           enabled: boolean

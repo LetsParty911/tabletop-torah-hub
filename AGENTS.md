@@ -1,3 +1,4 @@
 - Maintenance mode state lives only in Lovable Cloud table public.site_maintenance (row id=1), toggled from the admin Maintenance control; read server-side and fails closed. Why: a source flag could silently flip on unrelated publishes.
 - City-block check skips lookups when the edge country has no blocked city, memoizes per-IP results in the isolate, and time-boxes lookups (fail open). Why: blocking must never add an external request to every page view.
 - Keep the /admin since-last empty-state decision in the pure admin mini-summary helper. Why: Open PDF clicks and legacy downloads must both prevent a false empty report.
+- Maintenance-screen hits are logged server-side (request middleware after geoBlock) into Lovable Cloud public.maintenance_visits with no raw IP/UA/query strings, never into canonical analytics. Why: the maintenance view never mounts client analytics, and its traffic must not inflate visitor/PDF totals.
