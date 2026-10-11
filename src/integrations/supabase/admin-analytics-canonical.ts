@@ -15,6 +15,7 @@ import {
   type VisitorTimeline,
 } from "@/lib/retention-cohorts";
 import { aggregatePublications } from "@/lib/publication-funnel";
+import { weeklyReaderLoyalty } from "@/lib/weekly-reader-loyalty";
 import { isOpenPdfClick, openPdfClicksForReport, shapeOpenPdfClickDetails } from "@/lib/open-pdf-clicks";
 import { describeRecentStoryAction } from "@/lib/recent-story";
 import { pdfAccessActions, summarizePdfAccess, pdfOpenRate, PDF_ACCESS_CAP_PER_VISITOR, type PdfAccessSummary } from "@/lib/pdf-access";
@@ -1745,6 +1746,13 @@ type TimelineRow = {
   session_id: string | null;
   occurred_at: string;
   is_internal?: boolean | null;
+  event_name: string | null;
+  source_group?: string | null;
+  referrer_host?: string | null;
+  user_agent?: string | null;
+  device_type?: string | null;
+  as_organization?: string | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 async function fetchTimelineRows(sinceIso: string): Promise<TimelineRow[]> {
@@ -1753,8 +1761,8 @@ async function fetchTimelineRows(sinceIso: string): Promise<TimelineRow[]> {
   const pageSize = 1000;
   const maxRows = 60_000;
   const columns = (await eventColumns()).includes("is_internal")
-    ? "visitor_id, session_id, occurred_at, is_internal"
-    : "visitor_id, session_id, occurred_at";
+    ? "visitor_id, session_id, occurred_at, event_name, source_group, referrer_host, user_agent, device_type, as_organization, metadata, is_internal"
+    : "visitor_id, session_id, occurred_at, event_name, source_group, referrer_host, user_agent, device_type, metadata";
 
   for (let offset = 0; offset < maxRows; offset += pageSize) {
     const { data, error } = await admin
@@ -1823,6 +1831,7 @@ export const adminRetentionCohorts = createServerFn({ method: "POST" })
       leftCensoredVisitors: timelines.filter((timeline) => timeline.hasPriorHistory).length,
       cohorts: computeCohorts(timelines, observationStart),
       loyalty: computeWeeklyLoyalty(timelines.filter((timeline) => !timeline.hasPriorHistory)),
+      weeklyReaders: weeklyReaderLoyalty(rows),
     };
   });
 
