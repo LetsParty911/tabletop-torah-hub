@@ -107,7 +107,8 @@ export async function defaultTrackDeps(): Promise<TrackDeps> {
   };
 }
 
-/** Called from request middleware after the response exists. Supports maintenance\n * HTML and explicit maintenance-gate 503, never unrelated error responses. */
+/** Called from request middleware after the response exists. Supports maintenance
+ * HTML and explicit maintenance-gate 503, never unrelated error responses. */
 export async function recordMaintenanceVisitFromMiddleware(request: Request, response: Response | undefined) {
   if (!isTrackableNavigation(request) || !isServedHtmlDocument(response)) return;
   const work = (async () => trackMaintenanceVisit(request, response, await defaultTrackDeps()))().catch(() => false);
