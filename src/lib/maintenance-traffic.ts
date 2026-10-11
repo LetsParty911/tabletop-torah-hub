@@ -40,9 +40,12 @@ export function isTrackableNavigation(request: Request): boolean {
   return true;
 }
 
-/** Response-level check: only a real 200 HTML document counts. */
+/** Response-level check: an HTML document or an explicit maintenance-gate 503.
+ * Generic errors, redirects and unrelated 503s must never count. */
 export function isServedHtmlDocument(response: Response | undefined | null): boolean {
-  if (!response || response.status !== 200) return false;
+  if (!response) return false;
+  if (response.status === 503) return (response.headers.get("x-tftt-gate") ?? "").toLowerCase() === "maintenance";
+  if (response.status !== 200) return false;
   return (response.headers.get("content-type") ?? "").toLowerCase().includes("text/html");
 }
 

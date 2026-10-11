@@ -38,6 +38,15 @@ describe("maintenance traffic tracking", () => {
     expect(serialized).not.toContain("@");
   });
 
+  it("counts an explicit maintenance-gate 503 but not an unrelated server error", async () => {
+    const d = deps();
+    const gate = new Response("Closed for Maintenance", { status: 503, headers: { "x-tftt-gate": "maintenance" } });
+    expect(await trackMaintenanceVisit(req("/archive"), gate, d)).toBe(true);
+    expect(await trackMaintenanceVisit(req("/archive"), new Response("Error", { status: 503 }), d)).toBe(false);
+    expect(await trackMaintenanceVisit(req("/view/abc/pdf"), gate, d)).toBe(false);
+    expect(d.insert).toHaveBeenCalledTimes(1);
+  });
+
   it("does nothing when maintenance is OFF or the device is internal", async () => {
     for (const d of [deps(false), deps(true, true)]) {
       expect(await trackMaintenanceVisit(req("/"), html(), d)).toBe(false);

@@ -23,6 +23,12 @@ describe("classifySessions (headline filter)", () => {
     ev("reader", "page_view", 0),
     ev("reader", "download", 5_000),
     ev("served-only-reader", "download_served", 5_000),
+    ev("auto-preview", "page_view", 0),
+    ev("auto-preview", "pdf_open", 1_000),
+    ev("deliberate-open", "page_view", 0),
+    ev("deliberate-open", "publication_click", 1_000),
+    ev("signal-only", "page_view", 0),
+    ev("signal-only", "human_signal", 1_000),
     ev("uncertain", "page_view", 0),
     ev("internal", "page_view", 0, { is_internal: true }),
     ev("internal", "download", 1_000, { is_internal: true }),
@@ -33,16 +39,20 @@ describe("classifySessions (headline filter)", () => {
     expect(result.counts.suspected_automation).toBe(57);
   });
 
-  it("keeps Microsoft with explicit human_signal and a downloading reader", () => {
+  it("keeps explicit interactions but not server redirects or automatic viewer loads", () => {
     expect(result.humanIds.has("ms-human")).toBe(true);
     expect(result.humanIds.has("reader")).toBe(true);
-    expect(result.humanIds.has("served-only-reader")).toBe(true);
+    expect(result.humanIds.has("deliberate-open")).toBe(true);
+    expect(result.humanIds.has("served-only-reader")).toBe(false);
+    expect(result.humanIds.has("auto-preview")).toBe(false);
+    expect(result.confidence.get("signal-only")).toBe("likely_human");
+    expect(result.sessions.get("signal-only")?.meaningfulIntent).toBe(false);
   });
 
   it("excludes uncertain and internal sessions from the headline set", () => {
     expect(result.confidence.get("uncertain")).toBe("uncertain");
     expect(result.humanIds.has("uncertain")).toBe(false);
     expect(result.humanIds.has("internal")).toBe(false);
-    expect(result.humanIds.size).toBe(3);
+    expect(result.humanIds.size).toBe(4); // Microsoft interaction, reader, deliberate open, and signal-only
   });
 });

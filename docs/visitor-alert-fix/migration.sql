@@ -38,7 +38,7 @@ begin
   if new.session_id is null
      or coalesce(new.is_internal, false)
      or new.event_name not in (
-       'publication_click','filter_change','search','pdf_open','download',
+       'publication_click','filter_change','search','download',
        'share_click','signup','chooser_select','recommendation_click',
        'my_table_add','my_table_open','my_table_remove')
      -- Independently detectable Lovable preview/editor/test provenance only.

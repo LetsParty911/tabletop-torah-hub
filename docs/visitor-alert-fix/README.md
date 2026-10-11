@@ -13,9 +13,9 @@ loads (e.g. owner-identified Lovable test sessions
 ## Design
 - New trigger `queue_engaged_visitor_alert()` on `analytics_events` queues a
   session into `engaged_visitor_alert_queue` only on a deliberate action:
-  publication_click, filter_change, search, pdf_open, download, share_click,
+  publication_click, filter_change, search, download, share_click,
   signup, chooser_select, recommendation_click, my_table_add/open/remove.
-- Never queued by: session_start, page_view, publication_impression, heartbeat,
+- Never queued by: session_start, page_view, publication_impression, pdf_open (automatic preview), heartbeat,
   scroll_depth, human_signal, recommendation_view, outbound_click, error,
   server-side download_served.
 - Excluded: `is_internal=true`; Lovable provenance (referrer host lovable.app /
