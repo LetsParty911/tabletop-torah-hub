@@ -20,6 +20,7 @@ import { isOpenPdfClick, openPdfClicksForReport, shapeOpenPdfClickDetails } from
 import { describeRecentStoryAction } from "@/lib/recent-story";
 import { pdfAccessActions, summarizePdfAccess, pdfOpenRate, PDF_ACCESS_CAP_PER_VISITOR, type PdfAccessSummary } from "@/lib/pdf-access";
 import { buildOverview } from "@/lib/overview-analytics";
+import { summarizeGeoInsights } from "@/lib/geo-insights";
 import { summarizeHomepageSharing } from "@/lib/homepage-sharing";
 import {
   buildSessions,
@@ -635,6 +636,7 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
 
   return {
     overview,
+    geoInsights: summarizeGeoInsights(keptRows),
     homepageSharing: summarizeHomepageSharing(keptRows, countedRows),
     metrics: {
       people: canonical.uniqueVisitors,
