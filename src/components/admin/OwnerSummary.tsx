@@ -207,6 +207,9 @@ export default function OwnerSummary({
             value={m.downloadActionsUnmatched}
             note="Tapped but no served request recorded"
           />
+          <Stat label="PDF redirects issued" value={m.pdfRedirectsIssued} note="File request validated; not proof of transfer or reading" />
+          <Stat label="PDF route failures" value={m.pdfRouteFailures} note="Tagged Open PDF requests returning 404 or 500" />
+          <Stat label="PDF requests diagnosed" value={m.pdfRouteTracked} note="New tracking only; older opens have no route result" />
           <Stat label="Chooser used" value={m.chooserSelections} note="Guided choices made" />
           <Stat label="My Table" value={m.myTableAdds} note={`${m.myTableOpens} opened the list`} />
           <Stat label="Signups" value={m.signups} note="Weekly email" />
