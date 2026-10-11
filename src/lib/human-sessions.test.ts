@@ -45,6 +45,8 @@ describe("classifySessions (headline filter)", () => {
     expect(result.humanIds.has("deliberate-open")).toBe(true);
     expect(result.humanIds.has("served-only-reader")).toBe(false);
     expect(result.humanIds.has("auto-preview")).toBe(false);
+    expect(result.confidence.get("signal-only")).toBe("likely_human");
+    expect(result.sessions.get("signal-only")?.meaningfulIntent).toBe(false);
   });
 
   it("excludes uncertain and internal sessions from the headline set", () => {
