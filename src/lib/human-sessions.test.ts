@@ -27,6 +27,8 @@ describe("classifySessions (headline filter)", () => {
     ev("auto-preview", "pdf_open", 1_000),
     ev("deliberate-open", "page_view", 0),
     ev("deliberate-open", "publication_click", 1_000),
+    ev("signal-only", "page_view", 0),
+    ev("signal-only", "human_signal", 1_000),
     ev("uncertain", "page_view", 0),
     ev("internal", "page_view", 0, { is_internal: true }),
     ev("internal", "download", 1_000, { is_internal: true }),
