@@ -15,6 +15,7 @@ import {
   type VisitorTimeline,
 } from "@/lib/retention-cohorts";
 import { aggregatePublications } from "@/lib/publication-funnel";
+import { weeklyReaderLoyalty } from "@/lib/weekly-reader-loyalty";
 import { isOpenPdfClick, openPdfClicksForReport, shapeOpenPdfClickDetails } from "@/lib/open-pdf-clicks";
 import { describeRecentStoryAction } from "@/lib/recent-story";
 import { pdfAccessActions, summarizePdfAccess, pdfOpenRate, PDF_ACCESS_CAP_PER_VISITOR, type PdfAccessSummary } from "@/lib/pdf-access";
@@ -573,6 +574,12 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
   }
   const matchedActions = new Set([...actionIds].filter((id) => servedActions.has(id)));
 
+  // Click-correlated PDF route results are *server validation*, not verified
+  // CDN transfer or document reading. Kept separate from PDF open headlines.
+  const pdfRouteResults = keptRows.filter((row) => row.event_name === "pdf_route_result");
+  const pdfRedirectsIssued = pdfRouteResults.filter((row) => row.metadata?.["http_status"] === 302).length;
+  const pdfRouteFailures = pdfRouteResults.filter((row) => [404, 500].includes(Number(row.metadata?.["http_status"]))).length;
+
   // Plain-English, factual sentences about recent meaningful visits.
   const recentStories = sessionDetails
     .filter((session) => session.usedTorah || session.engaged)
@@ -650,6 +657,9 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
       downloadActionsMatched: matchedActions.size,
       downloadActionsUnmatched: Math.max(0, actionIds.size - matchedActions.size),
       servedWithoutAction: [...servedActions].filter((id) => !actionIds.has(id)).length,
+      pdfRedirectsIssued,
+      pdfRouteFailures,
+      pdfRouteTracked: pdfRouteResults.length,
       chooserSelections: keptRows.filter((row) => row.event_name === "chooser_select").length,
       recommendationClicks: keptRows.filter((row) => row.event_name === "recommendation_click").length,
       myTableAdds: keptRows.filter((row) => row.event_name === "my_table_add").length,
@@ -1745,6 +1755,13 @@ type TimelineRow = {
   session_id: string | null;
   occurred_at: string;
   is_internal?: boolean | null;
+  event_name: string | null;
+  source_group?: string | null;
+  referrer_host?: string | null;
+  user_agent?: string | null;
+  device_type?: string | null;
+  as_organization?: string | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 async function fetchTimelineRows(sinceIso: string): Promise<TimelineRow[]> {
@@ -1753,8 +1770,8 @@ async function fetchTimelineRows(sinceIso: string): Promise<TimelineRow[]> {
   const pageSize = 1000;
   const maxRows = 60_000;
   const columns = (await eventColumns()).includes("is_internal")
-    ? "visitor_id, session_id, occurred_at, is_internal"
-    : "visitor_id, session_id, occurred_at";
+    ? "visitor_id, session_id, occurred_at, event_name, source_group, referrer_host, user_agent, device_type, as_organization, metadata, is_internal"
+    : "visitor_id, session_id, occurred_at, event_name, source_group, referrer_host, user_agent, device_type, metadata";
 
   for (let offset = 0; offset < maxRows; offset += pageSize) {
     const { data, error } = await admin
@@ -1823,6 +1840,7 @@ export const adminRetentionCohorts = createServerFn({ method: "POST" })
       leftCensoredVisitors: timelines.filter((timeline) => timeline.hasPriorHistory).length,
       cohorts: computeCohorts(timelines, observationStart),
       loyalty: computeWeeklyLoyalty(timelines.filter((timeline) => !timeline.hasPriorHistory)),
+      weeklyReaders: weeklyReaderLoyalty(rows),
     };
   });
 

@@ -1,5 +1,5 @@
 import { FileText } from "lucide-react";
-import { trackFp } from "@/lib/first-party-analytics";
+import { getSessionId, getVisitorId, trackFp } from "@/lib/first-party-analytics";
 
 type DownloadToPrintButtonProps = {
   href: string;
@@ -36,7 +36,19 @@ export function DownloadToPrintButton({
     ? `/view/${encodeURIComponent(publicationId)}/pdf`
     : href.replace(/\/download(?:\?.*)?$/, "/pdf");
   const title = publicationTitle || publicationName || "PDF";
-  const recordOpen = () => {
+  const recordOpen = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    // Correlate this deliberate click with the server validation result.
+    // Keep the same-tab identity and preserve the normal new-tab link behavior.
+    try {
+      const visitor = getVisitorId();
+      const session = getSessionId();
+      const action = crypto.randomUUID();
+      const url = new URL(pdfHref, window.location.origin);
+      url.searchParams.set("a", action);
+      url.searchParams.set("s", session);
+      url.searchParams.set("v", visitor);
+      event.currentTarget.href = url.pathname + url.search;
+    } catch { /* The PDF must remain accessible without tracking. */ }
     trackFp("publication_click", {
       publication_id: publicationId ?? null,
       publication_title: publicationTitle ?? publicationName ?? null,

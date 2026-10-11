@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
+import { recordPdfRouteOutcome } from "@/lib/pdf-route-diagnostics.server";
 
 const NOINDEX = { "X-Robots-Tag": "noindex" } as const;
 
@@ -46,6 +47,7 @@ export const Route = createFileRoute("/view/$id/pdf")({
             .maybeSingle();
 
           if (error || !row || !row.published || !row.file_path) {
+            recordPdfRouteOutcome(request, id, 404);
             return new Response("Not found", { status: 404, headers: NOINDEX });
           }
 
@@ -55,12 +57,14 @@ export const Route = createFileRoute("/view/$id/pdf")({
           // published state before revealing the object URL.
           const { data } = admin.storage.from("pdfs").getPublicUrl(row.file_path);
           if (!data?.publicUrl) {
+            recordPdfRouteOutcome(request, id, 500);
             return new Response("Load failed", { status: 500, headers: NOINDEX });
           }
 
           if (adminBypass && request.headers.get("X-Admin-Link") === "1") {
             return Response.json({ url: data.publicUrl }, { headers: { ...NOINDEX, "Cache-Control": "no-store" } });
           }
+          recordPdfRouteOutcome(request, id, 302);
           return new Response(null, {
             status: 302,
             headers: {
@@ -72,6 +76,7 @@ export const Route = createFileRoute("/view/$id/pdf")({
           });
         } catch (err) {
           console.error("[view/pdf] failed", err);
+          recordPdfRouteOutcome(request, id, 500);
           return new Response("Load failed", { status: 500, headers: NOINDEX });
         }
       },

@@ -1,0 +1,28 @@
+name: Verify reader loyalty and PDF diagnostics
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/weekly-reader-loyalty*"
+      - "src/lib/pdf-route-diagnostics.server.ts"
+      - "src/lib/wa-redirect*"
+      - "src/components/DownloadToPrintButton.tsx"
+      - "src/routes/view.*.pdf.tsx"
+      - "src/integrations/supabase/admin-analytics-canonical.ts"
+      - "src/components/admin/OwnerSummary.tsx"
+      - ".github/workflows/verify-reader-tracking.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  tracking-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Run tracking regressions
+        run: bun test src/lib/weekly-reader-loyalty.test.ts src/lib/wa-redirect.test.ts src/lib/retention-cohorts.test.ts src/lib/human-sessions.test.ts src/integrations/supabase/admin-analytics-canonical.test.ts
+      - name: Build application
+        run: bun run build

@@ -207,6 +207,9 @@ export default function OwnerSummary({
             value={m.downloadActionsUnmatched}
             note="Tapped but no served request recorded"
           />
+          <Stat label="PDF redirects issued" value={m.pdfRedirectsIssued} note="File request validated; not proof of transfer or reading" />
+          <Stat label="PDF route failures" value={m.pdfRouteFailures} note="Tagged Open PDF requests returning 404 or 500" />
+          <Stat label="PDF requests diagnosed" value={m.pdfRouteTracked} note="New tracking only; older opens have no route result" />
           <Stat label="Chooser used" value={m.chooserSelections} note="Guided choices made" />
           <Stat label="My Table" value={m.myTableAdds} note={`${m.myTableOpens} opened the list`} />
           <Stat label="Signups" value={m.signups} note="Weekly email" />
@@ -337,6 +340,38 @@ export default function OwnerSummary({
               they were already visiting before this period), and percentages are hidden under 10
               eligible visitors.
             </p>
+          </div>
+        )}
+      </Block>
+
+      <Block title="Weekly Reader Loyalty">
+        {!cohorts && !cohortError && <p className="text-sm text-muted-foreground">Loading weekly reader activity…</p>}
+        {cohorts && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <Stat label="2+ publishing weeks" value={cohorts.weeklyReaders.twoPlusWeeks} note="Distinct browser IDs" />
+              <Stat label="3+ publishing weeks" value={cohorts.weeklyReaders.threePlusWeeks} note="Distinct browser IDs" />
+              <Stat label="Readers observed" value={cohorts.weeklyReaders.observedReaderIds} note="Human-qualified in lookback" />
+            </div>
+            <p className="text-xs text-muted-foreground">{cohorts.weeklyReaders.note}</p>
+            <div className="overflow-x-auto">
+              <table className="min-w-[620px] w-full text-left text-xs">
+                <thead><tr className="border-b border-border text-muted-foreground">
+                  <th className="py-2 pr-3">Thursday starting</th><th>Readers</th>
+                  <th>Clicked Open PDF</th><th>Seen earlier</th><th>Also last week</th><th>Top source</th>
+                </tr></thead>
+                <tbody>
+                  {cohorts.weeklyReaders.weeks.map((w) => (
+                    <tr key={w.week} className="border-b border-border/50">
+                      <td className="py-2 pr-3 whitespace-nowrap">{w.week}{w.isPartial ? " (in progress)" : ""}</td>
+                      <td>{w.readers}</td><td>{w.openers}</td><td>{w.returningObserved}</td>
+                      <td>{w.priorWeekRepeat}</td><td>{w.sources[0]?.source ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {cohorts.weeklyReaders.weeks.length === 0 && <p className="py-3 text-sm text-muted-foreground">No qualified weekly visits available yet.</p>}
+            </div>
           </div>
         )}
       </Block>
