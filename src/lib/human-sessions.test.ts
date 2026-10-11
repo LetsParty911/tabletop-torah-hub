@@ -15,6 +15,20 @@ function ev(session: string, name: string, offsetMs: number, extra: Partial<Sess
 }
 
 describe("classifySessions (headline filter)", () => {
+  it("excludes the owner-confirmed VPN QA session but keeps its raw event for auditing", () => {
+    const testId = "497fe6bd-d9d4-495c-a9a9-a0da36c012f0";
+    const rows = [
+      { session_id: testId, visitor_id: "qa-browser", event_name: "page_view", occurred_at: "2026-10-11T08:22:12Z" },
+      { session_id: testId, visitor_id: "qa-browser", event_name: "publication_click", occurred_at: "2026-10-11T08:22:19Z" },
+      { session_id: "genuine-reader", visitor_id: "other-browser", event_name: "publication_click", occurred_at: "2026-10-11T08:25:19Z" },
+    ];
+    const result = classifySessions(rows);
+    expect(result.sessions.get(testId)?.events).toBe(2);
+    expect(result.confidence.get(testId)).toBe("internal_test");
+    expect(result.humanIds.has(testId)).toBe(false);
+    expect(result.humanIds.has("genuine-reader")).toBe(true);
+  });
+
   const rows: SessionEventRow[] = [
     ...Array.from({ length: 42 }, (_, i) => ev(`amz-${i}`, "page_view", i * 60_000, { as_organization: "Amazon.com Inc." })),
     ...Array.from({ length: 15 }, (_, i) => ev(`cisco-${i}`, "page_view", i * 60_000, { as_organization: i % 2 ? "Cisco OpenDNS, LLC" : "Cisco OpenDNS LLC" })),
