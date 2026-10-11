@@ -64,12 +64,18 @@ describe("infrastructure automation rule", () => {
     expect(isInfrastructureOrganization("Verizon Business")).toBe(false);
   });
 
-  it("keeps Microsoft sessions with a human_signal or intent human", () => {
-    expect(classifySession({ ...base, infrastructureNetwork: true, humanSignal: true })).toBe("likely_human");
+  it("does not count passive cloud interaction as a human reader", () => {
+    expect(classifySession({ ...base, infrastructureNetwork: true, humanSignal: true })).toBe("uncertain");
     expect(classifySession({ ...base, infrastructureNetwork: true, meaningfulIntent: true })).toBe("likely_human");
+    expect(classifySession({ ...base, infrastructureNetwork: true, humanSignal: true, meaningfulIntent: true })).toBe("high_confidence_human");
   });
 
-  it("does not flag sustained multi-page infrastructure browsing", () => {
-    expect(classifySession({ ...base, infrastructureNetwork: true, pageviews: 3, durationMs: 60_000 })).toBe("likely_human");
+  it("does not count passive cloud multi-page browsing as human", () => {
+    expect(classifySession({ ...base, infrastructureNetwork: true, pageviews: 3, durationMs: 60_000 })).toBe("uncertain");
+  });
+
+  it("recognizes additional hosting networks", () => {
+    expect(isInfrastructureOrganization("Microsoft Azure Cloud (westus2)")).toBe(true);
+    expect(isInfrastructureOrganization("OVH SAS")).toBe(true);
   });
 });

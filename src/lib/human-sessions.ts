@@ -22,6 +22,7 @@ export type SessionEventRow = {
   user_agent?: string | null;
   is_internal?: boolean | null;
   as_organization?: string | null;
+  network_type?: string | null;
 };
 
 export type SessionAgg = {
@@ -43,19 +44,19 @@ export type SessionAgg = {
   internalTestTraffic: boolean;
   markedInternal: boolean;
   asOrganization: string | null;
+  networkType: string | null;
 };
 
-// Events that only a person can realistically produce.
+// Deliberate events only: pdf_open is an automatic viewer load, and
+// human_signal can be emitted by scrolling. Neither qualifies as intent.
 export const MEANINGFUL_INTENT = new Set([
   "download",
   "download_served",
-  "pdf_open",
   "publication_click",
   "filter_change",
   "search",
   "share_click",
   "signup",
-  "human_signal",
   // recommendation_view is intentionally absent: it is a render-time impression.
   "chooser_select",
   "recommendation_click",
@@ -100,6 +101,7 @@ export function buildSessions(rows: SessionEventRow[]): Map<string, SessionAgg> 
         internalTestTraffic: false,
         markedInternal: false,
         asOrganization: null,
+        networkType: null,
       };
       sessions.set(sid, session);
     }
@@ -109,6 +111,7 @@ export function buildSessions(rows: SessionEventRow[]): Map<string, SessionAgg> 
     if (session.source === "Direct" && row.source_group?.trim()) session.source = row.source_group.trim();
     if (session.device === "unknown" && row.device_type?.trim()) session.device = row.device_type.trim();
     if (!session.asOrganization && row.as_organization?.trim()) session.asOrganization = row.as_organization.trim();
+    if (!session.networkType && row.network_type?.trim()) session.networkType = row.network_type.trim();
 
     // Server-verified internal/test device marker (signed HttpOnly cookie).
     if (row.is_internal === true) {
@@ -227,7 +230,8 @@ export function classifySessions(rows: SessionEventRow[]): SessionClassification
     const label = classifySession({
       internal: session.internalTestTraffic,
       flaggedAutomation: ruleFlagged.has(session.id),
-      infrastructureNetwork: isInfrastructureOrganization(session.asOrganization),
+      infrastructureNetwork:
+        isInfrastructureOrganization(session.asOrganization) || session.networkType === "hosting",
       humanSignal: session.humanSignal,
       meaningfulIntent: session.meaningfulIntent,
       pageviews: session.pageviews,
