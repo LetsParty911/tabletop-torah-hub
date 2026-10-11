@@ -55,7 +55,7 @@ export const MEANINGFUL_INTENT = new Set([
   "share_click",
   "signup",
   "print_click",
-  "human_signal",
+  // human_signal is interaction evidence, but not a deliberate content action.
   // recommendation_view is intentionally absent: it is a render-time impression.
   "chooser_select",
   "recommendation_click",
