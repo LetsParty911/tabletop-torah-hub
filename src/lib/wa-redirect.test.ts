@@ -12,7 +12,7 @@ describe("WA_REDIRECT_TARGET", () => {
     const url = new URL(WA_REDIRECT_TARGET);
     expect(url.searchParams.get("utm_source")).toBe("whatsapp");
     expect(url.searchParams.get("utm_medium")).toBe("social");
-    expect(url.searchParams.get("utm_campaign")).toBe("bereishis");
+    expect(url.searchParams.get("utm_campaign")).toBe("weekly_parsha");
     // No extra params (e.g. utm_content) beyond the three approved values.
     expect([...url.searchParams.keys()].sort()).toEqual([
       "utm_campaign",
