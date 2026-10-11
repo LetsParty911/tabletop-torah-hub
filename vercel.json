@@ -23,5 +23,10 @@
       "destination": "https://torahforthetable.com/:path*",
       "permanent": true
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "fix/visitor-alert-deliberate-actions-20261009": false
+    }
+  }
 }
