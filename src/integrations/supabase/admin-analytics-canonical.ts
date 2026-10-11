@@ -574,6 +574,12 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
   }
   const matchedActions = new Set([...actionIds].filter((id) => servedActions.has(id)));
 
+  // Click-correlated PDF route results are *server validation*, not verified
+  // CDN transfer or document reading. Kept separate from PDF open headlines.
+  const pdfRouteResults = keptRows.filter((row) => row.event_name === "pdf_route_result");
+  const pdfRedirectsIssued = pdfRouteResults.filter((row) => row.metadata?.["http_status"] === 302).length;
+  const pdfRouteFailures = pdfRouteResults.filter((row) => [404, 500].includes(Number(row.metadata?.["http_status"]))).length;
+
   // Plain-English, factual sentences about recent meaningful visits.
   const recentStories = sessionDetails
     .filter((session) => session.usedTorah || session.engaged)
@@ -651,6 +657,9 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
       downloadActionsMatched: matchedActions.size,
       downloadActionsUnmatched: Math.max(0, actionIds.size - matchedActions.size),
       servedWithoutAction: [...servedActions].filter((id) => !actionIds.has(id)).length,
+      pdfRedirectsIssued,
+      pdfRouteFailures,
+      pdfRouteTracked: pdfRouteResults.length,
       chooserSelections: keptRows.filter((row) => row.event_name === "chooser_select").length,
       recommendationClicks: keptRows.filter((row) => row.event_name === "recommendation_click").length,
       myTableAdds: keptRows.filter((row) => row.event_name === "my_table_add").length,
