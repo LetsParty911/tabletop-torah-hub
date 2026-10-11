@@ -14,12 +14,12 @@ describe("engaged alert classifier", () => {
     expect([...FN_EVENTS]).toEqual([...ENGAGED_ALERT_EVENTS]);
     const sql = readFileSync("docs/visitor-alert-fix/migration.sql", "utf8");
     for (const e of ENGAGED_ALERT_EVENTS) expect(sql).toContain(`'${e}'`);
-    for (const e of ["page_view", "session_start", "heartbeat", "human_signal", "publication_impression", "scroll_depth"])
+    for (const e of ["page_view", "session_start", "heartbeat", "human_signal", "publication_impression", "scroll_depth", "pdf_open"])
       expect(sql).not.toContain(`'${e}'`);
   });
 
   it("passive events never qualify", () => {
-    for (const e of ["session_start", "page_view", "publication_impression", "heartbeat", "scroll_depth", "human_signal", "recommendation_view", "download_served"])
+    for (const e of ["session_start", "page_view", "publication_impression", "heartbeat", "scroll_depth", "human_signal", "recommendation_view", "download_served", "pdf_open"])
       expect(qualifiesForEngagedAlert({ event_name: e, session_id: "x" })).toBe(false);
   });
 
@@ -34,10 +34,15 @@ describe("engaged alert classifier", () => {
   });
 
   it("one alert per session despite multiple/concurrent actions", () => {
-    const rows = ["publication_click", "pdf_open", "download", "search"].map((e) => ({ event_name: e, session_id: "a" }));
+    const rows = ["publication_click", "download", "search"].map((e) => ({ event_name: e, session_id: "a" }));
     const out = engagedAlertsFor([...rows, { event_name: "filter_change", session_id: "b" }]);
     expect(out.map((r) => r.session_id)).toEqual(["a", "b"]);
     expect(out[0].event_name).toBe("publication_click");
+  });
+
+  it("automatic PDF preview cannot trigger even with a session", () => {
+    expect(qualifiesForEngagedAlert({ event_name: "pdf_open", session_id: "a" })).toBe(false);
+    expect(engagedAlertsFor([{ event_name: "pdf_open", session_id: "a" }])).toHaveLength(0);
   });
 
   it("excludes internal and Lovable provenance, not location", () => {
