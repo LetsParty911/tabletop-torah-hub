@@ -19,7 +19,6 @@ export function maintenanceResponse(): Response {
     status: 503,
     headers: {
       "Retry-After": "3600",
-      "X-Robots-Tag": "noindex",
       "Cache-Control": "no-store",
       "X-TFTT-Gate": "maintenance",
     },
