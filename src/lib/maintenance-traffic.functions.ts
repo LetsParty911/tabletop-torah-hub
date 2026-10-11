@@ -17,6 +17,9 @@ export const adminMaintenanceTraffic = createServerFn({ method: "POST" })
     if (end.getTime() <= start.getTime()) throw new Error("Invalid date range");
     if (end.getTime() - start.getTime() > 93 * 86400_000) throw new Error("Range too long (max 92 days)");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: maintenanceState, error: stateError } = await supabaseAdmin
+      .from("site_maintenance").select("enabled").eq("id", 1).maybeSingle();
+    const maintenanceEnabled = stateError ? null : (maintenanceState?.enabled ?? null);
     const { data: rows, error } = await supabaseAdmin
       .from("maintenance_visits")
       .select("created_at, path, country, region, city, device, referrer_domain, classification, visitor_key")
@@ -30,6 +33,7 @@ export const adminMaintenanceTraffic = createServerFn({ method: "POST" })
       rangeStartNy: formatNy(start.toISOString()),
       rangeEndNy: formatNy(end.toISOString()),
       truncated: list.length >= 5000,
+      maintenanceEnabled,
       summary: summarizeMaintenanceVisits(list),
       recent: list.slice(0, 50).map((r) => ({
         timeNy: formatNy(r.created_at), path: r.path, location: locationLabel(r),
