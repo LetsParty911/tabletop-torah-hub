@@ -68,9 +68,10 @@ export default function MaintenanceTrafficSection({ accessToken }: { accessToken
       {error && <p className="text-sm text-destructive">{error}</p>}
       {report && s && (
         <>
+          <p className="text-sm font-medium text-foreground">Current website status: {report.maintenanceEnabled === true ? "Closed for maintenance" : report.maintenanceEnabled === false ? "Open — no maintenance visits expected" : "Unavailable"}</p>
           <p className="text-xs text-muted-foreground">{report.rangeStartNy} – {report.rangeEndNy}{report.truncated ? " · showing the latest 5,000 requests only" : ""}</p>
           {s.totalRequests === 0 ? (
-            <p className="text-sm text-muted-foreground">No maintenance-screen requests recorded in this range.</p>
+            <p className="text-sm text-muted-foreground">No maintenance-screen requests recorded in this range. This does not reconstruct visits before the tracker was deployed; live verification requires an actual eligible visit while the site is closed.</p>
           ) : (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
