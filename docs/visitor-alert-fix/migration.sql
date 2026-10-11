@@ -1,4 +1,4 @@
--- STAGED — NOT APPLIED. Engagement-qualified visitor alerts.
+-- SHADOW QUEUE MIGRATION. Does not attach a webhook or send notifications.
 -- Run manually in the EXTERNAL analytics project only after owner approval.
 -- Additive: no analytics_events rows are changed or deleted; the existing
 -- queue_visitor_alert() trigger and visitor_alert_queue table are left intact
@@ -26,13 +26,13 @@ create table if not exists public.engaged_visitor_alert_queue (
 
 alter table public.engaged_visitor_alert_queue enable row level security;
 -- No policies: only the trigger (security definer) and service role touch it.
-revoke all on public.engaged_visitor_alert_queue from anon, authenticated;
+revoke all on public.engaged_visitor_alert_queue from public, anon, authenticated;
 
 create or replace function public.queue_engaged_visitor_alert()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 begin
   if new.session_id is null
@@ -65,6 +65,9 @@ exception when others then
   return new;
 end;
 $$;
+
+-- SECURITY DEFINER function is trigger-only; never exposed to API callers.
+revoke all on function public.queue_engaged_visitor_alert() from public, anon, authenticated;
 
 drop trigger if exists trg_queue_engaged_visitor_alert on public.analytics_events;
 create trigger trg_queue_engaged_visitor_alert
