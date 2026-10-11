@@ -19,11 +19,11 @@ export type ConfidenceInput = {
   internal: boolean;
   /** Matched an explicit automation rule (burst, impossible cadence, incident). */
   flaggedAutomation: boolean;
-  /** Network belongs to known cloud/security infrastructure (see INFRASTRUCTURE_ORGANIZATIONS). */
+  /** Known cloud/security infrastructure, by network organization or explicit hosting flag. */
   infrastructureNetwork?: boolean;
-  /** An explicit human_signal event was recorded. */
+  /** An interaction signal such as scroll or touch, not proof of deliberate Torah use. */
   humanSignal: boolean;
-  /** A download, PDF open, click, search, chooser or My Table action. */
+  /** A deliberate action: excludes automatic pdf_open previews and generic human_signal. */
   meaningfulIntent: boolean;
   pageviews: number;
   /** Rendered publication cards seen in the session. */
@@ -32,9 +32,10 @@ export type ConfidenceInput = {
 };
 
 /**
- * Cloud hosting / security-scanning networks. A real reader can browse through
- * these (corporate VPNs, secure DNS), so the rule only applies to low-signal
- * sessions — never to one with a deliberate action or an explicit human_signal.
+ * Known cloud hosting and security-scanning networks. Real readers may use
+ * corporate VPNs or secure DNS, so an actual deliberate action still qualifies.
+ * But passive viewing, scroll signals and dwell time alone are not sufficient
+ * evidence to include infrastructure traffic in human-reader totals.
  */
 export const INFRASTRUCTURE_ORGANIZATIONS = [
   "amazon.com",
@@ -44,6 +45,8 @@ export const INFRASTRUCTURE_ORGANIZATIONS = [
   "fastly",
   "latitude.sh",
   "microsoft corporation",
+  "microsoft azure",
+  "ovh sas",
 ];
 
 export function isInfrastructureOrganization(org: string | null | undefined): boolean {
@@ -65,11 +68,11 @@ export const CONFIDENCE_LABELS: Record<TrafficConfidence, string> = {
 
 export const CONFIDENCE_EXPLANATIONS: Record<TrafficConfidence, string> = {
   high_confidence_human:
-    "An explicit human interaction signal was recorded alongside a deliberate Torah action.",
+    "An interaction signal and a deliberate action were both recorded, not just an automatic PDF preview.",
   likely_human:
-    "A deliberate action such as opening a PDF, choosing, searching or saving was recorded.",
+    "A deliberate action was recorded, or a non-infrastructure session showed a human signal or sustained reading.",
   uncertain:
-    "The visit was recorded but showed no deliberate action, so it cannot be classified either way.",
+    "The visit lacks sufficient human evidence; cloud/security sessions with only passive signals or reading also remain uncertain.",
   suspected_automation:
     "The session matched a specific automation pattern and showed no deliberate action. Rows are kept; they are set aside from headline counts.",
   internal_test:
@@ -77,11 +80,28 @@ export const CONFIDENCE_EXPLANATIONS: Record<TrafficConfidence, string> = {
 };
 
 /**
- * Classification order matters: an explicit human signal or a real action always
- * protects a session from the generic automation rules.
+ * Classification order matters: deliberate actions qualify even on hosting
+ * networks. Passive previews, scrolling and dwell time never suffice by
+ * themselves to qualify cloud/security infrastructure as human readership.
  */
 export function classifySession(input: ConfidenceInput): TrafficConfidence {
   if (input.internal) return "internal_test";
+
+  // A cloud/security-network session must have a deliberate action to enter
+  // human totals. A generic human_signal can come from scrolling or automated
+  // browser activity; an embedded PDF viewer may also load automatically.
+  if (input.infrastructureNetwork && !input.meaningfulIntent) {
+    // A weak interaction signal is evidence against automatically flagging it
+    // as a bot, but is not enough to assert a human reader.
+    if (input.humanSignal) return "uncertain";
+    if (
+      input.flaggedAutomation ||
+      (input.pageviews <= 1 &&
+        input.impressions === 0 &&
+        input.durationMs < INFRASTRUCTURE_MAX_DURATION_MS)
+    ) return "suspected_automation";
+    return "uncertain";
+  }
 
   if (input.humanSignal && input.meaningfulIntent) return "high_confidence_human";
   if (input.meaningfulIntent) return "likely_human";
@@ -89,18 +109,8 @@ export function classifySession(input: ConfidenceInput): TrafficConfidence {
 
   if (input.flaggedAutomation) return "suspected_automation";
 
-  // Low-signal session from cloud/security infrastructure (e.g. the Amazon and
-  // Cisco OpenDNS one-event bursts). Intent and human_signal returned above.
-  if (
-    input.infrastructureNetwork &&
-    input.pageviews <= 1 &&
-    input.impressions === 0 &&
-    input.durationMs < INFRASTRUCTURE_MAX_DURATION_MS
-  )
-    return "suspected_automation";
-
-  // Sustained, multi-page reading with real dwell time is likely a person even
-  // without a recorded interaction event.
+  // Sustained, multi-page reading with real dwell time on a non-hosting network
+  // can be likely human even without a recorded interaction event.
   if (input.pageviews >= 3 && input.durationMs >= 30_000) return "likely_human";
   if (input.pageviews >= 2 && input.impressions > 0 && input.durationMs >= 10_000)
     return "likely_human";
