@@ -53,6 +53,6 @@ describe("classifySessions (headline filter)", () => {
     expect(result.confidence.get("uncertain")).toBe("uncertain");
     expect(result.humanIds.has("uncertain")).toBe(false);
     expect(result.humanIds.has("internal")).toBe(false);
-    expect(result.humanIds.size).toBe(3);
+    expect(result.humanIds.size).toBe(4); // Microsoft interaction, reader, deliberate open, and signal-only
   });
 });
