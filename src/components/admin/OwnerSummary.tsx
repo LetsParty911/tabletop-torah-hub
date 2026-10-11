@@ -341,6 +341,38 @@ export default function OwnerSummary({
         )}
       </Block>
 
+      <Block title="Weekly Reader Loyalty">
+        {!cohorts && !cohortError && <p className="text-sm text-muted-foreground">Loading weekly reader activity…</p>}
+        {cohorts && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <Stat label="2+ publishing weeks" value={cohorts.weeklyReaders.twoPlusWeeks} note="Distinct browser IDs" />
+              <Stat label="3+ publishing weeks" value={cohorts.weeklyReaders.threePlusWeeks} note="Distinct browser IDs" />
+              <Stat label="Readers observed" value={cohorts.weeklyReaders.observedReaderIds} note="Human-qualified in lookback" />
+            </div>
+            <p className="text-xs text-muted-foreground">{cohorts.weeklyReaders.note}</p>
+            <div className="overflow-x-auto">
+              <table className="min-w-[620px] w-full text-left text-xs">
+                <thead><tr className="border-b border-border text-muted-foreground">
+                  <th className="py-2 pr-3">Thursday starting</th><th>Readers</th>
+                  <th>Clicked Open PDF</th><th>Seen earlier</th><th>Also last week</th><th>Top source</th>
+                </tr></thead>
+                <tbody>
+                  {cohorts.weeklyReaders.weeks.map((w) => (
+                    <tr key={w.week} className="border-b border-border/50">
+                      <td className="py-2 pr-3 whitespace-nowrap">{w.week}{w.isPartial ? " (in progress)" : ""}</td>
+                      <td>{w.readers}</td><td>{w.openers}</td><td>{w.returningObserved}</td>
+                      <td>{w.priorWeekRepeat}</td><td>{w.sources[0]?.source ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {cohorts.weeklyReaders.weeks.length === 0 && <p className="py-3 text-sm text-muted-foreground">No qualified weekly visits available yet.</p>}
+            </div>
+          </div>
+        )}
+      </Block>
+
       <Block title="Recent story">
         {report.recentStories.length === 0 ? (
           <p className="text-sm text-muted-foreground">No meaningful visits to describe yet.</p>
