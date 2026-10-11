@@ -53,12 +53,11 @@ export function hebcalShabbatUrlForDate(dateISO: string): string {
 }
 
 /**
- * Fetch the Shabbos payload for the upcoming Shabbos (Eastern time) of `now`.
- * The request URL carries that explicit date, so both the in-memory and edge
- * caches are per-week and roll over safely. Throws on failure.
+ * Pinned weekly Hebcal payload. Two weeks may be needed on Motzei Shabbos:
+ * the ending week's Havdalah event and the upcoming week's Torah reading.
+ * Both are cached separately so a page load does not issue repeated fetches.
  */
-export async function fetchHebcalShabbatData(now: Date = new Date()): Promise<HebcalShabbat> {
-  const target = upcomingShabbosDate(now);
+async function fetchPinnedHebcalShabbatData(target: string): Promise<HebcalShabbat> {
   const hit = cache.get(target);
   if (hit && Date.now() - hit.at < CACHE_MS) return hit.data;
   const pending = inFlight.get(target);
@@ -66,14 +65,65 @@ export async function fetchHebcalShabbatData(now: Date = new Date()): Promise<He
 
   const p = (async () => {
     const data = await fetchHebcalShabbatPayload(hebcalShabbatUrlForDate(target));
-    cache.clear();
-    cache.set(target, { at: Date.now(), data });
+    const fetchedAt = Date.now();
+    for (const [key, entry] of cache) {
+      if (fetchedAt - entry.at >= CACHE_MS) cache.delete(key);
+    }
+    cache.set(target, { at: fetchedAt, data });
+    while (cache.size > 2) {
+      const oldestKey = cache.keys().next().value;
+      if (oldestKey === undefined) break;
+      cache.delete(oldestKey);
+    }
     return data;
   })().finally(() => {
     inFlight.delete(target);
   });
   inFlight.set(target, p);
   return p;
+}
+
+/**
+ * Determine which Shabbos reading to feature. The regular Hebcal weekly API
+ * rolls at local Sunday midnight; that is too late for a Motzei Shabbos
+ * reopening. On Saturday evening, use the timed Havdalah event for that
+ * Shabbos, already returned by our configured M=on Hebcal request.
+ *
+ * A missing/invalid Havdalah time is NOT a license to guess a fixed cutoff:
+ * the standard Sunday rollover will still work without an early transition.
+ * Multiple Saturday Havdalah events are treated conservatively (latest wins).
+ */
+export function readingDateAfterHavdalah(now: Date, thisWeek: HebcalShabbat): string {
+  const shabbosDate = upcomingShabbosDate(now);
+  if (easternDateKey(now) !== shabbosDate) return shabbosDate;
+
+  const havdalahTimes = thisWeek.items
+    .filter((item) => item.category === "havdalah" && item.date.startsWith(shabbosDate + "T"))
+    .map((item) =>
+      /(?:Z|[+-]\\d{2}:\\d{2})$/i.test(item.date) ? Date.parse(item.date) : Number.NaN,
+    )
+    .filter((time) => Number.isFinite(time));
+  if (havdalahTimes.length === 0 || now.getTime() < Math.max(...havdalahTimes)) {
+    return shabbosDate;
+  }
+
+  const followingShabbos = new Date(shabbosDate + "T12:00:00Z");
+  followingShabbos.setUTCDate(followingShabbos.getUTCDate() + 7);
+  return followingShabbos.toISOString().slice(0, 10);
+}
+
+/**
+ * Fetch the featured Shabbos for the current Eastern-time moment. On Motzei
+ * Shabbos, this automatically selects the next parsha after local Havdalah,
+ * without changing the manual site-maintenance or parsha-override settings.
+ */
+export async function fetchHebcalShabbatData(now: Date = new Date()): Promise<HebcalShabbat> {
+  const endingShabbos = upcomingShabbosDate(now);
+  const currentPayload = await fetchPinnedHebcalShabbatData(endingShabbos);
+  const featuredShabbos = readingDateAfterHavdalah(now, currentPayload);
+  return featuredShabbos === endingShabbos
+    ? currentPayload
+    : fetchPinnedHebcalShabbatData(featuredShabbos);
 }
 
 async function fetchHebcalShabbatPayload(url: string): Promise<HebcalShabbat> {
