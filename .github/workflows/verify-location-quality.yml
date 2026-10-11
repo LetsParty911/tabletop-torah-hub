@@ -1,0 +1,19 @@
+name: Verify location quality reporting
+on:
+  pull_request:
+    paths:
+      - "src/lib/geo-insights*"
+      - "src/components/admin/OwnerSummary.tsx"
+      - "src/integrations/supabase/admin-analytics-canonical.ts"
+      - ".github/workflows/verify-location-quality.yml"
+permissions:
+  contents: read
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run src/lib/geo-insights.test.ts src/lib/ip-geo.test.ts src/integrations/supabase/admin-analytics-canonical.test.ts
+      - run: bun run build
