@@ -1,8 +1,9 @@
 # Engaged-visitor Pushover alerts — staged fix (NOT DEPLOYED)
 
-Status: staged only. Nothing here is applied to the external analytics project,
-its triggers, webhooks, secrets, or the `visitor-alert` Edge Function. The
-published site is unchanged. Rollout needs separate owner approval.
+Status: staged only. The shadow engaged-visitor queue is safe to install separately;
+no new outbound webhook or Pushover function is enabled by this migration.
+The original `visitor-alert` function and raw `visitor_alert_push` webhook remain untouched.
+A separate owner-approved notification cutover is still required.
 
 ## Problem
 `queue_visitor_alert()` queues the first `page_view` per session and the
@@ -32,44 +33,37 @@ loads (e.g. owner-identified Lovable test sessions
 - Message: "Visitor engaged: <reason>", with new/returning browser as
   secondary metadata and "not proof of a human".
 
-## Rollout (manual, after approval)
-### Verified current production pieces (external project)
-- Trigger function: `public.queue_visitor_alert()` (AFTER INSERT on `analytics_events`)
-- Raw queue table: `public.visitor_alert_queue`
-- Database webhook: `visitor_alert_push` (INSERT on `visitor_alert_queue` →
-  `visitor-alert`), sends an `Authorization: Bearer …` header
-- Edge Function `visitor-alert`: `verify_jwt = true`
-- Existing secrets: `PUSHOVER_APP_TOKEN` (app token), `PUSHOVER_USER_KEY` (user key).
-  The staged function reads these exact names — **no renaming needed**.
+## Safe two-stage rollout
 
-### Steps
-0. Save current state: `select pg_get_functiondef('public.queue_visitor_alert'::regproc);`,
-   the deployed `visitor-alert` source, and the `visitor_alert_push` webhook config
-   (headers redacted when copied anywhere).
-1. Create one strong random value (password manager / `openssl rand -hex 32`) and
-   store it only as function secret `VISITOR_ALERT_WEBHOOK_SECRET`. Never commit it
-   or paste it into files/chat. Leave `PUSHOVER_APP_TOKEN` / `PUSHOVER_USER_KEY` as-is.
-2. Set `VISITOR_ALERT_DRY_RUN=1`, then deploy `visitor-alert/` keeping
-   `verify_jwt = true` (do not disable JWT verification).
-   **Outage note:** from this moment the old `visitor_alert_push` webhook's payloads
-   (table `visitor_alert_queue`, no `x-webhook-secret`) are rejected
-   (`unauthorized` / `wrong_table`), so no Pushover alerts are sent until step 5
-   ends dry-run. Brief, expected, intentional.
-3. Run `migration.sql`.
-4. Create the new webhook on `engaged_visitor_alert_queue` (INSERT) → `visitor-alert`.
-   Keep the same `Authorization: Bearer …` header the current webhook uses (needed
-   for `verify_jwt`), and add header `x-webhook-secret: <value from step 1>`, entered
-   only in the webhook settings. Then disable/delete `visitor_alert_push`.
-5. Trigger a real deliberate action on the live site from a non-internal device;
-   confirm `dry_run` in function logs; then unset `VISITOR_ALERT_DRY_RUN`.
+### Stage A — shadow observation (no Pushover changes)
+1. Review and apply `migration.sql` to the external analytics project.
+   This creates the engaged queue with RLS and a narrowly allowed trigger.
+   The trigger writes to a private table, never calls HTTP, and cannot send alerts.
+2. Observe newly arriving, authentic reader actions by comparing
+   `engaged_visitor_alert_queue` with existing first-page-view queue.
+   Do not insert synthetic analytics events into production.
+3. Leave the original `visitor_alert_push` webhook and `visitor-alert`
+   function in operation. Do not add an outbound webhook yet.
+4. To undo Stage A, run `rollback.sql`, preserving collected queue rows.
 
-**What changes and what doesn't:** `queue_visitor_alert()` stays installed, so
-`visitor_alert_queue` **keeps filling** with raw first page views. Only the old
-*push notifications* stop, once `visitor_alert_push` is switched off.
+### Stage B — separate cutover (NOT APPROVED BY STAGE A)
+1. Deploy the new handler under a *different* function name,
+   `visitor-alert-engaged`, not on top of the existing `visitor-alert`.
+   Keep `verify_jwt=true`.
+2. Configure a new `VISITOR_ALERT_WEBHOOK_SECRET` securely in Edge Function
+   secrets and its webhook; never commit or display the value. Reuse existing
+   Pushover secrets only on the new function.
+3. Start with `VISITOR_ALERT_DRY_RUN=1`, and configure a new webhook on
+   `engaged_visitor_alert_queue` pointing to the parallel function.
+4. Validate real future qualified actions and dry-run logs. Then switch off
+   the old push webhook and turn off dry-run under a coordinated cutover.
+   Disable the old webhook *before* enabling live delivery on the new one,
+   avoiding duplicate notifications.
+5. Roll back by restoring the old webhook and disabling the new one.
 
-## Rollback
-Run `rollback.sql`, re-enable `visitor_alert_push` (with its original Bearer header),
-and redeploy the saved original function.
+**Important:** Stage A is additive. The new queue only records events,
+does not identify people, and automatic `pdf_open` preview events are
+excluded. Stage B requires its own deployment verification.
 
 ## Tests
 `src/lib/visitor-alert.test.ts` (Vitest, mocked fetch, no network, no database).
