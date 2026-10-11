@@ -64,6 +64,13 @@ export const MEANINGFUL_INTENT = new Set([
   "my_table_open",
 ]);
 
+// Explicit owner-confirmed quality-assurance sessions. These IDs are not
+// identities or IP-based rules. Preserve all raw records for diagnostic audits.
+// 2026-10-11: mobile incognito VPN test of Open PDF via New York VPN.
+const KNOWN_OWNER_QA_SESSION_IDS: ReadonlySet<string> = new Set([
+  "497fe6bd-d9d4-495c-a9a9-a0da36c012f0",
+]);
+
 // One-time cleanup for a known automated traffic spike on 2026-09-18.
 const KNOWN_INCIDENT_START = Date.parse("2026-09-18T00:30:00.000Z");
 const KNOWN_INCIDENT_END = Date.parse("2026-09-18T01:15:00.000Z");
@@ -97,8 +104,8 @@ export function buildSessions(rows: SessionEventRow[]): Map<string, SessionAgg> 
         impressions: 0,
         humanSignal: false,
         meaningfulIntent: false,
-        internalTestTraffic: false,
-        markedInternal: false,
+        internalTestTraffic: KNOWN_OWNER_QA_SESSION_IDS.has(sid),
+        markedInternal: KNOWN_OWNER_QA_SESSION_IDS.has(sid),
         asOrganization: null,
       };
       sessions.set(sid, session);
