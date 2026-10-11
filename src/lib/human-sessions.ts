@@ -45,7 +45,8 @@ export type SessionAgg = {
   asOrganization: string | null;
 };
 
-// Deliberate client actions. Passive viewer loads and server-side redirects are\n// NOT intent evidence: they may be generated without any human interaction.
+// Deliberate client actions. Passive viewer loads and server-side redirects are
+// NOT intent evidence: they may be generated without any human interaction.
 export const MEANINGFUL_INTENT = new Set([
   "download",
   "publication_click",
