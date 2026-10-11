@@ -300,6 +300,33 @@ export default function OwnerSummary({
         )}
       </Block>
 
+      <Block title="Location quality (IP estimates only)">
+        <p className="text-xs text-muted-foreground">No GPS, location requests or new browser permissions. A city is an approximate network estimate, not the reader's verified whereabouts. All counts use likely-human sessions only.</p>
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Stat label="Sessions with city" value={report.geoInsights.citySessions} note={`of ${report.geoInsights.sessions} sessions`} />
+          <Stat label="Medium confidence" value={report.geoInsights.quality.medium} note="Network location, never exact" />
+          <Stat label="Low confidence" value={report.geoInsights.quality.low} note="Flagged network exit or mobility" />
+          <Stat label="Unknown confidence" value={report.geoInsights.quality.unknown} note="Insufficient network evidence" />
+          <Stat label="Postal estimates" value={report.geoInsights.postalSessions} note="Approximate, not an address" />
+          <Stat label="Conflicting city estimates" value={report.geoInsights.multiCityEstimateSessions} note="Different city estimates within one session" />
+          <Stat label="Country-only" value={report.geoInsights.countryOnlySessions} />
+          <Stat label="PDF-open sessions" value={report.geoInsights.pdfOpenSessions} note="Deliberate Open PDF clicks" />
+        </div>
+        <div className="mt-3 grid gap-4 md:grid-cols-2">
+          <div><h4 className="text-sm font-medium">Network type</h4>
+            <p className="text-xs text-muted-foreground">Unknown means the provider did not verify a VPN, mobile or hosting classification.</p>
+            <ul className="mt-2 space-y-1 text-xs">{report.geoInsights.networkTypes.map((v) => <li key={v.label} className="flex justify-between gap-2"><span>{v.label}</span><span>{v.sessions} sessions</span></li>)}</ul>
+          </div>
+          <div><h4 className="text-sm font-medium">Location data source</h4>
+            <ul className="mt-2 space-y-1 text-xs">{report.geoInsights.providers.map((v) => <li key={v.label} className="flex justify-between gap-2"><span>{v.label}</span><span>{v.sessions} sessions</span></li>)}</ul>
+          </div>
+        </div>
+        <div className="mt-3 overflow-x-auto"><table className="min-w-[620px] w-full text-left text-xs">
+          <thead><tr className="border-b border-border text-muted-foreground"><th className="py-2">Approximate city</th><th>Sessions</th><th>Medium</th><th>Low</th><th>Unknown</th><th>PDF clicked</th></tr></thead>
+          <tbody>{report.geoInsights.topCities.map((v) => <tr key={v.name} className="border-b border-border/50"><td className="py-1 pr-2">{v.name}</td><td>{v.sessions}</td><td>{v.medium}</td><td>{v.low}</td><td>{v.unknown}</td><td>{v.pdfOpenSessions}</td></tr>)}</tbody>
+        </table></div>
+      </Block>
+
       <Block title="Returning audience">
         {cohortError && <p className="text-sm text-destructive">{cohortError}</p>}
         {!cohorts && !cohortError && <p className="text-sm text-muted-foreground">Working out return rates…</p>}
