@@ -6,7 +6,6 @@ export const ENGAGED_ALERT_EVENTS = [
   "publication_click",
   "filter_change",
   "search",
-  "pdf_open",
   "download",
   "share_click",
   "signup",
