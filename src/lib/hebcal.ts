@@ -100,7 +100,7 @@ export function readingDateAfterHavdalah(now: Date, thisWeek: HebcalShabbat): st
   const havdalahTimes = thisWeek.items
     .filter((item) => item.category === "havdalah" && item.date.startsWith(shabbosDate + "T"))
     .map((item) =>
-      /(?:Z|[+-]\\d{2}:\\d{2})$/i.test(item.date) ? Date.parse(item.date) : Number.NaN,
+      /(?:Z|[+-]\d{2}:\d{2})$/i.test(item.date) ? Date.parse(item.date) : Number.NaN,
     )
     .filter((time) => Number.isFinite(time));
   if (havdalahTimes.length === 0 || now.getTime() < Math.max(...havdalahTimes)) {
