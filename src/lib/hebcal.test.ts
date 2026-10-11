@@ -4,6 +4,7 @@ import {
   resolveReadingFromHebcal,
   upcomingShabbosDate,
   hebcalShabbatUrlForDate,
+  readingDateAfterHavdalah,
   type HebcalShabbat,
 } from "@/lib/hebcal";
 
@@ -71,5 +72,68 @@ describe("rollover-safe target date", () => {
     const url = hebcalShabbatUrlForDate("2026-10-10");
     expect(url).toContain("gy=2026&gm=10&gd=10");
     expect(url).not.toContain("i=on");
+  });
+});
+
+describe("automatic Motzei Shabbos rollover", () => {
+  const havdalahWeek = (date: string, havdalahDate?: string): HebcalShabbat => ({
+    range: { start: date, end: date },
+    items: [
+      { title: "This week's reading", category: "parashat", date },
+      ...(havdalahDate
+        ? [{ title: "Havdalah", category: "havdalah", date: havdalahDate }]
+        : []),
+    ],
+  });
+
+  it("keeps Bereishis until Havdalah, then selects the following Shabbos before midnight", () => {
+    const week = havdalahWeek("2026-10-10", "2026-10-10T19:00:00-04:00");
+    expect(readingDateAfterHavdalah(new Date("2026-10-10T22:59:00Z"), week)).toBe("2026-10-10");
+    expect(readingDateAfterHavdalah(new Date("2026-10-10T23:00:00Z"), week)).toBe("2026-10-17");
+    expect(readingDateAfterHavdalah(new Date("2026-10-11T00:30:00Z"), week)).toBe("2026-10-17");
+  });
+
+  it("uses the timezone-aware Havdalah event in both winter and summer", () => {
+    const winter = havdalahWeek("2026-12-05", "2026-12-05T17:30:00-05:00");
+    expect(readingDateAfterHavdalah(new Date("2026-12-05T22:29:00Z"), winter)).toBe("2026-12-05");
+    expect(readingDateAfterHavdalah(new Date("2026-12-05T22:30:00Z"), winter)).toBe("2026-12-12");
+
+    const summer = havdalahWeek("2026-06-20", "2026-06-20T21:30:00-04:00");
+    expect(readingDateAfterHavdalah(new Date("2026-06-21T01:29:00Z"), summer)).toBe("2026-06-20");
+    expect(readingDateAfterHavdalah(new Date("2026-06-21T01:30:00Z"), summer)).toBe("2026-06-27");
+  });
+
+  it("does not advance early when the precise Saturday Havdalah time is absent", () => {
+    expect(
+      readingDateAfterHavdalah(new Date("2026-10-10T23:30:00Z"), havdalahWeek("2026-10-10")),
+    ).toBe("2026-10-10");
+    // A Sunday Yom Tov ending does not count as a Saturday Havdalah event.
+    expect(
+      readingDateAfterHavdalah(
+        new Date("2026-10-10T23:30:00Z"),
+        havdalahWeek("2026-10-10", "2026-10-11T20:00:00-04:00"),
+      ),
+    ).toBe("2026-10-10");
+    // Hebcal's event must carry a timezone offset, never the server's local timezone.
+    expect(
+      readingDateAfterHavdalah(
+        new Date("2026-10-10T23:30:00Z"),
+        havdalahWeek("2026-10-10", "2026-10-10T19:00:00"),
+      ),
+    ).toBe("2026-10-10");
+    expect(
+      readingDateAfterHavdalah(new Date("2026-10-11T04:01:00Z"), havdalahWeek("2026-10-10")),
+    ).toBe("2026-10-17");
+  });
+
+  it("uses the latest Saturday Havdalah time if multiple are provided", () => {
+    const week = havdalahWeek("2026-10-10", "2026-10-10T19:00:00-04:00");
+    week.items.push({
+      title: "Later Havdalah",
+      date: "2026-10-10T20:00:00-04:00",
+      category: "havdalah",
+    });
+    expect(readingDateAfterHavdalah(new Date("2026-10-10T23:30:00Z"), week)).toBe("2026-10-10");
+    expect(readingDateAfterHavdalah(new Date("2026-10-11T00:00:00Z"), week)).toBe("2026-10-17");
   });
 });
