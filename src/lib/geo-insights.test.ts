@@ -44,6 +44,24 @@ describe("IP location quality and coherent session summaries", () => {
     expect(result.countryOnlySessions).toBe(1);
     expect(result.citySessions).toBe(0);
   });
+  it("reviews all observed cities while keeping the top twenty overview", () => {
+    const visits = Array.from({ length: 24 }, (_, i) =>
+      row("session-" + i, "2026-10-11T10:00:00Z", "City " + i),
+    );
+    const report = summarizeGeoInsights(visits);
+    expect(report.reviewCities).toHaveLength(24);
+    expect(report.topCities).toHaveLength(20);
+    expect(report.reviewCities.reduce((n, city) => n + city.sessions, 0)).toBe(24);
+  });
+  it("shows conflicting city estimates as diagnostics, not additional sessions", () => {
+    const report = summarizeGeoInsights([
+      row("same", "2026-10-11T10:00:00Z", "Clifton"),
+      row("same", "2026-10-11T10:01:00Z", "Newark"),
+    ]);
+    expect(report.reviewCities).toHaveLength(1);
+    expect(report.reviewCities[0]?.sessions).toBe(1);
+    expect(report.reviewCities[0]?.conflictingEstimateSessions).toBe(1);
+  });
   it("uses earliest for equal-quality city estimates", () => {
     const chosen = pickCoherentSessionGeo([
       row("a","2026-10-11T10:00:05Z","Newark"),

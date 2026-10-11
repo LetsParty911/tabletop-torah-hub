@@ -327,6 +327,21 @@ export default function OwnerSummary({
         </table></div>
       </Block>
 
+      <Block title="Location Review — all estimated cities">
+        <p className="text-xs text-muted-foreground">Read-only city-level aggregates from likely-human sessions. No visitor identity, religious-affiliation inference, GPS, permission request, or automatic blocking. Every city is an approximate IP/network estimate.</p>
+        <details className="mt-3 rounded-md border border-border p-3">
+          <summary className="cursor-pointer text-sm font-medium">Inspect {report.geoInsights.reviewCities.length} estimated cities</summary>
+          <div className="mt-3 overflow-x-auto">
+            <table className="min-w-[720px] w-full text-left text-xs">
+              <thead><tr className="border-b border-border text-muted-foreground"><th className="py-2">Estimated city</th><th>Visits</th><th>Open PDF visits</th><th>Medium</th><th>Low</th><th>Unknown</th><th>Conflicting estimates</th></tr></thead>
+              <tbody>{report.geoInsights.reviewCities.map((city) => <tr key={city.name} className="border-b border-border/50">
+                <td className="py-2 pr-3">{city.name}</td><td>{city.sessions}</td><td>{city.pdfOpenSessions}</td><td>{city.medium}</td><td>{city.low}</td><td>{city.unknown}</td><td>{city.conflictingEstimateSessions}</td>
+              </tr>)}</tbody>
+            </table>
+          </div>
+        </details>
+      </Block>
+
       <Block title="Returning audience">
         {cohortError && <p className="text-sm text-destructive">{cohortError}</p>}
         {!cohorts && !cohortError && <p className="text-sm text-muted-foreground">Working out return rates…</p>}

@@ -86,6 +86,7 @@ export function summarizeGeoInsights(rows: readonly GeoEvent[]) {
   const cities = new Map<string, {
     name: string; sessions: number; pdfOpenSessions: number;
     medium: number; low: number; unknown: number;
+    conflictingEstimateSessions: number;
   }>();
   let citySessions = 0;
   let postalSessions = 0;
@@ -128,16 +129,23 @@ export function summarizeGeoInsights(rows: readonly GeoEvent[]) {
     const stat = cities.get(name) ?? {
       name, sessions: 0, pdfOpenSessions: 0,
       medium: 0, low: 0, unknown: 0,
+      conflictingEstimateSessions: 0,
     };
     stat.sessions += 1;
     if (deliberateOpen) stat.pdfOpenSessions += 1;
     stat[confidence] += 1;
+    if (distinctCityEstimates.size >= 2) stat.conflictingEstimateSessions += 1;
     cities.set(name, stat);
   }
 
   const breakdown = (m: Map<string, number>) =>
     [...m.entries()].map(([label, sessions]) => ({ label, sessions }))
       .sort((a,b) => b.sessions - a.sessions || a.label.localeCompare(b.label));
+
+  // Keep the short overview while also making every observed city available
+  // for the administrator's explicit location-quality review.
+  const cityRows = [...cities.values()]
+    .sort((a,b) => b.sessions - a.sessions || b.pdfOpenSessions - a.pdfOpenSessions || a.name.localeCompare(b.name));
 
   return {
     sessions: bySession.size,
@@ -149,8 +157,7 @@ export function summarizeGeoInsights(rows: readonly GeoEvent[]) {
     multiCityEstimateSessions,
     networkTypes: breakdown(networks),
     providers: breakdown(providers),
-    topCities: [...cities.values()]
-      .sort((a,b) => b.sessions - a.sessions || b.pdfOpenSessions - a.pdfOpenSessions || a.name.localeCompare(b.name))
-      .slice(0, 20),
+    topCities: cityRows.slice(0, 20),
+    reviewCities: cityRows,
   };
 }
