@@ -45,16 +45,15 @@ export type SessionAgg = {
   asOrganization: string | null;
 };
 
-// Events that only a person can realistically produce.
+// Deliberate client actions. Passive viewer loads and server-side redirects are\n// NOT intent evidence: they may be generated without any human interaction.
 export const MEANINGFUL_INTENT = new Set([
   "download",
-  "download_served",
-  "pdf_open",
   "publication_click",
   "filter_change",
   "search",
   "share_click",
   "signup",
+  "print_click",
   "human_signal",
   // recommendation_view is intentionally absent: it is a render-time impression.
   "chooser_select",
