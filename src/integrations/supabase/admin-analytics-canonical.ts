@@ -7,6 +7,8 @@ import {
   CONFIDENCE_LABELS,
   classifySession,
   emptyConfidenceCounts,
+  isDedicatedHostingOrganization,
+  isInfrastructureOrganization,
   type TrafficConfidence,
 } from "@/lib/traffic-confidence";
 import {
@@ -1131,8 +1133,10 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
 
     const rows = await fetchVisitorEvents(start, end);
 
-    // Reuse the EXISTING canonical session/automation rules — no new bot filter.
-    const sessions = buildSessions(rows);
+    // Use the shared, reporting-only confidence rules for raw Visitor Activity
+    // and headline analytics alike; all events remain available for audit.
+    const classified = classifySessions(rows);
+    const sessions = classified.sessions;
     const sessionList = [...sessions.values()];
     const burstOrHeartbeat = classifyAutomation(sessionList);
     const knownIncident = classifyKnownIncident(sessionList);
@@ -1144,6 +1148,8 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       pageviews: number;
       suspected: boolean;
       suspicionReasons: string[];
+      confidenceLabel: string;
+      reviewReason: string | null;
       timeline: Array<{
         at: string;
         event: string;
@@ -1346,15 +1352,25 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
         let detail = v.sessionDetails.get(sid);
         if (!detail) {
           const reasons: string[] = [];
+          const confidence = classified.confidence.get(sid) ?? "uncertain";
+          const aggregate = sessions.get(sid);
           if (burstOrHeartbeat.has(sid)) reasons.push("Matches canonical high-confidence automation rule");
           if (knownIncident.has(sid)) reasons.push("Inside known automated traffic incident window");
+          if (confidence === "suspected_automation" && reasons.length === 0 && isInfrastructureOrganization(aggregate?.asOrganization)) {
+            reasons.push("Short, action-free infrastructure-network session; card impressions are not human interaction.");
+          }
+          const reviewReason = confidence === "uncertain" && isDedicatedHostingOrganization(aggregate?.asOrganization)
+            ? "Hosted-browser activity on OVH: clicks or scrolls can be automated. Reader status unverified; raw actions retained."
+            : confidence === "uncertain" ? "Insufficient evidence to verify a human reader." : null;
           detail = {
             sessionId: sid,
             startedAt: at,
             endedAt: at,
             pageviews: 0,
-            suspected: reasons.length > 0,
+            suspected: confidence === "suspected_automation",
             suspicionReasons: reasons,
+            confidenceLabel: CONFIDENCE_LABELS[confidence],
+            reviewReason,
             timeline: [],
           };
           v.sessionDetails.set(sid, detail);
@@ -1422,6 +1438,7 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
         b.startedAt.localeCompare(a.startedAt),
       );
       const suspectedSessions = sessionDetails.filter((s) => s.suspected).length;
+      const unverifiedSessions = sessionDetails.filter((s) => s.reviewReason !== null).length;
       const suspicionReasons = [
         ...new Set(sessionDetails.flatMap((s) => s.suspicionReasons)),
       ];
@@ -1536,6 +1553,7 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
         likelyReturning: v.isReturningFlagSeen || v.sessionIds.length > 1,
         likelyNew: !v.isReturningFlagSeen && v.isNewFlagSeen && v.sessionIds.length <= 1,
         suspectedSessions,
+        unverifiedSessions,
         suspicionReasons,
         publicationActions: v.publicationActions.slice(-50).reverse(),
         searchTerms: v.searchTerms.slice(-50).reverse(),
@@ -1554,7 +1572,8 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       pdfAccessActionsRaw: rawPdfAccess.length,
       pdfAccessCap: PDF_ACCESS_CAP_PER_VISITOR,
       signups: rows.filter((r) => r.event_name === "signup").length,
-      suspectedSessions: new Set([...burstOrHeartbeat, ...knownIncident]).size,
+      suspectedSessions: classified.counts.suspected_automation,
+      unverifiedSessions: classified.counts.uncertain,
       eventsScanned: rows.length,
     };
 

@@ -46,3 +46,32 @@ describe("classifySessions (headline filter)", () => {
     expect(result.humanIds.size).toBe(3);
   });
 });
+
+
+describe("infrastructure-origin session reporting", () => {
+  it("sets aside card impressions on a Cisco one-page session without deleting rows", () => {
+    const rows = [
+      ev("cisco-render", "page_view", 0, { as_organization: "Cisco OpenDNS, LLC" }),
+      ev("cisco-render", "publication_impression", 1_000, { as_organization: "Cisco OpenDNS, LLC" }),
+      ev("cisco-render", "publication_impression", 1_100, { as_organization: "Cisco OpenDNS, LLC" }),
+    ];
+    const result = classifySessions(rows);
+    expect(result.sessions.get("cisco-render")?.events).toBe(3);
+    expect(result.confidence.get("cisco-render")).toBe("suspected_automation");
+    expect(result.humanIds.has("cisco-render")).toBe(false);
+  });
+
+  it("marks OVH hosted-browser interaction unverified, keeping all raw PDF activity", () => {
+    const rows = [
+      ev("ovh-hosted", "page_view", 0, { as_organization: "OVH SAS" }),
+      ev("ovh-hosted", "human_signal", 2_000, { as_organization: "OVH SAS" }),
+      ev("ovh-hosted", "publication_click", 4_000, { as_organization: "OVH SAS" }),
+      ev("ovh-hosted", "pdf_open", 5_000, { as_organization: "OVH SAS" }),
+    ];
+    const result = classifySessions(rows);
+    expect(result.sessions.get("ovh-hosted")?.accessedPdf).toBe(true);
+    expect(result.sessions.get("ovh-hosted")?.events).toBe(rows.length);
+    expect(result.confidence.get("ovh-hosted")).toBe("uncertain");
+    expect(result.humanIds.has("ovh-hosted")).toBe(false);
+  });
+});

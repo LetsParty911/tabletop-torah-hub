@@ -21,6 +21,8 @@ export type ConfidenceInput = {
   flaggedAutomation: boolean;
   /** Network belongs to known cloud/security infrastructure (see INFRASTRUCTURE_ORGANIZATIONS). */
   infrastructureNetwork?: boolean;
+  /** Known dedicated hosting ASN; browser interactions still require independent verification. */
+  dedicatedHostingNetwork?: boolean;
   /** An explicit human_signal event was recorded. */
   humanSignal: boolean;
   /** A download, PDF open, click, search, chooser or My Table action. */
@@ -44,7 +46,16 @@ export const INFRASTRUCTURE_ORGANIZATIONS = [
   "fastly",
   "latitude.sh",
   "microsoft corporation",
+  "ovh sas",
 ];
+
+/** Provider-specific: ordinary visitors can use a hosted browser or VPN, but
+ * an apparent click on a hosted machine is not independent proof of a person.
+ * The heuristic applies regardless of city; it never triggers a network block.
+ */
+export function isDedicatedHostingOrganization(org: string | null | undefined): boolean {
+  return org?.trim().toLowerCase().replace(/,/g, "").includes("ovh sas") ?? false;
+}
 
 export function isInfrastructureOrganization(org: string | null | undefined): boolean {
   const value = org?.trim().toLowerCase().replace(/,/g, "") ?? "";
@@ -52,7 +63,7 @@ export function isInfrastructureOrganization(org: string | null | undefined): bo
   return INFRASTRUCTURE_ORGANIZATIONS.some((needle) => value.includes(needle));
 }
 
-/** Low-signal: at most one page, no card impressions, under 30 seconds. */
+/** Low-signal: at most one page view, under 30 seconds, with no deliberate action. */
 export const INFRASTRUCTURE_MAX_DURATION_MS = 30_000;
 
 export const CONFIDENCE_LABELS: Record<TrafficConfidence, string> = {
@@ -69,7 +80,7 @@ export const CONFIDENCE_EXPLANATIONS: Record<TrafficConfidence, string> = {
   likely_human:
     "A deliberate action such as opening a PDF, choosing, searching or saving was recorded.",
   uncertain:
-    "The visit was recorded but showed no deliberate action, so it cannot be classified either way.",
+    "Not independently verified as a human reader. Some hosting-network sessions can register browser clicks and scrolls; keep their raw activity available for review.",
   suspected_automation:
     "The session matched a specific automation pattern and showed no deliberate action. Rows are kept; they are set aside from headline counts.",
   internal_test:
@@ -83,6 +94,11 @@ export const CONFIDENCE_EXPLANATIONS: Record<TrafficConfidence, string> = {
 export function classifySession(input: ConfidenceInput): TrafficConfidence {
   if (input.internal) return "internal_test";
 
+  // A hosted automated browser can produce click/scroll telemetry. Retain
+  // deliberate actions as raw activity without certifying the session human.
+  // For action-free hosted sessions, the short-visit rule below still applies.
+  if (input.dedicatedHostingNetwork && (input.humanSignal || input.meaningfulIntent)) return "uncertain";
+
   if (input.humanSignal && input.meaningfulIntent) return "high_confidence_human";
   if (input.meaningfulIntent) return "likely_human";
   if (input.humanSignal) return "likely_human";
@@ -94,7 +110,7 @@ export function classifySession(input: ConfidenceInput): TrafficConfidence {
   if (
     input.infrastructureNetwork &&
     input.pageviews <= 1 &&
-    input.impressions === 0 &&
+    // Publication impressions fire on card visibility and do not prove human intent.
     input.durationMs < INFRASTRUCTURE_MAX_DURATION_MS
   )
     return "suspected_automation";
