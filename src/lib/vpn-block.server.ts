@@ -101,7 +101,6 @@ async function fetchPrivacy(ip: string): Promise<PrivacyLookup | null> {
   const url = new URL(`https://proxycheck.io/v3/${encodeURIComponent(ip)}`);
   const key = process.env["PROXYCHECK_API_KEY"]?.trim();
   if (key) url.searchParams.set("key", key);
-  url.searchParams.set("p", "0");
   // Do not store positive-query tags in proxycheck's dashboard.
   url.searchParams.set("tag", "0");
   const controller = new AbortController();
