@@ -34,6 +34,7 @@ import { Route as ApiEnhancedFingerprintRouteImport } from './routes/api/enhance
 import { Route as ApiEventsRouteImport } from './routes/api/events'
 import { Route as ApiInternalDeviceRouteImport } from './routes/api/internal-device'
 import { Route as ApiPrivacyRegionRouteImport } from './routes/api/privacy-region'
+import { Route as ApiSiteVersionRouteImport } from './routes/api/site-version'
 import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
 import { Route as ApiTrackSearchRouteImport } from './routes/api/track-search'
 import { Route as ApiTrackViewRouteImport } from './routes/api/track-view'
@@ -175,6 +176,11 @@ const ApiPrivacyRegionRoute = ApiPrivacyRegionRouteImport.update({
   path: '/api/privacy-region',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSiteVersionRoute = ApiSiteVersionRouteImport.update({
+  id: '/api/site-version',
+  path: '/api/site-version',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTrackDownloadRoute = ApiTrackDownloadRouteImport.update({
   id: '/api/track-download',
   path: '/api/track-download',
@@ -277,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/api/events': typeof ApiEventsRoute
   '/api/internal-device': typeof ApiInternalDeviceRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
+  '/api/site-version': typeof ApiSiteVersionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
@@ -319,6 +326,7 @@ export interface FileRoutesByTo {
   '/api/events': typeof ApiEventsRoute
   '/api/internal-device': typeof ApiInternalDeviceRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
+  '/api/site-version': typeof ApiSiteVersionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
@@ -362,6 +370,7 @@ export interface FileRoutesById {
   '/api/events': typeof ApiEventsRoute
   '/api/internal-device': typeof ApiInternalDeviceRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
+  '/api/site-version': typeof ApiSiteVersionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
@@ -406,6 +415,7 @@ export interface FileRouteTypes {
     | '/api/events'
     | '/api/internal-device'
     | '/api/privacy-region'
+    | '/api/site-version'
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
@@ -448,6 +458,7 @@ export interface FileRouteTypes {
     | '/api/events'
     | '/api/internal-device'
     | '/api/privacy-region'
+    | '/api/site-version'
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
@@ -490,6 +501,7 @@ export interface FileRouteTypes {
     | '/api/events'
     | '/api/internal-device'
     | '/api/privacy-region'
+    | '/api/site-version'
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
@@ -533,6 +545,7 @@ export interface RootRouteChildren {
   ApiEventsRoute: typeof ApiEventsRoute
   ApiInternalDeviceRoute: typeof ApiInternalDeviceRoute
   ApiPrivacyRegionRoute: typeof ApiPrivacyRegionRoute
+  ApiSiteVersionRoute: typeof ApiSiteVersionRoute
   ApiTrackDownloadRoute: typeof ApiTrackDownloadRoute
   ApiTrackSearchRoute: typeof ApiTrackSearchRoute
   ApiTrackViewRoute: typeof ApiTrackViewRoute
@@ -724,6 +737,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPrivacyRegionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/site-version': {
+      id: '/api/site-version'
+      path: '/api/site-version'
+      fullPath: '/api/site-version'
+      preLoaderRoute: typeof ApiSiteVersionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/track-download': {
       id: '/api/track-download'
       path: '/api/track-download'
@@ -883,6 +903,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEventsRoute: ApiEventsRoute,
   ApiInternalDeviceRoute: ApiInternalDeviceRoute,
   ApiPrivacyRegionRoute: ApiPrivacyRegionRoute,
+  ApiSiteVersionRoute: ApiSiteVersionRoute,
   ApiTrackDownloadRoute: ApiTrackDownloadRoute,
   ApiTrackSearchRoute: ApiTrackSearchRoute,
   ApiTrackViewRoute: ApiTrackViewRoute,
