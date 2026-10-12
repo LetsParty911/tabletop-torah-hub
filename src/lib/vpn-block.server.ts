@@ -18,10 +18,25 @@ export type PrivacyLookup = {
   country: string | null;
 };
 
-export function getVpnBlockMode(): VpnBlockMode {
-  const v = (process.env["VPN_BLOCK_MODE"] ?? "monitor").trim().toLowerCase();
-  return v === "off" || v === "block" ? v : "monitor";
+// Fail safely to monitoring if the runtime configuration lookup is unavailable.
+let modeMemo: { mode: VpnBlockMode; expires: number } | null = null;
+export async function getVpnBlockMode(): Promise<VpnBlockMode> {
+  if (modeMemo && modeMemo.expires > Date.now()) return modeMemo.mode;
+  try {
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/ext.server");
+    const { data, error } = await getSupabaseAdmin().from("vpn_block_settings")
+      .select("mode").eq("id", 1).single();
+    if (error) throw error;
+    const mode = data?.mode;
+    if (mode !== "off" && mode !== "monitor" && mode !== "block") throw Error("Invalid VPN mode");
+    modeMemo = { mode, expires: Date.now() + 10_000 };
+    return mode;
+  } catch (error) {
+    console.error("[vpn-block] failed to read mode; defaulting to monitoring", error);
+    return "monitor";
+  }
 }
+export function clearVpnModeCache() { modeMemo = null; }
 
 const clean = (value: unknown, max = 120): string | null =>
   typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null;
@@ -176,7 +191,7 @@ async function auditPrivacy(
 
 /** Audit each eligible document navigation, including clean and failed classifications. */
 export async function checkVpnBlock(request: Request): Promise<Response | null> {
-  const mode = getVpnBlockMode();
+  const mode = await getVpnBlockMode();
   if (mode === "off") return null;
   try {
     const path = new URL(request.url).pathname;
