@@ -19,6 +19,7 @@ import { Route as DivreiTorahParshaRouteImport } from './routes/divrei-torah-par
 import { Route as JRouteImport } from './routes/j'
 import { Route as MissionRouteImport } from './routes/mission'
 import { Route as MyTableRouteImport } from './routes/my-table'
+import { Route as NoahideResourcesRouteImport } from './routes/noahide-resources'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as OriginalsRouteImport } from './routes/originals'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -34,6 +35,7 @@ import { Route as ApiEnhancedFingerprintRouteImport } from './routes/api/enhance
 import { Route as ApiEventsRouteImport } from './routes/api/events'
 import { Route as ApiInternalDeviceRouteImport } from './routes/api/internal-device'
 import { Route as ApiPrivacyRegionRouteImport } from './routes/api/privacy-region'
+import { Route as ApiSiteVersionRouteImport } from './routes/api/site-version'
 import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
 import { Route as ApiTrackSearchRouteImport } from './routes/api/track-search'
 import { Route as ApiTrackViewRouteImport } from './routes/api/track-view'
@@ -98,6 +100,11 @@ const MissionRoute = MissionRouteImport.update({
 const MyTableRoute = MyTableRouteImport.update({
   id: '/my-table',
   path: '/my-table',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NoahideResourcesRoute = NoahideResourcesRouteImport.update({
+  id: '/noahide-resources',
+  path: '/noahide-resources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfflineRoute = OfflineRouteImport.update({
@@ -173,6 +180,11 @@ const ApiInternalDeviceRoute = ApiInternalDeviceRouteImport.update({
 const ApiPrivacyRegionRoute = ApiPrivacyRegionRouteImport.update({
   id: '/api/privacy-region',
   path: '/api/privacy-region',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSiteVersionRoute = ApiSiteVersionRouteImport.update({
+  id: '/api/site-version',
+  path: '/api/site-version',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiTrackDownloadRoute = ApiTrackDownloadRouteImport.update({
@@ -262,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/j': typeof JRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
+  '/noahide-resources': typeof NoahideResourcesRoute
   '/offline': typeof OfflineRoute
   '/originals': typeof OriginalsRoute
   '/privacy': typeof PrivacyRoute
@@ -277,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/api/events': typeof ApiEventsRoute
   '/api/internal-device': typeof ApiInternalDeviceRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
+  '/api/site-version': typeof ApiSiteVersionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
@@ -304,6 +318,7 @@ export interface FileRoutesByTo {
   '/j': typeof JRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
+  '/noahide-resources': typeof NoahideResourcesRoute
   '/offline': typeof OfflineRoute
   '/originals': typeof OriginalsRoute
   '/privacy': typeof PrivacyRoute
@@ -319,6 +334,7 @@ export interface FileRoutesByTo {
   '/api/events': typeof ApiEventsRoute
   '/api/internal-device': typeof ApiInternalDeviceRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
+  '/api/site-version': typeof ApiSiteVersionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
@@ -347,6 +363,7 @@ export interface FileRoutesById {
   '/j': typeof JRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
+  '/noahide-resources': typeof NoahideResourcesRoute
   '/offline': typeof OfflineRoute
   '/originals': typeof OriginalsRoute
   '/privacy': typeof PrivacyRoute
@@ -362,6 +379,7 @@ export interface FileRoutesById {
   '/api/events': typeof ApiEventsRoute
   '/api/internal-device': typeof ApiInternalDeviceRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
+  '/api/site-version': typeof ApiSiteVersionRoute
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
@@ -391,6 +409,7 @@ export interface FileRouteTypes {
     | '/j'
     | '/mission'
     | '/my-table'
+    | '/noahide-resources'
     | '/offline'
     | '/originals'
     | '/privacy'
@@ -406,6 +425,7 @@ export interface FileRouteTypes {
     | '/api/events'
     | '/api/internal-device'
     | '/api/privacy-region'
+    | '/api/site-version'
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
@@ -433,6 +453,7 @@ export interface FileRouteTypes {
     | '/j'
     | '/mission'
     | '/my-table'
+    | '/noahide-resources'
     | '/offline'
     | '/originals'
     | '/privacy'
@@ -448,6 +469,7 @@ export interface FileRouteTypes {
     | '/api/events'
     | '/api/internal-device'
     | '/api/privacy-region'
+    | '/api/site-version'
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
@@ -475,6 +497,7 @@ export interface FileRouteTypes {
     | '/j'
     | '/mission'
     | '/my-table'
+    | '/noahide-resources'
     | '/offline'
     | '/originals'
     | '/privacy'
@@ -490,6 +513,7 @@ export interface FileRouteTypes {
     | '/api/events'
     | '/api/internal-device'
     | '/api/privacy-region'
+    | '/api/site-version'
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
@@ -518,6 +542,7 @@ export interface RootRouteChildren {
   JRoute: typeof JRoute
   MissionRoute: typeof MissionRoute
   MyTableRoute: typeof MyTableRoute
+  NoahideResourcesRoute: typeof NoahideResourcesRoute
   OfflineRoute: typeof OfflineRoute
   OriginalsRoute: typeof OriginalsRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -533,6 +558,7 @@ export interface RootRouteChildren {
   ApiEventsRoute: typeof ApiEventsRoute
   ApiInternalDeviceRoute: typeof ApiInternalDeviceRoute
   ApiPrivacyRegionRoute: typeof ApiPrivacyRegionRoute
+  ApiSiteVersionRoute: typeof ApiSiteVersionRoute
   ApiTrackDownloadRoute: typeof ApiTrackDownloadRoute
   ApiTrackSearchRoute: typeof ApiTrackSearchRoute
   ApiTrackViewRoute: typeof ApiTrackViewRoute
@@ -617,6 +643,13 @@ declare module '@tanstack/react-router' {
       path: '/my-table'
       fullPath: '/my-table'
       preLoaderRoute: typeof MyTableRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/noahide-resources': {
+      id: '/noahide-resources'
+      path: '/noahide-resources'
+      fullPath: '/noahide-resources'
+      preLoaderRoute: typeof NoahideResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offline': {
@@ -722,6 +755,13 @@ declare module '@tanstack/react-router' {
       path: '/api/privacy-region'
       fullPath: '/api/privacy-region'
       preLoaderRoute: typeof ApiPrivacyRegionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/site-version': {
+      id: '/api/site-version'
+      path: '/api/site-version'
+      fullPath: '/api/site-version'
+      preLoaderRoute: typeof ApiSiteVersionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/track-download': {
@@ -868,6 +908,7 @@ const rootRouteChildren: RootRouteChildren = {
   JRoute: JRoute,
   MissionRoute: MissionRoute,
   MyTableRoute: MyTableRoute,
+  NoahideResourcesRoute: NoahideResourcesRoute,
   OfflineRoute: OfflineRoute,
   OriginalsRoute: OriginalsRoute,
   PrivacyRoute: PrivacyRoute,
@@ -883,6 +924,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEventsRoute: ApiEventsRoute,
   ApiInternalDeviceRoute: ApiInternalDeviceRoute,
   ApiPrivacyRegionRoute: ApiPrivacyRegionRoute,
+  ApiSiteVersionRoute: ApiSiteVersionRoute,
   ApiTrackDownloadRoute: ApiTrackDownloadRoute,
   ApiTrackSearchRoute: ApiTrackSearchRoute,
   ApiTrackViewRoute: ApiTrackViewRoute,
