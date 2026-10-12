@@ -211,3 +211,9 @@ export async function checkVpnBlock(request: Request): Promise<Response | null> 
     return null;
   }
 }
+
+/** Isolated self-test for Vercel previews; never writes a visitor or VPN audit row. */
+export async function previewVpnLookup(ip: string | null): Promise<CheckResult | null> {
+  if (!validIp(ip)) return null;
+  return privacyLookup(ip);
+}
