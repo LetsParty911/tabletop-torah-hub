@@ -1,3 +1,6 @@
+import { normalizeSourceGroup } from "./source-group";
+export { normalizeSourceGroup } from "./source-group";
+
 // Phase 1 canonical first-party analytics client.
 //
 // This sits alongside — not instead of — the existing GTM helper
@@ -320,33 +323,6 @@ export type FpAttribution = {
   landing_path: string | null;
   source_group: string;
 };
-
-/**
- * Normalized bucket used by the dashboard breakdowns. Original UTM and
- * referrer values are always kept alongside this.
- */
-export function normalizeSourceGroup(input: {
-  referrer_host: string | null;
-  utm_source: string | null;
-  utm_medium: string | null;
-  utm_campaign: string | null;
-}): string {
-  const host = (input.referrer_host ?? "").toLowerCase();
-  const src = (input.utm_source ?? "").toLowerCase();
-  const med = (input.utm_medium ?? "").toLowerCase();
-  const hasCampaign = Boolean(input.utm_source || input.utm_medium || input.utm_campaign);
-
-  const any = `${host} ${src} ${med}`;
-
-  if (/whatsapp|wa\.me|chat\.whatsapp/.test(any)) return "WhatsApp";
-  if (/(^|\W)(email|newsletter|mail)(\W|$)/.test(` ${med} `) || /email|newsletter|sender|resend|mailchimp/.test(src))
-    return "Email";
-  if (/^mail\.|webmail|outlook|mail\.google/.test(host)) return "Email";
-  if (/(^|\.)google\./.test(host) || src === "google") return "Google";
-  if (!host && !hasCampaign) return "Direct";
-  if (hasCampaign) return "Other Campaign";
-  return "Other Referral";
-}
 
 type StoredAttribution = FpAttribution & { session_id?: string };
 

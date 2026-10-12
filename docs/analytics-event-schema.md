@@ -69,6 +69,7 @@ Privacy rules:
 
 First-touch attribution is captured once per session and is not overwritten by internal navigation. Canonical source groups are:
 
+- Shul Poster (`utm_source=shul` and `utm_medium=poster`, as used by `/s`)
 - WhatsApp
 - Email
 - Google
