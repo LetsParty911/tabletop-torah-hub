@@ -1,3 +1,4 @@
+import { summarizeNoahideResources } from "@/lib/noahide-resources-analytics";
 import { countSukkahSignDownloads } from "@/lib/sukkah-sign-downloads";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -637,6 +638,7 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
   return {
     overview,
     geoInsights: summarizeGeoInsights(keptRows),
+    noahideResources: summarizeNoahideResources(rows, priorVisitors, classified),
     homepageSharing: summarizeHomepageSharing(keptRows, countedRows),
     metrics: {
       people: canonical.uniqueVisitors,

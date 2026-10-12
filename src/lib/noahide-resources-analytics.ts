@@ -111,7 +111,7 @@ export function summarizeNoahideResources(
   const stats = new Map<string, SessionStat>();
   const rawClicks: Record<NoahideDestination, number> = { ask_noah: 0, chabad: 0 };
   let rejectedClicks = 0;
-  let clickOnlySessions = new Set<string>();
+  const clickOnlySessions = new Set<string>();
   const firstPass = new Map<string, NoahideEventRow[]>();
   for (const row of pageRows) {
     const sid = row.session_id?.trim();
@@ -221,7 +221,6 @@ export function summarizeNoahideResources(
   const devices = new Map<string, number>();
   const locations = new Map<string, number>();
   const campaigns = new Map<string, number>();
-  const scroll = new Map<string, number>();
   for (const s of human) {
     bump(sources, s.source);
     bump(devices, s.device);
@@ -229,7 +228,6 @@ export function summarizeNoahideResources(
     if (s.utm) bump(campaigns, s.utm);
   }
   const scrollReached = SCROLL_MILESTONES.map((m) => ({ percent: m, sessions: human.filter((s) => s.maxScroll >= m).length }));
-  void scroll;
   const anyClickSessions = human.filter((s) => clicked(s)).length;
 
   return {
