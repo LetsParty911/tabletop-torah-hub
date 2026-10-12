@@ -13,6 +13,7 @@ type Row = {
   path: string | null;
   referrer: string | null;
   user_agent: string | null;
+  blocked: boolean;
   block_reason: string;
   action: string;
 };
@@ -48,8 +49,8 @@ export default function BlockedVisitsSection({ accessToken }: { accessToken: str
         <div>
           <h2 className="font-serif text-2xl font-bold text-primary">Blocked Visits</h2>
           <p className="text-sm text-muted-foreground">
-            Visitors from blocked locations shown the maintenance page. Kept out of all visitor, session,
-            engagement and download reports. Latest 200 attempts.
+            Denied location visits only. VPN/proxy/Tor detections and decisions appear in
+            the separate VPN Tracking tab. Latest 200 location blocks.
           </p>
         </div>
         <button onClick={load} className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" disabled={loading}>
@@ -87,7 +88,7 @@ export default function BlockedVisitsSection({ accessToken }: { accessToken: str
                     {r.user_agent ? formatUaSummary(parseUserAgent(r.user_agent)) : "—"}
                   </td>
                   <td className="py-2 pr-3">{r.block_reason}</td>
-                  <td className="py-2">{r.action}</td>
+                  <td className="py-2">{r.blocked ? "Blocked" : "Monitoring"} — {r.action}</td>
                 </tr>
               ))}
             </tbody>

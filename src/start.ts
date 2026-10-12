@@ -95,6 +95,17 @@ const geoBlock = createMiddleware().server(async ({ next, request }) => {
 });
 
 /**
+ * Optional anonymous-network monitor / gate. Defaults to monitor-only.
+ * Runs ahead of location restrictions, with admin and marked-device exemptions.
+ */
+const vpnGate = createMiddleware().server(async ({ next, request }) => {
+  const { checkVpnBlock } = await import("@/lib/vpn-block.server");
+  const denied = await checkVpnBlock(request);
+  if (denied) return { response: denied } as never;
+  return next();
+});
+
+/**
  * Maintenance traffic: after the response exists, log a sanitized row when a
  * real public HTML navigation was served while persistent maintenance is ON.
  * Runs after geoBlock, so blocked-city requests stay only in blocked_visits.
@@ -114,5 +125,5 @@ const maintenanceTraffic = createMiddleware().server(async ({ next, request }) =
 
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [dotOrgRedirect, geoBlock, maintenanceTraffic, cacheControl],
+  requestMiddleware: [dotOrgRedirect, vpnGate, geoBlock, maintenanceTraffic, cacheControl],
 }));
