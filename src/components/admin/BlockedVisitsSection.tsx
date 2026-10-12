@@ -49,8 +49,8 @@ export default function BlockedVisitsSection({ accessToken }: { accessToken: str
         <div>
           <h2 className="font-serif text-2xl font-bold text-primary">Blocked Visits</h2>
           <p className="text-sm text-muted-foreground">
-            Includes denied location visits and VPN/proxy/Tor detections (monitor-only events are not blocked).
-            Latest 200 events.
+            Denied location visits only. VPN/proxy/Tor detections and decisions appear in
+            the separate VPN Tracking tab. Latest 200 location blocks.
           </p>
         </div>
         <button onClick={load} className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" disabled={loading}>
