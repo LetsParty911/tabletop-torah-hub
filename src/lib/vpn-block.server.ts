@@ -122,7 +122,7 @@ async function fetchPrivacy(ip: string): Promise<{ value: PrivacyLookup | null; 
     const response = await fetch(url.toString(), {
       method: "GET", signal: controller.signal, headers: { Accept: "application/json" },
     });
-    if (!response.ok) return { value: null, status: `http_${response.status}` };
+    if (!response.ok) return { value: null, status: `http_${response.status}_${key ? "key_present" : "key_missing"}` };
     const json = await response.json() as Record<string, unknown>;
     const value = parseProxycheckResponse(json, ip);
     return { value, status: value ? "ok" : `unclassified_${String(json.status ?? "unknown").slice(0, 30)}` };
