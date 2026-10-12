@@ -41,6 +41,9 @@ export function SiteFooter() {
         <Link to="/contact" className={linkClass}>
           Contact
         </Link>
+        <Link to="/noahide-resources" className={linkClass}>
+          The Seven Noahide Laws
+        </Link>
         <Link to="/privacy" className={linkClass}>
           Privacy
         </Link>
