@@ -81,13 +81,13 @@ export function privacyRestrictedResponse(): Response {
   });
 }
 
-type Cached = { value: PrivacyLookup | null; expires: number };
+type CheckResult = { value: PrivacyLookup | null; source: "provider" | "cache" | "inflight"; status: string; elapsed: number };
+type Cached = { value: PrivacyLookup | null; status: string; expires: number };
 const lookupCache = new Map<string, Cached>();
-const inFlight = new Map<string, Promise<PrivacyLookup | null>>();
-const lastMonitored = new Map<string, number>();
+const inFlight = new Map<string, Promise<CheckResult>>();
 const CACHE_MAX = 3000;
-const POSITIVE_TTL = 10 * 60 * 1000; // provider suggests <= 15m
-const CLEAN_TTL = 60 * 60 * 1000; // provider suggests <= 1h
+const POSITIVE_TTL = 10 * 60 * 1000;
+const CLEAN_TTL = 60 * 60 * 1000;
 const ERROR_TTL = 2 * 60 * 1000;
 const LOOKUP_TIMEOUT_MS = 1200;
 
@@ -97,43 +97,43 @@ function validIp(ip: string | null): ip is string {
     ip !== "127.0.0.1" && ip !== "0.0.0.0" && ip !== "::1";
 }
 
-async function fetchPrivacy(ip: string): Promise<PrivacyLookup | null> {
+async function fetchPrivacy(ip: string): Promise<{ value: PrivacyLookup | null; status: string }> {
   const url = new URL(`https://proxycheck.io/v3/${encodeURIComponent(ip)}`);
   const key = process.env["PROXYCHECK_API_KEY"]?.trim();
   if (key) url.searchParams.set("key", key);
-  // Do not store positive-query tags in proxycheck's dashboard.
-  url.searchParams.set("tag", "0");
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), LOOKUP_TIMEOUT_MS);
   try {
     const response = await fetch(url.toString(), {
-      method: "GET", signal: controller.signal,
-      headers: { Accept: "application/json" },
+      method: "GET", signal: controller.signal, headers: { Accept: "application/json" },
     });
-    if (!response.ok) return null; // quota/network failure: fail open
-    return parseProxycheckResponse(await response.json(), ip);
-  } catch {
-    return null;
+    if (!response.ok) return { value: null, status: `http_${response.status}` };
+    const json = await response.json() as Record<string, unknown>;
+    const value = parseProxycheckResponse(json, ip);
+    return { value, status: value ? "ok" : `unclassified_${String(json.status ?? "unknown").slice(0, 30)}` };
+  } catch (e) {
+    return { value: null, status: e instanceof Error && e.name === "AbortError" ? "timeout" : "lookup_error" };
   } finally {
     clearTimeout(timer);
   }
 }
 
-async function privacyLookup(ip: string): Promise<PrivacyLookup | null> {
-  const now = Date.now();
+async function privacyLookup(ip: string): Promise<CheckResult> {
+  const before = Date.now();
   const cached = lookupCache.get(ip);
-  if (cached && cached.expires > now) return cached.value;
+  if (cached && cached.expires > before) return { value: cached.value, source: "cache", status: cached.status, elapsed: 0 };
   const pending = inFlight.get(ip);
-  if (pending) return pending;
-
-  const task = (async () => {
+  if (pending) {
+    const result = await pending;
+    return { ...result, source: "inflight" };
+  }
+  const task: Promise<CheckResult> = (async () => {
     try {
-      const value = await fetchPrivacy(ip);
-      const ttl = value === null ? ERROR_TTL :
-        value.signals.length > 0 ? POSITIVE_TTL : CLEAN_TTL;
+      const result = await fetchPrivacy(ip);
+      const ttl = !result.value ? ERROR_TTL : result.value.signals.length ? POSITIVE_TTL : CLEAN_TTL;
       if (lookupCache.size >= CACHE_MAX) lookupCache.delete(lookupCache.keys().next().value!);
-      lookupCache.set(ip, { value, expires: Date.now() + ttl });
-      return value;
+      lookupCache.set(ip, { ...result, expires: Date.now() + ttl });
+      return { value: result.value, status: result.status, source: "provider" as const, elapsed: Date.now() - before };
     } finally {
       inFlight.delete(ip);
     }
@@ -142,76 +142,70 @@ async function privacyLookup(ip: string): Promise<PrivacyLookup | null> {
   return task;
 }
 
-async function logPrivacyDetection(
-  request: Request, ip: string, lookup: PrivacyLookup, blocked: boolean,
+async function auditPrivacy(
+  request: Request, ip: string | null, mode: VpnBlockMode, result: CheckResult | null,
+  automated: boolean, skippedReason?: string,
 ): Promise<void> {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/ext.server");
+    const t = getRequestTelemetry(request);
     const url = new URL(request.url);
-    const reason = `${lookup.signals.join("+")} detected by proxycheck` +
-      ` (confidence ${lookup.confidence ?? "unknown"}${lookup.operator ? `, ${lookup.operator}` : ""})`;
-    const telemetry = getRequestTelemetry(request);
-    const { error } = await supabaseAdmin.from("blocked_visits").insert({
-      ip_address: ip,
-      city: lookup.city ?? telemetry.city,
-      region: lookup.region ?? telemetry.region,
-      country: lookup.country ?? telemetry.country,
-      postal_code: telemetry.postalCode,
-      geo_source: "ip_lookup",
-      geo_provider: "proxycheck",
-      path: (url.pathname + url.search).slice(0, 500),
-      referrer: request.headers.get("referer")?.slice(0, 500) ?? null,
-      user_agent: telemetry.userAgent || null,
-      blocked,
-      block_reason: reason,
-      action: blocked ? "VPN/proxy connection denied" : "VPN/proxy detected — monitor only",
+    const lookup = result?.value ?? null;
+    const denied = mode === "block" && shouldDenyPrivacy(lookup);
+    const verdict = skippedReason ? "skipped" : !lookup ? "unknown" : lookup.signals.length ? "detected" : "clean";
+    const hostname = (() => { try { return new URL(request.headers.get("referer") ?? "").hostname.slice(0, 150) || null; } catch { return null; } })();
+    const { error } = await getSupabaseAdmin().from("vpn_connection_checks").insert({
+      ip_address: ip, country: lookup?.country ?? t.country, region: lookup?.region ?? t.region,
+      city: lookup?.city ?? t.city, vpn_operator: lookup?.operator ?? null,
+      user_agent: t.userAgent || null, referrer_host: hostname,
+      request_path: (url.pathname + url.search).slice(0, 500),
+      utm_source: url.searchParams.get("utm_source")?.slice(0, 100) ?? null,
+      mode, decision: denied ? "blocked" : "allowed", verdict,
+      signals: lookup?.signals ?? [], confidence: lookup?.confidence ?? null,
+      lookup_source: skippedReason ? "skipped" : result?.source ?? "skipped",
+      provider_status: skippedReason ?? result?.status ?? "unavailable",
+      lookup_ms: result?.elapsed ?? null, error_code: skippedReason ??
+        (lookup ? null : result?.status ?? "unknown"),
+      is_automated: automated,
     });
-    if (error) console.error("[vpn-block] audit log failed", error.message);
+    if (error) console.error("[vpn-block] audit insert failed", error.message);
   } catch (e) {
-    console.error("[vpn-block] audit log failed", e);
+    console.error("[vpn-block] audit insert failed", e);
   }
 }
 
-async function evaluatePrivacy(request: Request, ip: string, mode: VpnBlockMode): Promise<Response | null> {
-  const result = await privacyLookup(ip);
-  if (!result || result.signals.length === 0) return null;
-  const blocked = mode === "block" && shouldDenyPrivacy(result);
-  // Monitor every detected IP only once per cache window; log actual blocks on every attempt.
-  const key = `${ip}:${result.signals.join("+")}`;
-  const now = Date.now();
-  if (blocked || !lastMonitored.get(key) || now - lastMonitored.get(key)! >= POSITIVE_TTL) {
-    lastMonitored.set(key, now);
-    if (lastMonitored.size > CACHE_MAX) lastMonitored.delete(lastMonitored.keys().next().value!);
-    await logPrivacyDetection(request, ip, result, blocked);
-  }
-  return blocked ? privacyRestrictedResponse() : null;
-}
-
-/** Called ahead of site routes. Monitor mode never holds up page rendering. */
+/** Audit each eligible document navigation, including clean and failed classifications. */
 export async function checkVpnBlock(request: Request): Promise<Response | null> {
   const mode = getVpnBlockMode();
   if (mode === "off") return null;
   try {
     const path = new URL(request.url).pathname;
     if (request.method !== "GET" || !shouldCheck(request, path)) return null;
-    // Never lock the owner out of the admin site or their marked devices.
     if (await isInternalRequest(request)) return null;
-    const telemetry = getRequestTelemetry(request);
-    const ip = telemetry.ipAddress;
-    if (!validIp(ip)) return null;
-    // Avoid spending the free provider quota on obvious automated fetches
-    // while auditing. In block mode, do not rely on a spoofable User-Agent bypass.
-    if (mode === "monitor" && isAutomatedAgent(telemetry.userAgent)) return null;
-    if (mode === "monitor") {
-      const task = evaluatePrivacy(request, ip, mode).then(() => {});
-      try {
-        waitUntil(task);
-      } catch {
-        await task; // Fallback in non-Cloudflare environments
-      }
+    const t = getRequestTelemetry(request);
+    const ip = t.ipAddress;
+    const automated = isAutomatedAgent(t.userAgent);
+    // Never silently mistake a missing client address for a verified clean result.
+    if (!validIp(ip)) {
+      const audit = auditPrivacy(request, ip, mode, null, automated, "missing_or_invalid_ip");
+      try { waitUntil(audit); } catch { await audit; }
       return null;
     }
-    return await evaluatePrivacy(request, ip, mode);
+    if (mode === "monitor" && automated) {
+      const audit = auditPrivacy(request, ip, mode, null, automated, "automated_user_agent");
+      try { waitUntil(audit); } catch { await audit; }
+      return null;
+    }
+    if (mode === "monitor") {
+      const task = privacyLookup(ip).then(result => auditPrivacy(request, ip, mode, result, automated));
+      try { waitUntil(task); } catch { await task; }
+      return null;
+    }
+    const result = await privacyLookup(ip);
+    const denied = shouldDenyPrivacy(result.value);
+    const audit = auditPrivacy(request, ip, mode, result, automated);
+    try { waitUntil(audit); } catch { await audit; }
+    return denied ? privacyRestrictedResponse() : null;
   } catch (e) {
     console.error("[vpn-block] gate failed open", e);
     return null;
