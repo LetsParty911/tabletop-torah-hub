@@ -39,6 +39,7 @@ import { Route as ApiSiteVersionRouteImport } from './routes/api/site-version'
 import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
 import { Route as ApiTrackSearchRouteImport } from './routes/api/track-search'
 import { Route as ApiTrackViewRouteImport } from './routes/api/track-view'
+import { Route as ApiVpnDiagnosticRouteImport } from './routes/api/vpn-diagnostic'
 import { Route as ManageTableTokenRouteImport } from './routes/manage-table.$token'
 import { Route as OgImageDotpngRouteImport } from './routes/og.image[.]png'
 import { Route as ParshaSlugRouteImport } from './routes/parsha.$slug'
@@ -202,6 +203,11 @@ const ApiTrackViewRoute = ApiTrackViewRouteImport.update({
   path: '/api/track-view',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVpnDiagnosticRoute = ApiVpnDiagnosticRouteImport.update({
+  id: '/api/vpn-diagnostic',
+  path: '/api/vpn-diagnostic',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ManageTableTokenRoute = ManageTableTokenRouteImport.update({
   id: '/manage-table/$token',
   path: '/manage-table/$token',
@@ -294,6 +300,7 @@ export interface FileRoutesByFullPath {
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
+  '/api/vpn-diagnostic': typeof ApiVpnDiagnosticRoute
   '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
   '/parsha/$slug': typeof ParshaSlugRouteWithChildren
@@ -338,6 +345,7 @@ export interface FileRoutesByTo {
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
+  '/api/vpn-diagnostic': typeof ApiVpnDiagnosticRoute
   '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
   '/parsha/$slug': typeof ParshaSlugRouteWithChildren
@@ -383,6 +391,7 @@ export interface FileRoutesById {
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
+  '/api/vpn-diagnostic': typeof ApiVpnDiagnosticRoute
   '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
   '/parsha/$slug': typeof ParshaSlugRouteWithChildren
@@ -429,6 +438,7 @@ export interface FileRouteTypes {
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
+    | '/api/vpn-diagnostic'
     | '/manage-table/$token'
     | '/og/image.png'
     | '/parsha/$slug'
@@ -473,6 +483,7 @@ export interface FileRouteTypes {
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
+    | '/api/vpn-diagnostic'
     | '/manage-table/$token'
     | '/og/image.png'
     | '/parsha/$slug'
@@ -517,6 +528,7 @@ export interface FileRouteTypes {
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
+    | '/api/vpn-diagnostic'
     | '/manage-table/$token'
     | '/og/image.png'
     | '/parsha/$slug'
@@ -562,6 +574,7 @@ export interface RootRouteChildren {
   ApiTrackDownloadRoute: typeof ApiTrackDownloadRoute
   ApiTrackSearchRoute: typeof ApiTrackSearchRoute
   ApiTrackViewRoute: typeof ApiTrackViewRoute
+  ApiVpnDiagnosticRoute: typeof ApiVpnDiagnosticRoute
   ManageTableTokenRoute: typeof ManageTableTokenRoute
   OgImageDotpngRoute: typeof OgImageDotpngRoute
   ParshaSlugRoute: typeof ParshaSlugRouteWithChildren
@@ -785,6 +798,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTrackViewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/vpn-diagnostic': {
+      id: '/api/vpn-diagnostic'
+      path: '/api/vpn-diagnostic'
+      fullPath: '/api/vpn-diagnostic'
+      preLoaderRoute: typeof ApiVpnDiagnosticRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/manage-table/$token': {
       id: '/manage-table/$token'
       path: '/manage-table/$token'
@@ -928,6 +948,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTrackDownloadRoute: ApiTrackDownloadRoute,
   ApiTrackSearchRoute: ApiTrackSearchRoute,
   ApiTrackViewRoute: ApiTrackViewRoute,
+  ApiVpnDiagnosticRoute: ApiVpnDiagnosticRoute,
   ManageTableTokenRoute: ManageTableTokenRoute,
   OgImageDotpngRoute: OgImageDotpngRoute,
   ParshaSlugRoute: ParshaSlugRouteWithChildren,
