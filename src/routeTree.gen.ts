@@ -19,6 +19,7 @@ import { Route as DivreiTorahParshaRouteImport } from './routes/divrei-torah-par
 import { Route as JRouteImport } from './routes/j'
 import { Route as MissionRouteImport } from './routes/mission'
 import { Route as MyTableRouteImport } from './routes/my-table'
+import { Route as NoahideResourcesRouteImport } from './routes/noahide-resources'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as OriginalsRouteImport } from './routes/originals'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -99,6 +100,11 @@ const MissionRoute = MissionRouteImport.update({
 const MyTableRoute = MyTableRouteImport.update({
   id: '/my-table',
   path: '/my-table',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NoahideResourcesRoute = NoahideResourcesRouteImport.update({
+  id: '/noahide-resources',
+  path: '/noahide-resources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfflineRoute = OfflineRouteImport.update({
@@ -268,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/j': typeof JRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
+  '/noahide-resources': typeof NoahideResourcesRoute
   '/offline': typeof OfflineRoute
   '/originals': typeof OriginalsRoute
   '/privacy': typeof PrivacyRoute
@@ -311,6 +318,7 @@ export interface FileRoutesByTo {
   '/j': typeof JRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
+  '/noahide-resources': typeof NoahideResourcesRoute
   '/offline': typeof OfflineRoute
   '/originals': typeof OriginalsRoute
   '/privacy': typeof PrivacyRoute
@@ -355,6 +363,7 @@ export interface FileRoutesById {
   '/j': typeof JRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
+  '/noahide-resources': typeof NoahideResourcesRoute
   '/offline': typeof OfflineRoute
   '/originals': typeof OriginalsRoute
   '/privacy': typeof PrivacyRoute
@@ -400,6 +409,7 @@ export interface FileRouteTypes {
     | '/j'
     | '/mission'
     | '/my-table'
+    | '/noahide-resources'
     | '/offline'
     | '/originals'
     | '/privacy'
@@ -443,6 +453,7 @@ export interface FileRouteTypes {
     | '/j'
     | '/mission'
     | '/my-table'
+    | '/noahide-resources'
     | '/offline'
     | '/originals'
     | '/privacy'
@@ -486,6 +497,7 @@ export interface FileRouteTypes {
     | '/j'
     | '/mission'
     | '/my-table'
+    | '/noahide-resources'
     | '/offline'
     | '/originals'
     | '/privacy'
@@ -530,6 +542,7 @@ export interface RootRouteChildren {
   JRoute: typeof JRoute
   MissionRoute: typeof MissionRoute
   MyTableRoute: typeof MyTableRoute
+  NoahideResourcesRoute: typeof NoahideResourcesRoute
   OfflineRoute: typeof OfflineRoute
   OriginalsRoute: typeof OriginalsRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -630,6 +643,13 @@ declare module '@tanstack/react-router' {
       path: '/my-table'
       fullPath: '/my-table'
       preLoaderRoute: typeof MyTableRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/noahide-resources': {
+      id: '/noahide-resources'
+      path: '/noahide-resources'
+      fullPath: '/noahide-resources'
+      preLoaderRoute: typeof NoahideResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offline': {
@@ -888,6 +908,7 @@ const rootRouteChildren: RootRouteChildren = {
   JRoute: JRoute,
   MissionRoute: MissionRoute,
   MyTableRoute: MyTableRoute,
+  NoahideResourcesRoute: NoahideResourcesRoute,
   OfflineRoute: OfflineRoute,
   OriginalsRoute: OriginalsRoute,
   PrivacyRoute: PrivacyRoute,
