@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { adminVpnTracking } from "@/lib/vpn-tracking.functions";
+import { adminGetVpnMode, adminSetVpnMode } from "@/lib/vpn-mode.functions";
 import { formatUaSummary, parseUserAgent } from "@/lib/ua-parse";
 
 type VpnRow = {
@@ -16,6 +17,7 @@ export default function VpnTrackingSection({accessToken}:{accessToken:string|nul
  const [days,setDays]=useState(7),[page,setPage]=useState(0),[verdict,setVerdict]=useState("all"),[ip,setIp]=useState("");
  const [rows,setRows]=useState<VpnRow[]>([]),[summary,setSummary]=useState<Summary>({}),[count,setCount]=useState(0);
  const [loading,setLoading]=useState(false),[error,setError]=useState<string|null>(null);
+ const [mode,setMode]=useState<"off"|"monitor"|"block"|null>(null),[modeBusy,setModeBusy]=useState(false),[modeError,setModeError]=useState<string|null>(null);
  const [revision,setRevision]=useState(0);
  useEffect(()=>{if(!accessToken)return;let ignore=false;setLoading(true);setError(null);
   query({data:{accessToken,days,page,verdict:verdict as "all"|"clean"|"detected"|"unknown"|"skipped"|"blocked",ip:ip.trim()||undefined}})
@@ -26,6 +28,15 @@ export default function VpnTrackingSection({accessToken}:{accessToken:string|nul
  // Query returned by useServerFn can change identity on re-render.
  // eslint-disable-next-line react-hooks/exhaustive-deps
  },[accessToken,days,page,verdict,ip,revision]);
+ useEffect(()=>{if(!accessToken)return;adminGetVpnMode({data:{accessToken}}).then(r=>setMode(r.mode)).catch(e=>setModeError(String(e)));},[accessToken]);
+ const changeMode=async(next:"off"|"monitor"|"block")=>{
+  if(!accessToken||mode===next)return;
+  if(!window.confirm(next==="block"?"Enable LIVE VPN/proxy/Tor blocking? This may deny legitimate visitors.":"Change VPN mode to "+next+"?"))return;
+  setModeBusy(true);setModeError(null);
+  try{const r=await adminSetVpnMode({data:{accessToken,mode:next,confirm:"CHANGE_VPN_MODE"}});setMode(r.mode);}
+  catch(e){setModeError(String(e));}
+  finally{setModeBusy(false);}
+ };
  const num=(n?:number)=>Number(n??0).toLocaleString();
  const cards=[["Checks",summary.total],["Unique IPs",summary.unique_ips],["Detected",summary.detected],["Denied",summary.blocked],["Clean",summary.clean],["Unknown",summary.unknown],["Skipped",summary.skipped],["API queries",summary.provider_queries],["Cached checks",summary.cache_hits]];
  const exportCsv=()=>{const headers=["Time","IP","City","Region","Country","Outcome","Verdict","Signals","Confidence","Source","Provider status","Latency ms","Path","Referrer host","UTM","Device","Automated","Operator","Error"];
@@ -36,6 +47,8 @@ export default function VpnTrackingSection({accessToken}:{accessToken:string|nul
   <div className="flex flex-wrap justify-between items-center gap-3"><div><h2 className="font-serif text-2xl font-bold text-primary">VPN Connection Tracking</h2><p className="text-sm text-muted-foreground">Audits public document navigations. Provider errors are unknown, never clean. Admin and static/API routes are excluded. CSV exports the visible page only.</p></div>
    <div className="flex gap-2"><button className="rounded border px-3 py-2 text-sm" onClick={()=>setRevision(x=>x+1)}>Refresh</button><button className="rounded border px-3 py-2 text-sm" disabled={!rows.length} onClick={exportCsv}>CSV (this page)</button></div>
   </div>
+  <div className="rounded-lg border p-4 space-y-3"><h3 className="font-semibold">VPN protection mode: {mode??"Loading…"}</h3><p className="text-sm text-muted-foreground">Off disables checks; Monitor records classifications but allows visits; Block denies confidently identified VPN/proxy/Tor traffic. Changes may take up to 10 seconds to reach every server.</p>
+   <div className="flex flex-wrap gap-2">{(["off","monitor","block"] as const).map(x=><button key={x} type="button" disabled={modeBusy||!mode||mode===x} onClick={()=>changeMode(x)} className="rounded border px-3 py-2 text-sm disabled:opacity-50">{x==="off"?"Off":x==="monitor"?"Monitor":"Block"}</button>)}</div>{modeError&&<p className="text-sm text-destructive">{modeError}</p>}</div>
   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">{cards.map(([label,val])=><div className="rounded-md border p-3" key={String(label)}><div className="text-xs text-muted-foreground">{label}</div><div className="font-semibold text-xl">{num(val as number)}</div></div>)}</div>
   <div className="flex flex-wrap gap-3 items-center">
    <label className="text-sm">Range <select className="ml-2 rounded border bg-background p-2" value={days} onChange={e=>{setDays(Number(e.target.value));setPage(0)}}><option value={1}>24 hours</option><option value={7}>7 days</option><option value={30}>30 days</option><option value={90}>90 days</option></select></label>
