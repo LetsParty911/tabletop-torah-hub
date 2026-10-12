@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseProxycheckResponse, shouldDenyPrivacy, privacyRestrictedResponse } from "./vpn-block.server";
+import { parseProxycheckResponse, shouldDenyPrivacy, privacyRestrictedResponse, classifyProxycheckDenial } from "./vpn-block.server";
 
 const reply = (ip: string, detections: object, overrides: object = {}) => ({
   status: "ok", [ip]: {
@@ -38,6 +38,15 @@ describe("VPN and anonymous-network classification", () => {
     expect(parseProxycheckResponse({ status: "denied" }, ip)).toBeNull();
     expect(parseProxycheckResponse(reply(ip, { unknown: true }), ip)).toBeNull();
     expect(parseProxycheckResponse(reply(ip, { vpn: true }), "192.0.2.5")).toBeNull();
+  });
+
+  it("classifies provider denials without retaining arbitrary server response content", () => {
+    expect(classifyProxycheckDenial(403, "Your daily query quota has been exceeded")).toBe("quota_exhausted");
+    expect(classifyProxycheckDenial(403, "Invalid API key")).toBe("credential_denied");
+    expect(classifyProxycheckDenial(403, "This request originates from a proxy server")).toBe("caller_proxy_denied");
+    expect(classifyProxycheckDenial(429, "Too Many Requests")).toBe("rate_limited");
+    expect(classifyProxycheckDenial(403, "Forbidden for this client")).toBe("access_denied");
+    expect(classifyProxycheckDenial(403, "Visitor 203.0.113.10 token=secret")).toBe("unclassified_denial");
   });
 
   it("returns a non-cacheable 403 with an explicit VPN-off instruction", async () => {

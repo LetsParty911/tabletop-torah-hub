@@ -112,6 +112,20 @@ function validIp(ip: string | null): ip is string {
     ip !== "127.0.0.1" && ip !== "0.0.0.0" && ip !== "::1";
 }
 
+/** Recognize only fixed error categories. Never persist the provider's raw body,
+ * which can include searched IP addresses, request URLs or credential details.
+ */
+export function classifyProxycheckDenial(httpStatus: number, body: string): string {
+  const sample = body.slice(0, 4096).toLowerCase();
+  if (/rate.?limit|too many requests|burst.?token|requests? per second/.test(sample)) return "rate_limited";
+  if (/quota|queries? (?:exceeded|exhausted|remaining)|daily limit|query limit|no queries/.test(sample)) return "quota_exhausted";
+  if (/invalid (?:api[ -]?)?key|key (?:invalid|incorrect|expired|revoked)|unauthori[sz]ed|authentication/.test(sample)) return "credential_denied";
+  if (/originat(?:es|ing) from a proxy|request(?:er|ing ip)? (?:is |behind )?(?:a )?proxy|vpn (?:detected|access)|proxy (?:detected|access)|proxy traffic/.test(sample)) return "caller_proxy_denied";
+  if (/access denied|forbidden|permission denied|blocked/.test(sample)) return "access_denied";
+  if (httpStatus === 429) return "rate_limited";
+  return "unclassified_denial";
+}
+
 async function fetchPrivacy(ip: string): Promise<{ value: PrivacyLookup | null; status: string }> {
   const url = new URL(`https://proxycheck.io/v3/${encodeURIComponent(ip)}`);
   const key = process.env["PROXYCHECK_API_KEY"]?.trim();
@@ -122,7 +136,13 @@ async function fetchPrivacy(ip: string): Promise<{ value: PrivacyLookup | null; 
     const response = await fetch(url.toString(), {
       method: "GET", signal: controller.signal, headers: { Accept: "application/json" },
     });
-    if (!response.ok) return { value: null, status: `http_${response.status}_${key ? "key_present" : "key_missing"}` };
+    if (!response.ok) {
+      // The response is inspected only transiently; no raw provider text is logged or saved.
+      let denialText = "";
+      try { denialText = (await response.text()).slice(0, 4096); } catch { /* unavailable body */ }
+      const category = classifyProxycheckDenial(response.status, denialText);
+      return { value: null, status: `http_${response.status}_${category}_${key ? "key_present" : "key_missing"}` };
+    }
     const json = await response.json() as Record<string, unknown>;
     const value = parseProxycheckResponse(json, ip);
     return { value, status: value ? "ok" : `unclassified_${String(json.status ?? "unknown").slice(0, 30)}` };
