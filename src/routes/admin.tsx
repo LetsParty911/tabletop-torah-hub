@@ -13,6 +13,7 @@ import PdfListSection from "@/components/admin/PdfListSection";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import VisitorActivitySection from "@/components/admin/VisitorActivitySection";
 import BlockedVisitsSection from "@/components/admin/BlockedVisitsSection";
+import VpnTrackingSection from "@/components/admin/VpnTrackingSection";
 import MaintenanceModeControl from "@/components/admin/MaintenanceModeControl";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
@@ -1410,6 +1411,7 @@ function AdminPage() {
             <TabsTrigger value="subscribers-analytics">Subscribers</TabsTrigger>
             <TabsTrigger value="visitor-activity">Visitor Activity</TabsTrigger>
             <TabsTrigger value="blocked-visits">Blocked Visits</TabsTrigger>
+            <TabsTrigger value="vpn-tracking">VPN Tracking</TabsTrigger>
           </TabsList>
           <TabsContent value="this-week" className="space-y-8 mt-8">
         <section className="parchment-frame">
@@ -1752,6 +1754,7 @@ function AdminPage() {
           <TabsContent value="visitor-activity" className="space-y-8 mt-8">
             <VisitorActivitySection accessToken={accessToken} />
           </TabsContent>
+          <TabsContent value="vpn-tracking" className="space-y-8 mt-8"><VpnTrackingSection accessToken={accessToken} /></TabsContent>
           <TabsContent value="blocked-visits" className="space-y-8 mt-8">
             <BlockedVisitsSection accessToken={accessToken} />
           </TabsContent>
