@@ -42,6 +42,9 @@ describe("VPN and anonymous-network classification", () => {
 
   it("classifies provider denials without retaining arbitrary server response content", () => {
     expect(classifyProxycheckDenial(403, "Your daily query quota has been exceeded")).toBe("quota_exhausted");
+    expect(classifyProxycheckDenial(403, "100 queries exhausted, if you sign up for a free API key")).toBe("unregistered_100_exhausted");
+    expect(classifyProxycheckDenial(403, "1,000 Free queries exhausted. Please try again tomorrow")).toBe("registered_1000_exhausted");
+    expect(classifyProxycheckDenial(403, "1,000 Free queries exhausted and a burst token has already been consumed")).toBe("registered_1000_exhausted");
     expect(classifyProxycheckDenial(403, "Invalid API key")).toBe("credential_denied");
     expect(classifyProxycheckDenial(403, "This request originates from a proxy server")).toBe("caller_proxy_denied");
     expect(classifyProxycheckDenial(429, "Too Many Requests")).toBe("rate_limited");

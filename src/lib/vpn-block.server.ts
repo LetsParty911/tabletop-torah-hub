@@ -117,6 +117,10 @@ function validIp(ip: string | null): ip is string {
  */
 export function classifyProxycheckDenial(httpStatus: number, body: string): string {
   const sample = body.slice(0, 4096).toLowerCase();
+  // Proxycheck publishes distinct 100-query keyless and 1,000-query keyed denials.
+  // Classifying them before generic quota/burst text preserves the diagnostic.
+  if (/\b1[,.]?000\s+free\s+queries?\s+exhausted\b/.test(sample)) return "registered_1000_exhausted";
+  if (/\b100\s+queries?\s+exhausted\b/.test(sample)) return "unregistered_100_exhausted";
   if (/rate.?limit|too many requests|burst.?token|requests? per second/.test(sample)) return "rate_limited";
   if (/quota|queries? (?:exceeded|exhausted|remaining)|daily limit|query limit|no queries/.test(sample)) return "quota_exhausted";
   if (/invalid (?:api[ -]?)?key|key (?:invalid|incorrect|expired|revoked)|unauthori[sz]ed|authentication/.test(sample)) return "credential_denied";
