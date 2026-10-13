@@ -96,7 +96,7 @@ export function privacyRestrictedResponse(): Response {
   });
 }
 
-type CheckResult = { value: PrivacyLookup | null; source: "provider" | "cache" | "inflight"; status: string; elapsed: number };
+type CheckResult = { value: PrivacyLookup | null; source: "provider" | "cache" | "inflight"; status: string; elapsed: number; additionalBlock?: boolean };
 type Cached = { value: PrivacyLookup | null; status: string; expires: number };
 const lookupCache = new Map<string, Cached>();
 const inFlight = new Map<string, Promise<CheckResult>>();
@@ -249,8 +249,8 @@ async function auditPrivacy(
     const t = getRequestTelemetry(request);
     const url = new URL(request.url);
     const lookup = result?.value ?? null;
-    const denied = mode === "block" && shouldDenyPrivacy(lookup);
-    const verdict = skippedReason ? "skipped" : !lookup ? "unknown" : lookup.signals.length ? "detected" : "clean";
+    const denied = mode === "block" && (shouldDenyPrivacy(lookup) || Boolean(result?.additionalBlock));
+    const verdict = skippedReason ? "skipped" : result?.additionalBlock ? "detected" : !lookup ? "unknown" : lookup.signals.length ? "detected" : "clean";
     const hostname = (() => { try { return new URL(request.headers.get("referer") ?? "").hostname.slice(0, 150) || null; } catch { return null; } })();
     const { error } = await getSupabaseAdmin().from("vpn_connection_checks").insert({
       ip_address: ip, country: lookup?.country ?? t.country, region: lookup?.region ?? t.region,
@@ -300,8 +300,42 @@ export async function checkVpnBlock(request: Request): Promise<Response | null> 
       try { waitUntil(task); } catch { await task; }
       return null;
     }
-    const result = await privacyLookup(ip, keyChoice);
-    const denied = shouldDenyPrivacy(result.value);
+    const { checkKnownNetwork } = await import("./known-vpn-lists.server");
+    const { checkIpapi, getIpapiKey } = await import("./ipapi-privacy.server");
+    // All three sources are independent: a Proxycheck "clean" does not
+    // override an explicit detection by ipapi.is or the strict public lists.
+    const [primary, secondary, listed] = await Promise.all([
+      privacyLookup(ip, keyChoice),
+      checkIpapi(ip, getIpapiKey(request)),
+      checkKnownNetwork(ip),
+    ]);
+    const listSignal = listed.signal;
+    const ipapiSignals: PrivacySignal[] = secondary.value
+      ? (["VPN", "Proxy", "Tor"] as const).filter(s =>
+          s === "VPN" ? secondary.value?.vpn : s === "Proxy" ? secondary.value?.proxy : secondary.value?.tor)
+      : [];
+    const additionalBlock = Boolean(listSignal || ipapiSignals.length);
+    // ipapi.is and strict network lists make categorical, not scored, claims.
+    // Leave confidence null rather than manufacturing a percentage.
+    const additionalValue: PrivacyLookup | null = additionalBlock ? {
+      signals: [...new Set([...ipapiSignals, ...(listSignal ? [listSignal] : [])])] as PrivacySignal[],
+      confidence: null,
+      operator: secondary.value?.operator ?? (listSignal ? "Public strict list" : null),
+      city: null, region: null, country: null,
+    } : null;
+    const selected = shouldDenyPrivacy(primary.value) ? primary.value :
+      additionalValue ?? primary.value;
+    const providerStatus = [
+      "proxycheck:" + primary.status,
+      "ipapi:" + secondary.status,
+      "lists:" + listed.status,
+    ].join(";");
+    const result: CheckResult = {
+      value: selected, source: primary.source,
+      status: providerStatus, elapsed: Math.max(primary.elapsed,secondary.elapsed),
+      additionalBlock,
+    };
+    const denied = shouldDenyPrivacy(primary.value) || additionalBlock;
     const audit = auditPrivacy(request, ip, mode, result, automated);
     try { waitUntil(audit); } catch { await audit; }
     return denied ? privacyRestrictedResponse() : null;
