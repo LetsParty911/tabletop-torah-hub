@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, ChevronRight } from "lucide-react";
 import { SiteFooter } from "@/components/SiteFooter";
+import { fitPageTitle } from "@/lib/page-title";
 import { listParshaSeoSummaries } from "@/integrations/supabase/parsha-seo.functions";
 
 export const Route = createFileRoute("/divrei-torah-parsha")({
   loader: () => listParshaSeoSummaries(),
   head: () => {
-    const title = "Divrei Torah on the Parsha | Weekly Dvar Torah Library | Torah For The Table";
+    const title = fitPageTitle("Divrei Torah on the Parsha", " — Weekly Dvar Torah Library");
     const description =
       "Browse Divrei Torah on every weekly parsha: short vorts, printable Torah sheets, family-table material, stories, essays and deeper learning.";
     const url = "https://torahforthetable.com/divrei-torah-parsha";
