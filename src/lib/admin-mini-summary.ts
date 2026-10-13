@@ -6,6 +6,8 @@ export type AdminMiniActivity = {
   downloadActions: number;
   newSubscriberCount: number;
   newContactCount: number;
+  /** Stored, non-internal sessions not yet qualified as human (e.g. a single page load, no interaction). */
+  unconfirmedSessions?: number;
 };
 
 /** Whether the owner summary has any audience, PDF, subscriber, or contact activity. */
@@ -16,6 +18,7 @@ export function hasAdminMiniActivity(activity: AdminMiniActivity): boolean {
     (activity.countedPdfOpens ?? 0) > 0 ||
     activity.downloadActions > 0 ||
     activity.newSubscriberCount > 0 ||
-    activity.newContactCount > 0
+    activity.newContactCount > 0 ||
+    (activity.unconfirmedSessions ?? 0) > 0
   );
 }
