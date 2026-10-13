@@ -41,17 +41,50 @@ async function db() {
   return getSupabaseAdmin();
 }
 
-/** Insert a row already claimed ('sending'); returns id or null when suppressed. */
-async function claimRow(row: Record<string, unknown>): Promise<string | null> {
+// The analytics database has an AFTER INSERT trigger on vpn_connection_checks
+// that queues a 'vpn_blocked' row (deduped per hashed IP per 30-min bucket).
+// This module delivers queued rows; it only inserts block rows itself when
+// the audit write failed (so the trigger never fired).
+
+async function insertQueued(row: Record<string, unknown>): Promise<void> {
   const admin = await db();
-  const { data, error } = await admin.from("vpn_security_notifications")
-    .insert({ ...row, status: "sending", attempts: 1, last_attempt_at: new Date().toISOString() })
-    .select("id").single();
-  if (error) {
-    if (error.code === "23505") return null; // duplicate dedupe_key: another isolate claimed it
-    throw new Error("queue_insert_failed:" + (error.code ?? "unknown"));
+  const { error } = await admin.from("vpn_security_notifications").insert({ ...row, status: "queued", attempts: 0 });
+  if (error && error.code !== "23505") throw new Error("queue_insert_failed:" + (error.code ?? "unknown"));
+}
+
+type QueueRow = { id: string; kind: string; provider: string; details: string; location: string; audit_id: string | null; attempts: number };
+
+async function composeMessage(row: QueueRow): Promise<{ title: string; message: string }> {
+  if (row.kind !== "vpn_blocked") {
+    return { title: `TFTT — ${row.provider} problem`, message: row.details || `${row.provider} detection problem.` };
   }
-  return data.id as string;
+  if (row.details.startsWith("IP: ")) return { title: "TFTT — VPN/proxy blocked", message: row.details };
+  let ip = "unknown", path = "/";
+  if (row.audit_id) {
+    const admin = await db();
+    const { data } = await admin.from("vpn_connection_checks").select("ip_address,request_path").eq("id", row.audit_id).maybeSingle();
+    if (data) { ip = data.ip_address ?? "unknown"; path = data.request_path ?? "/"; }
+  }
+  return blockMessage({ ip, location: row.location || "Location unknown", detectedBy: row.provider ? row.provider.split(/\s*[+,]\s*/) : [], signals: row.details ? row.details.split(/\s*[+,]\s*/) : [], path });
+}
+
+/** Claim queued rows atomically (status=queued -> sending) and deliver them. */
+export async function drainQueue(env: Env, limit = 5): Promise<{ sent: number; failed: number }> {
+  const admin = await db();
+  const { data } = await admin.from("vpn_security_notifications")
+    .select("id,kind,provider,details,location,audit_id,attempts").eq("status", "queued")
+    .gte("created_at", new Date(Date.now() - 86400000).toISOString()).order("created_at").limit(limit);
+  let sent = 0, failed = 0;
+  for (const row of (data ?? []) as QueueRow[]) {
+    const { data: claimed } = await admin.from("vpn_security_notifications")
+      .update({ status: "sending", attempts: (row.attempts ?? 0) + 1, last_attempt_at: new Date().toISOString() })
+      .eq("id", row.id).eq("status", "queued").select("id");
+    if (!claimed?.length) continue; // another isolate claimed it
+    const msg = await composeMessage(row);
+    const r = await deliver(row.id, env, msg.title, msg.message);
+    r.ok ? sent++ : failed++;
+  }
+  return { sent, failed };
 }
 
 async function deliver(id: string, env: Env, title: string, message: string, priority = 0) {
@@ -68,19 +101,21 @@ export async function notifyBlocked(env: Env, a: {
 }) {
   try {
     const now = Date.now();
-    if (!tracker.shouldAlertBlock(a.ip, now)) return;
-    const admin = await db();
-    const since = new Date(now - BLOCK_SUPPRESS_MS).toISOString();
-    const { data: recent } = await admin.from("vpn_security_notifications").select("id")
-      .eq("kind", "vpn_blocked").like("dedupe_key", `vpn_blocked:${a.ip}:%`).gte("created_at", since).limit(1);
-    if (recent?.length) return;
-    const msg = blockMessage(a);
-    const id = await claimRow({
-      audit_id: a.auditId, kind: "vpn_blocked", provider: a.detectedBy.join(", ").slice(0, 200) || "unattributed",
-      dedupe_key: blockDedupeKey(a.ip, now), bucket_start: bucketStart(now, BLOCK_SUPPRESS_MS),
-      details: msg.message, location: a.location,
-    });
-    if (id) await deliver(id, env, msg.title, msg.message);
+    if (!a.auditId) {
+      // Audit write failed, so the database trigger never queued an alert.
+      if (tracker.shouldAlertBlock(a.ip, now)) {
+        const admin = await db();
+        const { data: recent } = await admin.from("vpn_security_notifications").select("id")
+          .eq("kind", "vpn_blocked").like("dedupe_key", `vpn_blocked:${a.ip}:%`)
+          .gte("created_at", new Date(now - BLOCK_SUPPRESS_MS).toISOString()).limit(1);
+        if (!recent?.length) await insertQueued({
+          kind: "vpn_blocked", provider: a.detectedBy.join(" + ").slice(0, 200) || "unattributed",
+          dedupe_key: blockDedupeKey(a.ip, now), bucket_start: bucketStart(now, BLOCK_SUPPRESS_MS),
+          details: blockMessage(a).message, location: a.location,
+        });
+      }
+    }
+    await drainQueue(env);
   } catch (e) {
     console.error("[vpn-notify] block alert failed", e instanceof Error ? e.message : "unknown");
   }
@@ -97,11 +132,11 @@ export async function recordProviderOutcome(env: Env, provider: ProviderKey, cat
       .gte("created_at", new Date(now - FAILURE_SUPPRESS_MS).toISOString()).limit(1);
     if (recent?.length) return;
     const msg = failureMessage(provider, alert, status);
-    const id = await claimRow({
+    await insertQueued({
       kind: "provider_failure", provider, dedupe_key: failureDedupeKey(provider, alert, now),
       bucket_start: bucketStart(now, FAILURE_SUPPRESS_MS), details: msg.message, location: "",
     });
-    if (id) await deliver(id, env, msg.title, msg.message);
+    await drainQueue(env);
   } catch (e) {
     console.error("[vpn-notify] failure alert failed", e instanceof Error ? e.message : "unknown");
   }
@@ -113,15 +148,15 @@ export async function retryFailedNotifications(env: Env) {
   const since = new Date(Date.now() - 86400000).toISOString();
   const stuck = new Date(Date.now() - 120000).toISOString();
   const { data, error } = await admin.from("vpn_security_notifications")
-    .select("id,kind,provider,details,attempts,status,last_attempt_at")
+    .select("id,kind,provider,details,location,audit_id,attempts,status,last_attempt_at")
     .gte("created_at", since).lt("attempts", 5)
     .or(`status.eq.failed,and(status.eq.sending,last_attempt_at.lt.${stuck}),status.eq.queued`).limit(20);
   if (error) throw new Error(error.message);
   let sent = 0, failed = 0;
   for (const row of data ?? []) {
     await admin.from("vpn_security_notifications").update({ status: "sending", attempts: (row.attempts ?? 0) + 1, last_attempt_at: new Date().toISOString() }).eq("id", row.id);
-    const title = row.kind === "vpn_blocked" ? "TFTT — VPN/proxy blocked (retry)" : `TFTT — ${row.provider} problem (retry)`;
-    const r = await deliver(row.id, env, title, row.details || "VPN security alert");
+    const msg = await composeMessage({ ...row, location: row.location ?? "", audit_id: row.audit_id ?? null } as QueueRow);
+    const r = await deliver(row.id, env, msg.title + " (retry)", msg.message);
     r.ok ? sent++ : failed++;
   }
   return { attempted: (data ?? []).length, sent, failed };
