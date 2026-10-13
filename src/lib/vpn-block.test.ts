@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseProxycheckResponse, shouldDenyPrivacy, privacyRestrictedResponse, classifyProxycheckDenial, chooseProxycheckKey, getWorkerProxycheckBinding, readProxycheckKey } from "./vpn-block.server";
+import { parseProxycheckResponse, shouldDenyPrivacy, privacyRestrictedResponse, classifyProxycheckDenial, chooseProxycheckKey, getWorkerProxycheckBinding, readProxycheckKey, proxycheckKeyShape } from "./vpn-block.server";
 
 const reply = (ip: string, detections: object, overrides: object = {}) => ({
   status: "ok", [ip]: {
@@ -68,6 +68,13 @@ describe("VPN and anonymous-network classification", () => {
     expect(getWorkerProxycheckBinding(request)).toBe(worker);
     expect(readProxycheckKey(request).source).toBe("worker");
     expect(getWorkerProxycheckBinding(new Request("https://example.test"))).toBeUndefined();
+  });
+
+  it("classifies fixed credential-format categories", () => {
+    expect(proxycheckKeyShape(null)).toBe("missing");
+    expect(proxycheckKeyShape("example")).toBe("wrong_grouping");
+    expect(proxycheckKeyShape("example value")).toBe("whitespace");
+    expect(proxycheckKeyShape("https://example.test")).toBe("url");
   });
 
   it("returns a non-cacheable 403 with an explicit VPN-off instruction", async () => {
