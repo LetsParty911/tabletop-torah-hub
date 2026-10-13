@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseProxycheckResponse, shouldDenyPrivacy, privacyRestrictedResponse, classifyProxycheckDenial } from "./vpn-block.server";
+import { parseProxycheckResponse, shouldDenyPrivacy, privacyRestrictedResponse, classifyProxycheckDenial, chooseProxycheckKey, getWorkerProxycheckBinding, readProxycheckKey } from "./vpn-block.server";
 
 const reply = (ip: string, detections: object, overrides: object = {}) => ({
   status: "ok", [ip]: {
@@ -50,6 +50,24 @@ describe("VPN and anonymous-network classification", () => {
     expect(classifyProxycheckDenial(429, "Too Many Requests")).toBe("rate_limited");
     expect(classifyProxycheckDenial(403, "Forbidden for this client")).toBe("access_denied");
     expect(classifyProxycheckDenial(403, "Visitor 203.0.113.10 token=secret")).toBe("unclassified_denial");
+  });
+
+  it("prefers active Worker secrets and safely classifies mismatches", () => {
+    const worker = "abcdef-123456-abcdef-123456";
+    const stale = "aaaaaa-bbbbbb-cccccc-dddddd";
+    expect(chooseProxycheckKey(worker, stale)).toEqual({
+      key: worker, source: "worker", mismatch: true, formatUnusual: false,
+    });
+    expect(chooseProxycheckKey(undefined, stale).source).toBe("process");
+    expect(chooseProxycheckKey(null, null).source).toBe("missing");
+    expect(chooseProxycheckKey("  ", "   ").key).toBeNull();
+    expect(chooseProxycheckKey("unusual", undefined)).toMatchObject({
+      source: "worker", formatUnusual: true,
+    });
+    const request = { runtime: { cloudflare: { env: { PROXYCHECK_API_KEY: worker } } } } as unknown as Request;
+    expect(getWorkerProxycheckBinding(request)).toBe(worker);
+    expect(readProxycheckKey(request).source).toBe("worker");
+    expect(getWorkerProxycheckBinding(new Request("https://example.test"))).toBeUndefined();
   });
 
   it("returns a non-cacheable 403 with an explicit VPN-off instruction", async () => {

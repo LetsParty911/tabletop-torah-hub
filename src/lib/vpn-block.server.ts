@@ -130,10 +130,56 @@ export function classifyProxycheckDenial(httpStatus: number, body: string): stri
   return "unclassified_denial";
 }
 
-async function fetchPrivacy(ip: string): Promise<{ value: PrivacyLookup | null; status: string }> {
+type ProxycheckKeyChoice = {
+  key: string | null;
+  source: "worker" | "process" | "missing";
+  mismatch: boolean;
+  formatUnusual: boolean;
+};
+
+/**
+ * Prefer the live Lovable/Cloudflare Worker secret binding over process.env.
+ * The latter may be absent or stale in Workers. Neither value is ever logged.
+ */
+export function chooseProxycheckKey(workerValue: unknown, processValue: unknown): ProxycheckKeyChoice {
+  const normalized = (value: unknown): string | null =>
+    typeof value === "string" && value.trim() ? value.trim() : null;
+  const worker = normalized(workerValue);
+  const node = normalized(processValue);
+  const key = worker ?? node;
+  return {
+    key,
+    source: worker ? "worker" : node ? "process" : "missing",
+    mismatch: Boolean(worker && node && worker !== node),
+    // Diagnostic only; don't reject a working key if Proxycheck changes its format.
+    formatUnusual: Boolean(key && !/^[a-z0-9]{6}(?:-[a-z0-9]{6}){3}$/i.test(key)),
+  };
+}
+
+/** Read the secret provided to the request by the Lovable Cloudflare adapter.
+ * The adapter exposes request.runtime.cloudflare.env for server middleware;
+ * this is NOT a browser-supplied header, query string or request body.
+ * Vercel/Node requests do not carry that binding.
+ */
+export function getWorkerProxycheckBinding(request: Request): unknown {
+  const runtime = (request as Request & {
+    runtime?: { cloudflare?: { env?: Record<string, unknown> } };
+  }).runtime;
+  return runtime?.cloudflare?.env?.["PROXYCHECK_API_KEY"];
+}
+
+export function readProxycheckKey(request: Request): ProxycheckKeyChoice {
+  const workerValue = getWorkerProxycheckBinding(request);
+  const processValue = typeof process === "undefined" ? undefined : process.env["PROXYCHECK_API_KEY"];
+  return chooseProxycheckKey(workerValue, processValue);
+}
+
+async function fetchPrivacy(ip: string, keyChoice: ProxycheckKeyChoice): Promise<{ value: PrivacyLookup | null; status: string }> {
   const url = new URL(`https://proxycheck.io/v3/${encodeURIComponent(ip)}`);
-  const key = process.env["PROXYCHECK_API_KEY"]?.trim();
-  if (key) url.searchParams.set("key", key);
+  if (keyChoice.key) url.searchParams.set("key", keyChoice.key);
+  // Only the source, presence, disagreement and format category can be saved.
+  const keyCategory = !keyChoice.key ? "key_missing" :
+    `key_present_${keyChoice.source}${keyChoice.mismatch ? "_mismatch" : ""}${keyChoice.formatUnusual ? "_format_unusual" : ""}`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), LOOKUP_TIMEOUT_MS);
   try {
@@ -145,7 +191,7 @@ async function fetchPrivacy(ip: string): Promise<{ value: PrivacyLookup | null; 
       let denialText = "";
       try { denialText = (await response.text()).slice(0, 4096); } catch { /* unavailable body */ }
       const category = classifyProxycheckDenial(response.status, denialText);
-      return { value: null, status: `http_${response.status}_${category}_${key ? "key_present" : "key_missing"}` };
+      return { value: null, status: `http_${response.status}_${category}_${keyCategory}` };
     }
     const json = await response.json() as Record<string, unknown>;
     const value = parseProxycheckResponse(json, ip);
@@ -157,7 +203,7 @@ async function fetchPrivacy(ip: string): Promise<{ value: PrivacyLookup | null; 
   }
 }
 
-async function privacyLookup(ip: string): Promise<CheckResult> {
+async function privacyLookup(ip: string, keyChoice: ProxycheckKeyChoice): Promise<CheckResult> {
   const before = Date.now();
   const cached = lookupCache.get(ip);
   if (cached && cached.expires > before) return { value: cached.value, source: "cache", status: cached.status, elapsed: 0 };
@@ -168,7 +214,7 @@ async function privacyLookup(ip: string): Promise<CheckResult> {
   }
   const task: Promise<CheckResult> = (async () => {
     try {
-      const result = await fetchPrivacy(ip);
+      const result = await fetchPrivacy(ip, keyChoice);
       const ttl = !result.value ? ERROR_TTL : result.value.signals.length ? POSITIVE_TTL : CLEAN_TTL;
       if (lookupCache.size >= CACHE_MAX) lookupCache.delete(lookupCache.keys().next().value!);
       lookupCache.set(ip, { ...result, expires: Date.now() + ttl });
@@ -235,12 +281,13 @@ export async function checkVpnBlock(request: Request): Promise<Response | null> 
       try { waitUntil(audit); } catch { await audit; }
       return null;
     }
+    const keyChoice = readProxycheckKey(request);
     if (mode === "monitor") {
-      const task = privacyLookup(ip).then(result => auditPrivacy(request, ip, mode, result, automated));
+      const task = privacyLookup(ip, keyChoice).then(result => auditPrivacy(request, ip, mode, result, automated));
       try { waitUntil(task); } catch { await task; }
       return null;
     }
-    const result = await privacyLookup(ip);
+    const result = await privacyLookup(ip, keyChoice);
     const denied = shouldDenyPrivacy(result.value);
     const audit = auditPrivacy(request, ip, mode, result, automated);
     try { waitUntil(audit); } catch { await audit; }
@@ -254,5 +301,5 @@ export async function checkVpnBlock(request: Request): Promise<Response | null> 
 /** Isolated self-test for Vercel previews; never writes a visitor or VPN audit row. */
 export async function previewVpnLookup(ip: string | null): Promise<CheckResult | null> {
   if (!validIp(ip)) return null;
-  return privacyLookup(ip);
+  return privacyLookup(ip, chooseProxycheckKey(undefined, typeof process === "undefined" ? undefined : process.env["PROXYCHECK_API_KEY"]));
 }
