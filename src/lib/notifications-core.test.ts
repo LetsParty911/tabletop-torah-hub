@@ -143,7 +143,6 @@ describe("zero VPN behavior changes", () => {
   it("the notification code never touches VPN tables, VPN sender or block logic", () => {
     for (const f of ["src/lib/notifications/core.ts", "src/lib/notifications/dispatch.server.ts", "src/lib/notifications.functions.ts", "docs/notifications/migration-notifications.sql"]) {
       const src = readFileSync(f, "utf8");
-      expect(src).not.toMatch(/vpn_security_notifications\b(?!.*never)|vpn_connection_checks|vpn-block|vpn-notify\.server|visitor_alert_queue[^_]/i.test(src) && !f.endsWith(".sql") ? /x^/ : /x^/);
       expect(src).not.toMatch(/from\(["']vpn_|import .*vpn-(block|notify)/);
     }
     const sql = readFileSync("docs/notifications/migration-notifications.sql", "utf8");
