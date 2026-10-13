@@ -1,4 +1,25 @@
-# Engaged-visitor Pushover alerts — staged fix (NOT DEPLOYED)
+# Visitor Pushover alerts — staged fixes (NOT DEPLOYED)
+
+## CURRENT PLAN (2026-10-13): two-stage alerts
+Supersedes the engaged-only cutover below — the immediate first-load alert stays.
+- Stage 1 "New/Returning Unconfirmed Visit": one push per session at first recorded page load
+  (existing `visitor_alert_queue`), with location, device, source/campaign (Shul Poster), landing page,
+  ET time, short visit ref, and "Not automated, blocked or rejected".
+- Stage 2 "Engaged Reader" (tagged Open PDF click or download) or "Confirmed Engagement — <action>":
+  at most one per session on the first dashboard `MEANINGFUL_INTENT` event (`engaged_visitor_alert_queue`).
+  Passive pdf_open, heartbeat, scroll, human_signal and server download_served never qualify.
+- Dedup: queue PKs + durable ledger `visitor_notification_log (session_id, stage)` claimed atomically
+  before every send; failed sends re-claimable, sent never resent.
+- Files: `visitor-alert/two-stage.ts`, `visitor-alert/index-two-stage.ts`, `migration-two-stage.sql`;
+  tests `src/lib/visitor-alert-two-stage.test.ts` (mock fetch, no network).
+- Rollout (each step needs owner approval; the analytics DB is shared with production):
+  1. Apply `migration-two-stage.sql` (additive, cannot send). 2. Deploy `visitor-alert-two-stage` with
+  `VISITOR_ALERT_DRY_RUN=1`, add webhooks on both queues. 3. Coordinated cutover: disable the old
+  `visitor_alert_push` webhook, then turn off dry-run. Rollback = re-enable old webhook, disable new ones.
+
+---
+
+# Engaged-visitor Pushover alerts — earlier staged fix (superseded)
 
 Status: staged only. The shadow engaged-visitor queue is safe to install separately;
 no new outbound webhook or Pushover function is enabled by this migration.
