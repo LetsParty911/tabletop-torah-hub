@@ -6,6 +6,7 @@ import { getParshaSeoPage } from "@/integrations/supabase/parsha-seo.functions";
 import { VORTS } from "@/data/vorts";
 import { readingSlug } from "@/lib/reading-page";
 import { PARSHIYOS_54, formatReadingLabel } from "@/lib/parshiyos";
+import { fitPageTitle } from "@/lib/page-title";
 
 function seferForParsha(parshaKey: string): string {
   const index = PARSHIYOS_54.indexOf(parshaKey);
@@ -25,7 +26,7 @@ export const Route = createFileRoute("/parsha/$slug")({
   head: ({ loaderData, params }) => {
     const label = loaderData?.label ?? "Parsha";
     const count = loaderData?.total_count ?? 0;
-    const title = `Divrei Torah on ${label} | Dvar Torah, Brief Insights & Printable PDFs`;
+    const title = fitPageTitle(`Divrei Torah on ${label}`, " — Dvar Torah, Brief Insights & Printable PDFs");
     const description =
       count > 0
         ? `Browse ${count} Divrei Torah on ${label}, including short vorts, printable Torah sheets, family-table material and deeper learning.`

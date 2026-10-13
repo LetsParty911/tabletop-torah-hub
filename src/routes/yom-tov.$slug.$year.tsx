@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getReadingCollection } from "@/integrations/supabase/reading-pages.functions";
+import { fitPageTitle } from "@/lib/page-title";
 import { ReadingCollectionView } from "@/components/ReadingCollectionView";
 
 export const Route = createFileRoute("/yom-tov/$slug/$year")({
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/yom-tov/$slug/$year")({
     const label = collection?.label ?? "Yom Tov";
     const year = collection?.jewish_year ?? params.year;
     const count = collection?.count ?? 0;
-    const title = `${label} ${year}: Divrei Torah for Children, Families & Adults | Torah For The Table`;
+    const title = fitPageTitle(`${label} ${year}`, " — Divrei Torah");
     const description = `${count} carefully selected Divrei Torah for ${label} ${year} — including choices for children, families, quick reads and deeper learning.`;
     const url = `https://torahforthetable.com/yom-tov/${params.slug}/${params.year}`;
     const image = `https://torahforthetable.com/og/image.png?parsha=${encodeURIComponent(label)}&count=${count}`;

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpRight } from "lucide-react";
 
 import { SiteFooter } from "@/components/SiteFooter";
+import { fitPageTitle } from "@/lib/page-title";
 
 /**
  * DRAFT page — copy is pending owner and rabbinic approval.
@@ -11,7 +12,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 export const Route = createFileRoute("/noahide-resources")({
   component: NoahideResourcesPage,
   head: () => {
-    const title = "The Seven Noahide Laws | Resources for Visitors — Torah For The Table";
+    const title = fitPageTitle("The Seven Noahide Laws", " — Resources for Visitors");
     const description =
       "A starting place for non-Jewish visitors who want to learn about the Torah's universal guidance for mankind: two external educational resources on the Seven Noahide Laws.";
     const url = "https://torahforthetable.com/noahide-resources";

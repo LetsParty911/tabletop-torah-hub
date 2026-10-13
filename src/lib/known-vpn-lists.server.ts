@@ -25,7 +25,8 @@ export function cidrRange(line:string):Range|null{
  return {base:(n&mask)>>>0,mask};
 }
 export function listContains(ip:string,ranges:Range[]):boolean{
- const n=ipv4Number(ip);return n!==null&&ranges.some(r=>(n&r.mask)===r.base);
+ // >>>0: bitwise AND yields a signed int32, which never equals the unsigned base for IPs >= 128.0.0.0.
+ const n=ipv4Number(ip);return n!==null&&ranges.some(r=>((n&r.mask)>>>0)===r.base);
 }
 export function parseStrictVpnList(data:string):Range[]{
  const lines=data.split(/\r?\n/);

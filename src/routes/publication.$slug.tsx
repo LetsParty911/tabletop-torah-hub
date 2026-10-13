@@ -8,6 +8,7 @@ import { standardizeCopy } from "@/lib/standardize-copy";
 import { isYomTovReading, readingSlug } from "@/lib/reading-page";
 import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { SiteFooter } from "@/components/SiteFooter";
+import { fitPageTitle } from "@/lib/page-title";
 
 export const Route = createFileRoute("/publication/$slug")({
   loader: async ({ params }) => {
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/publication/$slug")({
       publication?.default_description?.trim() ||
       `Browse current and earlier editions of ${name} on Torah For The Table.`;
     const url = `https://torahforthetable.com/publication/${params.slug}`;
-    const title = `${name} — Divrei Torah & Printable Editions | Torah For The Table`;
+    const title = fitPageTitle(name, " — Divrei Torah & Printable Editions");
     const image = `https://torahforthetable.com/og/image.png?title=${encodeURIComponent(name)}`;
 
     return {

@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/SiteFooter";
+import { fitPageTitle } from "@/lib/page-title";
 
 export const Route = createFileRoute("/resources")({
   component: ResourcesPage,
   head: () => {
-    const title = "Torah For The Table Originals — In-House Torah Learning Resources";
+    const title = fitPageTitle("Torah For The Table Originals", " — In-House Torah Learning Resources");
     const description =
       "Original educational material created in-house for the Shabbos table: Brief Insights, Stories for the Shabbos Table and Parsha Questions & Answers — all free of charge.";
     const url = "https://torahforthetable.com/resources";
