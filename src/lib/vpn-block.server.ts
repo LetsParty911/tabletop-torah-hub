@@ -240,42 +240,80 @@ async function privacyLookup(ip: string, keyChoice: ProxycheckKeyChoice): Promis
   return task;
 }
 
-async function auditPrivacy(
-  request: Request, ip: string | null, mode: VpnBlockMode, result: CheckResult | null,
-  automated: boolean, skippedReason?: string,
-): Promise<void> {
+type Attribution = { detectedBy: string[]; providerResults: Record<string, unknown> };
+
+/** Prefer the Cloudflare request context; fall back to Vercel, else await inline. */
+function runBackground(request: Request, task: Promise<unknown>): Promise<unknown> | null {
+  const ctx = (request as unknown as { runtime?: { cloudflare?: { context?: { waitUntil?: (p: Promise<unknown>) => void } } } }).runtime?.cloudflare?.context;
+  if (ctx?.waitUntil) { ctx.waitUntil(task); return null; }
+  try { waitUntil(task); return null; } catch { return task; }
+}
+
+/** Fallback log in Lovable Cloud when the analytics-database audit write fails. */
+async function recordAuditFailure(row: Record<string, unknown>, category: string, message: string) {
   try {
-    const { getSupabaseAdmin } = await import("@/integrations/supabase/ext.server");
-    const t = getRequestTelemetry(request);
-    const url = new URL(request.url);
-    const lookup = result?.value ?? null;
-    const denied = mode === "block" && (shouldDenyPrivacy(lookup) || Boolean(result?.additionalBlock));
-    const verdict = skippedReason ? "skipped" : result?.additionalBlock ? "detected" : !lookup ? "unknown" : lookup.signals.length ? "detected" : "clean";
-    const hostname = (() => { try { return new URL(request.headers.get("referer") ?? "").hostname.slice(0, 150) || null; } catch { return null; } })();
-    const { error } = await getSupabaseAdmin().from("vpn_connection_checks").insert({
-      ip_address: ip, country: lookup?.country ?? t.country, region: lookup?.region ?? t.region,
-      city: lookup?.city ?? t.city, vpn_operator: lookup?.operator ?? null,
-      user_agent: t.userAgent || null, referrer_host: hostname,
-      request_path: (url.pathname + url.search).slice(0, 500),
-      utm_source: url.searchParams.get("utm_source")?.slice(0, 100) ?? null,
-      mode, decision: denied ? "blocked" : "allowed", verdict,
-      signals: lookup?.signals ?? [], confidence: lookup?.confidence ?? null,
-      lookup_source: skippedReason ? "skipped" : result?.source ?? "skipped",
-      provider_status: skippedReason ?? result?.status ?? "unavailable",
-      lookup_ms: result?.elapsed ?? null, error_code: skippedReason ??
-        (lookup ? null : result?.status ?? "unknown"),
-      is_automated: automated,
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("vpn_audit_failures").insert({
+      error_category: category, error_message: message.slice(0, 300),
+      decision: String(row.decision), verdict: (row.verdict as string) ?? null,
+      detected_by: (row.detected_by as string[]) ?? [], ip_address: (row.ip_address as string) ?? null,
+      country: (row.country as string) ?? null, region: (row.region as string) ?? null,
+      city: (row.city as string) ?? null, request_path: (row.request_path as string) ?? null,
     });
-    if (error) console.error("[vpn-block] audit insert failed", error.message);
+    if (error) console.error("[vpn-block] audit-failure log also failed", error.code);
   } catch (e) {
-    console.error("[vpn-block] audit insert failed", e);
+    console.error("[vpn-block] audit-failure log also failed", e instanceof Error ? e.name : "unknown");
   }
+}
+
+export async function auditPrivacy(
+  request: Request, ip: string | null, mode: VpnBlockMode, result: CheckResult | null,
+  automated: boolean, skippedReason?: string, attribution?: Attribution,
+): Promise<{ id: string | null; row: Record<string, unknown> }> {
+  const t = getRequestTelemetry(request);
+  const url = new URL(request.url);
+  const lookup = result?.value ?? null;
+  const denied = mode === "block" && (shouldDenyPrivacy(lookup) || Boolean(result?.additionalBlock));
+  const verdict = skippedReason ? "skipped" : result?.additionalBlock ? "detected" : !lookup ? "unknown" : lookup.signals.length ? "detected" : "clean";
+  const hostname = (() => { try { return new URL(request.headers.get("referer") ?? "").hostname.slice(0, 150) || null; } catch { return null; } })();
+  const row: Record<string, unknown> = {
+    ip_address: ip, country: lookup?.country ?? t.country, region: lookup?.region ?? t.region,
+    city: lookup?.city ?? t.city, vpn_operator: lookup?.operator ?? null,
+    user_agent: t.userAgent || null, referrer_host: hostname,
+    request_path: (url.pathname + url.search).slice(0, 500),
+    utm_source: url.searchParams.get("utm_source")?.slice(0, 100) ?? null,
+    mode, decision: denied ? "blocked" : "allowed", verdict,
+    signals: lookup?.signals ?? [], confidence: lookup?.confidence ?? null,
+    lookup_source: skippedReason ? "skipped" : result?.source ?? "skipped",
+    provider_status: skippedReason ?? result?.status ?? "unavailable",
+    lookup_ms: result?.elapsed ?? null, error_code: skippedReason ??
+      (lookup ? null : result?.status ?? "unknown"),
+    is_automated: automated,
+    detected_by: attribution?.detectedBy ?? [],
+    provider_results: attribution?.providerResults ?? {},
+  };
+  let lastErr = "unknown";
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const { getSupabaseAdmin } = await import("@/integrations/supabase/ext.server");
+      const { data, error } = await getSupabaseAdmin().from("vpn_connection_checks").insert(row).select("id").single();
+      if (!error) return { id: (data?.id as string) ?? null, row };
+      lastErr = `${error.code ?? "db_error"}: ${error.message ?? ""}`;
+    } catch (e) {
+      lastErr = e instanceof Error ? `${e.name}: ${e.message}` : "unknown";
+    }
+    if (attempt === 0) await new Promise(r => setTimeout(r, 250));
+  }
+  console.error("[vpn-block] audit insert failed after retry");
+  await recordAuditFailure(row, lastErr.startsWith("Error: Missing env") ? "config" : "insert_failed", lastErr);
+  return { id: null, row };
 }
 
 /** Audit each eligible document navigation, including clean and failed classifications. */
 export async function checkVpnBlock(request: Request): Promise<Response | null> {
   const mode = await getVpnBlockMode();
   if (mode === "off") return null;
+  let denied = false;
   try {
     const path = new URL(request.url).pathname;
     if (request.method !== "GET" || !shouldCheck(request, path)) return null;
@@ -283,21 +321,28 @@ export async function checkVpnBlock(request: Request): Promise<Response | null> 
     const t = getRequestTelemetry(request);
     const ip = t.ipAddress;
     const automated = isAutomatedAgent(t.userAgent);
-    // Never silently mistake a missing client address for a verified clean result.
     if (!validIp(ip)) {
-      const audit = auditPrivacy(request, ip, mode, null, automated, "missing_or_invalid_ip");
-      try { waitUntil(audit); } catch { await audit; }
+      const p = runBackground(request, auditPrivacy(request, ip, mode, null, automated, "missing_or_invalid_ip"));
+      if (p) await p;
       return null;
     }
     if (mode === "monitor" && automated) {
-      const audit = auditPrivacy(request, ip, mode, null, automated, "automated_user_agent");
-      try { waitUntil(audit); } catch { await audit; }
+      const p = runBackground(request, auditPrivacy(request, ip, mode, null, automated, "automated_user_agent"));
+      if (p) await p;
       return null;
     }
     const keyChoice = readProxycheckKey(request);
+    const { buildAttribution, classifyProviderFailure } = await import("./vpn-security");
+    const notify = await import("./vpn-notify.server");
+    const env = notify.workerEnv(request);
     if (mode === "monitor") {
-      const task = privacyLookup(ip, keyChoice).then(result => auditPrivacy(request, ip, mode, result, automated));
-      try { waitUntil(task); } catch { await task; }
+      const task = privacyLookup(ip, keyChoice).then(async result => {
+        const attribution = buildAttribution({ proxycheck: result.value, proxycheckStatus: result.status, proxycheckQualifies: shouldDenyPrivacy(result.value) });
+        await auditPrivacy(request, ip, mode, result, automated, undefined, attribution);
+        if (result.source === "provider") await notify.recordProviderOutcome(env, "proxycheck", result.value ? null : classifyProviderFailure("proxycheck", result.status), result.status);
+      });
+      const p = runBackground(request, task);
+      if (p) await p;
       return null;
     }
     const { checkKnownNetwork } = await import("./known-vpn-lists.server");
@@ -315,8 +360,6 @@ export async function checkVpnBlock(request: Request): Promise<Response | null> 
           s === "VPN" ? secondary.value?.vpn : s === "Proxy" ? secondary.value?.proxy : secondary.value?.tor)
       : [];
     const additionalBlock = Boolean(listSignal || ipapiSignals.length);
-    // ipapi.is and strict network lists make categorical, not scored, claims.
-    // Leave confidence null rather than manufacturing a percentage.
     const additionalValue: PrivacyLookup | null = additionalBlock ? {
       signals: [...new Set([...ipapiSignals, ...(listSignal ? [listSignal] : [])])] as PrivacySignal[],
       confidence: null,
@@ -335,13 +378,34 @@ export async function checkVpnBlock(request: Request): Promise<Response | null> 
       status: providerStatus, elapsed: Math.max(primary.elapsed,secondary.elapsed),
       additionalBlock,
     };
-    const denied = shouldDenyPrivacy(primary.value) || additionalBlock;
-    const audit = auditPrivacy(request, ip, mode, result, automated);
-    try { waitUntil(audit); } catch { await audit; }
+    // Decide BEFORE any logging: the 403 never depends on the audit write.
+    denied = shouldDenyPrivacy(primary.value) || additionalBlock;
+    const attribution = buildAttribution({
+      proxycheck: primary.value, proxycheckStatus: primary.status, proxycheckQualifies: shouldDenyPrivacy(primary.value),
+      ipapi: secondary.value, ipapiStatus: secondary.status, listSignal, listStatus: listed.status,
+    });
+    const task = (async () => {
+      const audit = await auditPrivacy(request, ip, mode, result, automated, undefined, attribution);
+      if (primary.source === "provider") await notify.recordProviderOutcome(env, "proxycheck", primary.value ? null : classifyProviderFailure("proxycheck", primary.status), primary.status);
+      if (secondary.source === "provider" || secondary.status === "not_configured") await notify.recordProviderOutcome(env, "ipapi", secondary.value ? null : classifyProviderFailure("ipapi", secondary.status), secondary.status);
+      await notify.recordProviderOutcome(env, "lists", classifyProviderFailure("lists", listed.status), listed.status);
+      if (denied) {
+        const r = audit.row;
+        const { formatLocation } = await import("./vpn-security");
+        await notify.notifyBlocked(env, {
+          auditId: audit.id, ip, location: formatLocation(r.city as string, r.region as string, r.country as string),
+          detectedBy: attribution.detectedBy, signals: selected?.signals ?? [], path: String(r.request_path),
+        });
+      }
+    })().catch(() => { /* every step logs its own failure */ });
+    // On runtimes without background support the task is awaited, but a
+    // denied visitor still gets the 403 even if the task throws.
+    const p = runBackground(request, task);
+    if (p) await p.catch(() => {});
     return denied ? privacyRestrictedResponse() : null;
   } catch (e) {
     console.error("[vpn-block] gate failed open", e);
-    return null;
+    return denied ? privacyRestrictedResponse() : null;
   }
 }
 
