@@ -1,4 +1,5 @@
 import { standardizeCopy } from "@/lib/standardize-copy";
+import { fitPageTitle } from "@/lib/page-title";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -60,7 +61,7 @@ export const Route = createFileRoute("/view/$id")({
       : null;
 
     const shareTitle = parshaLabel ? `${title} — ${parshaLabel}` : title;
-    const pageTitle = `${shareTitle} | Torah For The Table`;
+    const pageTitle = fitPageTitle(shareTitle);
 
     const clamp = (v: string) => {
       if (v.length <= 160) return v;
