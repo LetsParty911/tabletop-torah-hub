@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { adminVpnTracking } from "@/lib/vpn-tracking.functions";
+import { adminVpnTracking, adminRetryVpnNotifications, adminTestVpnPushover } from "@/lib/vpn-tracking.functions";
 import { adminGetVpnMode, adminSetVpnMode } from "@/lib/vpn-mode.functions";
 import { formatUaSummary, parseUserAgent } from "@/lib/ua-parse";
 
@@ -10,7 +10,9 @@ type VpnRow = {
  utm_source:string|null;mode:string;decision:string;verdict:string;signals:string[];
  confidence:number|null;lookup_source:string;provider_status:string;lookup_ms:number|null;
  error_code:string|null;is_automated:boolean;
+ detected_by?:string[]|null;provider_results?:Record<string,{ok?:boolean;status?:string;failure?:string|null}>|null;
 };
+type Security={sampled:number;blocked:number;multi:number;unattributed:number;providers:Record<string,{detected:number;errors:number;quota:number;credentials:number}>;notifications:{blockSent:number;blockFailed:number;blockPending:number;failureSent:number;failureFailed:number;failurePending:number;recent:Array<{created_at:string;kind:string;provider:string;status:string;attempts:number;location:string;last_error_category:string|null}>};auditFailures:Array<{created_at:string;error_category:string;decision:string;ip_address:string|null;city:string|null;region:string|null;country:string|null;detected_by:string[]}>;auditFailuresError:string|null};
 type Summary = {total?:number;unique_ips?:number;blocked?:number;unique_blocked_ips?:number;detected?:number;clean?:number;unknown?:number;skipped?:number;vpn?:number;proxy?:number;tor?:number;provider_queries?:number;cache_hits?:number;by_country?:Array<{country:string;attempts:number;blocked:number}>};
 export default function VpnTrackingSection({accessToken}:{accessToken:string|null}){
  const query=useServerFn(adminVpnTracking);
@@ -19,9 +21,12 @@ export default function VpnTrackingSection({accessToken}:{accessToken:string|nul
  const [loading,setLoading]=useState(false),[error,setError]=useState<string|null>(null);
  const [mode,setMode]=useState<"off"|"monitor"|"block"|null>(null),[modeBusy,setModeBusy]=useState(false),[modeError,setModeError]=useState<string|null>(null);
  const [revision,setRevision]=useState(0);
+ const [security,setSecurity]=useState<Security|null>(null),[alertMsg,setAlertMsg]=useState<string|null>(null);
+ const retry=useServerFn(adminRetryVpnNotifications),testPush=useServerFn(adminTestVpnPushover);
+ const runAlert=async(kind:"retry"|"test")=>{if(!accessToken)return;setAlertMsg("Working…");try{if(kind==="test"){const r=await testPush({data:{accessToken}});setAlertMsg(r.ok?"Test sent to Pushover — check your phone.":"Test failed: "+r.category);}else{const r=await retry({data:{accessToken}});setAlertMsg(`Retried ${r.attempted}: ${r.sent} sent, ${r.failed} failed`);setRevision(x=>x+1);}}catch(e){setAlertMsg(e instanceof Error?e.message:"Failed");}};
  useEffect(()=>{if(!accessToken)return;let ignore=false;setLoading(true);setError(null);
   query({data:{accessToken,days,page,verdict:verdict as "all"|"clean"|"detected"|"unknown"|"skipped"|"blocked",ip:ip.trim()||undefined}})
-   .then(r=>{if(!ignore){setRows(r.rows as VpnRow[]);setSummary(r.summary as Summary);setCount(r.count);}})
+   .then(r=>{if(!ignore){setRows(r.rows as VpnRow[]);setSummary(r.summary as Summary);setCount(r.count);setSecurity((r as {security?:Security}).security??null);}})
    .catch(e=>{if(!ignore)setError(e instanceof Error?e.message:"Unable to load");})
    .finally(()=>{if(!ignore)setLoading(false);});
   return ()=>{ignore=true;};
@@ -64,11 +69,11 @@ export default function VpnTrackingSection({accessToken}:{accessToken:string|nul
     <td className="py-2 px-2 font-mono text-xs">{r.ip_address??"—"}</td>
     <td className="py-2 px-2">{[r.city,r.region,r.country].filter(Boolean).join(", ")||"—"}</td>
     <td className="py-2 px-2"><strong>{r.decision}</strong><div className="text-xs">{r.verdict} ({r.mode})</div></td>
-    <td className="py-2 px-2">{r.signals.join("+")||"—"}<div className="text-xs">Confidence: {r.confidence??"Unknown"}</div><div className="text-xs">{r.vpn_operator??""}</div></td>
+    <td className="py-2 px-2">{r.signals.join("+")||"—"}{r.detected_by?.length?<div className="text-xs font-medium">By: {r.detected_by.join(", ")}</div>:null}<div className="text-xs">Confidence: {r.confidence??"Unknown"}</div><div className="text-xs">{r.vpn_operator??""}</div></td>
     <td className="py-2 px-2">{r.lookup_source}<div className="text-xs">{r.provider_status}, {r.lookup_ms??"—"}ms</div></td>
     <td className="py-2 px-2 max-w-[270px] break-all">{r.request_path}<div className="text-xs">{r.referrer_host??"—"}</div></td>
     <td className="py-2 px-2">{r.user_agent?formatUaSummary(parseUserAgent(r.user_agent)):"—"}{r.is_automated?" (automated)":""}</td>
-    <td className="py-2 px-2">{r.error_code??"—"}</td>
+    <td className="py-2 px-2">{r.error_code??"—"}{Object.entries(r.provider_results??{}).filter(([,v])=>v&&v.ok===false).map(([k,v])=><div key={k} className="text-xs">{k}: {v.failure??v.status}</div>)}</td>
    </tr>)}</tbody>
   </table></div>
   <div className="flex items-center gap-3"><button className="rounded border px-3 py-1.5 text-sm" disabled={page===0||loading} onClick={()=>setPage(x=>x-1)}>Previous</button><span className="text-sm">Page {page+1}</span><button className="rounded border px-3 py-1.5 text-sm" disabled={loading||(page+1)*100>=count} onClick={()=>setPage(x=>x+1)}>Next</button></div>
