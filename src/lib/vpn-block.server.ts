@@ -96,7 +96,7 @@ export function privacyRestrictedResponse(): Response {
   });
 }
 
-type CheckResult = { value: PrivacyLookup | null; source: "provider" | "cache" | "inflight"; status: string; elapsed: number; additionalBlock?: boolean };
+type CheckResult = { value: PrivacyLookup | null; source: "provider" | "cache" | "inflight"; status: string; elapsed: number; additionalBlock?: boolean; detectedBy?: string[]; providerResults?: Record<string,string> };
 type Cached = { value: PrivacyLookup | null; status: string; expires: number };
 const lookupCache = new Map<string, Cached>();
 const inFlight = new Map<string, Promise<CheckResult>>();
@@ -265,10 +265,13 @@ async function auditPrivacy(
       lookup_ms: result?.elapsed ?? null, error_code: skippedReason ??
         (lookup ? null : result?.status ?? "unknown"),
       is_automated: automated,
+      detected_by: result?.detectedBy ?? [],
+      provider_results: result?.providerResults ?? {},
     });
-    if (error) console.error("[vpn-block] audit insert failed", error.message);
+    if (error) throw new Error("VPN audit insertion failed");
   } catch (e) {
-    console.error("[vpn-block] audit insert failed", e);
+    console.error("[vpn-block] audit insert failed");
+    throw e;
   }
 }
 
@@ -315,6 +318,17 @@ export async function checkVpnBlock(request: Request): Promise<Response | null> 
           s === "VPN" ? secondary.value?.vpn : s === "Proxy" ? secondary.value?.proxy : secondary.value?.tor)
       : [];
     const additionalBlock = Boolean(listSignal || ipapiSignals.length);
+    const detectedBy = [
+      ...(shouldDenyPrivacy(primary.value) ? ["Proxycheck"] : []),
+      ...(ipapiSignals.length ? ["ipapi.is"] : []),
+      ...(listSignal === "VPN" ? ["X4BNet"] : []),
+      ...(listSignal === "Tor" ? ["Tor Project"] : []),
+    ];
+    const providerResults = {
+      proxycheck: primary.value ? (primary.value.signals.length ? primary.value.signals.join("+") : "clean") : primary.status,
+      ipapi: secondary.value ? (ipapiSignals.length ? ipapiSignals.join("+") : "clean") : secondary.status,
+      lists: listSignal ?? listed.status,
+    };
     // ipapi.is and strict network lists make categorical, not scored, claims.
     // Leave confidence null rather than manufacturing a percentage.
     const additionalValue: PrivacyLookup | null = additionalBlock ? {
@@ -333,11 +347,16 @@ export async function checkVpnBlock(request: Request): Promise<Response | null> 
     const result: CheckResult = {
       value: selected, source: primary.source,
       status: providerStatus, elapsed: Math.max(primary.elapsed,secondary.elapsed),
-      additionalBlock,
+      additionalBlock, detectedBy, providerResults,
     };
     const denied = shouldDenyPrivacy(primary.value) || additionalBlock;
     const audit = auditPrivacy(request, ip, mode, result, automated);
-    try { waitUntil(audit); } catch { await audit; }
+    if (denied) {
+      // A denied request must not be reported as reliably audited until persisted.
+      await audit;
+    } else {
+      try { waitUntil(audit); } catch { await audit; }
+    }
     return denied ? privacyRestrictedResponse() : null;
   } catch (e) {
     console.error("[vpn-block] gate failed open", e);
