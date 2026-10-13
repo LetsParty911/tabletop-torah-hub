@@ -77,7 +77,7 @@ export function NotificationsSection({ accessToken }: { accessToken: string | nu
 
       <ul className="divide-y rounded border">
         {CATEGORIES.map((c) => {
-          const counts = st.counts[c] ?? {};
+          const counts = (st.counts as Record<string, Record<string, number>>)[c] ?? {};
           const ready = IMPLEMENTED.has(c);
           return (
             <li key={c} className="flex flex-wrap items-center justify-between gap-2 p-3">
