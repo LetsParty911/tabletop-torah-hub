@@ -11,6 +11,7 @@ import WeeklyChecklistSection from "@/components/admin/WeeklyChecklistSection";
 import ManageChecklistSourcesSection from "@/components/admin/ManageChecklistSourcesSection";
 import PdfListSection from "@/components/admin/PdfListSection";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { NotificationsSection } from "@/components/admin/NotificationsSection";
 import VisitorActivitySection from "@/components/admin/VisitorActivitySection";
 import BlockedVisitsSection from "@/components/admin/BlockedVisitsSection";
 import VpnTrackingSection from "@/components/admin/VpnTrackingSection";
@@ -1412,6 +1413,7 @@ function AdminPage() {
             <TabsTrigger value="visitor-activity">Visitor Activity</TabsTrigger>
             <TabsTrigger value="blocked-visits">Blocked Visits</TabsTrigger>
             <TabsTrigger value="vpn-tracking">VPN Tracking</TabsTrigger>
+            <TabsTrigger value="notifications">Alerts & Notifications</TabsTrigger>
           </TabsList>
           <TabsContent value="this-week" className="space-y-8 mt-8">
         <section className="parchment-frame">
@@ -1755,6 +1757,7 @@ function AdminPage() {
             <VisitorActivitySection accessToken={accessToken} />
           </TabsContent>
           <TabsContent value="vpn-tracking" className="space-y-8 mt-8"><VpnTrackingSection accessToken={accessToken} /></TabsContent>
+          <TabsContent value="notifications" className="space-y-8 mt-8"><NotificationsSection accessToken={accessToken} /></TabsContent>
           <TabsContent value="blocked-visits" className="space-y-8 mt-8">
             <BlockedVisitsSection accessToken={accessToken} />
           </TabsContent>

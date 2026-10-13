@@ -890,6 +890,17 @@ export const subscribeEmail = createServerFn({ method: "POST" })
     }
 
     console.log(`${tag} synced to Sender.net (already=${sender.alreadySubscribed})`);
+
+    // Owner notification: only a NEW subscription Sender.net accepted (not
+    // "already subscribed", not a local reactivation). Idempotent per email
+    // hash; time-boxed and never affects the visitor's response.
+    if (!sender.alreadySubscribed && !existing) {
+      const { notifyNewSubscriber } = await import("@/lib/notifications/dispatch.server");
+      await Promise.race([
+        notifyNewSubscriber(email, data.source ?? null),
+        new Promise((resolve) => setTimeout(resolve, 1500)),
+      ]);
+    }
     return {
       ok: true as const,
       error: null,
