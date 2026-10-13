@@ -174,12 +174,25 @@ export function readProxycheckKey(request: Request): ProxycheckKeyChoice {
   return chooseProxycheckKey(workerValue, processValue);
 }
 
+export function proxycheckKeyShape(value: string | null): string {
+  if (!value) return "missing";
+  if (/^[a-z0-9]{6}(?:-[a-z0-9]{6}){3}$/i.test(value)) return "standard";
+  if (/^PROXYCHECK_API_KEY\s*=/i.test(value)) return "assignment";
+  if (/^https?:/i.test(value)) return "url";
+  if (value.startsWith('"') || value.endsWith('"')) return "quoted";
+  if (value.includes("\n") || value.includes("\r")) return "multiline";
+  if (/\s/.test(value)) return "whitespace";
+  if (/^[a-z0-9]{24}$/i.test(value)) return "missing_hyphens";
+  if (/^[a-z0-9-]+$/i.test(value)) return "wrong_grouping";
+  return "other";
+}
+
 async function fetchPrivacy(ip: string, keyChoice: ProxycheckKeyChoice): Promise<{ value: PrivacyLookup | null; status: string }> {
   const url = new URL(`https://proxycheck.io/v3/${encodeURIComponent(ip)}`);
   if (keyChoice.key) url.searchParams.set("key", keyChoice.key);
   // Only the source, presence, disagreement and format category can be saved.
   const keyCategory = !keyChoice.key ? "key_missing" :
-    `key_present_${keyChoice.source}${keyChoice.mismatch ? "_mismatch" : ""}${keyChoice.formatUnusual ? "_format_unusual" : ""}`;
+    `key_present_${keyChoice.source}${keyChoice.mismatch ? "_mismatch" : ""}${keyChoice.formatUnusual ? `_format_${proxycheckKeyShape(keyChoice.key)}` : ""}`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), LOOKUP_TIMEOUT_MS);
   try {
