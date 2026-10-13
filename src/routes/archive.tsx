@@ -10,6 +10,7 @@ import { PublicationCardTracker } from "@/components/PublicationCardTracker";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
+import { fitPageTitle } from "@/lib/page-title";
 import { normalizeAudience, audienceLabel, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { standardizeCopy } from "@/lib/standardize-copy";
@@ -106,7 +107,7 @@ export const Route = createFileRoute("/archive")({
     const yearPart = search.year !== "all" ? ` ${search.year}` : "";
 
     const title = parshaLabel
-      ? `${parshaLabel}${yearPart} — Archive | Torah For The Table`
+      ? fitPageTitle(`${parshaLabel}${yearPart}`, " — Archive")
       : "Archive — Torah For The Table";
     const description = parshaLabel
       ? `Printable Divrei Torah for ${parshaLabel}${yearPart} from the Torah For The Table archive — free PDFs for children, families, and adults.`
