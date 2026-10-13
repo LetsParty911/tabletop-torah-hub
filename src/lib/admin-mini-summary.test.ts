@@ -22,3 +22,11 @@ describe("admin since-last activity empty state", () => {
     expect(hasAdminMiniActivity({ ...empty, downloadActions: 1 })).toBe(true);
   });
 });
+import { describe as d2, it as i2, expect as e2 } from "vitest";
+import { hasAdminMiniActivity as has2 } from "./admin-mini-summary";
+d2("unconfirmed visits", () => {
+  i2("stored but unqualified sessions prevent a false 'nothing new' state", () => {
+    e2(has2({ sessions: 0, openPdfClicks: 0, downloadActions: 0, newSubscriberCount: 0, newContactCount: 0, unconfirmedSessions: 4 })).toBe(true);
+    e2(has2({ sessions: 0, openPdfClicks: 0, downloadActions: 0, newSubscriberCount: 0, newContactCount: 0, unconfirmedSessions: 0 })).toBe(false);
+  });
+});

@@ -118,6 +118,7 @@ export default function AdminMiniDashboard({
         downloadActions: canonical.downloadActions,
         newSubscriberCount: data.newSubscriberCount,
         newContactCount: data.newContactCount,
+        unconfirmedSessions: canonical.filteredUncertainSessions,
       }),
   );
 
@@ -147,6 +148,13 @@ export default function AdminMiniDashboard({
           {canonical && (
             <p className="mt-1 text-xs text-muted-foreground">
               Headline audience metrics are human-qualified · {canonical.filteredAutomationSessions} suspected automated sessions filtered
+            </p>
+          )}
+          {canonical && canonical.filteredUncertainSessions > 0 && (
+            <p className="mt-2 text-sm text-foreground">
+              <b>{canonical.filteredUncertainSessions}</b> unconfirmed{" "}
+              {canonical.filteredUncertainSessions === 1 ? "visit" : "visits"} recorded (page loaded, no
+              interaction yet) — saved, but not counted as readers above.
             </p>
           )}
           {canonical && canonical.filteredInternalSessions > 0 && (
