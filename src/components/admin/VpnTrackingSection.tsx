@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { adminVpnTracking, adminRetryVpnNotifications, adminTestVpnPushover } from "@/lib/vpn-tracking.functions";
 import { adminGetVpnMode, adminSetVpnMode } from "@/lib/vpn-mode.functions";
+import VpnSecurityPanel, { type VpnSecurity } from "./VpnSecurityPanel";
 import { formatUaSummary, parseUserAgent } from "@/lib/ua-parse";
 
 type VpnRow = {
@@ -12,7 +13,7 @@ type VpnRow = {
  error_code:string|null;is_automated:boolean;
  detected_by?:string[]|null;provider_results?:Record<string,{ok?:boolean;status?:string;failure?:string|null}>|null;
 };
-type Security={sampled:number;blocked:number;multi:number;unattributed:number;providers:Record<string,{detected:number;errors:number;quota:number;credentials:number}>;notifications:{blockSent:number;blockFailed:number;blockPending:number;failureSent:number;failureFailed:number;failurePending:number;recent:Array<{created_at:string;kind:string;provider:string;status:string;attempts:number;location:string;last_error_category:string|null}>};auditFailures:Array<{created_at:string;error_category:string;decision:string;ip_address:string|null;city:string|null;region:string|null;country:string|null;detected_by:string[]}>;auditFailuresError:string|null};
+type Security=VpnSecurity;
 type Summary = {total?:number;unique_ips?:number;blocked?:number;unique_blocked_ips?:number;detected?:number;clean?:number;unknown?:number;skipped?:number;vpn?:number;proxy?:number;tor?:number;provider_queries?:number;cache_hits?:number;by_country?:Array<{country:string;attempts:number;blocked:number}>};
 export default function VpnTrackingSection({accessToken}:{accessToken:string|null}){
  const query=useServerFn(adminVpnTracking);
@@ -55,6 +56,7 @@ export default function VpnTrackingSection({accessToken}:{accessToken:string|nul
   <div className="rounded-lg border p-4 space-y-3"><h3 className="font-semibold">VPN protection mode: {mode??"Loading…"}</h3><p className="text-sm text-muted-foreground">Off disables checks; Monitor records classifications but allows visits; Block denies confidently identified VPN/proxy/Tor traffic. Changes may take up to 10 seconds to reach every server.</p>
    <div className="flex flex-wrap gap-2">{(["off","monitor","block"] as const).map(x=><button key={x} type="button" disabled={modeBusy||!mode||mode===x} onClick={()=>changeMode(x)} className="rounded border px-3 py-2 text-sm disabled:opacity-50">{x==="off"?"Off":x==="monitor"?"Monitor":"Block"}</button>)}</div>{modeError&&<p className="text-sm text-destructive">{modeError}</p>}</div>
   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">{cards.map(([label,val])=><div className="rounded-md border p-3" key={String(label)}><div className="text-xs text-muted-foreground">{label}</div><div className="font-semibold text-xl">{num(val as number)}</div></div>)}</div>
+   {security&&<VpnSecurityPanel security={security} message={alertMsg} onTest={()=>runAlert("test")} onRetry={()=>runAlert("retry")} />}
   <div className="flex flex-wrap gap-3 items-center">
    <label className="text-sm">Range <select className="ml-2 rounded border bg-background p-2" value={days} onChange={e=>{setDays(Number(e.target.value));setPage(0)}}><option value={1}>24 hours</option><option value={7}>7 days</option><option value={30}>30 days</option><option value={90}>90 days</option></select></label>
    <label className="text-sm">Outcome <select className="ml-2 rounded border bg-background p-2" value={verdict} onChange={e=>{setVerdict(e.target.value);setPage(0)}}>{["all","blocked","detected","clean","unknown","skipped"].map(x=><option key={x} value={x}>{x}</option>)}</select></label>
