@@ -212,6 +212,51 @@ export type Database = {
         }
         Relationships: []
       }
+      vpn_audit_failures: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          decision: string
+          detected_by: string[]
+          error_category: string
+          error_message: string | null
+          id: string
+          ip_address: string | null
+          region: string | null
+          request_path: string | null
+          verdict: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          decision: string
+          detected_by?: string[]
+          error_category: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          region?: string | null
+          request_path?: string | null
+          verdict?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          decision?: string
+          detected_by?: string[]
+          error_category?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          region?: string | null
+          request_path?: string | null
+          verdict?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
