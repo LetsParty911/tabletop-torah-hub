@@ -29,6 +29,13 @@
       "when": 1791675726378,
       "tag": "0003_create_maintenance_visits",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791902815228,
+      "tag": "0004_create_vpn_audit_failures",
+      "breakpoints": true
     }
   ]
 }
