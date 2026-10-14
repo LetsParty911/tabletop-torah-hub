@@ -55,7 +55,6 @@ async function loadReaderEvidence(admin: any, rows: Array<{created_at:string;ip_
         if (error) { err = "analytics read error"; console.error("vpn evidence read failed", error.message); events = null; break; }
         events!.push(...((data ?? []) as Ev[]));
         if ((data ?? []).length < PAGE) break;
-        if (off + PAGE >= CAP) err = null; // capped: matches found are still real; absence is reported as unverified
       }
     } catch (e) { err = "analytics read error"; events = null; console.error("vpn evidence read threw", e instanceof Error ? e.message : e); }
   }
