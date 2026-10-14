@@ -29,9 +29,38 @@ export const adminVpnTracking = createServerFn({ method: "POST" })
     ]);
     if (error) throw new Error(error.message);
     if (summary.error) throw new Error(summary.error.message);
-    const security = await loadSecurityStats(admin, since);
-    return {rows:rows??[],count:count??0,summary:summary.data??{},page:data.page,days:data.days,security};
+    const [security, evidence] = await Promise.all([loadSecurityStats(admin, since), loadReaderEvidence(admin, rows ?? [])]);
+    return {rows:(rows??[]).map((r: {id:string}, i: number)=>({...r, evidence: evidence[i]})),count:count??0,summary:summary.data??{},page:data.page,days:data.days,security};
   });
+
+// Read-only, single batched (paginated, capped) query for behaviour evidence on the visible page.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function loadReaderEvidence(admin: any, rows: Array<{created_at:string;ip_address:string|null;user_agent:string|null;is_automated:boolean}>) {
+  const { classifyReaderEvidence, POSITIVE_EVENTS, EVIDENCE_WINDOW_MS } = await import("./vpn-reader-evidence");
+  type Ev = import("./vpn-reader-evidence").EvidenceEvent;
+  const ips = [...new Set(rows.map(r=>r.ip_address?.trim()).filter((x): x is string => !!x))];
+  let events: Ev[] | null = [], err: string | null = null;
+  if (ips.length) {
+    const times = rows.map(r=>Date.parse(r.created_at)).filter(Number.isFinite);
+    const from = new Date(Math.min(...times) - EVIDENCE_WINDOW_MS).toISOString();
+    const to = new Date(Math.max(...times) + EVIDENCE_WINDOW_MS).toISOString();
+    const PAGE = 1000, CAP = 5000;
+    try {
+      for (let off = 0; off < CAP; off += PAGE) {
+        const { data, error } = await admin.from("analytics_events")
+          .select("event_name,occurred_at,ip_address,user_agent,is_internal,referrer_host")
+          .in("ip_address", ips).in("event_name", POSITIVE_EVENTS as string[])
+          .gte("occurred_at", from).lte("occurred_at", to)
+          .order("occurred_at", { ascending: true }).range(off, off + PAGE - 1);
+        if (error) { err = "analytics read error"; console.error("vpn evidence read failed", error.message); events = null; break; }
+        events!.push(...((data ?? []) as Ev[]));
+        if ((data ?? []).length < PAGE) break;
+        if (off + PAGE >= CAP) err = null; // capped: matches found are still real; absence is reported as unverified
+      }
+    } catch (e) { err = "analytics read error"; events = null; console.error("vpn evidence read threw", e instanceof Error ? e.message : e); }
+  }
+  return rows.map(r => classifyReaderEvidence(r, events, err));
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function loadSecurityStats(admin: any, since: string) {
