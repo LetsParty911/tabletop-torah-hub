@@ -658,7 +658,7 @@ function Index() {
         </section>
 
         {starterSelections.length > 0 && !isCurrentYomKippur && (
-          <section aria-labelledby="starter-selections-heading" className="rounded-2xl border border-accent/40 bg-card/50 px-4 py-5 sm:px-6">
+          <section aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border border-accent/40 bg-card/50 px-4 py-5 sm:px-6">
             <h2 id="starter-selections-heading" className="font-serif text-xl font-bold text-primary sm:text-2xl">
               Start here — ready to read or print
             </h2>
@@ -742,16 +742,16 @@ function Index() {
             </div>
             {resources.length > 0 && (
               <a
-                href="#this-weeks-collection"
+                href={starterSelections.length > 0 ? "#starter-selections-heading" : "#this-weeks-collection"}
                 onClick={() =>
                   trackFp("recommendation_click", {
                     parsha: displayedParshaKey,
-                    metadata: { chooser: "start_here", target: "collection" },
+                    metadata: { chooser: "start_here", target: starterSelections.length > 0 ? "starter_picks" : "collection" },
                   })
                 }
                 className="mt-2.5 inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-2.5 font-serif text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
               >
-                Not sure what to choose? Start here.
+                {starterSelections.length > 0 ? "Not sure? See our recommended picks" : "Browse all available Divrei Torah"}
               </a>
             )}
           </section>
