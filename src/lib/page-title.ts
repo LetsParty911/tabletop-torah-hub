@@ -1,6 +1,6 @@
-// Keeps every document <title> within the ~60-character range search
-// engines display. The site-brand suffix is always kept; an optional
-// detail segment is dropped first, and the base is word-truncated last.
+// Preserve the unique subject of each document in its SEO title.
+// ~60 characters is a display target, not a reason to remove the parsha
+// or article name merely to retain the site-brand suffix.
 
 const MAX_TITLE = 60;
 const SITE_SUFFIX = " | Torah For The Table";
@@ -17,11 +17,11 @@ export function fitPageTitle(
   detail = "",
   suffix: string = SITE_SUFFIX,
 ): string {
-  if (base.length + detail.length + suffix.length <= MAX_TITLE) {
-    return `${base}${detail}${suffix}`;
-  }
-  if (base.length + suffix.length <= MAX_TITLE) {
-    return `${base}${suffix}`;
-  }
-  return `${clampStem(base + detail, MAX_TITLE - suffix.length)}${suffix}`;
+  const fullTitle = `${base}${detail}`.trim();
+  if (fullTitle.length + suffix.length <= MAX_TITLE) return `${fullTitle}${suffix}`;
+  // Optional detail may be omitted only when the base is still informative.
+  if (detail && base.length + suffix.length <= MAX_TITLE) return `${base}${suffix}`;
+  // Prefer the complete, distinctive title to a branded but ambiguous fragment.
+  if (fullTitle.length <= MAX_TITLE) return fullTitle;
+  return clampStem(fullTitle, MAX_TITLE);
 }

@@ -558,7 +558,7 @@ function ArchivePage() {
           </section>
         )}
 
-        {years.length === 0 ? (
+        {archiveTotal === 0 ? (
           <section className="parchment-frame">
             <div className="parchment-panel text-center">
               <p className="font-serif text-xl sm:text-2xl text-primary">
@@ -569,7 +569,7 @@ function ArchivePage() {
               </p>
             </div>
           </section>
-        ) : filteredYears.length === 0 ? (
+        ) : totalPdfs === 0 ? (
           <section className="parchment-frame">
             <div className="parchment-panel text-center">
               <p className="font-serif text-xl sm:text-2xl text-primary">

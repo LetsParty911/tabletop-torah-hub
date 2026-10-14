@@ -61,7 +61,13 @@ export const Route = createFileRoute("/view/$id")({
       : null;
 
     const shareTitle = parshaLabel ? `${title} — ${parshaLabel}` : title;
-    const pageTitle = fitPageTitle(shareTitle);
+    // Lead search titles with the reading name so long series names cannot hide it.
+    const readingName = parshaLabel?.replace(/^Parshas\s+/i, "") ?? null;
+    const seoTitle =
+      readingName && !title.toLowerCase().includes(readingName.toLowerCase())
+        ? `${readingName}: ${title}`
+        : title;
+    const pageTitle = fitPageTitle(seoTitle);
 
     const clamp = (v: string) => {
       if (v.length <= 160) return v;
