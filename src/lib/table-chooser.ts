@@ -153,6 +153,37 @@ export function pickRecommendations<T extends ChooserResource>(
 }
 
 /**
+ * Three distinct, immediately useful options near the homepage hero.
+ * Uses published weekly resources supplied by the homepage loader and the
+ * same structured category membership as the full chooser.
+ * Missing categories are omitted rather than inventing a recommendation.
+ */
+export type StarterSelection<T extends ChooserResource> = {
+  key: "quick" | "kids" | "family";
+  label: string;
+  resource: T;
+};
+
+export function pickStarterSelections<T extends ChooserResource>(
+  resources: readonly T[],
+): StarterSelection<T>[] {
+  const choices = [
+    { key: "quick", label: "A Quick Vort" },
+    { key: "kids", label: "For Children" },
+    { key: "family", label: "Family Table" },
+  ] as const;
+  const used = new Set<string>();
+  const picks: StarterSelection<T>[] = [];
+  for (const { key, label } of choices) {
+    const resource = pickRecommendations(resources, key).find((r) => !used.has(r.id));
+    if (!resource) continue;
+    used.add(resource.id);
+    picks.push({ key, label, resource });
+  }
+  return picks;
+}
+
+/**
  * One concise, user-facing sentence explaining why this piece might suit the
  * table. Prefers real editorial copy before any generic fallback.
  */
