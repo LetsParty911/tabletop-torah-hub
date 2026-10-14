@@ -12,6 +12,6 @@ describe("blocked-city page", () => {
   it("keeps Irvington, Ashburn and Council Bluffs blocked", () => {
     const labels = BLOCKED_CITIES.map((c) => c.label);
     expect(labels).toEqual(expect.arrayContaining(["Irvington, NJ", "Ashburn, VA", "Council Bluffs, IA"]));
-    expect(BLOCKED_CITIES).toHaveLength(9);
+    expect(BLOCKED_CITIES).toHaveLength(10);
   });
 });
