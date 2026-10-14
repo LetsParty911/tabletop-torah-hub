@@ -62,7 +62,7 @@ export const Route = createFileRoute("/view/$id")({
 
     const shareTitle = parshaLabel ? `${title} — ${parshaLabel}` : title;
     // Lead search titles with the reading name so long series names cannot hide it.
-    const readingName = parshaLabel?.replace(/^Parshas\\s+/i, "") ?? null;
+    const readingName = parshaLabel?.replace(/^Parshas\s+/i, "") ?? null;
     const seoTitle =
       readingName && !title.toLowerCase().includes(readingName.toLowerCase())
         ? `${readingName}: ${title}`
