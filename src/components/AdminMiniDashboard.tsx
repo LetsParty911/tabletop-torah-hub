@@ -113,6 +113,7 @@ export default function AdminMiniDashboard({
       canonical &&
       !hasAdminMiniActivity({
         sessions: canonical.sessions,
+        rawSessions: canonical.rawSessions,
         openPdfClicks: canonical.openPdfClicks,
         countedPdfOpens: canonical.countedPdfOpens,
         downloadActions: canonical.downloadActions,
