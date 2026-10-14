@@ -4,6 +4,7 @@ import { adminVpnTracking, adminRetryVpnNotifications, adminTestVpnPushover } fr
 import { adminGetVpnMode, adminSetVpnMode } from "@/lib/vpn-mode.functions";
 import VpnSecurityPanel, { type VpnSecurity } from "./VpnSecurityPanel";
 import { formatUaSummary, parseUserAgent } from "@/lib/ua-parse";
+import { EVIDENCE_LABEL, type ReaderEvidence } from "@/lib/vpn-reader-evidence";
 
 type VpnRow = {
  id:string;created_at:string;ip_address:string|null;country:string|null;region:string|null;city:string|null;
@@ -11,7 +12,7 @@ type VpnRow = {
  utm_source:string|null;mode:string;decision:string;verdict:string;signals:string[];
  confidence:number|null;lookup_source:string;provider_status:string;lookup_ms:number|null;
  error_code:string|null;is_automated:boolean;
- detected_by?:string[]|null;provider_results?:Record<string,{ok?:boolean;status?:string;failure?:string|null}>|null;
+ detected_by?:string[]|null;evidence?:ReaderEvidence;provider_results?:Record<string,{ok?:boolean;status?:string;failure?:string|null}>|null;
 };
 type Security=VpnSecurity;
 type Summary = {total?:number;unique_ips?:number;blocked?:number;unique_blocked_ips?:number;detected?:number;clean?:number;unknown?:number;skipped?:number;vpn?:number;proxy?:number;tor?:number;provider_queries?:number;cache_hits?:number;by_country?:Array<{country:string;attempts:number;blocked:number}>};
@@ -45,8 +46,8 @@ export default function VpnTrackingSection({accessToken}:{accessToken:string|nul
  };
  const num=(n?:number)=>Number(n??0).toLocaleString();
  const cards=[["Checks",summary.total],["Unique IPs",summary.unique_ips],["Detected",summary.detected],["Denied",summary.blocked],["Clean",summary.clean],["Unknown",summary.unknown],["Skipped",summary.skipped],["API queries",summary.provider_queries],["Cached checks",summary.cache_hits]];
- const exportCsv=()=>{const headers=["Time","IP","City","Region","Country","Outcome","Verdict","Signals","Confidence","Source","Provider status","Latency ms","Path","Referrer host","UTM","Device","Automated","Operator","Error"];
- const values=rows.map(r=>[r.created_at,r.ip_address,r.city,r.region,r.country,r.decision,r.verdict,r.signals.join("+"),r.confidence,r.lookup_source,r.provider_status,r.lookup_ms,r.request_path,r.referrer_host,r.utm_source,r.user_agent,r.is_automated,r.vpn_operator,r.error_code]);
+ const exportCsv=()=>{const headers=["Time","IP","City","Region","Country","Outcome","Verdict","Signals","Confidence","Source","Provider status","Latency ms","Path","Referrer host","UTM","Device","Automated","Operator","Error","Reader evidence","Evidence event","Evidence time (ET)","Evidence reason"];
+ const values=rows.map(r=>[r.created_at,r.ip_address,r.city,r.region,r.country,r.decision,r.verdict,r.signals.join("+"),r.confidence,r.lookup_source,r.provider_status,r.lookup_ms,r.request_path,r.referrer_host,r.utm_source,r.user_agent,r.is_automated,r.vpn_operator,r.error_code,r.evidence?EVIDENCE_LABEL[r.evidence.status]:"Unverified",r.evidence?.event,r.evidence?.eventAt,r.evidence?.reason??"No evidence returned"]);
  const csv=[headers,...values].map(line=>line.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download="vpn-audit-visible-page.csv";a.click();URL.revokeObjectURL(a.href);};
  return <section className="rounded-lg border bg-card p-6 space-y-5">
@@ -63,14 +64,17 @@ export default function VpnTrackingSection({accessToken}:{accessToken:string|nul
    <label className="text-sm">IP <input className="ml-2 rounded border bg-background p-2" placeholder="Exact IP (optional)" value={ip} onChange={e=>{setIp(e.target.value);setPage(0)}} /></label>
   </div>
   {error&&<p className="text-sm text-destructive">{error}</p>}
+  <p className="text-xs text-muted-foreground"><strong>VPN result</strong> = network detection (IP reputation). <strong>Reader evidence</strong> = behaviour: "Likely Human" only when a human signal or deliberate action (e.g. Open PDF click, search) came from the same IP and user agent within ±30 min; "Suspected Automation" = automated user agent (not a confirmed bot); "Unverified" = no positive evidence (not a bot verdict).</p>
+  {rows.length>0&&<div className="text-xs text-muted-foreground">Reader evidence (visible page only, {rows.length} rows): {(["likely_human","unverified","suspected_automation"] as const).map(k=>`${EVIDENCE_LABEL[k]} ${rows.filter(r=>(r.evidence?.status??"unverified")===k).length}`).join(" · ")}</div>}
   <div className="text-sm text-muted-foreground">{loading?"Loading…":`${num(count)} matching checks, showing ${rows.length} (page ${page+1})`}</div>
   <div className="overflow-x-auto"><table className="w-full text-sm min-w-[1100px]">
-   <thead><tr className="border-b text-left text-muted-foreground">{["Time","IP","Location","Result","Signals / confidence","Lookup","Page / referrer","Device","Error"].map(x=><th key={x} className="py-2 px-2">{x}</th>)}</tr></thead>
+   <thead><tr className="border-b text-left text-muted-foreground">{["Time","IP","Location","Result","Reader evidence","Signals / confidence","Lookup","Page / referrer","Device","Error"].map(x=><th key={x} className="py-2 px-2">{x}</th>)}</tr></thead>
    <tbody>{rows.map(r=><tr key={r.id} className="border-b align-top">
     <td className="py-2 px-2 whitespace-nowrap">{new Date(r.created_at).toLocaleString()}</td>
     <td className="py-2 px-2 font-mono text-xs">{r.ip_address??"—"}</td>
     <td className="py-2 px-2">{[r.city,r.region,r.country].filter(Boolean).join(", ")||"—"}</td>
     <td className="py-2 px-2"><strong>{r.decision}</strong><div className="text-xs">{r.verdict} ({r.mode})</div></td>
+    <td className="py-2 px-2 max-w-[220px]" title={r.evidence?.reason}><strong>{EVIDENCE_LABEL[r.evidence?.status??"unverified"]}</strong><div className="text-xs text-muted-foreground">{r.evidence?.event?`${r.evidence.event} · ${r.evidence.eventAt}`:(r.evidence?.reason??"No evidence returned")}</div></td>
     <td className="py-2 px-2">{r.signals.join("+")||"—"}{r.detected_by?.length?<div className="text-xs font-medium">By: {r.detected_by.join(", ")}</div>:null}<div className="text-xs">Confidence: {r.confidence??"Unknown"}</div><div className="text-xs">{r.vpn_operator??""}</div></td>
     <td className="py-2 px-2">{r.lookup_source}<div className="text-xs">{r.provider_status}, {r.lookup_ms??"—"}ms</div></td>
     <td className="py-2 px-2 max-w-[270px] break-all">{r.request_path}<div className="text-xs">{r.referrer_host??"—"}</div></td>
