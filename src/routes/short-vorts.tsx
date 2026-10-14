@@ -178,7 +178,7 @@ function ParshaSection({
       </h2>
       {open && (
         <div id={`${id}-panel`} className="px-4 pb-5">
-          {!isYomTovReading(emptyLabel ?? heading) && (
+          {(vorts.length > 0 || !!publishedPdf) && !isYomTovReading(emptyLabel ?? heading) && (
             <div className="mb-4 text-center">
               <Link
                 to="/parsha/$slug"
@@ -228,13 +228,14 @@ function ParshaSection({
             <div className="parchment-frame">
               <div className="parchment-panel text-center">
                 <p className="text-sm text-muted-foreground">
-                  {`Original ${emptyLabel ?? heading} Brief Insights are being prepared. In the meantime, browse the full ${emptyLabel ?? heading} collection.`}
+                  New Brief Insights for {emptyLabel ?? heading} are being prepared. In the meantime, explore previously published Brief Insights that are ready to read or print.
                 </p>
                 <Link
-                  to="/"
+                  to="/archive"
+                  search={{ type: "Brief Insights" }}
                   className="mt-4 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                 >
-                  Browse the {emptyLabel ?? "current"} collection
+                  Browse available Brief Insights
                 </Link>
               </div>
             </div>
