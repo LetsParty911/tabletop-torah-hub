@@ -7,6 +7,7 @@ import {
   classifySession,
   emptyConfidenceCounts,
   isInfrastructureOrganization,
+  isDedicatedHostingOrganization,
   type ConfidenceCounts,
   type TrafficConfidence,
 } from "./traffic-confidence";
@@ -235,6 +236,7 @@ export function classifySessions(rows: SessionEventRow[]): SessionClassification
       internal: session.internalTestTraffic,
       flaggedAutomation: ruleFlagged.has(session.id),
       infrastructureNetwork: isInfrastructureOrganization(session.asOrganization),
+      dedicatedHostingNetwork: isDedicatedHostingOrganization(session.asOrganization),
       humanSignal: session.humanSignal,
       meaningfulIntent: session.meaningfulIntent,
       pageviews: session.pageviews,

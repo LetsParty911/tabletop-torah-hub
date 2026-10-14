@@ -89,6 +89,11 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
               Suspected ({visitor.suspectedSessions})
             </span>
           )}
+          {visitor.unverifiedSessions > 0 && (
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+              Unverified ({visitor.unverifiedSessions})
+            </span>
+          )}
           {visitor.signups > 0 && (
             <span className="rounded bg-accent/20 px-1.5 py-0.5 text-[11px] text-foreground">
               Signed up
@@ -405,12 +410,15 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
                       {timeLabel(s.startedAt)} → {clockLabel(s.endedAt)}
                     </span>
                     <span className="text-muted-foreground">{s.pageviews} pageviews</span>
-                    {s.suspected && (
-                      <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-destructive">
-                        Suspected
-                      </span>
-                    )}
+                    <span className={s.suspected
+                      ? "rounded bg-destructive/10 px-1.5 py-0.5 text-destructive"
+                      : "rounded bg-muted px-1.5 py-0.5 text-muted-foreground"}>
+                      {s.confidenceLabel}
+                    </span>
                   </div>
+                  {s.reviewReason && (
+                    <p className="mt-1.5 text-xs text-muted-foreground">{s.reviewReason}</p>
+                  )}
                   <ul className="mt-1.5 space-y-0.5 text-xs text-foreground/85">
                     {s.timeline.map((e, i) => (
                       <li key={`${e.at}-${i}`}>
@@ -477,8 +485,9 @@ export default function VisitorActivitySection({ accessToken, embedded = false }
           </Button>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          Individual visitor sessions for investigating traffic. Suspected automated sessions are
-          labelled, not hidden.
+          Raw visitor sessions for investigating traffic. Suspected automation and unverified
+          hosting traffic are labelled, not hidden. Only high-confidence or likely-human sessions
+          count in the separate headline reader metrics.
         </p>
 
         <div className="mt-3 flex flex-wrap gap-1">
@@ -497,14 +506,15 @@ export default function VisitorActivitySection({ accessToken, embedded = false }
         {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
 
         {totals && (
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-            <Stat label="Visitors" value={totals.visitors} />
-            <Stat label="Sessions" value={totals.sessions} />
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
+            <Stat label="Raw visitors" value={totals.visitors} />
+            <Stat label="Raw sessions" value={totals.sessions} />
             <Stat label="Pageviews" value={totals.pageviews} />
             <Stat label="PDF opens" value={totals.pdfOpens} />
             <Stat label="PDF-access actions (raw)" value={totals.pdfAccessActionsRaw} />
             <Stat label="Signups" value={totals.signups} />
             <Stat label="Suspected" value={totals.suspectedSessions} />
+            <Stat label="Unverified" value={totals.unverifiedSessions} />
           </div>
         )}
 
