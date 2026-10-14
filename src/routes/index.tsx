@@ -39,7 +39,7 @@ import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { TableChooser } from "@/components/TableChooser";
 import { MobileCollectionControlsBar } from "@/components/MobileCollectionControlsBar";
-import { CHOOSERS, chooseReason, pickRecommendations, type ChooserKey } from "@/lib/table-chooser";
+import { CHOOSERS, chooseReason, pickRecommendations, pickStarterSelections, type ChooserKey } from "@/lib/table-chooser";
 
 type Resource = {
   id: string;
@@ -354,6 +354,7 @@ function Index() {
   const [mobileQuickChoice, setMobileQuickChoice] = useState<ChooserKey | null>(null);
 
   const sortedResources = resources;
+  const starterSelections = pickStarterSelections(sortedResources);
   usePrewarmDownloads(sortedResources.map((r) => r.id));
 
 
@@ -655,6 +656,47 @@ function Index() {
             )}
           </div>
         </section>
+
+        {starterSelections.length > 0 && !isCurrentYomKippur && (
+          <section aria-labelledby="starter-selections-heading" className="rounded-2xl border border-accent/40 bg-card/50 px-4 py-5 sm:px-6">
+            <h2 id="starter-selections-heading" className="font-serif text-xl font-bold text-primary sm:text-2xl">
+              Start here — ready to read or print
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {isFallback ? `While new ${currentLabel} selections are being prepared, enjoy these ${displayedLabel} Divrei Torah.` : `A few useful choices from our ${displayedLabel} collection.`}
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {starterSelections.map(({ key, label, resource: r }) => (
+                <article key={r.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{label}</p>
+                  <h3 className="mt-2 font-serif text-base font-bold leading-snug text-primary">
+                    <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline">
+                      {displayTitle(r)}
+                    </Link>
+                  </h3>
+                  <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
+                    {standardizeCopy(chooseReason(r))}
+                  </p>
+                  <div className="mt-auto pt-4">
+                    <DownloadAndPrintButtons
+                      href={`/view/${r.id}/pdf`}
+                      publicationId={r.id}
+                      publicationName={displayPublicationName(r)}
+                      publicationTitle={r.title}
+                      publisher={r.publisher}
+                      publicationSeries={r.publication}
+                      parsha={r.parsha_key ?? displayedParshaKey}
+                      className="w-full px-3 py-2.5 text-sm"
+                    />
+                  </div>
+                </article>
+              ))}
+            </div>
+            <a href="#this-weeks-collection" className="mt-4 inline-block text-sm font-semibold text-primary underline underline-offset-4 hover:text-accent">
+              Browse the complete collection
+            </a>
+          </section>
+        )}
 
         {resources.length > 0 && (
           <section aria-labelledby="mobile-quick-choices" className="sm:hidden">
