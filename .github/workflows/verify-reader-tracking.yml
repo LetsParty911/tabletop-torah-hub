@@ -10,6 +10,9 @@ on:
       - "src/routes/view.*.pdf.tsx"
       - "src/integrations/supabase/admin-analytics-canonical.ts"
       - "src/components/admin/OwnerSummary.tsx"
+      - "src/components/AdminMiniDashboard.tsx"
+      - "src/lib/admin-mini-summary*"
+      - "src/lib/human-sessions*"
       - ".github/workflows/verify-reader-tracking.yml"
 
 permissions:
@@ -23,6 +26,6 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - name: Run tracking regressions
-        run: bun test src/lib/weekly-reader-loyalty.test.ts src/lib/wa-redirect.test.ts src/lib/retention-cohorts.test.ts src/lib/human-sessions.test.ts src/integrations/supabase/admin-analytics-canonical.test.ts
+        run: bun test src/lib/weekly-reader-loyalty.test.ts src/lib/wa-redirect.test.ts src/lib/retention-cohorts.test.ts src/lib/human-sessions.test.ts src/lib/admin-mini-summary.test.ts src/integrations/supabase/admin-analytics-canonical.test.ts
       - name: Build application
         run: bun run build
