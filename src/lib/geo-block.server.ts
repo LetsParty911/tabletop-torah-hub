@@ -42,7 +42,23 @@ export const BLOCKED_CITIES: BlockedCity[] = [
   { city: "carnegie", regions: ["oklahoma", "ok"], country: "us", label: "Carnegie, OK" },
   { city: "blackburn", regions: ["england"], country: "gb", label: "Blackburn, England" },
   { city: "the dalles", regions: ["oregon", "or"], country: "us", label: "The Dalles, OR" },
+  { city: "fulton", regions: ["kentucky", "ky"], country: "us", label: "Fulton, KY" },
 ];
+
+/** Exact single-IP denials (owner-authorized). Checked before any geo lookup. */
+export const BLOCKED_IPS: ReadonlySet<string> = new Set(["12.75.139.6"]);
+
+export function isBlockedIp(ip: string | null | undefined): boolean {
+  return !!ip && BLOCKED_IPS.has(ip.trim());
+}
+
+/** Paths an exact-blocked IP may still reach: admin pages and server functions (admin controls/login). */
+export function shouldCheckBlockedIp(path: string): boolean {
+  if (isAdminPath(path)) return false;
+  if (path.startsWith("/_serverFn")) return false;
+  if (path.startsWith("/assets/") || path.startsWith("/@") || path.startsWith("/node_modules/") || path.startsWith("/src/")) return false;
+  return true;
+}
 
 const norm = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
 
@@ -108,6 +124,30 @@ export async function checkGeoBlock(request: Request): Promise<Response | null> 
   try {
     const url = new URL(request.url);
     path = url.pathname;
+
+    // Exact-IP denial: precedes the geo lookup, so it applies even if lookups time out.
+    const ipEarly = getRequestTelemetry(request).ipAddress;
+    if (isBlockedIp(ipEarly) && shouldCheckBlockedIp(path)) {
+      const { isInternalRequest } = await import("./internal-marker.server");
+      if (!(await isInternalRequest(request))) {
+        try {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          await supabaseAdmin.from("blocked_visits").insert({
+            ip_address: ipEarly,
+            path: (path + url.search).slice(0, 500),
+            referrer: request.headers.get("referer")?.slice(0, 500) ?? null,
+            user_agent: request.headers.get("user-agent") || null,
+            blocked: true,
+            block_reason: "exact IP rule",
+            action: BLOCK_ACTION,
+          });
+        } catch (e) {
+          console.error("[geo-block] ip log failed", e);
+        }
+        return blockedResponse();
+      }
+    }
+
     if (!shouldCheck(request, path)) return null;
 
     // The owner's admin-marked device (signed HttpOnly cookie) is never blocked.
