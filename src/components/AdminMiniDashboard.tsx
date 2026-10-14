@@ -113,6 +113,7 @@ export default function AdminMiniDashboard({
       canonical &&
       !hasAdminMiniActivity({
         sessions: canonical.sessions,
+        rawSessions: canonical.rawSessions,
         openPdfClicks: canonical.openPdfClicks,
         countedPdfOpens: canonical.countedPdfOpens,
         downloadActions: canonical.downloadActions,
@@ -153,8 +154,8 @@ export default function AdminMiniDashboard({
           {canonical && canonical.filteredUncertainSessions > 0 && (
             <p className="mt-2 text-sm text-foreground">
               <b>{canonical.filteredUncertainSessions}</b> unconfirmed{" "}
-              {canonical.filteredUncertainSessions === 1 ? "visit" : "visits"} recorded (page loaded, no
-              interaction yet) — saved, but not counted as readers above.
+              {canonical.filteredUncertainSessions === 1 ? "session" : "sessions"} recorded, but not
+              reader-qualified under the dashboard rules. These remain saved for review.
             </p>
           )}
           {canonical && canonical.filteredInternalSessions > 0 && (
@@ -172,16 +173,41 @@ export default function AdminMiniDashboard({
         {data && !nothingNew && (
           <div className="mt-6 grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-2">
             {canonical && (
-              <Tile label="Audience since last visit" quiet={canonical.sessions === 0}>
-                {canonical.sessions === 0 ? (
-                  <Quiet>No visitor sessions</Quiet>
+              <Tile label="Audience since last visit" quiet={canonical.rawSessions === 0}>
+                {canonical.rawSessions === 0 ? (
+                  <Quiet>No recorded sessions</Quiet>
                 ) : (
                   <>
-                    <BigNumber>{canonical.uniqueVisitors}</BigNumber>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div>
+                        <p className="font-serif text-3xl font-bold text-primary sm:text-4xl">
+                          {canonical.rawSessions}
+                        </p>
+                        <p className="mt-2 text-xs text-muted-foreground">Recorded sessions</p>
+                      </div>
+                      <div>
+                        <p className="font-serif text-3xl font-bold text-primary sm:text-4xl">
+                          {canonical.sessions}
+                        </p>
+                        <p className="mt-2 text-xs text-muted-foreground">Qualified reader sessions</p>
+                      </div>
+                      <div>
+                        <p className="font-serif text-3xl font-bold text-primary sm:text-4xl">
+                          {canonical.filteredUncertainSessions}
+                        </p>
+                        <p className="mt-2 text-xs text-muted-foreground">Unconfirmed sessions</p>
+                      </div>
+                    </div>
                     <p className="mt-3 text-sm">
-                      unique visitors · {canonical.sessions} sessions · {canonical.engagedSessions}{" "}
-                      engaged
+                      {canonical.uniqueVisitors} unique visitor IDs in qualified sessions ·{" "}
+                      {canonical.engagedSessions} engaged sessions
                     </p>
+                    {(canonical.filteredAutomationSessions > 0 || canonical.filteredInternalSessions > 0) && (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Also excluded: {canonical.filteredAutomationSessions} suspected automated and{" "}
+                        {canonical.filteredInternalSessions} internal/test sessions.
+                      </p>
+                    )}
                   </>
                 )}
               </Tile>
