@@ -28,7 +28,7 @@ function plainText(report: AnyReport): string {
     "",
     `People: ${m.people}`,
     `Used Torah: ${m.usedTorah}`,
-    `Counted PDF opens: ${m.countedPdfOpens} (human only, max ${m.pdfAccessCap} per visitor; ${m.pdfAccessRaw} raw)`,
+    `Counted PDF opens: ${m.countedPdfOpens} (human-qualified, no per-visitor cap; ${m.pdfAccessRaw} raw)`,
     `Automatic previews (not counted): ${m.pdfOpens}`,
     `Historical download actions (audit, already inside counted opens): ${m.downloads}`,
     `Returning readers: ${m.returningReaders}`,
