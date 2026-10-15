@@ -230,8 +230,7 @@ export default function AdminMiniDashboard({
                     {" · "}{canonical.countedPdfOpenVisitors} {canonical.countedPdfOpenVisitors === 1 ? "visitor" : "visitors"}
                   </p>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Human only, max {canonical.pdfAccessCap} per visitor · {canonical.openPdfClicks} Open PDF clicks before the cap
-                    {canonical.pdfAccessOverCap > 0 ? ` · ${canonical.pdfAccessOverCap} over cap` : ""}
+                    Human-qualified, unlimited per visitor · {canonical.openPdfClicks} Open PDF clicks
                     {canonical.downloadActions > 0 ? ` · ${canonical.downloadActions} historical download actions (included)` : ""}
                   </p>
                 </>
