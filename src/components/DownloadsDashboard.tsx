@@ -107,7 +107,7 @@ export default function DownloadsDashboard({ accessToken }: { accessToken: strin
         <h2 className="font-serif text-2xl font-bold text-primary">Raw download-action audit</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           This section shows legacy/raw download events. One person or session can create multiple
-          actions; use the canonical funnel above for conversion.
+          actions; use the canonical report for conversion. These are requests, not completed transfers or printing. All-time/7-day/30-day figures and rows are legacy/raw; today (ET) reads the canonical action view, so these figures must not be added together.
         </p>
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

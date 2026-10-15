@@ -35,7 +35,7 @@ export function Kpi({ label, value, note }: { label: string; value: string | num
 export function ownerSentence(data: ReportData) {
   const h = data.report.overview.headline;
   const conv = shouldShowRate(h.sessions) ? `${Math.round((h.pdfOpenSessions / h.sessions) * 100)}% of visits` : `${h.pdfOpenSessions} of ${h.sessions} visits`;
-  return `${data.rangeLabel}: ${h.visitors} human visitors made ${h.sessions} visits and viewed ${h.pageviews} pages. ${conv} opened a PDF (${h.countedPdfOpens} counted PDF opens, no per-visitor maximum). ${h.returningVisitors} visitors were returning.`;
+  return `${data.rangeLabel}: ${h.visitors} human visitors made ${h.sessions} visits and viewed ${h.pageviews} pages. ${conv} requested a PDF (${h.countedPdfOpens} counted PDF attempted opens, no per-visitor maximum). ${h.returningVisitors} visitors were returning.`;
 }
 
 export function KpiRow({ data }: { data: ReportData }) {
@@ -45,8 +45,8 @@ export function KpiRow({ data }: { data: ReportData }) {
     <Kpi label="Human visitors" value={h.visitors} note={delta(h.visitors, p?.visitors)} />
     <Kpi label="Visits" value={h.sessions} note={delta(h.sessions, p?.sessions)} />
     <Kpi label="Pageviews" value={h.pageviews} note={delta(h.pageviews, p?.pageviews)} />
-    <Kpi label="Counted PDF opens" value={h.countedPdfOpens} note={delta(h.countedPdfOpens, p?.countedPdfOpens)} />
-    <Kpi label="PDF-open rate" value={formatCountRate(h.pdfOpenSessions, h.sessions).split(" · ")[0]!} note="visits with a counted open" />
+    <Kpi label="Counted PDF attempted opens" value={h.countedPdfOpens} note={delta(h.countedPdfOpens, p?.countedPdfOpens)} />
+    <Kpi label="PDF attempted-open rate" value={formatCountRate(h.pdfOpenSessions, h.sessions).split(" · ")[0]!} note="visits with an attempted open, not confirmed transfer" />
     <Kpi label="Avg engaged time" value={secs(h.averageEngagedSeconds)} note={`median ${secs(h.medianEngagedSeconds)}`} />
     <Kpi label="New / returning" value={`${h.newVisitors} / ${h.returningVisitors}`} />
     <Kpi label="Active now" value={data.report.overview.recency.activeLast5Min} note={`${data.report.overview.recency.activeLast30Min} in last 30 min`} />
@@ -60,7 +60,7 @@ function RecentVisitors({ data }: { data: ReportData }) {
     <p className="text-xs text-muted-foreground">Most recent human visits (bots, internal devices and blocked visits never appear here). Locations are approximate network locations. Time is ET.</p>
     {rows.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No human visits in this period.</p> :
       <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[760px] text-left text-xs">
-        <thead className="text-muted-foreground"><tr><th className="py-1 pr-2">Started</th><th className="pr-2">Location</th><th className="pr-2">Visitor</th><th className="pr-2">Device</th><th className="pr-2">Source</th><th className="pr-2">Span</th><th className="pr-2">Last</th><th className="pr-2">Pages</th><th className="pr-2" title="Counted PDF opens">PDF</th><th>Scroll</th></tr></thead>
+        <thead className="text-muted-foreground"><tr><th className="py-1 pr-2">Started</th><th className="pr-2">Location</th><th className="pr-2">Visitor</th><th className="pr-2">Device</th><th className="pr-2">Source</th><th className="pr-2">Span</th><th className="pr-2">Last</th><th className="pr-2">Pages</th><th className="pr-2" title="Counted PDF attempted opens">PDF</th><th>Scroll</th></tr></thead>
         <tbody className="divide-y divide-border">{rows.map((j) => <tr key={j.sessionId}>
           <td className="py-1 pr-2 whitespace-nowrap">{etTime(j.startedAt)}</td>
           <td className="pr-2">{j.location}</td>
@@ -118,9 +118,9 @@ export default function AnalyticsControlCenter({ data, accessToken }: { data: Re
     <RecentVisitors data={data} />
     <section>
       <h3 className="font-serif text-lg font-semibold text-primary">Publications</h3>
-      <p className="text-xs text-muted-foreground">Ranked by counted PDF opens (human-qualified, no per-visitor limit).</p>
-      {pubs.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No counted PDF opens.</p> :
-        <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[560px] text-left text-xs"><thead className="text-muted-foreground"><tr><th className="py-1">Publication</th><th>Series</th><th>Parsha</th><th>Counted opens</th><th>Visitors</th><th>Top source</th></tr></thead>
+      <p className="text-xs text-muted-foreground">Ranked by counted PDF attempted opens (human-qualified, no per-visitor limit).</p>
+      {pubs.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No counted PDF attempted opens.</p> :
+        <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[560px] text-left text-xs"><thead className="text-muted-foreground"><tr><th className="py-1">Publication</th><th>Series</th><th>Parsha</th><th>Attempted opens</th><th>Visitors</th><th>Top source</th></tr></thead>
           <tbody className="divide-y divide-border">{pubs.map((p) => <tr key={p.publicationId}><td className="py-1 pr-2">{p.title}</td><td>{p.series ?? "—"}</td><td>{p.parsha ?? "—"}</td><td>{p.opens}</td><td>{p.uniqueVisitors}</td><td>{p.topSource ?? "—"}</td></tr>)}</tbody></table></div>}
     </section>
     <section>

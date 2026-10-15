@@ -28,18 +28,20 @@ function plainText(report: AnyReport): string {
     "",
     `People: ${m.people}`,
     `Used Torah: ${m.usedTorah}`,
-    `Counted PDF opens: ${m.countedPdfOpens} (human-qualified, no per-visitor cap; ${m.pdfAccessRaw} raw)`,
-    `Automatic previews (not counted): ${m.pdfOpens}`,
-    `Historical download actions (audit, already inside counted opens): ${m.downloads}`,
+    `Counted PDF attempted opens: ${m.countedPdfOpens} (human-qualified, no per-visitor cap; ${m.pdfAccessRaw} raw)`,
+    `PDF viewer loads (automatic) (not counted): ${m.pdfOpens}`,
+    `Historical download actions (audit, already inside counted attempted opens): ${m.downloads}`,
     `Returning readers: ${m.returningReaders}`,
     `Signups: ${m.signups}`,
     "",
+    "Attempted opens are not confirmed downloads or reading. File transfers and printing are not measured; paired redirects do not add a second action.",
+    "Used Torah: distinct qualified visitor IDs with an Open PDF click, viewer load, download request/served redirect, share or signup.",
   ];
   if (report.pdfAccessPublications.length) {
-    lines.push("Top publications by counted PDF opens:");
+    lines.push("Top publications by counted PDF attempted opens:");
     for (const publication of report.pdfAccessPublications.slice(0, 5)) {
       lines.push(
-        `- ${publication.title}: ${publication.opens} counted opens, ${publication.uniqueVisitors} visitors, top source ${publication.topSource ?? "—"}`,
+        `- ${publication.title}: ${publication.opens} counted attempted opens, ${publication.uniqueVisitors} visitors, top source ${publication.topSource ?? "—"}`,
       );
     }
     lines.push("");
@@ -60,7 +62,7 @@ function plainText(report: AnyReport): string {
   if (report.comparisonMetrics) {
     lines.push("", `Compared with ${report.comparisonLabel}:`);
     lines.push(
-      `People ${report.comparisonMetrics.people} → ${m.people}; counted PDF opens ${report.comparisonMetrics.countedPdfOpens} → ${m.countedPdfOpens}`,
+      `People ${report.comparisonMetrics.people} → ${m.people}; counted PDF attempted opens ${report.comparisonMetrics.countedPdfOpens} → ${m.countedPdfOpens}`,
     );
   }
   if (report.changes.length) lines.push("", "What changed:", ...report.changes.map((change) => `- ${change}`));
@@ -93,12 +95,12 @@ function ReportBody({ report }: { report: AnyReport }) {
 
       {quiet ? (
         <p className="text-sm text-foreground">
-          This period was quiet: no recorded visitors or PDF opens.
+          This period was quiet: no qualified visitors, attempted PDF opens or PDF viewer loads.
         </p>
       ) : (
         <p className="font-serif text-lg leading-relaxed text-foreground">
           {m.people} {m.people === 1 ? "person" : "people"} visited, {m.usedTorah} used Torah,{" "}
-          {m.countedPdfOpens} counted PDF opens.
+          {m.countedPdfOpens} counted PDF attempted opens.
         </p>
       )}
 
@@ -106,26 +108,26 @@ function ReportBody({ report }: { report: AnyReport }) {
         items={[
           line("People", m.people),
           line("Used Torah", m.usedTorah),
-          line("Counted PDF opens", m.countedPdfOpens),
-          line("Visitors who opened", m.countedPdfOpenVisitors),
+          line("Counted PDF attempted opens", m.countedPdfOpens),
+          line("Visitors with attempted opens", m.countedPdfOpenVisitors),
           line("Returning", m.returningReaders),
           line("Signups", m.signups),
         ]}
       />
 
       <p className="text-xs text-muted-foreground">
-        {m.pdfAccessRaw} raw PDF-access actions; {m.pdfAccessExcludedNonHuman} excluded by the human filter and {m.pdfAccessExcludedNoVisitorId} without a visitor ID. Automatic previews ({m.pdfOpens}) and historical download actions ({m.downloads}) are shown for audit only.
+        {m.pdfAccessRaw} raw PDF-access actions; {m.pdfAccessExcludedNonHuman} excluded by the human filter and {m.pdfAccessExcludedNoVisitorId} without a visitor ID. PDF viewer loads (automatic) ({m.pdfOpens}) and historical download actions ({m.downloads}) are shown for audit only.
       </p>
 
       {report.pdfAccessPublications.length > 0 && (
         <section>
-          <h4 className="font-serif text-base font-semibold text-primary">Top publications by counted PDF opens</h4>
+          <h4 className="font-serif text-base font-semibold text-primary">Top publications by counted PDF attempted opens</h4>
           <ul className="mt-2 divide-y divide-border text-sm">
             {report.pdfAccessPublications.map((publication) => (
               <li key={publication.publicationId} className="py-2">
                 <span className="font-medium">{publication.title}</span>
                 <span className="block text-xs text-muted-foreground">
-                  {publication.opens} counted opens · {publication.uniqueVisitors} visitors
+                  {publication.opens} counted attempted opens · {publication.uniqueVisitors} visitors
                   {publication.series ? ` · ${publication.series}` : ""}
                   {publication.parsha ? ` · ${publication.parsha}` : ""} · top source {publication.topSource ?? "—"}
                 </span>
@@ -134,6 +136,8 @@ function ReportBody({ report }: { report: AnyReport }) {
           </ul>
         </section>
       )}
+
+      <p className="text-xs text-muted-foreground">Attempted opens are not confirmed downloads or reading. Historical download actions are included once; paired redirects never add a second action. Completed file transfers and printing are not measured. Used Torah counts distinct qualified visitor IDs with an Open PDF click, viewer load, download request/served redirect, share or signup.</p>
 
       <section className="grid gap-6 sm:grid-cols-3">
         <div>
@@ -208,7 +212,7 @@ function ReportBody({ report }: { report: AnyReport }) {
           <h4 className="font-serif text-base font-semibold text-primary">Compared with {report.comparisonLabel}</h4>
           <p className="mt-1 text-sm text-muted-foreground">
             People {report.comparisonMetrics.people} → {m.people} · Used Torah{" "}
-            {report.comparisonMetrics.usedTorah} → {m.usedTorah} · Counted PDF opens{" "}
+            {report.comparisonMetrics.usedTorah} → {m.usedTorah} · Counted PDF attempted opens{" "}
             {report.comparisonMetrics.countedPdfOpens} → {m.countedPdfOpens}
           </p>
         </section>

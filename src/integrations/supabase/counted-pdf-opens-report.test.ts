@@ -20,7 +20,7 @@ const ev = (o: Partial<EventRow> = {}): EventRow => ({
 });
 const win = { start: "2026-10-08T00:00:00Z", end: "2026-10-09T00:00:00Z" };
 
-describe("Counted PDF opens wired into canonical reports", () => {
+describe("Counted PDF attempted opens wired into canonical reports", () => {
   it("counts every action across sessions and retains raw audit", () => {
     n = 0;
     const rows = [
@@ -51,7 +51,7 @@ describe("Counted PDF opens wired into canonical reports", () => {
     expect(since.pdfOpenRate).toBe(1);
   });
 
-  it("never counts automatic previews; pairs download + served once; dedups retries", () => {
+  it("never counts PDF viewer loads (automatic); pairs download + served once; dedups retries", () => {
     n = 0;
     const dl = ev({ event_name: "download", metadata: { action_id: "a1" }, publication_id: "p" });
     const rows = [
@@ -74,7 +74,7 @@ describe("Counted PDF opens wired into canonical reports", () => {
     expect(r.metrics.pdfAccessExcludedNonHuman).toBe(1);
   });
 
-  it("selected-period comparison uses counted opens, and observations cite them", () => {
+  it("selected-period comparison uses counted attempted opens, and observations cite them", () => {
     n = 0;
     const cur = buildAnalyticsReport([ev(), ev()], new Set(), win);
     const prev = buildAnalyticsReport([ev()], new Set(), win);
@@ -83,6 +83,6 @@ describe("Counted PDF opens wired into canonical reports", () => {
       people: 1, usedTorah: 1, pdfOpens: 0, countedPdfOpens: cur.metrics.countedPdfOpens, signups: 0, returningReaders: 0,
       topPublication: null, topSourcePdfOpens: cur.pdfAccess.bySource[0]!, searchesWithoutContent: 0, searchesTotal: 0, suspectedSessions: 0,
     });
-    expect(notes[0]).toBe("WhatsApp produced 2 of 2 counted PDF opens.");
+    expect(notes[0]).toBe("WhatsApp produced 2 of 2 counted PDF attempted opens.");
   });
 });

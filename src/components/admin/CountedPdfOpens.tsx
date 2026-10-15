@@ -13,7 +13,7 @@ export function pdfAccessAuditLine(m: ReportData["report"]["metrics"]): string {
 }
 
 export function countedPdfOpensCsv(data: ReportData): string {
-  const header = ["publication_id", "title", "series", "parsha", "counted_pdf_opens", "unique_visitors", "top_source", "last_at_utc"];
+  const header = ["publication_id", "title", "series", "parsha", "counted_pdf_attempted_opens", "unique_visitors", "top_source", "last_at_utc"];
   const lines = data.report.pdfAccess.byPublication.map((p) =>
     [p.publicationId, p.title, p.series, p.parsha, p.opens, p.uniqueVisitors, p.topSource, p.lastAt].map(csvCell).join(","),
   );
@@ -30,31 +30,31 @@ function downloadCsv(data: ReportData) {
   URL.revokeObjectURL(url);
 }
 
-/** Ranked publications by counted PDF opens, plus filter audit and historical downloads. */
+/** Ranked publications by counted PDF attempted opens, plus filter audit and historical downloads. */
 export default function CountedPdfOpens({ data, showRanking = true }: { data: ReportData; showRanking?: boolean }) {
   const m = data.report.metrics;
   const access = data.report.pdfAccess;
   return (
     <section className="space-y-4">
       <div>
-        <h3 className="font-serif text-lg font-semibold text-primary">Counted PDF opens</h3>
+        <h3 className="font-serif text-lg font-semibold text-primary">Counted PDF attempted opens</h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          Deliberate Open PDF clicks plus historical download actions, from likely-human visitors only, with no per-visitor action limit across visits and PDFs. Attempted opens — not proof the file loaded or was read. Automatic previews ({access.automaticPreviews}) are never counted.
+          Deliberate Open PDF clicks plus historical download actions, from likely-human visitors only, with no per-visitor action limit across visits and PDFs. Attempted opens — not proof the file loaded or was read. PDF viewer loads (automatic) ({access.automaticPreviews}) are never counted.
         </p>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Fig label="Counted PDF opens" value={m.countedPdfOpens} />
-        <Fig label="Visitors who opened" value={m.countedPdfOpenVisitors} />
-        <Fig label="Distinct PDFs" value={m.countedUniquePdfs} />
-        <Fig label="PDF-open rate" value={m.sessions > 0 ? pct(m.pdfOpenRate) : "—"} note={`${m.countedPdfOpenSessions} of ${m.sessions} visits`} />
+        <Fig label="Counted PDF attempted opens" value={m.countedPdfOpens} />
+        <Fig label="Visitors with attempted opens" value={m.countedPdfOpenVisitors} />
+        <Fig label="Distinct PDFs requested" value={m.countedUniquePdfs} />
+        <Fig label="PDF attempted-open rate" value={m.sessions > 0 ? pct(m.pdfOpenRate) : "—"} note={`${m.countedPdfOpenSessions} of ${m.sessions} visits`} />
       </div>
       <p className="text-xs text-muted-foreground">{pdfAccessAuditLine(m)}{m.pdfAccessMissingPublicationId > 0 ? ` ${m.pdfAccessMissingPublicationId} counted actions have no publication ID and are excluded from the ranking.` : ""}</p>
       {showRanking && (access.byPublication.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No counted PDF opens in this period.</p>
+        <p className="text-sm text-muted-foreground">No counted PDF attempted opens in this period.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-left text-xs">
-            <thead className="text-muted-foreground"><tr><th className="py-1 pr-2">Publication</th><th className="pr-2">Series</th><th className="pr-2">Parsha</th><th className="pr-2">Counted opens</th><th className="pr-2">Visitors</th><th>Top source</th></tr></thead>
+            <thead className="text-muted-foreground"><tr><th className="py-1 pr-2">Publication</th><th className="pr-2">Series</th><th className="pr-2">Parsha</th><th className="pr-2">Attempted opens</th><th className="pr-2">Visitors</th><th>Top source</th></tr></thead>
             <tbody className="divide-y divide-border">
               {access.byPublication.map((p) => (
                 <tr key={p.publicationId}><td className="py-1 pr-2">{p.title}</td><td className="pr-2">{p.series ?? "—"}</td><td className="pr-2">{p.parsha ?? "—"}</td><td className="pr-2 font-semibold">{p.opens}</td><td className="pr-2">{p.uniqueVisitors}</td><td>{p.topSource ?? "—"}</td></tr>
@@ -70,7 +70,7 @@ export default function CountedPdfOpens({ data, showRanking = true }: { data: Re
         {showRanking && access.byPublication.length > 0 && (
           <button type="button" className="underline" onClick={() => downloadCsv(data)}>Export CSV</button>
         )}
-        <span className="text-muted-foreground">Historical audit (not a headline): {m.downloads} download actions, {m.downloadsServed} served redirects.</span>
+        <span className="text-muted-foreground">Historical audit (not a headline): {m.downloads} download actions, {m.downloadsServed} historical PDF redirects issued (not confirmed downloads).</span>
       </div>
     </section>
   );

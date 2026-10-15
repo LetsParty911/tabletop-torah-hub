@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { adminVisitorActivity } from "@/integrations/supabase/admin-analytics-canonical";
 import { formatUaSummary, parseUserAgent } from "@/lib/ua-parse";
+import { pdfEventLabel, pdfReasonLabel } from "@/lib/pdf-reporting";
 import { Button } from "@/components/ui/button";
 
 type VisitorActivityData = Awaited<ReturnType<typeof adminVisitorActivity>>;
@@ -127,7 +128,7 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
         <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-foreground/80">
           <span>{visitor.sessionsInRange} sessions</span>
           <span>{visitor.pageviews} pageviews</span>
-          <span>{visitor.pdfOpens} PDF opens</span>
+          <span>{visitor.pdfOpens} PDF viewer loads</span>
           <span title="Deliberate Open PDF clicks + historical downloads, before the human filter; all distinct actions retained">{visitor.pdfAccessActionsRaw} PDF-access actions (raw)</span>
           <span className="text-muted-foreground">{shortId(visitor.visitorId)}</span>
         </div>
@@ -347,7 +348,7 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
               <ul className="mt-1 space-y-1 text-sm text-foreground/90">
                 {visitor.publicationActions.map((a, i) => (
                   <li key={`${a.at}-${i}`}>
-                    <span className="text-muted-foreground">{clockLabel(a.at)}</span> {a.action}:{" "}
+                    <span className="text-muted-foreground">{clockLabel(a.at)}</span> {a.action === "Opened PDF" ? "PDF viewer loaded" : a.action === "Downloaded" ? "Download requested" : pdfReasonLabel(a.action)}:{" "}
                     {a.publication}
                   </li>
                 ))}
@@ -415,7 +416,7 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
                     {s.timeline.map((e, i) => (
                       <li key={`${e.at}-${i}`}>
                         <span className="text-muted-foreground">{clockLabel(e.at)}</span>{" "}
-                        {e.event}
+                        {pdfEventLabel(e.event)}
                         {e.path ? ` · ${e.path}` : ""}
                         {e.publication ? ` · ${e.publication}` : ""}
                         {e.detail ? ` · ${e.detail}` : ""}
@@ -501,7 +502,7 @@ export default function VisitorActivitySection({ accessToken, embedded = false }
             <Stat label="Visitors" value={totals.visitors} />
             <Stat label="Sessions" value={totals.sessions} />
             <Stat label="Pageviews" value={totals.pageviews} />
-            <Stat label="PDF opens" value={totals.pdfOpens} />
+            <Stat label="PDF viewer loads" value={totals.pdfOpens} />
             <Stat label="PDF-access actions (raw)" value={totals.pdfAccessActionsRaw} />
             <Stat label="Signups" value={totals.signups} />
             <Stat label="Suspected" value={totals.suspectedSessions} />

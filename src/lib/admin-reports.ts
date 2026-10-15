@@ -144,7 +144,7 @@ export type ObservationInput = {
   usedTorah: number;
   /** Automatic embedded previews — context only, never a headline. */
   pdfOpens: number;
-  /** Counted PDF opens (canonical, human-qualified, uncapped). */
+  /** Counted PDF attempted opens (canonical, human-qualified, uncapped). */
   countedPdfOpens: number;
   signups: number;
   returningReaders: number;
@@ -163,12 +163,12 @@ export function buildObservations(input: ObservationInput): string[] {
   const notes: string[] = [];
   if (input.topSourcePdfOpens && input.countedPdfOpens > 0 && input.topSourcePdfOpens.opens > 0) {
     notes.push(
-      `${input.topSourcePdfOpens.label} produced ${input.topSourcePdfOpens.opens} of ${input.countedPdfOpens} counted PDF opens.`,
+      `${input.topSourcePdfOpens.label} produced ${input.topSourcePdfOpens.opens} of ${input.countedPdfOpens} counted PDF attempted opens.`,
     );
   }
   if (input.topPublication && input.topPublication.countedPdfOpens > 0) {
     notes.push(
-      `${input.topPublication.title} led with ${input.topPublication.countedPdfOpens} counted PDF opens from ${input.topPublication.uniqueVisitors} visitor${input.topPublication.uniqueVisitors === 1 ? "" : "s"}.`,
+      `${input.topPublication.title} led with ${input.topPublication.countedPdfOpens} counted PDF attempted opens from ${input.topPublication.uniqueVisitors} visitor${input.topPublication.uniqueVisitors === 1 ? "" : "s"}.`,
     );
   }
   if (input.searchesTotal > 0) {

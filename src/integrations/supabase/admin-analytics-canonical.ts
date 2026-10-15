@@ -607,8 +607,8 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
     downloads: keptRows.filter((row) => row.event_name === "download").map((row) => detailFor(row)),
     returning: keptRows.filter((row, index, list) => row.visitor_id && returning.has(row.visitor_id) && list.findIndex((other) => other.visitor_id === row.visitor_id) === index).map((row) => detailFor(row)),
     engaged: sessionDetails.filter((session) => session.engaged).flatMap((session) => session.events.slice(0, 1)),
-    downloadsServed: keptRows.filter((row) => row.event_name === "download_served").map((row) => detailFor(row, "Application validated the file and issued the redirect")),
-    countedPdfOpens: [...pdfAccess.countedActions].reverse().map((a) => detailFor(a.row, a.kind === "open_pdf_click" ? "Clicked Open PDF (attempted open)" : "Historical download action")),
+    downloadsServed: keptRows.filter((row) => row.event_name === "download_served").map((row) => detailFor(row, "PDF redirect issued (not confirmed download or reading)")),
+    countedPdfOpens: [...pdfAccess.countedActions].reverse().map((a) => detailFor(a.row, a.kind === "open_pdf_click" ? "Clicked Open PDF (attempted open)" : a.kind === "download_served" ? "Historical PDF redirect issued (not confirmed download)" : "Historical download request/action")),
   };
 
   // Attribution of counted PDF opens by grouped source and named campaign.
@@ -1323,15 +1323,15 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       }
       if (name === "publication_click") {
         v.publicationClicks += 1;
-        if (publication) v.publicationActions.push({ at, action: "Clicked", publication });
+        if (publication) v.publicationActions.push({ at, action: isOpenPdfClick(row) ? "Open PDF click (attempted open)" : "Publication selected", publication });
       }
       if (name === "pdf_open") {
         v.pdfOpens += 1;
-        if (publication) v.publicationActions.push({ at, action: "Opened PDF", publication });
+        if (publication) v.publicationActions.push({ at, action: "PDF viewer loaded", publication });
       }
       if (name === "download") {
         v.downloads += 1;
-        if (publication) v.publicationActions.push({ at, action: "Downloaded", publication });
+        if (publication) v.publicationActions.push({ at, action: "Download requested", publication });
       }
       if (name === "search") {
         v.searches += 1;

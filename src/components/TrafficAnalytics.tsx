@@ -144,10 +144,10 @@ export default function TrafficAnalytics({ accessToken }: { accessToken: string 
               note={`${pct(cur.engagedSessions, cur.sessions)} engaged now`}
             />
             <ComparisonCard
-              label="Download conversion"
+              label="Download-request rate"
               current={pctRatio(cur.downloadConversion)}
               previous={pctRatio(prev.downloadConversion)}
-              note={`${cur.downloadingSessions} downloading sessions now`}
+              note={`${cur.downloadingSessions} sessions with download requests now`}
             />
             <ComparisonCard
               label="New subscribers"
@@ -162,8 +162,8 @@ export default function TrafficAnalytics({ accessToken }: { accessToken: string 
             />
             <ComparisonCard
               label="PDF activity"
-              current={`${cur.uniquePdfDownloads} unique PDF downloads`}
-              previous={`${prev.uniquePdfDownloads} unique PDF downloads`}
+              current={`${cur.uniquePdfDownloads} session–publication download request pairs`}
+              previous={`${prev.uniquePdfDownloads} session–publication download request pairs`}
               note={`${cur.downloadActions} download actions · ${cur.pdfAccessingSessions} PDF-accessing sessions now`}
             />
           </div>
@@ -204,16 +204,16 @@ export default function TrafficAnalytics({ accessToken }: { accessToken: string 
                 denominators use that same interval.
               </p>
               <p>
-                <b className="text-foreground">Download conversion:</b> sessions with at least one
+                <b className="text-foreground">Download-request rate:</b> sessions with at least one
                 canonical download action / all sessions in that collection window.
               </p>
               <p>
-                <b className="text-foreground">Unique PDF download:</b> one session+publication
-                pair, deduplicating repeated clicks on the same PDF inside a session.
+                <b className="text-foreground">Session–publication download request pair:</b> one session+publication
+                pair, deduplicating repeated requests for the same publication inside a session. This is not the distinct Open PDF click-ID metric.
               </p>
               <p>
                 <b className="text-foreground">Download action:</b> every recorded user-initiated
-                download request, including repeats.
+                download request, including repeats. Redirects do not confirm completed transfers or printing.
               </p>
             </div>
           </details>

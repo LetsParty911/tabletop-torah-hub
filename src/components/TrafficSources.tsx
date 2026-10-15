@@ -37,7 +37,7 @@ function FunnelPanel({ title, note, rows }: { title: string; note?: string; rows
             <tr className="text-xs uppercase tracking-wide text-muted-foreground">
               <th className="pb-1 text-left font-medium">Source</th>
               <th className="pb-1 text-right font-medium">Visits</th>
-              <th className="pb-1 text-right font-medium">Downloads</th>
+              <th className="pb-1 text-right font-medium">Download requests</th>
               <th className="pb-1 text-right font-medium">Rate</th>
             </tr>
           </thead>
@@ -130,7 +130,7 @@ export default function TrafficSources({
       </div>
       <p className="text-xs text-muted-foreground">
         Legacy raw page-view rows, kept for historical audit. Headline audience numbers come from
-        the canonical report, not from this section, and the two are never added together.
+        the canonical report, not from this section, and the two are never added together. Download rows record requests, not completed transfers or printing.
       </p>
 
       {error && (
@@ -142,12 +142,12 @@ export default function TrafficSources({
       {data?.funnel && (
         <div>
           <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-            Legacy raw visit-to-download funnel
+            Legacy raw visit-to-download-request funnel
           </p>
           <div className="mb-4 grid gap-3 sm:grid-cols-3">
             {[
               { label: "Visits (sessions)", value: data.funnel.sessions.toLocaleString() },
-              { label: "Sessions that downloaded", value: data.funnel.converted.toLocaleString() },
+              { label: "Sessions with download requests", value: data.funnel.converted.toLocaleString() },
               { label: "Conversion rate", value: pct(data.funnel.rate) },
             ].map((s) => (
               <div key={s.label} className="rounded-xl border border-border bg-card p-4">
@@ -162,7 +162,7 @@ export default function TrafficSources({
             <FunnelPanel title="By campaign" note="utm_source / medium — campaign" rows={data.funnel.byCampaign} />
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Sessions are matched to downloads recorded from the same browsing session; downloads from before this
+            Sessions are matched to download requests recorded from the same browsing session; downloads from before this
             report went live are not matched.
           </p>
         </div>
@@ -172,14 +172,14 @@ export default function TrafficSources({
         <>
           <div>
             <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-              Sources that drive downloads ({data.downloads.total.toLocaleString()} tracked downloads)
+              Sources with download requests ({data.downloads.total.toLocaleString()} tracked download requests)
             </p>
             <div className="grid gap-4 lg:grid-cols-3">
               <Panel title="Top referrers" note="Where the visitor came from" rows={data.downloads.referrers} />
               <Panel title="Top landing pages" note="First page of the visit" rows={data.downloads.landingPages} />
               <Panel
-                title="Top download pages"
-                note="Page the download happened on"
+                title="Top download-request pages"
+                note="Page the download was requested on"
                 rows={data.downloads.downloadPages ?? []}
               />
             </div>
