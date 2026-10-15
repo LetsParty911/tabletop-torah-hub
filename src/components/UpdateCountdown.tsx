@@ -10,6 +10,8 @@ type UpdateCountdownProps = {
   readingDate?: string | null;
   /** Number of Divrei Torah currently published for the live collection. */
   availableCount?: number | null;
+  /** True when the admin progress meter is at 100% for the live collection. */
+  collectionComplete?: boolean;
 };
 
 const NEW_YORK_TIME_ZONE = "America/New_York";
@@ -113,6 +115,7 @@ export function UpdateCountdown({
   liveParshaLabel,
   readingDate,
   availableCount,
+  collectionComplete = false,
 }: UpdateCountdownProps) {
   const [now, setNow] = useState(() => Date.now());
 
