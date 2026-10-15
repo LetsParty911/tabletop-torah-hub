@@ -21,26 +21,24 @@ const ev = (o: Partial<EventRow> = {}): EventRow => ({
 const win = { start: "2026-10-08T00:00:00Z", end: "2026-10-09T00:00:00Z" };
 
 describe("Counted PDF opens wired into canonical reports", () => {
-  it("caps one visitor at five across sessions; extra clicks stay in raw/over-cap audit", () => {
+  it("counts every action across sessions and retains raw audit", () => {
     n = 0;
     const rows = [
       ...[0, 1, 2, 3].map(() => ev({ session_id: "s1" })),
       ...[0, 1, 2].map(() => ev({ session_id: "s2" })),
     ];
     const r = buildAnalyticsReport(rows, new Set(), win);
-    expect(r.metrics.countedPdfOpens).toBe(5);
+    expect(r.metrics.countedPdfOpens).toBe(7);
     expect(r.metrics.pdfAccessRaw).toBe(7);
-    expect(r.metrics.pdfAccessOverCap).toBe(2);
-    expect(r.metrics.pdfAccessVisitorsOverCap).toBe(1);
     expect(r.metrics.openPdfClicks).toBe(7); // raw human click panel unchanged
-    expect(r.details.countedPdfOpens).toHaveLength(5);
+    expect(r.details.countedPdfOpens).toHaveLength(7);
     // Overview, trend, funnel and journeys all agree with the headline.
-    expect(r.overview.headline.countedPdfOpens).toBe(5);
-    expect(r.overview.trend.reduce((a, t) => a + t.pdfOpens, 0)).toBe(5);
-    expect(r.overview.journeys.reduce((a, j) => a + j.pdfOpens, 0)).toBe(5);
+    expect(r.overview.headline.countedPdfOpens).toBe(7);
+    expect(r.overview.trend.reduce((a, t) => a + t.pdfOpens, 0)).toBe(7);
+    expect(r.overview.journeys.reduce((a, j) => a + j.pdfOpens, 0)).toBe(7);
     expect(r.overview.funnels[0]!.stages.at(-1)!.label).toBe("Counted PDF open");
-    expect(r.pdfAccess.byPublication.reduce((a, p) => a + p.opens, 0)).toBe(5);
-    expect(r.pdfAccess.bySource).toEqual([{ label: "WhatsApp", opens: 5 }]);
+    expect(r.pdfAccess.byPublication.reduce((a, p) => a + p.opens, 0)).toBe(7);
+    expect(r.pdfAccess.bySource).toEqual([{ label: "WhatsApp", opens: 7 }]);
   });
 
   it("counts different visitors independently and keeps since-last in sync", () => {
@@ -68,7 +66,7 @@ describe("Counted PDF opens wired into canonical reports", () => {
     expect(r.metrics.downloads).toBe(1); // historical audit retained
   });
 
-  it("excludes internal sessions before the cap", () => {
+  it("excludes internal sessions from human-qualified headline while retaining raw events", () => {
     n = 0;
     const rows = [ev(), ev({ session_id: "int", visitor_id: "iv", is_internal: true })];
     const r = buildAnalyticsReport(rows, new Set(), win);
