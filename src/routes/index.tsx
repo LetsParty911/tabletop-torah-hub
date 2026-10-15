@@ -33,6 +33,7 @@ import {
   getParshaOverride,
   getActiveSubscriberCount,
   getAnnouncementBanner,
+  getThursdayProgress,
   type AnnouncementBanner as AnnouncementBannerData,
 } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
@@ -75,6 +76,7 @@ type LoaderData = {
   readingDate: string | null;
   upcomingAfterYomTovKey: string | null;
   announcement: AnnouncementBannerData;
+  progressFillStep?: number | null;
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
@@ -156,6 +158,7 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     readingDate,
     upcomingAfterYomTovKey,
     announcement,
+    progressFillStep,
   };
 }
 

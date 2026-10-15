@@ -45,7 +45,9 @@ async function loadVortsWeek(): Promise<LoaderData> {
     try {
       const { resources } = await listPublishedPdfs({ data: { parshaKey } });
       const hit = resources.find(
-        (r: any) => r.format_type === "Short Vorts" || /short\s+vort/i.test(r.title ?? ""),
+        (r: any) =>
+          r.content_type !== "Questions & Answers" &&
+          (r.format_type === "Short Vorts" || /short\s+vort/i.test(r.title ?? "")),
       );
       if (hit) publishedPdf = { id: hit.id, title: hit.title };
     } catch {
