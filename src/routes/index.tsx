@@ -343,8 +343,24 @@ function Index() {
     setResources(loaderData.resources ?? []);
   }, [loaderData.resources]);
 
-  const collectionComplete = isCollectionComplete(
+  // Refresh cached server-rendered progress after hydration so a completed
+  // collection cannot retain a stale “more coming” status.
+  const [progressFillStep, setProgressFillStep] = useState<number | null>(
     loaderData.progressFillStep ?? null,
+  );
+  useEffect(() => {
+    let cancelled = false;
+    void getThursdayProgress()
+      .then((progress) => {
+        if (!cancelled) setProgressFillStep(progress.fillStep);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const collectionComplete = isCollectionComplete(
+    progressFillStep,
     isFallback,
     resources.length,
   );
