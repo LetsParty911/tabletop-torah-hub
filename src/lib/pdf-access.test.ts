@@ -45,17 +45,26 @@ describe("counted PDF opens", () => {
     expect(s.uniquePublications).toBe(1);
   });
 
-  it("caps at five per visitor across sessions (8 -> 5), earliest five attributed", () => {
+  it("counts all eight actions by one visitor across sessions and PDFs", () => {
     const rows = Array.from({ length: 8 }, (_, i) =>
       click({ session_id: i < 4 ? "s1" : "s2", publication_id: i < 3 ? "pdf-a" : "pdf-b", occurred_at: at(i) }),
     );
     const s = summarizePdfAccess(rows.reverse(), kept("s1", "s2"));
-    expect(s.counted).toBe(5);
-    expect(s.overCap).toBe(3);
-    expect(s.visitorsOverCap).toBe(1);
+    expect(s.counted).toBe(8);
+    expect(s.rawActions).toBe(8);
     expect(s.byPublication.find((p) => p.publicationId === "pdf-a")?.opens).toBe(3);
-    expect(s.byPublication.find((p) => p.publicationId === "pdf-b")?.opens).toBe(2);
+    expect(s.byPublication.find((p) => p.publicationId === "pdf-b")?.opens).toBe(5);
     expect(s.byPublication.reduce((x, p) => x + p.opens, 0)).toBe(s.counted);
+  });
+
+  it("does not impose a cap even after 1,500 repeated actions", () => {
+    const rows = Array.from({ length: 1500 }, (_, i) =>
+      click({ occurred_at: new Date(Date.UTC(2026, 9, 8, 12, 0, 0, i)).toISOString() }),
+    );
+    const s = summarizePdfAccess(rows, kept("s1"));
+    expect(s.counted).toBe(1500);
+    expect(s.visitors).toBe(1);
+    expect(s.byPublication[0]?.opens).toBe(1500);
   });
 
   it("does not merge two visitor IDs that share an IP or location", () => {
@@ -68,7 +77,7 @@ describe("counted PDF opens", () => {
     expect(s.visitors).toBe(2);
   });
 
-  it("applies the human filter before the cap and drops unidentified visitors from headline", () => {
+  it("applies the human filter without capping actions, and audits unidentified visitors", () => {
     const rows = [
       ...Array.from({ length: 4 }, () => click({ session_id: "bot" })),
       ...Array.from({ length: 5 }, () => click()),
@@ -76,13 +85,12 @@ describe("counted PDF opens", () => {
     ];
     const s = summarizePdfAccess(rows, kept("s1"));
     expect(s.counted).toBe(5);
-    expect(s.overCap).toBe(0);
     expect(s.excludedNonHuman).toBe(4);
     expect(s.excludedNoVisitorId).toBe(1);
     expect(s.rawActions).toBe(10);
   });
 
-  it("applies the cap independently to each period window", () => {
+  it("counts every action in independent period windows", () => {
     const rows = Array.from({ length: 7 }, (_, i) => click({ occurred_at: i < 3 ? at(i) : at(100 + i) }));
     const inWindow = (s: string, e: string) => rows.filter((r) => r.occurred_at >= s && r.occurred_at < e);
     const prior = summarizePdfAccess(inWindow(at(0), at(50)), kept("s1"));
