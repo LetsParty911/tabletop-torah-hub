@@ -29,6 +29,7 @@ const ALLOWED_EVENTS = new Set([
   "search",
   "pdf_open",
   "download",
+  "print_click",
   "share_click",
   "signup",
   "heartbeat",
