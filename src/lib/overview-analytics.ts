@@ -144,7 +144,7 @@ export function headlineOf(
   const engagedDurations = engaged.map((s) => activeSeconds.get(s.id) ?? 0).filter((v) => v > 0);
   const returning = [...visitors].filter((v) => returningVisitors.has(v)).length;
   const downloading = sessions.filter((s) => s.downloaded).length;
-  // Counted PDF opens (canonical, capped — see src/lib/pdf-access.ts). Only
+  // Counted PDF opens (canonical, uncapped — see src/lib/pdf-access.ts). Only
   // rows present in `countedPdfAccess` count; automatic previews never do.
   const pdfOpenSessions = new Set<string>();
   let countedPdfOpens = 0;
@@ -372,7 +372,7 @@ export function buildOverview(input: {
     return stages;
   };
   // Final step = a counted PDF open (deliberate Open PDF click or historical
-  // download action, human-filtered and capped). Automatic previews never count.
+  // download action, human-filtered and uncapped). Automatic previews never count.
   const isCountedOpen = (r: OverviewRow) => counted.has(r);
   const landingFunnel = funnel(
     (list) => list.findIndex((r) => r.event_name === "page_view" || r.event_name === "session_start"),
