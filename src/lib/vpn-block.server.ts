@@ -18,6 +18,22 @@ export type PrivacyLookup = {
   country: string | null;
 };
 
+/** Temporary owner-requested exception; turn off to restore Brooklyn VPN blocking. */
+export const TEMP_ALLOW_BROOKLYN_VPN = true;
+
+/** A Brooklyn match is about the VPN exit IP, not proof of a visitor's real location. */
+export function isTemporaryBrooklynVpnException(
+  location: Pick<PrivacyLookup, "city" | "region" | "country"> | null | undefined,
+  vpnDetected: boolean,
+  torDetected: boolean,
+): boolean {
+  if (!TEMP_ALLOW_BROOKLYN_VPN || !vpnDetected || torDetected) return false;
+  const norm = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
+  return norm(location?.city) === "brooklyn" &&
+    ["new york", "ny"].includes(norm(location?.region)) &&
+    ["us", "usa", "united states"].includes(norm(location?.country));
+}
+
 // Fail safely to monitoring if the runtime configuration lookup is unavailable.
 let modeMemo: { mode: VpnBlockMode; expires: number } | null = null;
 export async function getVpnBlockMode(): Promise<VpnBlockMode> {
@@ -82,6 +98,13 @@ export function shouldDenyPrivacy(lookup: PrivacyLookup | null): boolean {
     lookup.confidence !== null && lookup.confidence >= 90);
 }
 
+/** Single policy function for the response and its audit record. */
+export function shouldBlockPrivacy(
+  lookup: PrivacyLookup | null, additionalBlock: boolean, brooklynVpnException: boolean,
+): boolean {
+  return !brooklynVpnException && (shouldDenyPrivacy(lookup) || additionalBlock);
+}
+
 const RESTRICTED_PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Connection restricted — TorahForTheTable.com</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f7f2e7;color:#1b2a4a;font-family:Georgia,serif;text-align:center;padding:24px}main{max-width:580px}h1{font-size:1.1rem;letter-spacing:.08em;color:#b08a3e;margin:0 0 16px}h2{font-size:2rem;margin:0 0 12px}p{font:1rem/1.65 system-ui,sans-serif;color:#4a5570}</style></head><body><main><h1>TorahForTheTable.com</h1><h2>Connection Restricted</h2><p>Access is unavailable through your current network connection. Please turn off your VPN or proxy, then revisit our website using your regular internet connection.</p><p>If you are not using a VPN or proxy, try another connection. We apologize for the inconvenience.</p></main></body></html>`;
 
 export function privacyRestrictedResponse(): Response {
@@ -96,7 +119,7 @@ export function privacyRestrictedResponse(): Response {
   });
 }
 
-type CheckResult = { value: PrivacyLookup | null; source: "provider" | "cache" | "inflight"; status: string; elapsed: number; additionalBlock?: boolean };
+type CheckResult = { value: PrivacyLookup | null; source: "provider" | "cache" | "inflight"; status: string; elapsed: number; additionalBlock?: boolean; brooklynVpnException?: boolean };
 type Cached = { value: PrivacyLookup | null; status: string; expires: number };
 const lookupCache = new Map<string, Cached>();
 const inFlight = new Map<string, Promise<CheckResult>>();
@@ -273,7 +296,7 @@ export async function auditPrivacy(
   const t = getRequestTelemetry(request);
   const url = new URL(request.url);
   const lookup = result?.value ?? null;
-  const denied = mode === "block" && (shouldDenyPrivacy(lookup) || Boolean(result?.additionalBlock));
+  const denied = mode === "block" && shouldBlockPrivacy(lookup, Boolean(result?.additionalBlock), Boolean(result?.brooklynVpnException));
   const verdict = skippedReason ? "skipped" : result?.additionalBlock ? "detected" : !lookup ? "unknown" : lookup.signals.length ? "detected" : "clean";
   const hostname = (() => { try { return new URL(request.headers.get("referer") ?? "").hostname.slice(0, 150) || null; } catch { return null; } })();
   const row: Record<string, unknown> = {
@@ -373,13 +396,51 @@ export async function checkVpnBlock(request: Request): Promise<Response | null> 
       "ipapi:" + secondary.status,
       "lists:" + listed.status,
     ].join(";");
+    // Exempt only VPN-positive Brooklyn, NY exit IPs. Proxy-only and Tor
+    // detections keep their existing blocking policy everywhere.
+    const vpnDetected = Boolean(
+      (shouldDenyPrivacy(primary.value) && primary.value?.signals.includes("VPN")) ||
+      secondary.value?.vpn === true || listSignal === "VPN"
+    );
+    const torDetected = Boolean(
+      primary.value?.signals.includes("Tor") ||
+      secondary.value?.tor === true || listSignal === "Tor"
+    );
+    let brooklynVpnException =
+      isTemporaryBrooklynVpnException(primary.value, vpnDetected, torDetected) ||
+      isTemporaryBrooklynVpnException(t, vpnDetected, torDetected);
+
+    // Proxycheck may lack city data or identify a Brooklyn exit as "New York".
+    // On VPN detections only, consult the existing blocking geo provider/cache
+    // in those cases. A failed lookup never creates an exemption.
+    if (vpnDetected && !torDetected && !brooklynVpnException) {
+      const p = primary.value;
+      const completeLocation = Boolean(p?.city && p?.region && p?.country);
+      const region = (p?.region ?? "").trim().toLowerCase();
+      const country = (p?.country ?? "").trim().toLowerCase();
+      const mayBeNewYork = ["new york", "ny"].includes(region) &&
+        ["us", "usa", "united states"].includes(country);
+      if (!completeLocation || mayBeNewYork) {
+        try {
+          const { resolveApproximateGeo } = await import("./ip-geo.server");
+          const { memoizedLookup, BLOCK_MEMO_TTL_MS, NEGATIVE_MEMO_TTL_MS } = await import("./geo-block-memo");
+          const geo = await memoizedLookup(ip, () => resolveApproximateGeo(t, "blocking"),
+            undefined, v => v?.city ? BLOCK_MEMO_TTL_MS : NEGATIVE_MEMO_TTL_MS);
+          brooklynVpnException = isTemporaryBrooklynVpnException(geo, vpnDetected, torDetected);
+        } catch {
+          // Preserve the existing VPN block when exit-IP geography is unavailable.
+        }
+      }
+    }
+
     const result: CheckResult = {
       value: selected, source: primary.source,
-      status: providerStatus, elapsed: Math.max(primary.elapsed,secondary.elapsed),
-      additionalBlock,
+      status: providerStatus + (brooklynVpnException ? ";policy:temporary_brooklyn_vpn_exception" : ""),
+      elapsed: Math.max(primary.elapsed,secondary.elapsed),
+      additionalBlock, brooklynVpnException,
     };
-    // Decide BEFORE any logging: the 403 never depends on the audit write.
-    denied = shouldDenyPrivacy(primary.value) || additionalBlock;
+    // Decide BEFORE any logging: the response and audit use the same policy.
+    denied = shouldBlockPrivacy(primary.value, additionalBlock, brooklynVpnException);
     const attribution = buildAttribution({
       proxycheck: primary.value, proxycheckStatus: primary.status, proxycheckQualifies: shouldDenyPrivacy(primary.value),
       ipapi: secondary.value, ipapiStatus: secondary.status, listSignal, listStatus: listed.status,
