@@ -114,7 +114,7 @@ function ReportBody({ report }: { report: AnyReport }) {
       />
 
       <p className="text-xs text-muted-foreground">
-        {m.pdfAccessRaw} raw PDF-access actions; {m.pdfAccessExcludedNonHuman} non-human, {m.pdfAccessExcludedNoVisitorId} unidentified and {m.pdfAccessOverCap} over the {m.pdfAccessCap}-per-visitor cap excluded. Automatic previews ({m.pdfOpens}) and historical download actions ({m.downloads}) are shown for audit only.
+        {m.pdfAccessRaw} raw PDF-access actions; {m.pdfAccessExcludedNonHuman} excluded by the human filter and {m.pdfAccessExcludedNoVisitorId} without a visitor ID. Automatic previews ({m.pdfOpens}) and historical download actions ({m.downloads}) are shown for audit only.
       </p>
 
       {report.pdfAccessPublications.length > 0 && (
