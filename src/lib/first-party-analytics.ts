@@ -21,6 +21,7 @@ export type FpEventName =
   | "search"
   | "pdf_open"
   | "download"
+  | "print_click"
   | "share_click"
   | "signup"
   | "heartbeat"
@@ -427,6 +428,7 @@ let flushTimer: ReturnType<typeof setTimeout> | null = null;
 const IMMEDIATE: ReadonlySet<string> = new Set<string>([
   "session_start",
   "download",
+  "print_click",
   "pdf_open",
   "signup",
   "error",

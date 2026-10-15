@@ -10,6 +10,8 @@ type UpdateCountdownProps = {
   readingDate?: string | null;
   /** Number of Divrei Torah currently published for the live collection. */
   availableCount?: number | null;
+  /** True when the admin progress meter is at 100% for the live collection. */
+  collectionComplete?: boolean;
 };
 
 const NEW_YORK_TIME_ZONE = "America/New_York";
@@ -113,6 +115,7 @@ export function UpdateCountdown({
   liveParshaLabel,
   readingDate,
   availableCount,
+  collectionComplete = false,
 }: UpdateCountdownProps) {
   const [now, setNow] = useState(() => Date.now());
 
@@ -155,9 +158,11 @@ export function UpdateCountdown({
           <p className="font-serif text-base font-bold sm:text-lg">{label} is now available</p>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          {remaining !== null && remaining > 0 && typeof availableCount === "number" && availableCount > 0
+          {!collectionComplete && remaining !== null && remaining > 0 && typeof availableCount === "number" && availableCount > 0
             ? `${availableCount} ${availableCount === 1 ? "Dvar Torah posted" : "Divrei Torah posted"} so far — more coming.`
-            : "Choose. Print. Enjoy."}
+            : collectionComplete && typeof availableCount === "number" && availableCount > 0
+              ? `All ${availableCount} ${availableCount === 1 ? "Dvar Torah is" : "Divrei Torah are"} posted — the collection is complete.`
+              : "Choose. Print. Enjoy."}
         </p>
         <a
           href="#this-weeks-collection"

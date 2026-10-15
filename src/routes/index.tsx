@@ -16,6 +16,7 @@ import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
+import { collectionCountLine, displayContentType, isCollectionComplete } from "@/lib/collection-status";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { publicationLabel } from "@/lib/badges";
 
@@ -32,6 +33,7 @@ import {
   getParshaOverride,
   getActiveSubscriberCount,
   getAnnouncementBanner,
+  getThursdayProgress,
   type AnnouncementBanner as AnnouncementBannerData,
 } from "@/integrations/supabase/api.functions";
 import { trackEvent } from "@/lib/analytics";
@@ -74,6 +76,7 @@ type LoaderData = {
   readingDate: string | null;
   upcomingAfterYomTovKey: string | null;
   announcement: AnnouncementBannerData;
+  progressFillStep?: number | null;
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
@@ -137,6 +140,12 @@ async function loadCurrentWeek(): Promise<LoaderData> {
   }
 
   const announcement = await announcementPromise;
+  let progressFillStep: number | null = null;
+  try {
+    progressFillStep = (await getThursdayProgress()).fillStep;
+  } catch {
+    progressFillStep = null;
+  }
 
   return {
     label,
@@ -149,6 +158,7 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     readingDate,
     upcomingAfterYomTovKey,
     announcement,
+    progressFillStep,
   };
 }
 
@@ -337,6 +347,11 @@ function Index() {
     setResources(loaderData.resources ?? []);
   }, [loaderData.resources]);
 
+  const collectionComplete = isCollectionComplete(
+    loaderData.progressFillStep ?? null,
+    isFallback,
+    resources.length,
+  );
   const [postShabbos, setPostShabbos] = useState(false);
   useEffect(() => {
     const showingLastShabbos = isFallback || isPastReading(readingDate);
@@ -371,9 +386,7 @@ function Index() {
             : r.page_count >= 5
         : false;
   const resourceContentType = (r: Resource) =>
-    r.content_type === "Questions & Answers"
-      ? "Questions & Answers"
-      : formatTypeLabel(r.format_type) ?? formatTypeLabel(r.content_type);
+    displayContentType(r.content_type, r.format_type, formatTypeLabel);
   const matchesContentType = (r: Resource, value = contentTypeFilter) =>
     value === "All" || resourceContentType(r) === value;
 
@@ -542,6 +555,7 @@ function Index() {
           liveParshaLabel={currentLabel}
           readingDate={readingDate}
           availableCount={resources.length}
+          collectionComplete={collectionComplete}
         />
         <section className="parchment-frame">
           <div className="parchment-panel py-5 text-center sm:py-7">
@@ -572,7 +586,9 @@ function Index() {
             </p>
             {!isFallback && (
               <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-accent-readable sm:hidden">
-                {resources.length} available now • more coming.
+                {collectionComplete
+                  ? `All ${resources.length} available • collection complete`
+                  : `${resources.length} available now • more coming.`}
               </p>
             )}
             {heroDateLine && (
@@ -789,9 +805,8 @@ function Index() {
               <div className="mx-auto mt-4 max-w-2xl rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-center">
                 <p className="font-serif text-sm leading-relaxed text-primary sm:text-base">
                   <span className="font-semibold">
-                    {resources.length} {resources.length === 1 ? "Dvar Torah is" : "Divrei Torah are"} already posted
+                    {collectionCountLine(resources.length, collectionComplete)}
                   </span>
-                  {" — "}more coming.
                 </p>
               </div>
             )}

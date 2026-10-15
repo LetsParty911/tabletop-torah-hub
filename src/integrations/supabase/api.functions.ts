@@ -269,36 +269,36 @@ type PdfResource = {
   featured_slot: string | null;
 };
 
+// PostgREST caps each response (default 1,000 rows); page through so no
+// published publication is ever silently dropped from a collection.
+async function selectAllPublished(admin: ReturnType<typeof getSupabaseAdmin>, cols: string) {
+  const PAGE = 1000;
+  const out: any[] = [];
+  for (let from = 0; from < 50_000; from += PAGE) {
+    const res = await admin
+      .from("pdfs")
+      .select(cols)
+      .eq("published", true)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (res.error) return { data: null, error: res.error };
+    out.push(...((res.data as any[]) ?? []));
+    if (!res.data || res.data.length < PAGE) break;
+  }
+  return { data: out, error: null };
+}
+
 async function fetchAllPublishedRows(admin: ReturnType<typeof getSupabaseAdmin>) {
-  const withSlot = await admin
-    .from("pdfs")
-    .select("id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, description, audience, format_type, page_count, badge, featured_slot")
-    .eq("published", true)
-    .order("created_at", { ascending: false });
+  const withSlot = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, description, audience, format_type, page_count, badge, featured_slot");
   if (!withSlot.error) return withSlot.data ?? [];
-  const withMeta = await admin
-    .from("pdfs")
-    .select("id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, description, audience, format_type, page_count, badge")
-    .eq("published", true)
-    .order("created_at", { ascending: false });
+  const withMeta = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, description, audience, format_type, page_count, badge");
   if (!withMeta.error) return withMeta.data ?? [];
-  const withPub = await admin
-    .from("pdfs")
-    .select("id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication")
-    .eq("published", true)
-    .order("created_at", { ascending: false });
+  const withPub = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication");
   if (!withPub.error) return withPub.data ?? [];
-  const withCats = await admin
-    .from("pdfs")
-    .select("id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags")
-    .eq("published", true)
-    .order("created_at", { ascending: false });
+  const withCats = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags");
   if (!withCats.error) return withCats.data ?? [];
-  const fb = await admin
-    .from("pdfs")
-    .select("id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path")
-    .eq("published", true)
-    .order("created_at", { ascending: false });
+  const fb = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path");
   if (fb.error) {
     console.error("fetchAllPublishedRows error", fb.error);
     return [];
