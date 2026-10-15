@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { waitUntil } from "@vercel/functions";
+import { resolveWaitUntil, runInBackground } from "@/lib/pdf-route-diagnostics.server";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { buildDownloadFilename } from "@/lib/download-filename";
 
@@ -121,9 +121,9 @@ async function recordDownloadServed(
 // Cloudflare's waitUntil keeps tracking alive after the redirect without
 // making the visitor wait. Never fall back to awaiting analytics here: a slow
 // Supabase read/write must not delay or prevent delivery of a valid PDF.
-function queueDownloadTracking(request: Request, id: string, filename: string): void {
+async function queueDownloadTracking(request: Request, id: string, filename: string): Promise<void> {
   try {
-    waitUntil(recordDownloadServed(request, id, filename));
+    await runInBackground(recordDownloadServed(request, id, filename), await resolveWaitUntil(request));
   } catch (err) {
     // Tracking is best-effort. Keep the download working if scheduling fails.
     console.error("[view/download] unable to schedule tracking", err);
@@ -195,7 +195,7 @@ export const Route = createFileRoute("/view/$id/download")({
 
           // A validated redirect must never wait for analytics queries or writes.
           // Cloudflare continues this task after the response is returned.
-          queueDownloadTracking(request, id, entry.filename);
+          await queueDownloadTracking(request, id, entry.filename);
           if (adminBypass && request.headers.get("X-Admin-Link") === "1") {
             return Response.json({ url: deliveryUrl }, { headers: { ...NOINDEX, "Cache-Control": "no-store", "Server-Timing": routeTimings.join(", ") } });
           }
