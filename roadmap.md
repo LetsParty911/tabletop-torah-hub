@@ -48,7 +48,7 @@
 - [ ] Publish (owner approval) and then re-verify /r, /s, /j on the live domain
 
 ## Admin PDF terminology audit (preview only)
-- [ ] Correct owner/admin labels, notes, drilldowns, and report exports without changing tracking or counts
-- [ ] Validate uncapped actions, paired redirects, distinct IDs, exclusions, and Used Torah regressions
-- [ ] Run targeted tests and inspect authenticated preview; leave production unchanged
+- [x] Correct owner/admin labels, notes, drilldowns, and report exports without changing tracking or counts
+- [x] Validate uncapped actions, paired redirects, distinct IDs, exclusions, and Used Torah regressions
+- [x] Run targeted tests and inspect authenticated preview; leave production unchanged
 

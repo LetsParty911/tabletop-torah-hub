@@ -19,6 +19,7 @@ import { aggregatePublications } from "@/lib/publication-funnel";
 import { weeklyReaderLoyalty } from "@/lib/weekly-reader-loyalty";
 import { isOpenPdfClick, openPdfClicksForReport, shapeOpenPdfClickDetails } from "@/lib/open-pdf-clicks";
 import { describeRecentStoryAction } from "@/lib/recent-story";
+import { pdfEventLabel } from "@/lib/pdf-reporting";
 import { pdfAccessActions, summarizePdfAccess, pdfOpenRate, type PdfAccessSummary } from "@/lib/pdf-access";
 import { buildOverview } from "@/lib/overview-analytics";
 import { summarizeGeoInsights } from "@/lib/geo-insights";
@@ -471,7 +472,7 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
     path: row.path,
     publication: row.publication_title?.trim() || row.publication_id?.trim() || null,
     source: row.source_group?.trim() || "Direct",
-    reason,
+    reason: reason ?? (["publication_click", "pdf_open", "download", "download_served", "pdf_route_result", "print_click"].includes(row.event_name ?? "") ? pdfEventLabel(row.event_name ?? "", row.metadata) : null),
     publicationId: row.publication_id?.trim() || null,
     device: row.device_type?.trim() || null,
     location: [row.city, row.region, row.country].map((part) => part?.trim()).filter(Boolean).join(", ") || null,

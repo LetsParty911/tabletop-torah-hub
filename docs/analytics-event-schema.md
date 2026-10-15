@@ -345,7 +345,7 @@ button click. Historical campaign-tagged activity remains visible; homepage
 button-click counts begin only with this instrumentation.
 
 
-## Counted PDF opens (headline PDF metric)
+## Counted PDF attempted opens (headline PDF metric)
 
 Single source: `src/lib/pdf-access.ts` (`summarizePdfAccess`), used by every admin surface (/admin since-last tile, /admin-analytics Control Center, Weekly Ops, Owner Summary, Overview, Publications, Website Sharing, daily/collection reports, health check).
 
@@ -355,8 +355,17 @@ Single source: `src/lib/pdf-access.ts` (`summarizePdfAccess`), used by every adm
 - **Audit fields:** `pdfAccessRaw`, `pdfAccessExcludedNonHuman`, `pdfAccessExcludedNoVisitorId`, `pdfAccessMissingPublicationId`, `pdfAccessByKind`. Raw events are never altered.
 - **PDF-open rate:** human sessions with ≥1 counted open ÷ human sessions.
 - **Rankings / attribution:** `report.pdfAccess.byPublication` (id, title, series, parsha, opens, uniqueVisitors, topSource, lastAt), `bySource`, `byCampaign`. Missing publication IDs are excluded from rankings, never guessed from titles.
-- **CSV (`counted-pdf-opens-*.csv`):** `publication_id, title, series, parsha, counted_pdf_opens, unique_visitors, top_source, last_at_utc`.
+- **CSV (`counted-pdf-opens-*.csv`):** `publication_id, title, series, parsha, counted_pdf_attempted_opens, unique_visitors, top_source, last_at_utc`. Internal metric names remain unchanged.
 - Timestamps are stored in UTC; days and collection windows are New York time.
 - It is an attempted open — not proof the file bytes loaded or that anyone read it.
 - **Historical audit:** `metrics.downloads`, `downloadsServed`, per-publication `downloadActions` remain visible, labeled historical, and are never added to the counted total a second time. "Download rate" and "Open→download" headlines were removed.
 - The raw Open PDF clicks panel (every human click, uncapped) and automatic previews remain separate diagnostics.
+
+### Admin display terminology (presentation-only audit)
+- **Open PDF clicks:** tagged deliberate clicks; attempted opens, not file-load or reading confirmation. Ordinary untagged publication clicks remain selections and are not relabeled as known Open PDF clicks.
+- **Distinct PDFs clicked:** nonempty publication IDs among qualified tagged Open PDF clicks; missing IDs excluded, never inferred from titles. This is separate from **Distinct PDFs requested**, which covers all canonical PDF-access action kinds.
+- **PDF viewer loads:** embedded `pdf_open` events, automatic and separate from attempted-open totals.
+- **PDF redirects issued (not confirmed downloads):** HTTP 302 `pdf_route_result` outcomes. Historical `download_served` redirects are labeled separately; neither confirms CDN transfer completion.
+- **Download requests/actions:** intentional user requests; legacy session–publication request pairs retain their existing calculations and are not the distinct-click metric.
+- **Used Torah:** existing qualification and reason priority are unchanged; display translates the legacy `Opened a PDF` reason to `PDF viewer loaded (automatic)`. This metric is not verified reading, completed transfer, or printing.
+- **Printing and completed file transfers:** not measured. A print click is intent only. A paired download request and redirect are never added as two successful downloads.
