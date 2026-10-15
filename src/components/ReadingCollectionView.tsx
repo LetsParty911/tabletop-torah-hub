@@ -59,7 +59,10 @@ export function ReadingCollectionView({
       : null,
     quickShort && quickShort.id !== quickKids?.id && quickShort.id !== quickFamily?.id
       ? {
-          label: `${quickShort.page_count === 1 ? "1-Page Short Vort" : "Short Vorts"}`,
+          label:
+            quickShort.content_type === "Questions & Answers"
+              ? "Questions & Answers"
+              : `${quickShort.page_count === 1 ? "1-Page Short Vort" : "Short Vorts"}`,
           resource: quickShort,
         }
       : null,

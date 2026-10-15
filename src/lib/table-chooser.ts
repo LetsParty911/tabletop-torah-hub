@@ -6,6 +6,7 @@
 
 import { normalizeAudience } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
+import { displayContentType } from "@/lib/collection-status";
 
 export type ChooserResource = {
   id: string;
@@ -101,7 +102,8 @@ const norm = (v: string | null | undefined) =>
 
 /** Structured metadata only: format/content type, category and tags. */
 function structuredTerms(r: ChooserResource): string[] {
-  return [formatTypeLabel(r.format_type), formatTypeLabel(r.content_type), r.primary_category, ...(r.tags ?? [])]
+  const qa = r.content_type === "Questions & Answers";
+  return [qa ? null : formatTypeLabel(r.format_type), formatTypeLabel(r.content_type), r.primary_category, ...(r.tags ?? [])]
     .map(norm)
     .filter(Boolean);
 }
@@ -212,7 +214,7 @@ export function chooseReason(r: ChooserResource): string {
 export function chooserMetaLine(r: ChooserResource): string | null {
   const parts = [
     normalizeAudience(r.audience, r.title) ?? r.audience,
-    formatTypeLabel(r.format_type) ?? formatTypeLabel(r.content_type),
+    displayContentType(r.content_type, r.format_type, formatTypeLabel),
     typeof r.page_count === "number" ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}` : null,
   ].filter(Boolean);
   return parts.length ? parts.join(" · ") : null;
