@@ -21,6 +21,27 @@ const ev = (o: Partial<EventRow> = {}): EventRow => ({
 const win = { start: "2026-10-08T00:00:00Z", end: "2026-10-09T00:00:00Z" };
 
 describe("Counted PDF attempted opens wired into canonical reports", () => {
+  it("keeps a click, viewer load, paired request/redirect and route outcome separate", () => {
+    n = 0;
+    const rows = [
+      ev({ publication_id: "p" }),
+      ev({ event_name: "pdf_open", publication_id: "p", metadata: null }),
+      ev({ event_name: "download", publication_id: "p", metadata: { action_id: "d1" } }),
+      ev({ event_name: "download_served", publication_id: "p", metadata: { action_id: "d1" } }),
+      ev({ event_name: "pdf_route_result", publication_id: "p", metadata: { action_id: "c1", http_status: 302 } }),
+    ];
+    const r = buildAnalyticsReport(rows, new Set(), win);
+    expect(r.metrics.countedPdfOpens).toBe(2);
+    expect(r.metrics.openPdfClicks).toBe(1);
+    expect(r.metrics.uniquePdfsOpened).toBe(1);
+    expect(r.metrics.pdfOpens).toBe(1);
+    expect(r.metrics.downloads).toBe(1);
+    expect(r.metrics.downloadsServed).toBe(1);
+    expect(r.metrics.pdfRedirectsIssued).toBe(1);
+    expect(r.metrics.usedTorah).toBe(1);
+    expect(r.details.downloadsServed[0]?.reason).toContain("not confirmed download");
+  });
+
   it("counts every action across sessions and retains raw audit", () => {
     n = 0;
     const rows = [
