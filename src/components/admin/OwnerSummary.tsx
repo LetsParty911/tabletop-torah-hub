@@ -157,8 +157,8 @@ export default function OwnerSummary({
           <Stat
             label="Counted PDF opens"
             value={m.countedPdfOpens}
-            note={`Human only, max ${m.pdfAccessCap} per visitor`}
-            onClick={() => openDetail("countedPdfOpens", "Counted PDF opens", "Deliberate Open PDF clicks and historical download actions from likely-human visitors, earliest five per visitor.")}
+            note={`Human-qualified, no per-visitor limit`}
+            onClick={() => openDetail("countedPdfOpens", "Counted PDF opens", "Deliberate Open PDF clicks and historical download actions from likely-human visitors, all distinct actions without a visitor limit.")}
           />
           <Stat
             label="Used Torah"

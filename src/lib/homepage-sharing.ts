@@ -69,7 +69,7 @@ export function summarizeHomepageSharing(
     clickingBrowsers: clickingBrowsers.size,
     linkSessions: linkSessions.size,
     linkVisitors: linkVisitors.size,
-    /** Counted PDF opens (canonical, capped) in tagged-link sessions. */
+    /** Counted PDF opens (canonical, uncapped) in tagged-link sessions. */
     linkCountedPdfOpens,
     /** Historical audit only. */
     linkDownloads,

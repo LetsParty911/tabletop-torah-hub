@@ -12,16 +12,14 @@
  * Automatic embedded viewer previews (`pdf_open`) are NEVER counted here.
  *
  * Rules (applied in this order):
- *  1. Collapse duplicate deliveries (same event_id) and pair download +
+ *  1. Collapse retried deliveries (same event_id) and pair download +
  *     download_served by action_id so one action counts once.
  *  2. Keep only rows from sessions the shared human classifier kept.
  *  3. Drop rows without a visitor_id (kept in raw audit only).
- *  4. Per visitor_id, across all sessions and PDFs in the window, count only
- *     the earliest CAP actions by occurred_at. Later actions are over-cap.
+ *  4. Count EVERY distinct deliberate action from a qualifying visitor,
+ *     across all sessions and PDFs in the reporting window, without a cap.
  * Visitors are never merged by IP or location.
  */
-export const PDF_ACCESS_CAP_PER_VISITOR = 5;
-
 export type PdfAccessRow = {
   event_name: string | null;
   event_id?: string | null;
@@ -57,18 +55,13 @@ export type PdfAccessPublication = {
 };
 
 export type PdfAccessSummary<T extends PdfAccessRow = PdfAccessRow> = {
-  cap: number;
-  /** Headline: human, identified, capped. */
+  /** Headline: human-qualified, identified, unlimited distinct actions. */
   counted: number;
   countedActions: CountedPdfAccess<T>[];
   /** All deduplicated access actions before any filter. */
   rawActions: number;
-  /** After human filter + identity requirement, before the cap. */
-  humanBeforeCap: number;
   excludedNonHuman: number;
   excludedNoVisitorId: number;
-  overCap: number;
-  visitorsOverCap: number;
   visitors: number;
   sessionsWithAccess: Set<string>;
   uniquePublications: number;
@@ -124,25 +117,15 @@ export function pdfAccessActions<T extends PdfAccessRow>(rows: T[]): CountedPdfA
 export function summarizePdfAccess<T extends PdfAccessRow>(
   rows: T[],
   keptSessionIds: Set<string>,
-  cap = PDF_ACCESS_CAP_PER_VISITOR,
 ): PdfAccessSummary<T> {
   const all = pdfAccessActions(rows);
   const isKept = (r: PdfAccessRow) => Boolean(r.session_id && keptSessionIds.has(r.session_id.trim()));
   const human = all.filter((a) => isKept(a.row));
   const identified = human.filter((a) => str(a.row.visitor_id));
-  const perVisitor = new Map<string, number>();
-  const overVisitors = new Set<string>();
-  const counted: CountedPdfAccess<T>[] = [];
-  for (const action of identified) {
-    const vid = str(action.row.visitor_id);
-    const n = perVisitor.get(vid) ?? 0;
-    if (n >= cap) {
-      overVisitors.add(vid);
-      continue;
-    }
-    perVisitor.set(vid, n + 1);
-    counted.push(action);
-  }
+  // Every independent reader action counts. Only retries of the same event
+  // and paired download/redirect records have already been deduplicated.
+  const counted = identified;
+  const visitors = new Set(identified.map((action) => str(action.row.visitor_id)));
 
   const byKind: Record<PdfAccessKind, number> = { open_pdf_click: 0, download: 0, download_served: 0 };
   const pubs = new Map<string, { title: string; series: string | null; parsha: string | null; opens: number; visitors: Set<string>; sources: Map<string, number>; lastAt: string }>();
@@ -170,16 +153,12 @@ export function summarizePdfAccess<T extends PdfAccessRow>(
   }
 
   return {
-    cap,
     counted: counted.length,
     countedActions: counted,
     rawActions: all.length,
-    humanBeforeCap: identified.length,
     excludedNonHuman: all.length - human.length,
     excludedNoVisitorId: human.length - identified.length,
-    overCap: identified.length - counted.length,
-    visitorsOverCap: overVisitors.size,
-    visitors: perVisitor.size,
+    visitors: visitors.size,
     sessionsWithAccess: sessions,
     uniquePublications: pubs.size,
     countedMissingPublicationId: missing,

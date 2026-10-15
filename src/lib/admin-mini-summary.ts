@@ -3,7 +3,7 @@ export type AdminMiniActivity = {
   /** All saved session IDs, including unconfirmed, internal and suspected automation. */
   rawSessions?: number;
   openPdfClicks: number;
-  /** Counted PDF opens (canonical, capped). Optional for older callers. */
+  /** Counted PDF opens (canonical, uncapped). Optional for older callers. */
   countedPdfOpens?: number;
   downloadActions: number;
   newSubscriberCount: number;

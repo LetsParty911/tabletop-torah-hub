@@ -144,7 +144,7 @@ export type ObservationInput = {
   usedTorah: number;
   /** Automatic embedded previews — context only, never a headline. */
   pdfOpens: number;
-  /** Counted PDF opens (canonical, human-filtered, capped per visitor). */
+  /** Counted PDF opens (canonical, human-qualified, uncapped). */
   countedPdfOpens: number;
   signups: number;
   returningReaders: number;
