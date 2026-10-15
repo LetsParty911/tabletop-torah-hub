@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseProxycheckResponse, shouldDenyPrivacy, privacyRestrictedResponse, classifyProxycheckDenial, chooseProxycheckKey, getWorkerProxycheckBinding, readProxycheckKey, proxycheckKeyShape } from "./vpn-block.server";
+import { parseProxycheckResponse, shouldDenyPrivacy, shouldBlockPrivacy, isTemporaryBrooklynVpnException, privacyRestrictedResponse, classifyProxycheckDenial, chooseProxycheckKey, getWorkerProxycheckBinding, readProxycheckKey, proxycheckKeyShape } from "./vpn-block.server";
 
 const reply = (ip: string, detections: object, overrides: object = {}) => ({
   status: "ok", [ip]: {
@@ -82,5 +82,42 @@ describe("VPN and anonymous-network classification", () => {
     expect(response.status).toBe(403);
     expect(response.headers.get("cache-control")).toContain("no-store");
     expect(await response.text()).toContain("turn off your VPN");
+  });
+});
+
+describe("temporary Brooklyn VPN exemption", () => {
+  const brooklyn = { city: "Brooklyn", region: "New York", country: "US" };
+  const vpn = { ...brooklyn, signals: ["VPN"] as const, confidence: 95, operator: null };
+
+  it("allows positively detected VPN exits in Brooklyn, New York", () => {
+    expect(isTemporaryBrooklynVpnException(brooklyn, true, false)).toBe(true);
+    expect(isTemporaryBrooklynVpnException({ city: " BROOKLYN ", region: " NY ", country: " usa " }, true, false)).toBe(true);
+    expect(shouldBlockPrivacy({ ...vpn, signals: ["VPN"] }, false, true)).toBe(false);
+    // Also exempt when a strict list or secondary provider detected the VPN.
+    expect(shouldBlockPrivacy(null, true, true)).toBe(false);
+  });
+
+  it("does not exempt other cities, states, countries, or unknown geography", () => {
+    for (const location of [
+      { city: "New York", region: "New York", country: "US" },
+      { city: "Queens", region: "New York", country: "US" },
+      { city: "Brooklyn", region: "New Jersey", country: "US" },
+      { city: "Brooklyn", region: "New York", country: "CA" },
+      { city: null, region: "New York", country: "US" },
+      { city: "Brooklyn", region: null, country: "US" },
+      { city: "Brooklyn", region: "New York", country: null },
+    ]) {
+      expect(isTemporaryBrooklynVpnException(location, true, false)).toBe(false);
+    }
+    expect(shouldBlockPrivacy({ ...vpn, signals: ["VPN"] }, false, false)).toBe(true);
+    expect(shouldBlockPrivacy(null, true, false)).toBe(true);
+  });
+
+  it("retains Tor, proxy-only, and unrelated blocking rules", () => {
+    expect(isTemporaryBrooklynVpnException(brooklyn, false, false)).toBe(false);
+    expect(isTemporaryBrooklynVpnException(brooklyn, true, true)).toBe(false);
+    expect(shouldBlockPrivacy({ ...vpn, signals: ["Tor"] }, false, false)).toBe(true);
+    expect(shouldBlockPrivacy({ ...vpn, signals: ["Proxy"] }, false, false)).toBe(true);
+    expect(shouldBlockPrivacy(null, false, false)).toBe(false);
   });
 });
