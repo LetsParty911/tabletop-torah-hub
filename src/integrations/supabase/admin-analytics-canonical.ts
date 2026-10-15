@@ -19,7 +19,7 @@ import { aggregatePublications } from "@/lib/publication-funnel";
 import { weeklyReaderLoyalty } from "@/lib/weekly-reader-loyalty";
 import { isOpenPdfClick, openPdfClicksForReport, shapeOpenPdfClickDetails } from "@/lib/open-pdf-clicks";
 import { describeRecentStoryAction } from "@/lib/recent-story";
-import { pdfAccessActions, summarizePdfAccess, pdfOpenRate, PDF_ACCESS_CAP_PER_VISITOR, type PdfAccessSummary } from "@/lib/pdf-access";
+import { pdfAccessActions, summarizePdfAccess, pdfOpenRate, type PdfAccessSummary } from "@/lib/pdf-access";
 import { buildOverview } from "@/lib/overview-analytics";
 import { summarizeGeoInsights } from "@/lib/geo-insights";
 import { summarizeHomepageSharing } from "@/lib/homepage-sharing";
@@ -255,13 +255,9 @@ export function pdfAccessFigures(s: PdfAccessSummary, humanSessions: number) {
     countedPdfOpenSessions: s.sessionsWithAccess.size,
     countedUniquePdfs: s.uniquePublications,
     pdfOpenRate: pdfOpenRate(s.sessionsWithAccess.size, humanSessions),
-    pdfAccessCap: s.cap,
     pdfAccessRaw: s.rawActions,
-    pdfAccessHumanBeforeCap: s.humanBeforeCap,
     pdfAccessExcludedNonHuman: s.excludedNonHuman,
     pdfAccessExcludedNoVisitorId: s.excludedNoVisitorId,
-    pdfAccessOverCap: s.overCap,
-    pdfAccessVisitorsOverCap: s.visitorsOverCap,
     pdfAccessMissingPublicationId: s.countedMissingPublicationId,
     pdfAccessByKind: s.byKind,
   };
@@ -699,7 +695,6 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
     locations: [...locations.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions).slice(0, 20),
     searches: searches.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 50),
     pdfAccess: {
-      cap: pdfAccess.cap,
       counted: pdfAccess.counted,
       byPublication: pdfAccess.byPublication,
       bySource: toCountRows(pdfBySource),
@@ -1422,9 +1417,9 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       b.lastSeenInRange.localeCompare(a.lastSeenInRange),
     );
     const capped = all.slice(0, VISITOR_CAP);
-    // Raw deliberate PDF-access actions per visitor (deduplicated; before the
-    // human filter and the per-visitor cap used by Counted PDF opens).
-    const rawPdfAccess = pdfAccessActions(rows.map((r) => ({ ...r, event_id: null })));
+    // All deduplicated deliberate PDF-access actions, including sessions
+    // outside the human-qualified headline. No per-visitor maximum.
+    const rawPdfAccess = pdfAccessActions(rows);
     const rawPdfAccessByVisitor = new Map<string, number>();
     for (const a of rawPdfAccess) {
       const vid = a.row.visitor_id?.trim();
@@ -1523,7 +1518,6 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
         pdfOpens: v.pdfOpens,
         downloads: v.downloads,
         pdfAccessActionsRaw: rawPdfAccessByVisitor.get(v.visitorId) ?? 0,
-        overPdfAccessCap: (rawPdfAccessByVisitor.get(v.visitorId) ?? 0) > PDF_ACCESS_CAP_PER_VISITOR,
         searches: v.searches,
         signups: v.signups,
         shares: v.shares,
@@ -1566,7 +1560,6 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       pdfOpens: rows.filter((r) => r.event_name === "pdf_open").length,
       downloads: rows.filter((r) => r.event_name === "download").length,
       pdfAccessActionsRaw: rawPdfAccess.length,
-      pdfAccessCap: PDF_ACCESS_CAP_PER_VISITOR,
       signups: rows.filter((r) => r.event_name === "signup").length,
       suspectedSessions: new Set([...burstOrHeartbeat, ...knownIncident]).size,
       eventsScanned: rows.length,
