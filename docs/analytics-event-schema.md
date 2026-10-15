@@ -351,8 +351,8 @@ Single source: `src/lib/pdf-access.ts` (`summarizePdfAccess`), used by every adm
 
 - **Counts:** tagged `publication_click` with `metadata.action = "open_pdf"`, and historical user-initiated `download` actions. A `download_served` row counts only when its `metadata.action_id` matches no `download` row (then it stands in for that action); otherwise it pairs with the action and is not counted again. Duplicate deliveries (same `event_id`) collapse.
 - **Never counts:** automatic `pdf_open` previews, untagged selections, impressions, page views.
-- **Order of filters:** dedupe → shared human classifier (uncertain, internal/test, suspected automation excluded) → require `visitor_id` → per `visitor_id`, keep the **earliest 5** actions by `occurred_at` across all sessions and publications in the selected range. Never per session or IP.
-- **Audit fields:** `pdfAccessRaw`, `pdfAccessExcludedNonHuman`, `pdfAccessExcludedNoVisitorId`, `pdfAccessOverCap`, `pdfAccessVisitorsOverCap`, `pdfAccessMissingPublicationId`, `pdfAccessByKind`. Raw events are never altered.
+- **Order of filters:** dedupe → shared human classifier (uncertain, internal/test, suspected automation excluded) → require `visitor_id` → count every distinct qualifying action across all sessions and publications in the selected range. There is no per-visitor limit; visitors are never merged by IP.
+- **Audit fields:** `pdfAccessRaw`, `pdfAccessExcludedNonHuman`, `pdfAccessExcludedNoVisitorId`, `pdfAccessMissingPublicationId`, `pdfAccessByKind`. Raw events are never altered.
 - **PDF-open rate:** human sessions with ≥1 counted open ÷ human sessions.
 - **Rankings / attribution:** `report.pdfAccess.byPublication` (id, title, series, parsha, opens, uniqueVisitors, topSource, lastAt), `bySource`, `byCampaign`. Missing publication IDs are excluded from rankings, never guessed from titles.
 - **CSV (`counted-pdf-opens-*.csv`):** `publication_id, title, series, parsha, counted_pdf_opens, unique_visitors, top_source, last_at_utc`.
