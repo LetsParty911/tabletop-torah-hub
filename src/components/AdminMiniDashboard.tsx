@@ -167,7 +167,7 @@ export default function AdminMiniDashboard({
         {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
         {data && canonical && nothingNew && (
           <p className="mt-6 font-serif text-xl text-foreground">
-            No new visitor activity, PDF opens, subscribers, or contact messages in this period.
+            No new visitor activity, PDF requests, subscribers, or contact messages in this period.
           </p>
         )}
         {data && !nothingNew && (
@@ -218,19 +218,19 @@ export default function AdminMiniDashboard({
               quiet={canonical.countedPdfOpens === 0 && canonical.openPdfClicks === 0 && canonical.downloadActions === 0}
             >
               {canonical.countedPdfOpens === 0 && canonical.openPdfClicks === 0 && canonical.downloadActions === 0 ? (
-                <Quiet>No PDF opens</Quiet>
+                <Quiet>No attempted PDF opens</Quiet>
               ) : (
                 <>
                   <BigNumber>{canonical.countedPdfOpens}</BigNumber>
                   <p className="mt-2 font-serif text-lg text-foreground">
-                    Counted PDF {canonical.countedPdfOpens === 1 ? "open" : "opens"}
+                    Counted PDF attempted {canonical.countedPdfOpens === 1 ? "open" : "opens"}
                   </p>
                   <p className="mt-3 text-sm leading-6">
-                    {canonical.countedUniquePdfs} distinct {canonical.countedUniquePdfs === 1 ? "PDF" : "PDFs"}
+                    {canonical.countedUniquePdfs} distinct requested {canonical.countedUniquePdfs === 1 ? "PDF" : "PDFs"}
                     {" · "}{canonical.countedPdfOpenVisitors} {canonical.countedPdfOpenVisitors === 1 ? "visitor" : "visitors"}
                   </p>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Human-qualified, unlimited per visitor · {canonical.openPdfClicks} Open PDF clicks
+                    Attempted opens, not confirmed downloads · Human-qualified, unlimited per visitor · {canonical.openPdfClicks} Open PDF clicks
                     {canonical.downloadActions > 0 ? ` · ${canonical.downloadActions} historical download actions (included)` : ""}
                   </p>
                 </>

@@ -58,7 +58,7 @@ export default function DownloadsByMinute({ accessToken }: { accessToken: string
         <div>
           <h3 className="font-serif text-lg font-semibold">Download actions by minute</h3>
           <p className="text-xs text-muted-foreground">
-            {total.toLocaleString()} raw actions · peak {peak.toLocaleString()}/min · times shown ET
+            {total.toLocaleString()} raw requests/actions (not completed transfers) · peak {peak.toLocaleString()}/min · times shown ET
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1">

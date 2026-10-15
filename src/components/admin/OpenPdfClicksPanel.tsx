@@ -6,9 +6,9 @@ type Detail = ReportData["report"]["details"]["openPdfClicks"][number];
 import { csvCell, formatNyClockSeconds as fmt } from "@/lib/open-pdf-clicks";
 
 function exportCsv(rows: Detail[], rangeLabel: string) {
-  const header = ["occurred_at_utc", "occurred_at_et", "publication_title", "publication_id", "source_page", "visitor_id", "session_id", "traffic_source", "referrer", "device", "approx_ip_location"];
+  const header = ["occurred_at_utc", "occurred_at_et", "publication_title", "publication_id", "source_page", "visitor_id", "session_id", "traffic_source", "referrer", "device", "approx_ip_location", "measurement", "transfer_confirmation"];
   const lines = [header.join(",")].concat(
-    rows.map((r) => [r.at, fmt(r.at), r.publication, r.publicationId, r.path, r.visitorId, r.sessionId, r.source, r.referrer, r.device, r.location].map(csvCell).join(",")),
+    rows.map((r) => [r.at, fmt(r.at), r.publication, r.publicationId, r.path, r.visitorId, r.sessionId, r.source, r.referrer, r.device, r.location, "Open PDF click (attempted open)", "Not measured"].map(csvCell).join(",")),
   );
   const blob = new Blob([lines.join("\n")], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
@@ -33,17 +33,17 @@ export default function OpenPdfClicksPanel({ data }: { data: ReportData }) {
     <section className="border-y border-border py-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="font-serif text-lg font-semibold text-primary">Open PDF button clicks</h3>
+          <h3 className="font-serif text-lg font-semibold text-primary">Open PDF clicks</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Deliberate taps on the public Open PDF button ({data.rangeLabel}). Separate from PDF viewer previews (automatic) and download actions.
+            Deliberate taps on the public Open PDF button ({data.rangeLabel}). Separate from PDF viewer loads (automatic) and download actions.
             {" "}{s.total} from likely-human visits · {s.rawTotal} raw ({s.excluded} excluded from human headline, including uncertain, internal/test, automation, or unidentified visits) · {s.uniqueVisitors} visitors · {s.uniqueSessions} visits.
           </p>
           <p className="mt-2 text-sm">
-            <b>{s.total}</b> Open PDF clicks on <b>{s.uniquePublications}</b> unique {s.uniquePublications === 1 ? "PDF" : "PDFs"} by <b>{s.uniqueVisitors}</b> {s.uniqueVisitors === 1 ? "visitor" : "visitors"}
-            <span className="text-xs text-muted-foreground"> · raw: {s.rawUniquePublications} unique PDFs. Attempted opens, not verified reading or saved downloads.</span>
+            <b>{s.total}</b> Open PDF clicks on <b>{s.uniquePublications}</b> distinct {s.uniquePublications === 1 ? "PDF" : "PDFs"} by <b>{s.uniqueVisitors}</b> {s.uniqueVisitors === 1 ? "visitor" : "visitors"}
+            <span className="text-xs text-muted-foreground"> · raw: {s.rawUniquePublications} distinct PDFs clicked. Attempted opens, not verified reading or saved downloads.</span>
           </p>
           {s.clicksMissingPublicationId > 0 && (
-            <p className="mt-1 text-xs text-muted-foreground">{s.clicksMissingPublicationId} {s.clicksMissingPublicationId === 1 ? "click has" : "clicks have"} no publication ID and {s.clicksMissingPublicationId === 1 ? "is" : "are"} not included in the unique PDF count.</p>
+            <p className="mt-1 text-xs text-muted-foreground">{s.clicksMissingPublicationId} {s.clicksMissingPublicationId === 1 ? "click has" : "clicks have"} no publication ID and {s.clicksMissingPublicationId === 1 ? "is" : "are"} not included in the Distinct PDFs clicked count.</p>
           )}
         </div>
         <button type="button" onClick={() => exportCsv(rows, data.rangeLabel)} disabled={!rows.length} className="rounded-full border border-primary/40 px-3 py-1.5 text-xs font-medium text-primary hover:bg-accent/15 disabled:opacity-50">
@@ -55,7 +55,7 @@ export default function OpenPdfClicksPanel({ data }: { data: ReportData }) {
       ) : (
         <div className="mt-4 grid gap-6 lg:grid-cols-3">
           <div id="open-pdf-by-publication" className="lg:col-span-2 overflow-x-auto scroll-mt-24">
-            <h4 className="text-sm font-semibold">By publication ({s.uniquePublications} unique PDFs)</h4>
+            <h4 className="text-sm font-semibold">By publication ({s.uniquePublications} distinct PDFs clicked)</h4>
             <table className="mt-2 w-full min-w-[420px] text-left text-xs">
               <thead className="text-muted-foreground"><tr><th className="py-1">Publication</th><th>Clicks</th><th>Visits</th><th>Last click (ET)</th></tr></thead>
               <tbody className="divide-y divide-border">

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Overview, Headline } from "@/lib/overview-analytics";
+import { pdfEventLabel } from "@/lib/pdf-reporting";
 import { formatCountRate, shouldShowRate } from "@/lib/admin-analytics-display";
 
 type Row = { label: string; sessions: number; count?: number };
@@ -73,9 +74,9 @@ export default function PlausibleOverview({ overview, prior, rangeLabel }: { ove
       <Card label="Bounce rate" value={shouldShowRate(h.sessions) ? `${Math.round((h.bouncedSessions / h.sessions) * 100)}%` : `${h.bouncedSessions} of ${h.sessions}`} />
       <Card label="Median engaged time" value={secs(h.medianEngagedSeconds)} note={`avg ${secs(h.averageEngagedSeconds)} · ${h.engagedSessionsWithTime} timed`} />
       <Card label="New / returning" value={`${h.newVisitors} / ${h.returningVisitors}`} />
-      <Card label="Counted PDF opens" value={h.countedPdfOpens} note={change(h.countedPdfOpens, prior?.countedPdfOpens)} />
-      <Card label="Visits with a PDF open" value={h.pdfOpenSessions} note={formatCountRate(h.pdfOpenSessions, h.sessions) + " PDF-open rate"} />
-      <Card label="Download actions (historical)" value={h.downloadActions} note="Audit only — already inside counted opens" />
+      <Card label="Counted PDF attempted opens" value={h.countedPdfOpens} note={change(h.countedPdfOpens, prior?.countedPdfOpens)} />
+      <Card label="Visits with an attempted PDF open" value={h.pdfOpenSessions} note={formatCountRate(h.pdfOpenSessions, h.sessions) + " PDF attempted-open rate"} />
+      <Card label="Download actions (historical)" value={h.downloadActions} note="Audit only — already inside counted attempted opens" />
     </section>
 
     <section>
@@ -83,10 +84,10 @@ export default function PlausibleOverview({ overview, prior, rangeLabel }: { ove
       <p className="text-xs text-muted-foreground">Visitors per {overview.bucketing === "day" ? "day" : overview.bucketing === "hour" ? "hour" : "5 minutes"} (New York time).</p>
       {overview.trend.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No activity.</p> : <>
         <div className="mt-3 flex h-32 items-end gap-0.5 border-b border-border">
-          {overview.trend.map((t) => <div key={t.bucket} title={`${t.bucket}: ${t.visitors} visitors, ${t.pageviews} pageviews, ${t.pdfOpens} counted PDF opens`} className="flex-1 rounded-t bg-primary/70" style={{ height: `${(t.visitors / maxTrend) * 100}%` }} />)}
+          {overview.trend.map((t) => <div key={t.bucket} title={`${t.bucket}: ${t.visitors} visitors, ${t.pageviews} pageviews, ${t.pdfOpens} counted PDF attempted opens`} className="flex-1 rounded-t bg-primary/70" style={{ height: `${(t.visitors / maxTrend) * 100}%` }} />)}
         </div>
         <details className="mt-2 text-xs"><summary className="cursor-pointer text-muted-foreground">Show table</summary>
-          <table className="mt-2 w-full text-left"><thead><tr className="text-muted-foreground"><th>Period</th><th>Visitors</th><th>Sessions</th><th>Pageviews</th><th>Counted PDF opens</th><th>Historical downloads</th></tr></thead>
+          <table className="mt-2 w-full text-left"><thead><tr className="text-muted-foreground"><th>Period</th><th>Visitors</th><th>Sessions</th><th>Pageviews</th><th>Counted PDF attempted opens</th><th>Historical download actions</th></tr></thead>
             <tbody>{overview.trend.map((t) => <tr key={t.bucket}><td>{t.bucket}</td><td>{t.visitors}</td><td>{t.sessions}</td><td>{t.pageviews}</td><td>{t.pdfOpens}</td><td>{t.downloads}</td></tr>)}</tbody></table>
         </details>
       </>}
@@ -163,7 +164,7 @@ export default function PlausibleOverview({ overview, prior, rangeLabel }: { ove
       <ul className="mt-2 divide-y divide-border text-sm">
         {overview.journeys.map((j) => <li key={j.sessionId} className="py-2">
           <button className="w-full text-left" onClick={() => setJourney(journey === j.sessionId ? null : j.sessionId)}>{time(j.startedAt)} · {j.source} · {j.device} · {j.steps.length} steps</button>
-          {journey === j.sessionId && <ol className="mt-2 space-y-0.5 pl-4 text-xs text-muted-foreground">{j.steps.map((s, i) => <li key={i}>{time(s.at)} — {s.event.replaceAll("_", " ")}{s.label ? ` · ${s.label}` : ""}</li>)}</ol>}
+          {journey === j.sessionId && <ol className="mt-2 space-y-0.5 pl-4 text-xs text-muted-foreground">{j.steps.map((s, i) => <li key={i}>{time(s.at)} — {pdfEventLabel(s.event)}{s.label ? ` · ${s.label}` : ""}</li>)}</ol>}
         </li>)}
       </ul>
     </section>
@@ -172,7 +173,7 @@ export default function PlausibleOverview({ overview, prior, rangeLabel }: { ove
       <h3 className="font-serif text-lg font-semibold text-primary">Event types</h3>
       <p className="text-xs text-muted-foreground">Every validated canonical event name recorded in this period. Scroll events: {overview.scroll.rawEvents} raw, {overview.scroll.uniqueThresholdEvents} unique page-view thresholds.</p>
       <table className="mt-2 w-full text-left text-sm"><thead><tr className="text-muted-foreground"><th>Event</th><th>Count</th><th>Sessions</th></tr></thead>
-        <tbody>{overview.eventCatalog.map((e) => <tr key={e.label}><td>{e.label}</td><td>{e.count}</td><td>{e.sessions}</td></tr>)}</tbody></table>
+        <tbody>{overview.eventCatalog.map((e) => <tr key={e.label}><td>{pdfEventLabel(e.label)} <code className="text-[10px] text-muted-foreground">({e.label})</code></td><td>{e.count}</td><td>{e.sessions}</td></tr>)}</tbody></table>
     </section>
   </div>;
 }

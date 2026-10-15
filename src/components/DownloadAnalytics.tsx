@@ -72,7 +72,7 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
           <h2 className="text-lg font-semibold">Raw download actions by collection</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             Legacy audit data grouped by the PDF's collection. These are actions, not people or a
-            conversion rate.
+            conversion rate or confirmed completed transfers. Printing is not measured.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -144,7 +144,7 @@ export function DownloadAnalytics({ accessToken }: { accessToken: string }) {
                 >
                   <span className="font-medium">{r.title}</span>
                   <span className="shrink-0 text-right">
-                    <b className="text-primary">{r.actions}</b> selected
+                    <b className="text-primary">{r.actions}</b> download actions
                     <br />
                     <span className="text-xs text-muted-foreground">
                       {r.previous} {prevParsha ?? "previous collection"}

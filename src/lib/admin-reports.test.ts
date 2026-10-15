@@ -130,8 +130,8 @@ describe("deterministic observations", () => {
       topSourcePdfOpens: { label: "Email", opens: 5 },
     });
     expect(notes).toHaveLength(3);
-    expect(notes[0]).toBe("Email produced 5 of 8 counted PDF opens.");
-    expect(notes[1]).toBe("Artscroll by the Shabbos Table led with 5 counted PDF opens from 3 visitors.");
+    expect(notes[0]).toBe("Email produced 5 of 8 counted PDF attempted opens.");
+    expect(notes[1]).toBe("Artscroll by the Shabbos Table led with 5 counted PDF attempted opens from 3 visitors.");
     expect(notes[2]).toBe("No searches failed to lead to content.");
   });
 });

@@ -30,7 +30,7 @@ describe("describeRecentStoryAction", () => {
       pageviews: 2,
       events: [{ event: "publication_click" }, { event: "pdf_open" }],
     });
-    expect(did).toBe("opened a PDF");
+    expect(did).toBe("loaded a PDF viewer (automatic)");
   });
 
   it("falls back to page-view wording for sessions without a tagged click", () => {

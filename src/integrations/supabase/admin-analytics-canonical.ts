@@ -19,6 +19,7 @@ import { aggregatePublications } from "@/lib/publication-funnel";
 import { weeklyReaderLoyalty } from "@/lib/weekly-reader-loyalty";
 import { isOpenPdfClick, openPdfClicksForReport, shapeOpenPdfClickDetails } from "@/lib/open-pdf-clicks";
 import { describeRecentStoryAction } from "@/lib/recent-story";
+import { pdfEventLabel } from "@/lib/pdf-reporting";
 import { pdfAccessActions, summarizePdfAccess, pdfOpenRate, type PdfAccessSummary } from "@/lib/pdf-access";
 import { buildOverview } from "@/lib/overview-analytics";
 import { summarizeGeoInsights } from "@/lib/geo-insights";
@@ -471,7 +472,7 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
     path: row.path,
     publication: row.publication_title?.trim() || row.publication_id?.trim() || null,
     source: row.source_group?.trim() || "Direct",
-    reason,
+    reason: reason ?? (["publication_click", "pdf_open", "download", "download_served", "pdf_route_result", "print_click"].includes(row.event_name ?? "") ? pdfEventLabel(row.event_name ?? "", row.metadata) : null),
     publicationId: row.publication_id?.trim() || null,
     device: row.device_type?.trim() || null,
     location: [row.city, row.region, row.country].map((part) => part?.trim()).filter(Boolean).join(", ") || null,
@@ -607,8 +608,8 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
     downloads: keptRows.filter((row) => row.event_name === "download").map((row) => detailFor(row)),
     returning: keptRows.filter((row, index, list) => row.visitor_id && returning.has(row.visitor_id) && list.findIndex((other) => other.visitor_id === row.visitor_id) === index).map((row) => detailFor(row)),
     engaged: sessionDetails.filter((session) => session.engaged).flatMap((session) => session.events.slice(0, 1)),
-    downloadsServed: keptRows.filter((row) => row.event_name === "download_served").map((row) => detailFor(row, "Application validated the file and issued the redirect")),
-    countedPdfOpens: [...pdfAccess.countedActions].reverse().map((a) => detailFor(a.row, a.kind === "open_pdf_click" ? "Clicked Open PDF (attempted open)" : "Historical download action")),
+    downloadsServed: keptRows.filter((row) => row.event_name === "download_served").map((row) => detailFor(row, "PDF redirect issued (not confirmed download or reading)")),
+    countedPdfOpens: [...pdfAccess.countedActions].reverse().map((a) => detailFor(a.row, a.kind === "open_pdf_click" ? "Clicked Open PDF (attempted open)" : a.kind === "download_served" ? "Historical PDF redirect issued (not confirmed download)" : "Historical download request/action")),
   };
 
   // Attribution of counted PDF opens by grouped source and named campaign.
@@ -1323,15 +1324,15 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       }
       if (name === "publication_click") {
         v.publicationClicks += 1;
-        if (publication) v.publicationActions.push({ at, action: "Clicked", publication });
+        if (publication) v.publicationActions.push({ at, action: isOpenPdfClick(row) ? "Open PDF click (attempted open)" : "Publication selected", publication });
       }
       if (name === "pdf_open") {
         v.pdfOpens += 1;
-        if (publication) v.publicationActions.push({ at, action: "Opened PDF", publication });
+        if (publication) v.publicationActions.push({ at, action: "PDF viewer loaded", publication });
       }
       if (name === "download") {
         v.downloads += 1;
-        if (publication) v.publicationActions.push({ at, action: "Downloaded", publication });
+        if (publication) v.publicationActions.push({ at, action: "Download requested", publication });
       }
       if (name === "search") {
         v.searches += 1;
@@ -1981,11 +1982,11 @@ export const adminAnalyticsHealth = createServerFn({ method: "POST" })
       const healthClass = classifySessions(rows);
       const access = summarizePdfAccess(rows, healthClass.humanIds);
       checks.push({
-        name: "Counted PDF opens",
+        name: "Counted PDF attempted opens",
         status: access.rawActions === 0 ? "not_enough_data" : access.countedMissingPublicationId === 0 ? "healthy" : "warning",
         detail: access.rawActions === 0
           ? "No deliberate Open PDF clicks or historical download actions in the last 7 days."
-          : `${access.rawActions} deduplicated PDF-access actions; ${access.counted} counted after excluding ${access.excludedNonHuman} non-human, ${access.excludedNoVisitorId} without a visitor ID and ${access.overCap} over the ${access.cap}-per-visitor cap. ${access.countedMissingPublicationId} counted actions lack a publication ID. ${access.automaticPreviews} automatic previews are never counted.`,
+          : `${access.rawActions} deduplicated PDF-access actions; ${access.counted} attempted opens after excluding ${access.excludedNonHuman} uncertain/internal/test or suspected-automation actions and ${access.excludedNoVisitorId} without a visitor ID. Every distinct qualifying action counts, with no per-visitor limit. ${access.countedMissingPublicationId} counted actions lack a publication ID. ${access.automaticPreviews} PDF viewer loads are separate. Redirects are not confirmed downloads.`,
       });
     }
 

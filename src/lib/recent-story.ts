@@ -19,7 +19,7 @@ export interface RecentStorySession {
 export function describeRecentStoryAction(session: RecentStorySession): string {
   const events = session.events ?? [];
   if (events.some((event) => event.event === "download")) return "requested a download";
-  if (events.some((event) => event.event === "pdf_open")) return "opened a PDF";
+  if (events.some((event) => event.event === "pdf_open")) return "loaded a PDF viewer (automatic)";
   if (
     session.usedTorahReason === "Clicked Open PDF" &&
     events.some((event) => event.event === "publication_click")

@@ -96,7 +96,7 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
               note="only where canonical session 1 is observed"
             />
             <Stat
-              label="Median lifetime time to first download"
+              label="Median lifetime time to first download request"
               value={maybe(data.totals.medianHoursToFirstDownload, "h")}
               note="only where canonical session 1 is observed"
             />
@@ -121,7 +121,7 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
                   key={r.key}
                   label={r.key.replace("lifetime", "recorded")}
                   value={pct(r.convertedSessions, r.sessions)}
-                  note={`${r.convertedSessions} downloading sessions / ${r.sessions} sessions`}
+                  note={`${r.convertedSessions} sessions with download requests / ${r.sessions} sessions`}
                 />
               ))}
             </div>
@@ -129,7 +129,7 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
 
           <section>
             <h3 className="font-serif text-lg font-bold text-primary">
-              Lifetime time to first download
+              Lifetime time to first download request
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
               This section includes only visitors whose first canonical session is observed.
@@ -143,7 +143,7 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
                 label="Later lifetime session"
                 value={String(data.timeToConversion.laterSession)}
               />
-              <Stat label="No recorded download" value={String(data.timeToConversion.noDownload)} />
+              <Stat label="No recorded download request" value={String(data.timeToConversion.noDownload)} />
             </div>
           </section>
 
@@ -198,7 +198,7 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
                     <div className="font-semibold text-primary">{r.title}</div>
                     <div className="mt-1 text-xs text-muted-foreground">
                       {r.returningVisitors} returning visitors · {r.repeatVisitors} repeat visitors
-                      · {r.accesses} access pairs · {r.downloads} download pairs
+                      · {r.accesses} access pairs · {r.downloads} download request pairs
                     </div>
                   </div>
                 ))
@@ -256,7 +256,7 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
                           )}
                           {s.accessed.length > 0 && <div>Accessed: {s.accessed.join(", ")}</div>}
                           {s.downloaded.length > 0 && (
-                            <div>Downloaded: {s.downloaded.join(", ")}</div>
+                            <div>Download requested: {s.downloaded.join(", ")}</div>
                           )}
                         </div>
                       ))}
@@ -284,7 +284,7 @@ export default function Phase2ReturningAnalytics({ accessToken }: { accessToken:
               </p>
               <p>
                 <b className="text-foreground">Converted visitor:</b> an active visitor with at
-                least one recorded download action at any point in canonical history.
+                least one recorded download action at any point in canonical history. This is a request, not a completed file transfer; neither transfers nor printing are measured.
               </p>
               <p>
                 <b className="text-foreground">Lifetime timing:</b> calculated only when canonical

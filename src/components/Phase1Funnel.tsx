@@ -61,10 +61,10 @@ function Breakdown({ title, rows }: { title: string; rows: BreakRow[] }) {
               </div>
               <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground sm:grid-cols-4">
                 <span>{r.accesses} access pairs</span>
-                <span>{r.uniquePdfDownloads} unique PDF downloads</span>
+                <span>{r.uniquePdfDownloads} session–publication download request pairs</span>
                 <span>{r.downloadActions} download actions</span>
                 <span className="font-semibold text-foreground">
-                  {pct(r.convertedSessions, r.sessions)} session download conversion
+                  {pct(r.convertedSessions, r.sessions)} session download-request rate
                 </span>
               </div>
             </div>
@@ -98,7 +98,7 @@ function LocationList({ title, rows }: { title: string; rows: LocationRow[] }) {
               <span className="shrink-0 text-right text-xs text-muted-foreground">
                 <b className="text-primary">{r.sessions}</b> sessions · {r.uniqueVisitors} visitors
                 <br />
-                {ratio(r.sessionDownloadConversion)} download conv.
+                {ratio(r.sessionDownloadConversion)} download-request rate
               </span>
             </li>
           ))}
@@ -185,9 +185,9 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
               note={`${pct(data.totals.engagedSessions, data.totals.sessions)} of sessions`}
             />
             <Card
-              label="Session download conversion"
+              label="Session download-request rate"
               value={ratio(data.totals.sessionDownloadConversion)}
-              note={`${data.totals.downloadingSessions} downloading of ${data.totals.sessions} sessions`}
+              note={`${data.totals.downloadingSessions} with download requests out of ${data.totals.sessions} sessions`}
             />
             <Card
               label="Returning visitors"
@@ -258,10 +258,10 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
                       <span>{p.impressions} impression pairs</span>
                       <span>{p.clicks} click pairs</span>
                       <span>{p.accesses} access pairs</span>
-                      <span>{p.downloads} download pairs</span>
+                      <span>{p.downloads} download request pairs</span>
                       <span className="font-semibold">CTR {pct(p.clicks, p.impressions)}</span>
                       <span className="font-semibold">
-                        Access→download {pct(p.downloads, p.accesses)}
+                        Access→download request {pct(p.downloads, p.accesses)}
                       </span>
                     </div>
                   </div>
@@ -281,12 +281,12 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
                 note={pct(data.totals.pdfAccessingSessions, data.totals.sessions)}
               />
               <Small
-                label="Downloading sessions"
+                label="Sessions with download requests"
                 value={String(data.totals.downloadingSessions)}
                 note={pct(data.totals.downloadingSessions, data.totals.sessions)}
               />
               <Small
-                label="Unique PDF downloads"
+                label="Session–publication request pairs"
                 value={String(data.totals.uniquePdfDownloads)}
                 note="session + publication pairs"
               />
@@ -326,7 +326,7 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
                 before the range, or canonical non-first-session evidence.
               </p>
               <p>
-                <b className="text-foreground">Session download conversion:</b> downloading sessions
+                <b className="text-foreground">Session download-request rate:</b> sessions with download requests
                 / sessions.
               </p>
               <p>
@@ -335,12 +335,12 @@ export default function Phase1Funnel({ accessToken }: { accessToken: string }) {
                 range.
               </p>
               <p>
-                <b className="text-foreground">Unique PDF download:</b> one session+publication
-                pair.
+                <b className="text-foreground">Session–publication download request pair:</b> one session+publication
+                pair with a download request; not a completed transfer.
               </p>
               <p>
                 <b className="text-foreground">Download action:</b> each raw download event,
-                including repeats.
+                including repeats. A redirect does not confirm a completed file transfer or printing.
               </p>
               <p>
                 <b className="text-foreground">Engaged session:</b> positive action, heartbeat, at

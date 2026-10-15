@@ -81,7 +81,15 @@ const FILE_READ_HINT =
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
-  head: () => ({ meta: [{ title: "Admin — Torah for the Table" }] }),
+  head: () => ({ meta: [
+    { title: "Admin — Torah for the Table" },
+    { name: "description", content: "Private publication management, analytics and reporting for Torah for the Table administrators." },
+    { property: "og:title", content: "Admin — Torah for the Table" },
+    { property: "og:description", content: "Private publication management, analytics and reporting for Torah for the Table administrators." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+    { name: "robots", content: "noindex, nofollow" },
+  ] }),
 });
 
 import { formatTypeLabel } from "@/lib/format-labels";

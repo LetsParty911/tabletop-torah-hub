@@ -5,6 +5,7 @@ import {
   adminRetentionCohorts,
   type adminAnalyticsReport,
 } from "@/integrations/supabase/admin-analytics-canonical";
+import { PDF_REPORTING } from "@/lib/pdf-reporting";
 import { formatCountRate } from "@/lib/admin-analytics-display";
 import CampaignLinkBuilder from "@/components/admin/CampaignLinkBuilder";
 import InternalDeviceControl from "@/components/admin/InternalDeviceControl";
@@ -155,16 +156,16 @@ export default function OwnerSummary({
             onClick={() => openDetail("engaged", "Engaged Sessions", "Sessions with meaningful intent or at least two pageviews.")}
           />
           <Stat
-            label="Counted PDF opens"
+            label="Counted PDF attempted opens"
             value={m.countedPdfOpens}
-            note={`Human-qualified, no per-visitor limit`}
-            onClick={() => openDetail("countedPdfOpens", "Counted PDF opens", "Deliberate Open PDF clicks and historical download actions from likely-human visitors, all distinct actions without a visitor limit.")}
+            note="Attempted opens, not confirmed transfers; uncapped"
+            onClick={() => openDetail("countedPdfOpens", "Counted PDF attempted opens", PDF_REPORTING.attemptedDefinition)}
           />
           <Stat
             label="Used Torah"
             value={m.usedTorah}
-            note="Clicked Open PDF, opened, downloaded, shared or signed up"
-            onClick={() => openDetail("usedTorah", "Used Torah", "Sessions with a qualifying Torah action.")}
+            note="Open PDF click, viewer load, download request, share or signup"
+            onClick={() => openDetail("usedTorah", "Used Torah", PDF_REPORTING.usedTorahDefinition)}
           />
           <Stat
             label="Open PDF clicks"
@@ -173,31 +174,31 @@ export default function OwnerSummary({
             onClick={() => openDetail("openPdfClicks", "Open PDF button clicks", "Every deliberate Open PDF button click from likely-human visits, newest first.")}
           />
           <Stat
-            label="Unique PDFs opened"
+            label="Distinct PDFs clicked"
             value={m.uniquePdfsOpened}
-            note="Distinct PDFs with an Open PDF click — attempted opens, not verified reading"
+            note={PDF_REPORTING.clickedDefinition}
             onClick={scrollToOpenPdfPublications}
           />
           <Stat
-            label="PDF viewer opens"
+            label="PDF viewer loads"
             value={m.pdfOpens}
             note="Embedded preview loaded (automatic)"
-            onClick={() => openDetail("pdfOpens", "PDF viewer opens", "Every embedded PDF-preview load in this period. Not a button click.")}
+            onClick={() => openDetail("pdfOpens", "PDF viewer loads", "Every embedded PDF-preview load in this period. Not a button click.")}
           />
           <Stat
             label="Download actions (historical)"
             value={m.downloads}
-            note="Audit only — already inside counted opens"
+            note="Audit only — already inside counted attempted opens"
             onClick={() => openDetail("downloads", "Download Actions", "Every user-initiated download request.")}
           />
           <Stat
-            label="Served download requests (historical)"
+            label="Historical PDF redirects issued"
             value={m.downloadsServed}
             note="File redirect issued — not proof the file finished"
             onClick={() =>
               openDetail(
                 "downloadsServed",
-                "Served Download Requests",
+                "Historical PDF redirects issued (not confirmed downloads)",
                 "The application validated the publication and issued the redirect to the file. It does not prove every byte transferred.",
               )
             }
@@ -205,9 +206,9 @@ export default function OwnerSummary({
           <Stat
             label="Unmatched actions"
             value={m.downloadActionsUnmatched}
-            note="Tapped but no served request recorded"
+            note="Requested, but no matching redirect recorded"
           />
-          <Stat label="PDF redirects issued" value={m.pdfRedirectsIssued} note="File request validated; not proof of transfer or reading" />
+          <Stat label={PDF_REPORTING.redirects} value={m.pdfRedirectsIssued} note="File request validated; not proof of transfer or reading" />
           <Stat label="PDF route failures" value={m.pdfRouteFailures} note="Tagged Open PDF requests returning 404 or 500" />
           <Stat label="PDF requests diagnosed" value={m.pdfRouteTracked} note="New tracking only; older opens have no route result" />
           <Stat label="Chooser used" value={m.chooserSelections} note="Guided choices made" />
@@ -284,8 +285,8 @@ export default function OwnerSummary({
                 <p className="font-medium text-foreground">{publication.title}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {publication.impressions} shown → {publication.clicks} selected →{" "}
-                  {publication.pdfOpens} automatic previews · historical: {publication.downloadActions} download actions,{" "}
-                  {publication.downloadsServed} served
+                  {publication.pdfOpens} PDF viewer loads (automatic) · historical: {publication.downloadActions} download actions,{" "}
+                  {publication.downloadsServed} redirects issued (not confirmed downloads)
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Selection rate: {formatCountRate(publication.clickNumerator, publication.clickDenominator)}
@@ -310,7 +311,7 @@ export default function OwnerSummary({
           <Stat label="Postal estimates" value={report.geoInsights.postalSessions} note="Approximate, not an address" />
           <Stat label="Conflicting city estimates" value={report.geoInsights.multiCityEstimateSessions} note="Different city estimates within one session" />
           <Stat label="Country-only" value={report.geoInsights.countryOnlySessions} />
-          <Stat label="PDF-open sessions" value={report.geoInsights.pdfOpenSessions} note="Deliberate Open PDF clicks" />
+          <Stat label="Sessions with Open PDF clicks" value={report.geoInsights.pdfOpenSessions} note="Deliberate Open PDF clicks" />
         </div>
         <div className="mt-3 grid gap-4 md:grid-cols-2">
           <div><h4 className="text-sm font-medium">Network type</h4>
@@ -333,7 +334,7 @@ export default function OwnerSummary({
           <summary className="cursor-pointer text-sm font-medium">Inspect {report.geoInsights.reviewCities.length} estimated cities</summary>
           <div className="mt-3 overflow-x-auto">
             <table className="min-w-[720px] w-full text-left text-xs">
-              <thead><tr className="border-b border-border text-muted-foreground"><th className="py-2">Estimated city</th><th>Visits</th><th>Open PDF visits</th><th>Medium</th><th>Low</th><th>Unknown</th><th>Conflicting estimates</th></tr></thead>
+              <thead><tr className="border-b border-border text-muted-foreground"><th className="py-2">Estimated city</th><th>Visits</th><th>Visits with Open PDF clicks</th><th>Medium</th><th>Low</th><th>Unknown</th><th>Conflicting estimates</th></tr></thead>
               <tbody>{report.geoInsights.reviewCities.map((city) => <tr key={city.name} className="border-b border-border/50">
                 <td className="py-2 pr-3">{city.name}</td><td>{city.sessions}</td><td>{city.pdfOpenSessions}</td><td>{city.medium}</td><td>{city.low}</td><td>{city.unknown}</td><td>{city.conflictingEstimateSessions}</td>
               </tr>)}</tbody>
