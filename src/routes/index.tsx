@@ -268,7 +268,6 @@ function Index() {
   const fallbackParshaLabel = loaderData.fallbackParshaLabel;
   const fallbackParshaKey = loaderData.fallbackParshaKey;
   const readingDate = loaderData.readingDate;
-  const upcomingAfterYomTovKey = loaderData.upcomingAfterYomTovKey;
 
   const displayedLabel = isFallback && fallbackParshaLabel ? fallbackParshaLabel : currentLabel;
   const displayedParshaKey = isFallback && fallbackParshaKey ? fallbackParshaKey : currentParshaKey;
@@ -303,9 +302,6 @@ function Index() {
   const isCurrentYomKippur = normalizedCollectionKey === "yom kippur";
   const isSukkosSeason = ["sukkos", "shemini atzeres", "simchas torah"].includes(normalizedCurrentKey);
   const sukkosSeasonTitle = "Divrei Torah for Sukkos, Shmini Atzeres & Simchas Torah";
-  const upcomingParsha = isFallback
-    ? (currentParshaKey ?? nextParshaAfter(displayedParshaKey) ?? upcomingAfterYomTovKey)
-    : (nextParshaAfter(displayedParshaKey) ?? upcomingAfterYomTovKey);
 
   // Keep the current collection fresh after hydration. The homepage is time-sensitive,
   // and a platform/CDN can occasionally serve older SSR HTML even after the database
@@ -502,9 +498,6 @@ function Index() {
       Share Torah For The Table
     </a>
   );
-
-  const upcomingLabel =
-    upcomingParsha && upcomingParsha !== displayedParshaKey ? formatReadingLabel(upcomingParsha) : null;
 
   const isHaazinuWeek = normalizedCurrentKey === "ha'azinu";
   const haazinuQaTitle = "Parsha Questions & Answers – Haazinu";
@@ -774,13 +767,14 @@ function Index() {
         )}
 
         <ThursdayProgressMeter
-          heading={isFallback ? currentLabel : upcomingLabel ? `Upcoming: ${upcomingLabel}` : "Upcoming Divrei Torah"}
-          badgeLabel={isFallback ? "This Shabbos" : "Upcoming"}
+          // Upload progress belongs to the active reading, not the following week's parsha.
+          heading={currentLabel}
+          badgeLabel="This Shabbos"
           message="New Divrei Torah will be added then."
           completeHref="#this-weeks-collection"
-          completeCtaLabel={isFallback ? `See ${currentLabel} PDFs` : upcomingLabel ? `Browse ${upcomingLabel}` : "Browse the new collection"}
+          completeCtaLabel={`Browse ${displayedLabel}`}
           ariaLabel={(fillStep) =>
-            `${isFallback ? `${currentLabel} upload` : upcomingLabel ? `${upcomingLabel} upload` : "Upcoming Divrei Torah upload"} progress: ${fillStep}% complete`
+            `${currentLabel} upload progress: ${fillStep}% complete`
           }
         />
 
