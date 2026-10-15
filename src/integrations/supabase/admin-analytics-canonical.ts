@@ -1981,11 +1981,11 @@ export const adminAnalyticsHealth = createServerFn({ method: "POST" })
       const healthClass = classifySessions(rows);
       const access = summarizePdfAccess(rows, healthClass.humanIds);
       checks.push({
-        name: "Counted PDF opens",
+        name: "Counted PDF attempted opens",
         status: access.rawActions === 0 ? "not_enough_data" : access.countedMissingPublicationId === 0 ? "healthy" : "warning",
         detail: access.rawActions === 0
           ? "No deliberate Open PDF clicks or historical download actions in the last 7 days."
-          : `${access.rawActions} deduplicated PDF-access actions; ${access.counted} counted after excluding ${access.excludedNonHuman} non-human, ${access.excludedNoVisitorId} without a visitor ID and ${access.overCap} over the ${access.cap}-per-visitor cap. ${access.countedMissingPublicationId} counted actions lack a publication ID. ${access.automaticPreviews} automatic previews are never counted.`,
+          : `${access.rawActions} deduplicated PDF-access actions; ${access.counted} attempted opens after excluding ${access.excludedNonHuman} uncertain/internal/test or suspected-automation actions and ${access.excludedNoVisitorId} without a visitor ID. Every distinct qualifying action counts, with no per-visitor limit. ${access.countedMissingPublicationId} counted actions lack a publication ID. ${access.automaticPreviews} PDF viewer loads are separate. Redirects are not confirmed downloads.`,
       });
     }
 
