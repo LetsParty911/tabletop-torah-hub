@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { classifySessions } from "@/lib/human-sessions";
+import { isClientReturningEvidence } from "@/lib/visitor-return-evidence";
 
 async function requireAdmin(accessToken: string) {
   const { createClient } = await import("@supabase/supabase-js");
@@ -263,7 +264,7 @@ export const adminPhase1DashboardV2 = createServerFn({ method: "POST" })
     // If canonical history began during the report window, a non-first session flag still supplies evidence of return.
     for (const row of rows) {
       const vid = s(row.visitor_id);
-      if (vid && row.is_new_visitor === false) returningVisitors.add(vid);
+      if (vid && isClientReturningEvidence(row)) returningVisitors.add(vid);
     }
     const engaged = all.filter(
       (x) => x.positiveAction || x.heartbeat || x.pageViews >= 2 || x.activeSeconds >= 10,

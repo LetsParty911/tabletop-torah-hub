@@ -27,7 +27,7 @@ export interface PdfOutcomeRow {
   occurred_at: string;
   visitor_id: string;
   session_id: string;
-  is_new_visitor: false;
+  is_new_visitor: null;
   is_internal: boolean;
   path: string;
   publication_id: string;
@@ -79,7 +79,7 @@ export function buildOutcomeRow(
     occurred_at: now.toISOString(),
     visitor_id: c.vid,
     session_id: c.sid,
-    is_new_visitor: false,
+    is_new_visitor: null,
     is_internal: internal,
     path: "/view/" + publicationId + "/pdf",
     publication_id: publicationId,

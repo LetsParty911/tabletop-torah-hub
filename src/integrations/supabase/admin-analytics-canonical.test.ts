@@ -37,6 +37,19 @@ describe("canonical since-last PDF activity summary", () => {
     expect(rows[1]?.is_new_visitor).toBe(false);
   });
 
+  it("keeps first-time visitors new despite historical server PDF diagnostics", () => {
+    const rows = [
+      event({ event_id: "client-new", visitor_id: "new-one", session_id: "new-session", is_new_visitor: true }),
+      event({ event_id: "server-redirect", event_name: "pdf_route_result", visitor_id: "new-one", session_id: "new-session", is_new_visitor: false, metadata: { outcome: "redirect_issued" } }),
+      event({ event_id: "server-download", event_name: "download_served", visitor_id: "new-one", session_id: "new-session", is_new_visitor: false, metadata: { action_id: "d" } }),
+    ];
+    expect(summarizeCanonical(rows).returningVisitors).toBe(0);
+    const report = buildAnalyticsReport(rows, new Set());
+    expect(report.metrics.people).toBe(1);
+    expect(report.metrics.returningReaders).toBe(0);
+    expect(report.metrics.newVisitors).toBe(1);
+  });
+
   it("counts click events separately while deduplicating PDF IDs and transport retries", () => {
     const first = event({ event_id: "click-1" });
     const summary = summarizeCanonical([

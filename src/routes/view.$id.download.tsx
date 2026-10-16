@@ -97,7 +97,7 @@ async function recordDownloadServed(
       occurred_at: new Date().toISOString(),
       visitor_id: visitorId,
       session_id: sessionId,
-      is_new_visitor: false,
+      is_new_visitor: null,
       path: `/view/${publicationId}/download`,
       publication_id: publicationId,
       is_internal: isInternal,

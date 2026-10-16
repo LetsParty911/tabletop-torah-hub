@@ -7,6 +7,7 @@
 
 import { classifySessions, isHeadlineConfidence, type SessionClassification, type SessionEventRow } from "./human-sessions";
 import type { TrafficConfidence } from "./traffic-confidence";
+import { isClientReturningEvidence } from "./visitor-return-evidence";
 
 export const NOAHIDE_PATH = "/noahide-resources";
 
@@ -154,7 +155,7 @@ export function summarizeNoahideResources(
       device: pv.device_type?.trim() || "unknown",
       location: [pv.city, pv.region, pv.country].map((v) => v?.trim()).filter(Boolean).join(", ") || "Location unknown",
       locationQuality: pv.geo_reliability?.trim() || pv.network_type?.trim() || "unrated",
-      returning: Boolean(vid && (priorVisitors.has(vid) || list.some((r) => r.is_new_visitor === false))),
+      returning: Boolean(vid && (priorVisitors.has(vid) || list.some(isClientReturningEvidence))),
     };
     for (const r of list) {
       const m = meta(r);
