@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { activityTotals, publicationActivityCsv, selectPublicationActivity, type PublicationPdfActivity as Activity } from '@/lib/publication-pdf-activity';
 
-type Metric = 'deliberateOpens' | 'automaticLoads' | 'historicalDownloads' | 'historicalRedirects' | 'uniqueVisitors' | 'ageAdjustedPerDay';
-const metrics: [Metric, string][] = [['deliberateOpens', 'Deliberate open attempts'], ['automaticLoads', 'Automatic viewer loads'], ['historicalDownloads', 'Historical download actions'], ['historicalRedirects', 'Unpaired historical redirects'], ['uniqueVisitors', 'Unique activity visitors']];
+type CountMetric = 'deliberateOpens' | 'automaticLoads' | 'historicalDownloads' | 'historicalRedirects' | 'uniqueVisitors';
+type Metric = CountMetric | 'ageAdjustedPerDay';
+const metrics: [CountMetric, string][] = [['deliberateOpens', 'Deliberate open attempts'], ['automaticLoads', 'Automatic viewer loads'], ['historicalDownloads', 'Historical download actions'], ['historicalRedirects', 'Unpaired historical redirects'], ['uniqueVisitors', 'Unique activity visitors']];
 export default function PublicationPdfActivity({ publications, missingPublication, windowStart, windowEnd }: { publications: Activity[]; missingPublication: number; windowStart: string; windowEnd: string }) {
   const [parsha, setParsha] = useState('');
   const [metric, setMetric] = useState<Metric>('deliberateOpens');
