@@ -52,3 +52,8 @@
 - [x] Validate uncapped actions, paired redirects, distinct IDs, exclusions, and Used Torah regressions
 - [x] Run targeted tests and inspect authenticated preview; leave production unchanged
 
+## Reporting authority and Thursday signup (preview only)
+- [ ] Audit existing maintenance authority, canonical PDF semantics, and visitor breakdowns; fix only demonstrated bugs
+- [ ] Add compact near-top signup while preserving the lower form and unique anchors
+- [ ] Run focused regressions and verify desktop/mobile preview without subscriber or production changes
+
