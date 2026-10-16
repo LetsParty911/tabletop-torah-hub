@@ -158,7 +158,9 @@ export function buildSessions(rows: SessionEventRow[]): Map<string, SessionAgg> 
 
 /**
  * Burst / impossible-cadence automation. Sessions with real intent or an
- * explicit human_signal are never classified as automated.
+ * explicit human_signal are skipped here, but note that on known cloud
+ * infrastructure a human_signal without a deliberate action still cannot reach
+ * the headline count (see classifySession in traffic-confidence.ts).
  */
 export function classifyAutomation(sessions: SessionAgg[]): Set<string> {
   const automated = new Set<string>();
