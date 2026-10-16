@@ -26,6 +26,8 @@ export type ConfidenceInput = {
   /** A download, PDF open, click, search, chooser or My Table action. */
   meaningfulIntent: boolean;
   pageviews: number;
+  /** Number of distinct navigated paths; reloading one URL cannot establish multi-page reading. */
+  distinctPagePaths?: number;
   /** Rendered publication cards seen in the session. */
   impressions: number;
   durationMs: number;
@@ -89,7 +91,7 @@ export const CONFIDENCE_EXPLANATIONS: Record<TrafficConfidence, string> = {
   high_confidence_human:
     "An explicit human interaction signal was recorded alongside a deliberate Torah action.",
   likely_human:
-    "A deliberate action such as opening a PDF, choosing, searching or saving was recorded.",
+    "Evidence of human-like interaction, a deliberate site action, or navigation across distinct pages. This is not proof that a PDF was opened or read.",
   uncertain:
     "The visit was recorded but showed no deliberate action, so it cannot be classified either way. Passive visits from cloud-hosting networks stay here even with dwell time or a generic interaction signal.",
   suspected_automation:
@@ -106,7 +108,9 @@ export const CONFIDENCE_EXPLANATIONS: Record<TrafficConfidence, string> = {
  *    session can never become headline traffic: automation-rule matches and
  *    short one-page sessions are suspected_automation, everything else is
  *    uncertain (uncounted) — a generic human_signal alone is not conclusive;
- * 4. other networks keep the original human_signal / sustained-reading rules.
+ * 4. other networks require an observed human_signal, deliberate action, or
+ *    sustained navigation across DISTINCT paths. Homepage reloads and heartbeat
+ *    volume do not prove multiple pages of reading.
  */
 export function classifySession(input: ConfidenceInput): TrafficConfidence {
   if (input.internal) return "internal_test";
@@ -128,10 +132,12 @@ export function classifySession(input: ConfidenceInput): TrafficConfidence {
   if (input.humanSignal) return "likely_human";
   if (input.flaggedAutomation) return "suspected_automation";
 
-  // Sustained, multi-page reading with real dwell time is likely a person even
-  // without a recorded interaction event (non-infrastructure networks only).
-  if (input.pageviews >= 3 && input.durationMs >= 30_000) return "likely_human";
-  if (input.pageviews >= 2 && input.impressions > 0 && input.durationMs >= 10_000)
+  // Only genuinely distinct navigated URLs qualify as sustained browsing.
+  // Repeated page_view events on the same URL, impressions and heartbeat
+  // samples must not promote a passive session to a likely-human visitor.
+  const distinctPaths = input.distinctPagePaths ?? 0;
+  if (distinctPaths >= 3 && input.durationMs >= 30_000) return "likely_human";
+  if (distinctPaths >= 2 && input.impressions > 0 && input.durationMs >= 10_000)
     return "likely_human";
 
   return "uncertain";
