@@ -37,7 +37,13 @@ describe("classifySession", () => {
   });
 
   it("calls sustained multi-page reading likely human", () => {
-    expect(classifySession({ ...base, pageviews: 3, durationMs: 60_000 })).toBe("likely_human");
+    expect(classifySession({ ...base, pageviews: 3, distinctPagePaths: 3, durationMs: 60_000 })).toBe("likely_human");
+  });
+
+  it("does not count repeated homepage loads or heartbeats as multi-page reading", () => {
+    expect(classifySession({ ...base, pageviews: 8, distinctPagePaths: 1, impressions: 5, durationMs: 29 * 60_000 })).toBe("uncertain");
+    expect(classifySession({ ...base, pageviews: 5, impressions: 5, durationMs: 60_000 })).toBe("uncertain");
+    expect(classifySession({ ...base, pageviews: 5, distinctPagePaths: 1, humanSignal: true, durationMs: 60_000 })).toBe("likely_human");
   });
 
   it("falls back to uncertain rather than guessing", () => {
@@ -109,8 +115,8 @@ describe("infrastructure automation rule", () => {
 
   it("preserves non-infrastructure human signals and sustained browsing", () => {
     expect(classifySession({ ...base, humanSignal: true })).toBe("likely_human");
-    expect(classifySession({ ...base, pageviews: 3, durationMs: 60_000 })).toBe("likely_human");
-    expect(classifySession({ ...base, pageviews: 2, impressions: 2, durationMs: 23_000 })).toBe("likely_human");
+    expect(classifySession({ ...base, pageviews: 3, distinctPagePaths: 3, durationMs: 60_000 })).toBe("likely_human");
+    expect(classifySession({ ...base, pageviews: 2, distinctPagePaths: 2, impressions: 2, durationMs: 23_000 })).toBe("likely_human");
   });
 
   it("keeps internal ahead of everything", () => {
