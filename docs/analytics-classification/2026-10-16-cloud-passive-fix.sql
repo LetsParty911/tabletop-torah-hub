@@ -9,7 +9,9 @@
 --
 -- Mirrors src/lib/traffic-confidence.ts classifySession():
 --   internal                                   -> 'internal'          / false
---   download_served action or interaction      -> 'qualified_human'   / true
+--   owner-excluded Des Moines Microsoft      -> 'likely_automated'  / false
+--   deliberate client action                  -> 'qualified_human'   / true
+--   server download_served alone              -> diagnostic, not intent
 --   known infrastructure, no deliberate action:
 --     <=1 page, no human_signal, < 30 s        -> 'likely_automated'  / false
 --     otherwise (incl. human_signal / dwell)   -> 'unclassified'      / false
@@ -63,10 +65,17 @@ WITH s AS (
          (EXTRACT(epoch FROM (max(e.occurred_at) - min(e.occurred_at))))::integer AS active_span_seconds,
          count(*) FILTER (WHERE e.event_name = 'page_view') AS page_views,
          count(*) FILTER (WHERE e.event_name = 'human_signal') AS human_signals,
+         -- Successful server-side redirects are recorded for diagnostics, but
+         -- cannot by themselves demonstrate a human-initiated action.
          count(DISTINCT coalesce(e.metadata->>'action_id', e.id::text))
            FILTER (WHERE e.event_name = 'download_served') AS download_actions,
-         count(*) FILTER (WHERE e.event_name = ANY (ARRAY['chooser_select','filter_change','search',
-           'recommendation_click','publication_click','my_table_open','signup'])) AS interaction_actions,
+         -- Match MEANINGFUL_INTENT in src/lib/human-sessions.ts. This is a
+         -- deliberate client-action list, not a browser/render lifecycle list.
+         count(*) FILTER (WHERE e.event_name = ANY (ARRAY[
+           'download', 'publication_click', 'filter_change', 'search',
+           'share_click', 'signup', 'print_click', 'chooser_select',
+           'recommendation_click', 'my_table_add', 'my_table_remove', 'my_table_open'
+         ])) AS interaction_actions,
          bool_or(coalesce(e.is_internal, false)) AS is_internal,
          max(e.as_organization) AS as_organization,
          max(e.device_type) AS device_type,
@@ -85,7 +94,12 @@ SELECT session_id, visitor_id, started_at, ended_at, active_span_seconds,
        source_group, is_new_visitor,
        CASE
          WHEN is_internal THEN 'internal'
-         WHEN download_actions > 0 OR interaction_actions > 0 THEN 'qualified_human'
+         -- Explicit owner exclusion stays before client intent qualification.
+         WHEN lower(coalesce(city, '')) = 'des moines'
+          AND lower(coalesce(region, '')) = 'iowa'
+          AND upper(coalesce(country, '')) = 'US'
+          AND as_organization = 'Microsoft Corporation' THEN 'likely_automated'
+         WHEN interaction_actions > 0 THEN 'qualified_human'
          WHEN public.is_cloud_infrastructure_org(as_organization)
               AND page_views <= 1 AND human_signals = 0 AND active_span_seconds < 30
            THEN 'likely_automated'
@@ -95,7 +109,11 @@ SELECT session_id, visitor_id, started_at, ended_at, active_span_seconds,
        END AS traffic_class,
        CASE
          WHEN is_internal THEN false
-         WHEN download_actions > 0 OR interaction_actions > 0 THEN true
+         WHEN lower(coalesce(city, '')) = 'des moines'
+          AND lower(coalesce(region, '')) = 'iowa'
+          AND upper(coalesce(country, '')) = 'US'
+          AND as_organization = 'Microsoft Corporation' THEN false
+         WHEN interaction_actions > 0 THEN true
          WHEN public.is_cloud_infrastructure_org(as_organization) THEN false
          WHEN human_signals > 0 OR page_views > 1 OR active_span_seconds > 30 THEN true
          ELSE NULL::boolean
@@ -115,72 +133,35 @@ COMMIT;
 --    WHERE public.is_cloud_infrastructure_org(as_organization)
 --      AND started_at > now() - interval '1 day'
 --    GROUP BY 1, 2;
---   -- Expect no TRUE row unless interaction_actions > 0 OR download_actions > 0.
+--   -- Expect no TRUE infrastructure row unless interaction_actions > 0;
+--   -- download_served alone must not qualify a person.
+--   SELECT count(*) AS incorrectly_qualified_des_moines
+--     FROM public.analytics_sessions_classified
+--    WHERE lower(city) = 'des moines' AND lower(region) = 'iowa'
+--      AND upper(country) = 'US' AND as_organization = 'Microsoft Corporation'
+--      AND counts_as_qualified_visitor IS TRUE;
+--   -- Expect 0, including if an automated session happened to click.
 --   SELECT public.is_cloud_infrastructure_org('Microsoft Azure Cloud (westus2)'),  -- t
 --          public.is_cloud_infrastructure_org('Google LLC'),                       -- f
 --          public.is_cloud_infrastructure_org('Verizon Business');                 -- f
 -- -----------------------------------------------------------------------------
 
 -- =============================================================================
--- ROLLBACK (run as one block). Restores the pre-fix outer CASE, where cloud
--- sessions fell through to the generic human_signal / page / dwell rules.
--- Same 19 columns, same CTE, so CREATE OR REPLACE keeps grants.
--- The helper function is left in place (harmless, unused after rollback);
--- if it did not exist before, it may be removed AFTER this rollback with:
---   DROP FUNCTION public.is_cloud_infrastructure_org(text);
--- NOTE: if your saved pre-check pg_get_viewdef output differs from the block
--- below, use that saved output instead — it is the authoritative old version.
+-- ROLLBACK PLAN (do not substitute a generic old definition)
 -- =============================================================================
--- BEGIN;
--- SET LOCAL lock_timeout = '5s';
--- CREATE OR REPLACE VIEW public.analytics_sessions_classified AS
--- WITH s AS (
---   SELECT e.session_id,
---          e.visitor_id,
---          min(e.occurred_at) AS started_at,
---          max(e.occurred_at) AS ended_at,
---          (EXTRACT(epoch FROM (max(e.occurred_at) - min(e.occurred_at))))::integer AS active_span_seconds,
---          count(*) FILTER (WHERE e.event_name = 'page_view') AS page_views,
---          count(*) FILTER (WHERE e.event_name = 'human_signal') AS human_signals,
---          count(DISTINCT coalesce(e.metadata->>'action_id', e.id::text))
---            FILTER (WHERE e.event_name = 'download_served') AS download_actions,
---          count(*) FILTER (WHERE e.event_name = ANY (ARRAY['chooser_select','filter_change','search',
---            'recommendation_click','publication_click','my_table_open','signup'])) AS interaction_actions,
---          bool_or(coalesce(e.is_internal, false)) AS is_internal,
---          max(e.as_organization) AS as_organization,
---          max(e.device_type) AS device_type,
---          max(e.city) AS city,
---          max(e.region) AS region,
---          max(e.country) AS country,
---          max(e.source_group) AS source_group,
---          bool_or(e.is_new_visitor) AS is_new_visitor
---     FROM public.analytics_events e
---    WHERE e.session_id IS NOT NULL
---    GROUP BY e.session_id, e.visitor_id
--- )
--- SELECT session_id, visitor_id, started_at, ended_at, active_span_seconds,
---        page_views, human_signals, download_actions, interaction_actions,
---        is_internal, as_organization, device_type, city, region, country,
---        source_group, is_new_visitor,
---        CASE
---          WHEN is_internal THEN 'internal'
---          WHEN download_actions > 0 OR interaction_actions > 0 THEN 'qualified_human'
---          WHEN public.is_cloud_infrastructure_org(as_organization)
---               AND page_views <= 1 AND human_signals = 0 AND active_span_seconds < 30
---            THEN 'likely_automated'
---          WHEN human_signals > 0 OR page_views > 1 OR active_span_seconds > 30 THEN 'likely_human'
---          ELSE 'unclassified'
---        END AS traffic_class,
---        CASE
---          WHEN is_internal THEN false
---          WHEN download_actions > 0 OR interaction_actions > 0 THEN true
---          WHEN public.is_cloud_infrastructure_org(as_organization)
---               AND page_views <= 1 AND human_signals = 0 AND active_span_seconds < 30
---            THEN false
---          WHEN human_signals > 0 OR page_views > 1 OR active_span_seconds > 30 THEN true
---          ELSE NULL::boolean
---        END AS counts_as_qualified_visitor
---   FROM s;
--- REVOKE ALL ON public.analytics_sessions_classified FROM PUBLIC, anon, authenticated;
--- GRANT SELECT ON public.analytics_sessions_classified TO service_role;
--- COMMIT;
+-- Before executing this migration, save the EXACT current production definition:
+--   SELECT pg_get_viewdef('public.analytics_sessions_classified'::regclass, true);
+-- Save the current grants:
+--   SELECT grantee, privilege_type FROM information_schema.role_table_grants
+--    WHERE table_schema='public' AND table_name='analytics_sessions_classified';
+--
+-- If a rollback is necessary, use CREATE OR REPLACE VIEW ... AS followed by
+-- the saved definition above, in a transaction; re-assert the saved grants.
+-- This avoids accidentally losing the owner's existing Des Moines exclusion
+-- or any concurrent legitimate refinements.
+-- The helper function may safely remain installed even if the view no longer
+-- references it. Never DROP any object or rewrite analytics event rows here.
+--
+-- STATUS: REVIEW-ONLY SQL FILE. No Supabase database changes are made by
+-- committing or deploying this file. Require explicit owner authorization
+-- before executing it against the production analytics database.
