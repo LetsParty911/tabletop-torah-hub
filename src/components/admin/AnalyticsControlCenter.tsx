@@ -35,14 +35,14 @@ export function Kpi({ label, value, note }: { label: string; value: string | num
 export function ownerSentence(data: ReportData) {
   const h = data.report.overview.headline;
   const conv = shouldShowRate(h.sessions) ? `${Math.round((h.pdfOpenSessions / h.sessions) * 100)}% of visits` : `${h.pdfOpenSessions} of ${h.sessions} visits`;
-  return `${data.rangeLabel}: ${h.visitors} human visitors made ${h.sessions} visits and viewed ${h.pageviews} pages. ${conv} requested a PDF (${h.countedPdfOpens} counted PDF attempted opens, no per-visitor maximum). ${h.returningVisitors} visitors were returning.`;
+  return `${data.rangeLabel}: ${h.visitors} likely-human browser IDs made ${h.sessions} visits and viewed ${h.pageviews} pages. ${data.report.metrics.usedTorah} browser IDs had a Torah-use action (PDF access, sharing or signup). ${conv} attempted a PDF open (${h.countedPdfOpens} counted attempts, no per-visitor maximum). ${h.returningVisitors} browser IDs were returning.`;
 }
 
 export function KpiRow({ data }: { data: ReportData }) {
   const h = data.report.overview.headline;
   const p = data.comparisonHeadline;
   return <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
-    <Kpi label="Human visitors" value={h.visitors} note={delta(h.visitors, p?.visitors)} />
+    <Kpi label="Likely-human visitors" value={h.visitors} note={delta(h.visitors, p?.visitors)} />
     <Kpi label="Visits" value={h.sessions} note={delta(h.sessions, p?.sessions)} />
     <Kpi label="Pageviews" value={h.pageviews} note={delta(h.pageviews, p?.pageviews)} />
     <Kpi label="Counted PDF attempted opens" value={h.countedPdfOpens} note={delta(h.countedPdfOpens, p?.countedPdfOpens)} />
@@ -56,8 +56,8 @@ export function KpiRow({ data }: { data: ReportData }) {
 function RecentVisitors({ data }: { data: ReportData }) {
   const rows = data.report.overview.journeys;
   return <section>
-    <h3 className="font-serif text-lg font-semibold text-primary">Recent visitors</h3>
-    <p className="text-xs text-muted-foreground">Most recent human visits (bots, internal devices and blocked visits never appear here). Locations are approximate network locations. Time is ET.</p>
+    <h3 className="font-serif text-lg font-semibold text-primary">Recent likely-human visits</h3>
+    <p className="text-xs text-muted-foreground">Sessions with human-like evidence, not verified people or PDF readers. Uncertain traffic, suspected automation and internal visits are excluded. Locations are approximate network estimates. Time is ET.</p>
     {rows.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No human visits in this period.</p> :
       <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[760px] text-left text-xs">
         <thead className="text-muted-foreground"><tr><th className="py-1 pr-2">Started</th><th className="pr-2">Location</th><th className="pr-2">Visitor</th><th className="pr-2">Device</th><th className="pr-2">Source</th><th className="pr-2">Span</th><th className="pr-2">Last</th><th className="pr-2">Pages</th><th className="pr-2" title="Counted PDF attempted opens">PDF</th><th>Scroll</th></tr></thead>

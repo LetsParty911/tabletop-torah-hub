@@ -14,6 +14,7 @@ import {
 export type SessionEventRow = {
   event_name: string | null;
   occurred_at: string;
+  path?: string | null;
   visitor_id: string | null;
   session_id: string | null;
   device_type?: string | null;
@@ -30,6 +31,8 @@ export type SessionAgg = {
   source: string;
   device: string;
   pageviews: number;
+  /** Distinct routes actually viewed; reloading one URL is not navigation. */
+  pagePaths: Set<string>;
   events: number;
   engaged: boolean;
   accessedPdf: boolean;
@@ -94,6 +97,7 @@ export function buildSessions(rows: SessionEventRow[]): Map<string, SessionAgg> 
         source: row.source_group?.trim() || "Direct",
         device: row.device_type?.trim() || "unknown",
         pageviews: 0,
+        pagePaths: new Set<string>(),
         events: 0,
         engaged: false,
         accessedPdf: false,
@@ -141,7 +145,10 @@ export function buildSessions(rows: SessionEventRow[]): Map<string, SessionAgg> 
     }
 
     const name = row.event_name ?? "";
-    if (name === "page_view") session.pageviews += 1;
+    if (name === "page_view") {
+      session.pageviews += 1;
+      if (row.path?.trim()) session.pagePaths.add(row.path.trim());
+    }
     if (name === "heartbeat") session.heartbeats += 1;
     if (name === "publication_impression") session.impressions += 1;
     if (name === "human_signal") session.humanSignal = true;
@@ -240,6 +247,7 @@ export function classifySessions(rows: SessionEventRow[]): SessionClassification
       humanSignal: session.humanSignal,
       meaningfulIntent: session.meaningfulIntent,
       pageviews: session.pageviews,
+      distinctPagePaths: session.pagePaths.size || undefined,
       impressions: session.impressions,
       durationMs: Math.max(0, session.lastAt - session.firstAt),
     });

@@ -278,7 +278,7 @@ report shows the internal session count separately. The existing exclusion of `/
 human, likely human, uncertain, suspected automation, internal/test. Nothing is written back to the
 event rows — the labels are recomputed from raw data every time, so the rules can change without
 rewriting history. An explicit `human_signal` or any meaningful intent event always protects a
-session from the generic automation rules. Where two visitor IDs share network or device evidence,
+session from generic burst-only automation detection, but on known hosting networks a generic `human_signal` without a deliberate action remains uncertain. Sustained browsing without an explicit interaction qualifies only when page-view paths show navigation to at least two distinct URLs (and impressions and dwell support that), or three distinct URLs with sustained dwell. Repeated homepage reloads, impressions and heartbeats alone never prove a likely-human session. A likely-human visitor is not a confirmed Torah reader: the separate **Used Torah** metric requires actual recorded PDF access, sharing or signup. Where two visitor IDs share network or device evidence,
 reporting states "possible relationship" or "insufficient evidence" only; visitor IDs are never
 merged.
 
