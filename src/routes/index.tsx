@@ -636,11 +636,14 @@ function Index() {
             {isFallback && !isCurrentYomKippur ? (
               <div className="mt-4 flex flex-col items-center justify-center gap-2.5 sm:flex-row">
                 <a
-                  href="#weekly-email-signup"
+                  href="#weekly-email-signup-top"
                   onClick={(e) => {
                     e.preventDefault();
-                    const el = document.getElementById("weekly-email-signup");
-                    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    const el = document.getElementById("weekly-email-signup-top");
+                    el?.scrollIntoView({
+                      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+                      block: "start",
+                    });
                     el?.querySelector<HTMLInputElement>('input[type="email"]')?.focus({
                       preventScroll: true,
                     });

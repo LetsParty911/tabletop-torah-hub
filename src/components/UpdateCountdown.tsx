@@ -142,9 +142,12 @@ export function UpdateCountdown({
 
   const scrollToSignup = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    document
-      .getElementById("weekly-email-signup")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const signup = document.getElementById("weekly-email-signup-top");
+    signup?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "start",
+    });
+    signup?.querySelector<HTMLInputElement>('input[type="email"]')?.focus({ preventScroll: true });
   };
 
   if (contentLive) {
@@ -231,7 +234,7 @@ export function UpdateCountdown({
       )}
 
       <a
-        href="#weekly-email-signup"
+        href="#weekly-email-signup-top"
         onClick={scrollToSignup}
         className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-[#b8790b] bg-gradient-to-b from-[#ffd96b] to-[#f1b52f] px-6 py-3 font-serif text-lg font-bold text-[#082c55] shadow-[0_5px_16px_rgba(184,121,11,0.22)] transition-transform hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:w-auto sm:min-w-72"
       >

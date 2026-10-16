@@ -37,7 +37,8 @@ describe("homepage Thursday signup placements", () => {
     expect(top).toBeLessThan(source.indexOf('sourceId="homepage"'));
     expect(source).toContain('anchorId="weekly-email-signup-top"');
     expect(source).toContain("One free email each Thursday when the next Divrei Torah collection is ready.");
-    expect(source).toContain('href="#weekly-email-signup"');
+    expect(source).toContain('href="#weekly-email-signup-top"');
+    expect(source).not.toContain('href="#weekly-email-signup"');
   });
 
   it("preserves explicit consent, existing subscription flow and independent placement attribution", () => {
