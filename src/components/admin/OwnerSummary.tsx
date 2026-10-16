@@ -98,12 +98,12 @@ export default function OwnerSummary({
             note="Distinct browser visitors"
             onClick={() => openDetail("people", "People", "The distinct browser visitors included in this report.")}
           />
-          <Stat label="New" value={m.newVisitors} note="First observed visit" />
+          <Stat label="New" value={m.newVisitors} note="No prior or returning-session evidence" />
           <Stat
             label="Returning"
             value={m.returningReaders}
-            note="Seen before this period"
-            onClick={() => openDetail("returning", "Returning Readers", "Visitors with prior canonical history.")}
+            note="Prior visit or returning session in this period"
+            onClick={() => openDetail("returning", "Returning Readers", "Distinct browser visitors with prior canonical history or a returning-session signal, including a return within this period. New and returning visitor counts are mutually exclusive; session flags remain unchanged.")}
           />
           <Stat
             label="Confident humans"

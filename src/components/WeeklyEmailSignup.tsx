@@ -2,10 +2,13 @@ import { useRef, useState } from "react";
 import { subscribeEmail } from "@/integrations/supabase/api.functions";
 import { trackEvent, trackEventOnce } from "@/lib/analytics";
 import { trackFp } from "@/lib/first-party-analytics";
+import { Button } from "@/components/ui/button";
 
 type WeeklyEmailSignupProps = {
   /** Distinguishes the once-per-page analytics key across routes. */
   sourceId?: string;
+  /** Preserve the existing lower-form anchor; additional forms must supply a unique ID. */
+  anchorId?: string;
   className?: string;
   /** "compact" renders a small inline strip instead of the full parchment card. */
   variant?: "full" | "compact";
@@ -17,6 +20,7 @@ type WeeklyEmailSignupProps = {
 
 export function WeeklyEmailSignup({
   sourceId = "page",
+  anchorId = "weekly-email-signup",
   className = "",
   variant = "full",
   ctaLabel = "Get the new Shabbos collection every Thursday",
@@ -28,6 +32,8 @@ export function WeeklyEmailSignup({
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const consentRef = useRef<HTMLInputElement | null>(null);
+  const emailId = `${anchorId}-email`;
+  const messageId = `${anchorId}-message`;
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,7 +99,7 @@ export function WeeklyEmailSignup({
 
   if (variant === "compact") {
     return (
-      <div id="weekly-email-signup" className={`scroll-mt-8 ${className}`}>
+      <div id={anchorId} className={`scroll-mt-8 ${className}`}>
         {done ? (
           <p
             role="status"
@@ -104,27 +110,30 @@ export function WeeklyEmailSignup({
           </p>
         ) : (
           <>
-            <p className="text-center font-sans text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-accent-readable">
+            <p className="text-center font-serif text-sm font-semibold leading-relaxed text-primary">
               {ctaLabel}
             </p>
-            <form onSubmit={handleSignup} className="mt-2 flex flex-col gap-2" noValidate>
+            <form aria-label={`Weekly Torah signup — ${sourceId}`} onSubmit={handleSignup} className="mt-2 flex flex-col gap-2" noValidate>
               <div className="flex flex-col gap-2 sm:flex-row">
+                <label htmlFor={emailId} className="sr-only">Email address for weekly Torah reminders</label>
                 <input
+                  id={emailId}
                   type="email"
                   aria-label="Email address for weekly Torah reminders"
+                  aria-describedby={signupMsg ? messageId : undefined}
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email address"
-                  className="flex-1 rounded-full border border-accent/50 bg-background px-4 py-2 font-serif text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                  className="min-h-11 min-w-0 flex-1 rounded-full border border-accent/50 bg-background px-4 py-2 font-serif text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
-                <button
+                <Button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-full bg-primary px-5 py-2 font-serif text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                  className="h-auto min-h-11 rounded-full bg-primary px-5 py-2 font-serif text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {submitting ? "Subscribing…" : "Subscribe"}
-                </button>
+                </Button>
               </div>
               <label className="flex items-start gap-2 text-left text-xs text-muted-foreground">
                 {consentInput}
@@ -135,7 +144,7 @@ export function WeeklyEmailSignup({
               </label>
             </form>
             {signupMsg && (
-              <p className="mt-2 text-xs text-accent font-serif" role="alert">
+              <p id={messageId} className="mt-2 text-xs text-accent-readable font-serif" role="alert">
                 {signupMsg}
               </p>
             )}
@@ -147,7 +156,7 @@ export function WeeklyEmailSignup({
 
   return (
     <section
-      id="weekly-email-signup"
+      id={anchorId}
       className={`parchment-frame max-w-2xl mx-auto scroll-mt-8 ${className}`}
     >
       <div className="parchment-panel py-6 px-5 sm:px-6 sm:py-8 text-center">
@@ -176,24 +185,27 @@ export function WeeklyEmailSignup({
           </div>
         ) : (
           <>
-            <form onSubmit={handleSignup} className="mt-5 flex flex-col gap-3 max-w-md mx-auto" noValidate>
+            <form aria-label={`Weekly Torah signup — ${sourceId}`} onSubmit={handleSignup} className="mt-5 flex flex-col gap-3 max-w-md mx-auto" noValidate>
               <div className="flex flex-col sm:flex-row gap-3">
+                <label htmlFor={emailId} className="sr-only">Email address for weekly Torah reminders</label>
                 <input
+                  id={emailId}
                   type="email"
                   aria-label="Email address for weekly Torah reminders"
+                  aria-describedby={signupMsg ? messageId : undefined}
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email address"
                   className="flex-1 rounded-full border-2 border-accent/50 bg-background px-5 py-3 font-serif text-foreground placeholder:font-serif placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
                 />
-                <button
+                <Button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-full bg-primary px-8 py-3.5 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="h-auto rounded-full bg-primary px-8 py-3.5 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {submitting ? "Subscribing…" : "Subscribe"}
-                </button>
+                </Button>
               </div>
               <label className="flex items-start gap-2 text-left text-sm text-foreground">
                 {consentInput}
@@ -204,7 +216,7 @@ export function WeeklyEmailSignup({
               </label>
             </form>
             {signupMsg && (
-              <p className="mt-4 text-sm text-accent font-serif" role="alert">
+              <p id={messageId} className="mt-4 text-sm text-accent font-serif" role="alert">
                 {signupMsg}
               </p>
             )}

@@ -682,6 +682,14 @@ function Index() {
           </div>
         </section>
 
+        <WeeklyEmailSignup
+          variant="compact"
+          sourceId="homepage-top"
+          anchorId="weekly-email-signup-top"
+          ctaLabel="One free email each Thursday when the next Divrei Torah collection is ready."
+          className="mx-auto w-full max-w-2xl"
+        />
+
         {starterSelections.length > 0 && !isCurrentYomKippur && (
           <section aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border border-accent/40 bg-card/50 px-4 py-5 sm:px-6">
             <h2 id="starter-selections-heading" className="font-serif text-xl font-bold text-primary sm:text-2xl">

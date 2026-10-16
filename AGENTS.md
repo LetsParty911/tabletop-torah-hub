@@ -6,3 +6,4 @@
 - The VPN 403 decision is made before any logging; failed audit writes fall back to Lovable Cloud public.vpn_audit_failures. Why: blocking must never depend on the analytics database.
 - Generic owner alerts live in src/lib/notifications/ (pure core + dispatch.server) with a durable outbox in the analytics DB (docs/notifications/); they never touch VPN alerts or the first-load visitor alert. Why: independent, idempotent delivery that can't regress working alerts.
 - Keep PDF event/qualification display translations in the pure pdf-reporting helper; retain raw event names and qualification values. Why: truthful report wording must not change tracking or historical metrics.
+- Reuse WeeklyEmailSignup for additional signup placements with distinct anchorId and sourceId props, leaving its default anchor on the lower homepage form. Why: consent, feedback, attribution, and existing scrolling remain consistent without duplicate DOM IDs.

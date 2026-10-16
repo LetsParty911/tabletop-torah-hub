@@ -651,7 +651,9 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
       engagedSessions: canonical.engagedSessions,
       returningReaders: returning.size,
       signups: keptRows.filter((row) => row.event_name === "signup").length,
-      newVisitors: new Set(keptRows.filter((row) => row.is_new_visitor === true && row.visitor_id).map((row) => row.visitor_id)).size,
+      // Visitor-level partition, not a sum of first/returning session flags:
+      // a browser with both session types in this window belongs to returning only.
+      newVisitors: canonical.uniqueVisitors - returning.size,
       // A served download request means the application validated the
       // publication and issued the redirect. It is not proof the file finished.
       downloadsServed: servedActions.size,
