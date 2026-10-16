@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { summarizeCanonical, type EventRow } from "./admin-analytics-canonical";
+import { buildAnalyticsReport, summarizeCanonical, type EventRow } from "./admin-analytics-canonical";
 
 const event = (overrides: Partial<EventRow> = {}): EventRow => ({
   event_name: "publication_click",
@@ -18,6 +18,25 @@ const event = (overrides: Partial<EventRow> = {}): EventRow => ({
 });
 
 describe("canonical since-last PDF activity summary", () => {
+  it("partitions visitor headlines when a first and returning session occur in the same window", () => {
+    const rows = [
+      event({ event_id: "first", visitor_id: "mixed", session_id: "first-session", is_new_visitor: true }),
+      event({ event_id: "return", visitor_id: "mixed", session_id: "return-session", is_new_visitor: false }),
+      event({ event_id: "new", visitor_id: "new-only", session_id: "new-session" }),
+      event({ event_id: "prior", visitor_id: "prior", session_id: "prior-session" }),
+      event({ event_id: "unknown", visitor_id: "no-return-evidence", session_id: "unknown-session", is_new_visitor: null }),
+      event({ event_id: "internal", visitor_id: "internal", session_id: "internal-session", is_internal: true }),
+    ];
+    const { metrics } = buildAnalyticsReport(rows, new Set(["prior"]));
+    expect(metrics.people).toBe(4);
+    expect(metrics.returningReaders).toBe(2);
+    expect(metrics.newVisitors).toBe(2);
+    expect(metrics.newVisitors + metrics.returningReaders).toBe(metrics.people);
+    expect(metrics.sessions).toBe(5);
+    expect(rows[0]?.is_new_visitor).toBe(true);
+    expect(rows[1]?.is_new_visitor).toBe(false);
+  });
+
   it("counts click events separately while deduplicating PDF IDs and transport retries", () => {
     const first = event({ event_id: "click-1" });
     const summary = summarizeCanonical([
