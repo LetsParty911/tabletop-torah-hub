@@ -64,12 +64,58 @@ describe("infrastructure automation rule", () => {
     expect(isInfrastructureOrganization("Verizon Business")).toBe(false);
   });
 
-  it("keeps Microsoft sessions with a human_signal or intent human", () => {
-    expect(classifySession({ ...base, infrastructureNetwork: true, humanSignal: true })).toBe("likely_human");
+  it("keeps infrastructure sessions with a deliberate action human", () => {
     expect(classifySession({ ...base, infrastructureNetwork: true, meaningfulIntent: true })).toBe("likely_human");
+    expect(classifySession({ ...base, infrastructureNetwork: true, humanSignal: true, meaningfulIntent: true })).toBe(
+      "high_confidence_human",
+    );
+    expect(classifySession({ ...base, infrastructureNetwork: true, flaggedAutomation: true, meaningfulIntent: true })).toBe(
+      "likely_human",
+    );
   });
 
-  it("does not flag sustained multi-page infrastructure browsing", () => {
-    expect(classifySession({ ...base, infrastructureNetwork: true, pageviews: 3, durationMs: 60_000 })).toBe("likely_human");
+  it("never counts a generic human_signal alone on infrastructure", () => {
+    expect(classifySession({ ...base, infrastructureNetwork: true, humanSignal: true, durationMs: 2_000 })).toBe("uncertain");
+    expect(classifySession({ ...base, infrastructureNetwork: true, humanSignal: true, flaggedAutomation: true })).toBe(
+      "suspected_automation",
+    );
+  });
+
+  it("does not promote passive multi-page infrastructure browsing", () => {
+    expect(classifySession({ ...base, infrastructureNetwork: true, pageviews: 3, durationMs: 60_000 })).toBe("uncertain");
+    expect(
+      classifySession({ ...base, infrastructureNetwork: true, pageviews: 2, impressions: 2, durationMs: 23_000 }),
+    ).toBe("uncertain");
+  });
+
+  it("matches Azure and narrow cloud hosts but not blanket vendors", () => {
+    for (const org of [
+      "Microsoft Azure Cloud (westus2)",
+      "MICROSOFT-CORP-MSN-AS-BLOCK Microsoft Corporation",
+      "Google Cloud",
+      "DigitalOcean, LLC",
+      "Hetzner Online GmbH",
+      "OVH SAS",
+      "Leaseweb USA, Inc.",
+      "Oracle Cloud Infrastructure",
+      "Amazon Data Services NoVa",
+    ]) {
+      expect(isInfrastructureOrganization(org)).toBe(true);
+    }
+    for (const org of ["Google LLC", "Google Fiber Inc.", "Verizon Business", "Comcast Cable", "Oracle Corporation", null, ""]) {
+      expect(isInfrastructureOrganization(org)).toBe(false);
+    }
+  });
+
+  it("preserves non-infrastructure human signals and sustained browsing", () => {
+    expect(classifySession({ ...base, humanSignal: true })).toBe("likely_human");
+    expect(classifySession({ ...base, pageviews: 3, durationMs: 60_000 })).toBe("likely_human");
+    expect(classifySession({ ...base, pageviews: 2, impressions: 2, durationMs: 23_000 })).toBe("likely_human");
+  });
+
+  it("keeps internal ahead of everything", () => {
+    expect(classifySession({ ...base, internal: true, infrastructureNetwork: true, meaningfulIntent: true })).toBe(
+      "internal_test",
+    );
   });
 });
