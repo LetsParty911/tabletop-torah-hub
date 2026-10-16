@@ -54,7 +54,8 @@ describe("classifySessions (headline filter)", () => {
   });
 
   it("keeps explicit interactions but not server redirects or automatic viewer loads", () => {
-    expect(result.humanIds.has("ms-human")).toBe(true);
+    expect(result.humanIds.has("ms-human")).toBe(false); // human_signal alone on Microsoft is not enough
+    expect(result.confidence.get("ms-human")).toBe("uncertain");
     expect(result.humanIds.has("reader")).toBe(true);
     expect(result.humanIds.has("deliberate-open")).toBe(true);
     expect(result.humanIds.has("served-only-reader")).toBe(false);
@@ -67,7 +68,67 @@ describe("classifySessions (headline filter)", () => {
     expect(result.confidence.get("uncertain")).toBe("uncertain");
     expect(result.humanIds.has("uncertain")).toBe(false);
     expect(result.humanIds.has("internal")).toBe(false);
-    expect(result.humanIds.size).toBe(4); // Microsoft interaction, reader, deliberate open, and signal-only
+    expect(result.confidence.get("internal")).toBe("internal_test");
+    expect(result.humanIds.size).toBe(3); // reader, deliberate open, and non-infrastructure signal-only
+  });
+});
+
+describe("2026-10-16 passive cloud-infrastructure sessions", () => {
+  function passive(session: string, org: string, extra: Partial<SessionEventRow> = {}): SessionEventRow[] {
+    const base = { as_organization: org, source_group: "Direct", device_type: "desktop", ...extra };
+    return [
+      ev(session, "page_view", 0, base),
+      ev(session, "publication_impression", 500, base),
+      ev(session, "publication_impression", 600, base),
+      ev(session, "page_view", 4_000, base),
+      ...Array.from({ length: 12 }, (_, i) => ev(session, "heartbeat", 1_000 + i * 2_000, base)),
+    ];
+  }
+
+  it("excludes Microsoft Corporation 2 pages + 2 impressions + 12 heartbeats in 23s", () => {
+    const r = classifySessions(passive("ms-passive", "Microsoft Corporation"));
+    expect(r.humanIds.has("ms-passive")).toBe(false);
+    expect(r.confidence.get("ms-passive")).not.toBe("likely_human");
+    expect(r.sessions.get("ms-passive")?.events).toBe(16); // raw rows retained
+  });
+
+  it("excludes the same pattern from Microsoft Azure Cloud westus2, even on mobile/referral", () => {
+    const r = classifySessions(passive("azure-passive", "Microsoft Azure Cloud (westus2)", { device_type: "mobile", source_group: "WhatsApp" }));
+    expect(r.humanIds.has("azure-passive")).toBe(false);
+    expect(r.confidence.get("azure-passive")).toBe("uncertain");
+  });
+
+  it("excludes a short infrastructure session with only a generic human_signal", () => {
+    const org = { as_organization: "Microsoft Azure Cloud (eastus)" };
+    const r = classifySessions([ev("az-sig", "page_view", 0, org), ev("az-sig", "human_signal", 1_500, org)]);
+    expect(r.humanIds.has("az-sig")).toBe(false);
+  });
+
+  it("still counts deliberate publication_click, download or search from infrastructure", () => {
+    const org = { as_organization: "Microsoft Corporation" };
+    for (const action of ["publication_click", "download", "search"]) {
+      const sid = `infra-${action}`;
+      const r = classifySessions([...passive(sid, "Microsoft Corporation"), ev(sid, action, 5_000, org)]);
+      expect(r.humanIds.has(sid)).toBe(true);
+    }
+  });
+
+  it("preserves non-infrastructure passive multi-page reading", () => {
+    const r = classifySessions(passive("isp-reader", "Verizon Business", { device_type: "mobile", source_group: "WhatsApp" }));
+    expect(r.confidence.get("isp-reader")).toBe("likely_human");
+  });
+
+  it("keeps owner/internal sessions internal and the canonical counts consistent", () => {
+    const rows = [
+      ...passive("ms-passive", "Microsoft Corporation"),
+      ev("owner", "page_view", 0, { is_internal: true, as_organization: "Microsoft Corporation" }),
+      ev("owner", "publication_click", 1_000, { is_internal: true }),
+    ];
+    const r = classifySessions(rows);
+    expect(r.confidence.get("owner")).toBe("internal_test");
+    const total = Object.values(r.counts).reduce((a, b) => a + b, 0);
+    expect(total).toBe(r.sessions.size);
+    expect(r.humanIds.size).toBe(r.counts.high_confidence_human + r.counts.likely_human);
   });
 });
 

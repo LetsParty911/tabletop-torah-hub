@@ -33,21 +33,43 @@ export type ConfidenceInput = {
 
 /**
  * Cloud hosting / security-scanning networks. A real reader can browse through
- * these (corporate VPNs, secure DNS), so the rule only applies to low-signal
- * sessions — never to one with a deliberate action or an explicit human_signal.
+ * these (corporate VPNs, secure DNS), so only a deliberate action (meaningful
+ * intent) can qualify such a session for headline counts. Passive signals —
+ * a generic human_signal, page views, impressions, heartbeats or dwell time —
+ * are NOT sufficient on these networks (2026-10-16 Azure passive-session fix).
+ *
+ * Needles are matched against the normalized organization name (lowercase,
+ * commas removed, whitespace collapsed). Keep them narrow: never add a bare
+ * vendor name such as "google" or a consumer ISP like "verizon business".
  */
 export const INFRASTRUCTURE_ORGANIZATIONS = [
   "amazon.com",
   "amazon technologies",
+  "amazon data services",
   "cisco opendns",
   "cloudflare",
   "fastly",
   "latitude.sh",
   "microsoft corporation",
+  "microsoft azure",
+  "azure cloud",
+  "google cloud",
+  "digitalocean",
+  "hetzner online",
+  "ovh sas",
+  "ovh hosting",
+  "ovhcloud",
+  "leaseweb",
+  "oracle cloud",
+  "oracle public cloud",
 ];
 
+export function normalizeOrganization(org: string | null | undefined): string {
+  return org?.trim().toLowerCase().replace(/,/g, "").replace(/\s+/g, " ") ?? "";
+}
+
 export function isInfrastructureOrganization(org: string | null | undefined): boolean {
-  const value = org?.trim().toLowerCase().replace(/,/g, "") ?? "";
+  const value = normalizeOrganization(org);
   if (!value) return false;
   return INFRASTRUCTURE_ORGANIZATIONS.some((needle) => value.includes(needle));
 }
@@ -69,7 +91,7 @@ export const CONFIDENCE_EXPLANATIONS: Record<TrafficConfidence, string> = {
   likely_human:
     "A deliberate action such as opening a PDF, choosing, searching or saving was recorded.",
   uncertain:
-    "The visit was recorded but showed no deliberate action, so it cannot be classified either way.",
+    "The visit was recorded but showed no deliberate action, so it cannot be classified either way. Passive visits from cloud-hosting networks stay here even with dwell time or a generic interaction signal.",
   suspected_automation:
     "The session matched a specific automation pattern and showed no deliberate action. Rows are kept; they are set aside from headline counts.",
   internal_test:
@@ -77,30 +99,37 @@ export const CONFIDENCE_EXPLANATIONS: Record<TrafficConfidence, string> = {
 };
 
 /**
- * Classification order matters: an explicit human signal or a real action always
- * protects a session from the generic automation rules.
+ * Classification order matters:
+ * 1. internal always wins;
+ * 2. a deliberate action protects any session, including cloud networks;
+ * 3. on known cloud/security infrastructure without a deliberate action, the
+ *    session can never become headline traffic: automation-rule matches and
+ *    short one-page sessions are suspected_automation, everything else is
+ *    uncertain (uncounted) — a generic human_signal alone is not conclusive;
+ * 4. other networks keep the original human_signal / sustained-reading rules.
  */
 export function classifySession(input: ConfidenceInput): TrafficConfidence {
   if (input.internal) return "internal_test";
 
-  if (input.humanSignal && input.meaningfulIntent) return "high_confidence_human";
-  if (input.meaningfulIntent) return "likely_human";
-  if (input.humanSignal) return "likely_human";
+  if (input.meaningfulIntent) return input.humanSignal ? "high_confidence_human" : "likely_human";
 
+  if (input.infrastructureNetwork) {
+    if (input.flaggedAutomation) return "suspected_automation";
+    if (
+      !input.humanSignal &&
+      input.pageviews <= 1 &&
+      input.impressions === 0 &&
+      input.durationMs < INFRASTRUCTURE_MAX_DURATION_MS
+    )
+      return "suspected_automation";
+    return "uncertain";
+  }
+
+  if (input.humanSignal) return "likely_human";
   if (input.flaggedAutomation) return "suspected_automation";
 
-  // Low-signal session from cloud/security infrastructure (e.g. the Amazon and
-  // Cisco OpenDNS one-event bursts). Intent and human_signal returned above.
-  if (
-    input.infrastructureNetwork &&
-    input.pageviews <= 1 &&
-    input.impressions === 0 &&
-    input.durationMs < INFRASTRUCTURE_MAX_DURATION_MS
-  )
-    return "suspected_automation";
-
   // Sustained, multi-page reading with real dwell time is likely a person even
-  // without a recorded interaction event.
+  // without a recorded interaction event (non-infrastructure networks only).
   if (input.pageviews >= 3 && input.durationMs >= 30_000) return "likely_human";
   if (input.pageviews >= 2 && input.impressions > 0 && input.durationMs >= 10_000)
     return "likely_human";
