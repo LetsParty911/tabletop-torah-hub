@@ -53,7 +53,7 @@
 - [x] Run targeted tests and inspect authenticated preview; leave production unchanged
 
 ## Reporting authority and Thursday signup (preview only)
-- [ ] Audit existing maintenance authority, canonical PDF semantics, and visitor breakdowns; fix only demonstrated bugs
-- [ ] Add compact near-top signup while preserving the lower form and unique anchors
-- [ ] Run focused regressions and verify desktop/mobile preview without subscriber or production changes
+- [x] Audit existing maintenance authority and canonical PDF semantics; fix overlapping new/returning visitor headlines only
+- [x] Add compact near-top signup while preserving the lower form and unique anchors
+- [x] Run 55 focused and 325 full-suite regressions plus 12 calendar/download tests; verify desktop/mobile signup and authenticated owner report without subscriber or production changes
 
