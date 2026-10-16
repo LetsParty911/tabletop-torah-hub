@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { classifySessions } from "@/lib/human-sessions";
+import { isClientNewVisitorEvidence, isClientReturningEvidence } from "@/lib/visitor-return-evidence";
 
 async function requireAdmin(accessToken: string) {
   const { createClient } = await import("@supabase/supabase-js");
@@ -213,7 +214,7 @@ function buildVisitors(rows: Row[], since: string): Visitor[] {
         firstDownloadAt: null,
         activeSeconds: 0,
         activeInRange: row.occurred_at >= since,
-        isNewVisitor: row.is_new_visitor,
+        isNewVisitor: isClientReturningEvidence(row) ? false : isClientNewVisitorEvidence(row) ? true : null,
       };
       sessionMap.set(sessionId, session);
     }
@@ -234,8 +235,8 @@ function buildVisitors(rows: Row[], since: string): Visitor[] {
     session.postalCode ??= nonempty(row.postal_code);
     // A canonical false value is strong evidence this is not the visitor's first session.
     // Let false dominate in case older rows contain a mixture of null/true/false values.
-    if (row.is_new_visitor === false) session.isNewVisitor = false;
-    else if (session.isNewVisitor == null && row.is_new_visitor === true)
+    if (isClientReturningEvidence(row)) session.isNewVisitor = false;
+    else if (session.isNewVisitor == null && isClientNewVisitorEvidence(row))
       session.isNewVisitor = true;
 
     const name = nonempty(row.event_name) ?? "";

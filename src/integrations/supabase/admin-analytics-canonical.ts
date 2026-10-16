@@ -1,4 +1,5 @@
 import { publicationPdfActivity, type PdfCatalogEntry } from "@/lib/publication-pdf-activity";
+import { isClientNewVisitorEvidence, isClientReturningEvidence } from "@/lib/visitor-return-evidence";
 import { summarizeNoahideResources } from "@/lib/noahide-resources-analytics";
 import { countSukkahSignDownloads } from "@/lib/sukkah-sign-downloads";
 import { createServerFn } from "@tanstack/react-start";
@@ -303,7 +304,7 @@ export function summarizeCanonical(rows: EventRow[], priorVisitors = new Set<str
     const vid = row.visitor_id?.trim() || null;
     if (vid) {
       visitors.add(vid);
-      if (priorVisitors.has(vid) || row.is_new_visitor === false) returningVisitors.add(vid);
+      if (priorVisitors.has(vid) || isClientReturningEvidence(row)) returningVisitors.add(vid);
     }
 
     const name = row.event_name ?? "";
@@ -501,7 +502,7 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
   const returning = new Set<string>();
   for (const row of keptRows) {
     const vid = row.visitor_id?.trim();
-    if (vid && (priorVisitors.has(vid) || row.is_new_visitor === false)) returning.add(vid);
+    if (vid && (priorVisitors.has(vid) || isClientReturningEvidence(row))) returning.add(vid);
   }
 
   const publications = aggregatePublications(keptRows, priorVisitors);
@@ -1312,8 +1313,8 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       if (row.utm_source?.trim()) v.utmSource = row.utm_source.trim();
       if (row.utm_medium?.trim()) v.utmMedium = row.utm_medium.trim();
       if (row.utm_campaign?.trim()) v.utmCampaign = row.utm_campaign.trim();
-      if (row.is_new_visitor === true) v.isNewFlagSeen = true;
-      if (row.is_new_visitor === false) v.isReturningFlagSeen = true;
+      if (isClientNewVisitorEvidence(row)) v.isNewFlagSeen = true;
+      if (isClientReturningEvidence(row)) v.isReturningFlagSeen = true;
 
       const publication = row.publication_title?.trim() || row.publication_id?.trim() || null;
       const meta = (row.metadata ?? {}) as Record<string, unknown>;

@@ -1,3 +1,5 @@
+import { isClientNewVisitorEvidence, isClientReturningEvidence } from "./visitor-return-evidence";
+
 // Publication funnel aggregation.
 //
 // The publication id is the canonical grouping key whenever an event carries
@@ -132,8 +134,8 @@ export function aggregatePublications(
     publication.devices.set(device, deviceSet);
 
     const vid = row.visitor_id?.trim();
-    if (vid && (priorVisitors.has(vid) || row.is_new_visitor === false)) publication.returningSessions.add(sid);
-    else if (row.is_new_visitor === true) publication.newVisitorSessions.add(sid);
+    if (vid && (priorVisitors.has(vid) || isClientReturningEvidence(row))) publication.returningSessions.add(sid);
+    else if (isClientNewVisitorEvidence(row)) publication.newVisitorSessions.add(sid);
 
     publications.set(key, publication);
   }
