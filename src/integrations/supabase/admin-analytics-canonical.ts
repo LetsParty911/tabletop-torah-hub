@@ -699,7 +699,7 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
       .sort((a, b) => b.sessions - a.sessions),
     locations: [...locations.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions).slice(0, 20),
     searches: searches.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 50),
-    publicationActivity: publicationPdfActivity(rows, keptIds, catalog),
+    publicationActivity: publicationPdfActivity(rows, keptIds, catalog, window),
     pdfAccess: {
       counted: pdfAccess.counted,
       byPublication: pdfAccess.byPublication,

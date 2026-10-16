@@ -696,17 +696,17 @@ function Index() {
         {starterSelections.length > 0 && !isCurrentYomKippur && (
           <section aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border border-accent/40 bg-card/50 px-4 py-5 sm:px-6">
             <h2 id="starter-selections-heading" className="font-serif text-xl font-bold text-primary sm:text-2xl">
-              Start here — ready to read or print
+              New here? Start with one Dvar Torah
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {isFallback ? `While new ${currentLabel} selections are being prepared, enjoy these ${displayedLabel} Divrei Torah.` : `A few useful choices from our ${displayedLabel} collection.`}
+              {isFallback ? `While new ${currentLabel} selections are being prepared, enjoy these ${displayedLabel} Divrei Torah.` : `Choose one selection from our ${displayedLabel} collection. Open the PDF to read or print; no account is needed.`}
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {starterSelections.map(({ key, label, resource: r }) => (
                 <article key={r.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{label}</p>
                   <h3 className="mt-2 font-serif text-base font-bold leading-snug text-primary">
-                    <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline">
+                    <Link to="/view/$id" params={{ id: r.id }} onClick={() => trackFp("recommendation_click", { publication_id: r.id, publication_title: r.title, parsha: r.parsha_key ?? displayedParshaKey, metadata: { chooser: key, placement: "homepage_start_here" } })} className="hover:text-accent hover:underline">
                       {displayTitle(r)}
                     </Link>
                   </h3>

@@ -28,6 +28,25 @@ describe('publication activity', () => {
   });
 });
 
+it('compares PDFs by report-window exposure, suppressing premature rates for recent uploads', () => {
+  const window = { start: '2026-10-16T00:00:00Z', end: '2026-10-18T00:00:00Z' };
+  const catalog = [
+    { id: 'p', title: 'Early', parsha_key: 'Noach', created_at: '2026-10-16T00:00:00Z' },
+    { id: 'fresh', title: 'Just uploaded', parsha_key: 'Noach', created_at: '2026-10-17T18:00:00Z' },
+    { id: 'other', title: 'One day', parsha_key: 'Noach', created_at: '2026-10-17T00:00:00Z' },
+  ];
+  const rows = [row({publication_id:'p'}), row({publication_id:'p',event_id:'b'}), row({publication_id:'fresh',event_id:'c'}), row({publication_id:'other',event_id:'d'})];
+  const result = publicationPdfActivity(rows, kept, catalog, window);
+  const early = result.publications.find(p=>p.publicationId==='p')!;
+  const fresh = result.publications.find(p=>p.publicationId==='fresh')!;
+  expect(early.availableHours).toBe(48);
+  expect(early.ageAdjustedPerDay).toBe(1);
+  expect(fresh.availableHours).toBe(6);
+  expect(fresh.ageAdjustedPerDay).toBeNull();
+  expect(selectPublicationActivity(result.publications, 'Noach', 'ageAdjustedPerDay').map(p=>p.publicationId)).toEqual(['p','other','fresh']);
+  expect(publicationActivityCsv(result.publications)).toContain('requests_per_24h_since_upload');
+});
+
 it('filters Noach before totals and CSV, ranks by the selected measure without mutating input', () => {
   const all = publicationPdfActivity([row(), row({event_name:'pdf_open',publication_id:'preview'}),row({publication_id:'other',event_id:'other'})], kept,
     [{id:'p',title:'A',parsha_key:'Noach'},{id:'preview',title:'B',parsha_key:'Noach'},{id:'other',title:'C',parsha_key:'Bereishis'}]).publications;
