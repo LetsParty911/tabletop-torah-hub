@@ -113,8 +113,12 @@ describe("2026-10-16 passive cloud-infrastructure sessions", () => {
     }
   });
 
-  it("preserves non-infrastructure passive multi-page reading", () => {
-    const r = classifySessions(passive("isp-reader", "Verizon Business", { device_type: "mobile", source_group: "WhatsApp" }));
+  it("preserves non-infrastructure passive browsing across two distinct routes", () => {
+    const rows = passive("isp-reader", "Verizon Business", { device_type: "mobile", source_group: "WhatsApp" })
+      .map((row, index) => row.event_name === "page_view"
+        ? { ...row, path: index === 0 ? "/" : "/parsha/noach" }
+        : row);
+    const r = classifySessions(rows);
     expect(r.confidence.get("isp-reader")).toBe("likely_human");
   });
 
@@ -174,5 +178,47 @@ describe("recorded traffic versus reader-qualified sessions", () => {
     ]);
     expect(result.humanIds.has("read-action")).toBe(true);
     expect(result.counts.likely_human).toBe(1);
+  });
+});
+
+describe("France and Washington forensic patterns (reporting only)", () => {
+  const paris = { source_group: "Direct", device_type: "desktop", as_organization: "Orange S.A", path: "/" };
+  const amazon = { source_group: "Direct", device_type: "desktop", as_organization: "Amazon.com, Inc.", path: "/" };
+  const google = { source_group: "Direct", device_type: "desktop", as_organization: "Google LLC", path: "/" };
+  const rows: SessionEventRow[] = [
+    ev("paris-passive", "session_start", 0, paris),
+    ...Array.from({ length: 5 }, (_, i) => ev("paris-passive", "page_view", i * 30_000, paris)),
+    ...Array.from({ length: 65 }, (_, i) => ev("paris-passive", "heartbeat", i * 15_000, paris)),
+    ev("paris-interacted", "page_view", 1_000_000, paris),
+    ev("paris-interacted", "human_signal", 1_002_000, paris),
+    ev("paris-filtered", "page_view", 1_050_000, paris),
+    ev("paris-filtered", "filter_change", 1_052_000, paris),
+    ev("dc-hosted", "session_start", 2_000_000, amazon),
+    ev("dc-hosted", "page_view", 2_000_001, amazon),
+    ev("dc-google", "session_start", 3_000_000, google),
+    ev("dc-google", "page_view", 3_000_001, google),
+  ];
+
+  it("excludes a Paris browser that keeps loading only the homepage despite dozens of heartbeats", () => {
+    const r = classifySessions(rows);
+    expect(r.confidence.get("paris-passive")).toBe("uncertain");
+    expect(r.humanIds.has("paris-passive")).toBe(false);
+    expect(r.sessions.get("paris-passive")?.pagePaths.size).toBe(1);
+    expect(r.sessions.get("paris-passive")?.events).toBe(71);
+  });
+
+  it("retains actual human-like actions as likely visits, not proof of Torah use", () => {
+    const r = classifySessions(rows);
+    expect(r.confidence.get("paris-interacted")).toBe("likely_human");
+    expect(r.confidence.get("paris-filtered")).toBe("likely_human");
+    expect(r.sessions.get("paris-interacted")?.accessedPdf).toBe(false);
+    expect(r.sessions.get("paris-filtered")?.accessedPdf).toBe(false);
+  });
+
+  it("excludes passive Amazon-hosted Washington traffic without assuming Google LLC is Googlebot", () => {
+    const r = classifySessions(rows);
+    expect(r.confidence.get("dc-hosted")).toBe("suspected_automation");
+    expect(r.confidence.get("dc-google")).toBe("uncertain");
+    expect(r.humanIds.has("dc-google")).toBe(false);
   });
 });
