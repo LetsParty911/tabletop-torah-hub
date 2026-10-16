@@ -1,3 +1,4 @@
+import { publicationPdfActivity, type PdfCatalogEntry } from "@/lib/publication-pdf-activity";
 import { summarizeNoahideResources } from "@/lib/noahide-resources-analytics";
 import { countSukkahSignDownloads } from "@/lib/sukkah-sign-downloads";
 import { createServerFn } from "@tanstack/react-start";
@@ -442,7 +443,7 @@ export function describeLocation(place: string, row: Pick<EventRow, "geo_reliabi
   return `${place} — approximate network location`;
 }
 
-export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, window?: { start: string; end: string }) {
+export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string>, window?: { start: string; end: string }, catalog: PdfCatalogEntry[] = []) {
   // Shared classifier: only high_confidence_human + likely_human count.
   const classified = classifySessions(rows);
   const allSessions = classified.sessions;
@@ -697,6 +698,7 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
       .sort((a, b) => b.sessions - a.sessions),
     locations: [...locations.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions).slice(0, 20),
     searches: searches.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 50),
+    publicationActivity: publicationPdfActivity(rows, keptIds, catalog),
     pdfAccess: {
       counted: pdfAccess.counted,
       byPublication: pdfAccess.byPublication,
@@ -734,7 +736,7 @@ export const adminAnalyticsReport = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireAnalyticsAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
-    const pdfResult = await admin.from("pdfs").select("parsha_key, created_at");
+    const pdfResult = await admin.from("pdfs").select("id, title, parsha_key, publication, created_at");
     if (pdfResult.error) throw new Error(pdfResult.error.message);
     const windows = buildCollectionWindows((pdfResult.data ?? []) as Array<{ parsha_key: string | null; created_at: string | null }>);
     const range = data.range ?? "collection";
@@ -753,7 +755,7 @@ export const adminAnalyticsReport = createServerFn({ method: "POST" })
       rangeLabel: window.label,
       windowStart: window.start,
       windowEnd: window.end,
-      report: buildAnalyticsReport(rows, priorVisitors, window),
+      report: buildAnalyticsReport(rows, priorVisitors, window, (pdfResult.data ?? []) as PdfCatalogEntry[]),
       ...(() => {
         const prior = buildAnalyticsReport(priorRows, comparisonPriorVisitors, priorWindow);
         return { comparison: prior.metrics, comparisonHeadline: prior.overview.headline, comparisonWindow: priorWindow };

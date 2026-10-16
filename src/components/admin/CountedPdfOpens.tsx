@@ -1,3 +1,4 @@
+import PublicationPdfActivity from "./PublicationPdfActivity";
 import type { adminAnalyticsReport } from "@/integrations/supabase/admin-analytics-canonical";
 import { csvCell } from "@/lib/open-pdf-clicks";
 
@@ -36,6 +37,7 @@ export default function CountedPdfOpens({ data, showRanking = true }: { data: Re
   const access = data.report.pdfAccess;
   return (
     <section className="space-y-4">
+      {showRanking && <PublicationPdfActivity {...data.report.publicationActivity} windowStart={data.windowStart} windowEnd={data.windowEnd} />}
       <div>
         <h3 className="font-serif text-lg font-semibold text-primary">Counted PDF attempted opens</h3>
         <p className="mt-1 text-xs text-muted-foreground">
