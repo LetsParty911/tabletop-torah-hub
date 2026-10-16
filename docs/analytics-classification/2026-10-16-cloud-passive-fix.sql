@@ -1,110 +1,186 @@
 -- =============================================================================
 -- 2026-10-16 — Passive cloud-infrastructure sessions must not count as qualified
--- Target: EXTERNAL analytics database (torah-by-the-table), view
---         public.analytics_sessions_classified
+-- Target: EXTERNAL analytics database (torah-by-the-table)
+-- Object: public.analytics_sessions_classified (view) + helper
+--         public.is_cloud_infrastructure_org(text)
 --
--- STATUS: REVIEWED DRAFT — NOT EXECUTED BY LOVABLE. Lovable only has REST row
--- access to this database; the view body could not be read, only its column
--- list (verified via the REST schema on 2026-10-16):
---   session_id, visitor_id, started_at, ended_at, active_span_seconds,
---   page_views, human_signals, download_actions, interaction_actions,
---   is_internal, as_organization, device_type, city, region, country,
---   source_group, is_new_visitor, traffic_class, counts_as_qualified_visitor
+-- STATUS: REVIEWED, EXECUTABLE — NOT EXECUTED BY LOVABLE. The owner applies it
+-- separately. Idempotent: CREATE OR REPLACE only, no DROP, no row changes.
 --
 -- Mirrors src/lib/traffic-confidence.ts classifySession():
---   internal -> internal
---   explicit interaction / download -> qualified (protects cloud networks too)
+--   internal                                   -> 'internal'          / false
+--   download_served action or interaction      -> 'qualified_human'   / true
 --   known infrastructure, no deliberate action:
---       1 page, < 30 s, no human_signal -> likely_automated
---       otherwise                       -> unclassified
---     counts_as_qualified_visitor = FALSE in both cases
---   then the EXISTING generic human_signal / pages / dwell rules (unchanged).
+--     <=1 page, no human_signal, < 30 s        -> 'likely_automated'  / false
+--     otherwise (incl. human_signal / dwell)   -> 'unclassified'      / false
+--   other networks: human_signal, >1 page or >30 s -> 'likely_human'  / true
+--   else                                       -> 'unclassified'      / NULL
 --
--- No DROP. No rows touched. CREATE OR REPLACE VIEW keeps column names, order,
--- types, owner and grants.
+-- Column list and order (19) are unchanged, so CREATE OR REPLACE VIEW keeps
+-- the view's owner, comments and grants (service_role-only). The grant block
+-- below simply re-asserts that state.
 --
--- ---------------------------------------------------------------------------
--- STEP 0 (REQUIRED, before running): save the current definition for rollback
+-- Pre-check (read-only, recommended):
 --   SELECT pg_get_viewdef('public.analytics_sessions_classified'::regclass, true);
 --   SELECT grantee, privilege_type FROM information_schema.role_table_grants
 --    WHERE table_schema='public' AND table_name='analytics_sessions_classified';
--- Store both outputs. ROLLBACK = run
---   CREATE OR REPLACE VIEW public.analytics_sessions_classified AS <saved body>;
--- (and DROP FUNCTION public.is_cloud_infrastructure_org(text) only after the
---  view no longer references it).
--- ---------------------------------------------------------------------------
--- STEP 1: narrow, normalized matcher (same needles as the TypeScript list).
--- ---------------------------------------------------------------------------
+-- =============================================================================
+
 BEGIN;
 SET LOCAL lock_timeout = '5s';
 
+-- Narrow, normalized matcher. Same needles as INFRASTRUCTURE_ORGANIZATIONS in
+-- src/lib/traffic-confidence.ts. Deliberately NOT matched: bare "google",
+-- "google fiber", "oracle corporation", consumer ISPs (e.g. Verizon Business).
 CREATE OR REPLACE FUNCTION public.is_cloud_infrastructure_org(org text)
 RETURNS boolean
 LANGUAGE sql
 IMMUTABLE
-SET search_path = public
+PARALLEL SAFE
+SET search_path = pg_catalog
 AS $$
   SELECT coalesce(
-    regexp_replace(lower(replace(trim(org), ',', '')), '\s+', ' ', 'g') ~ (
-      'amazon\.com|amazon technologies|amazon data services|cisco opendns|'
-      || 'cloudflare|fastly|latitude\.sh|microsoft corporation|microsoft azure|'
-      || 'azure cloud|google cloud|digitalocean|hetzner online|ovh sas|ovh hosting|'
-      || 'ovhcloud|leaseweb|oracle cloud|oracle public cloud'
-    ),
+    regexp_replace(lower(replace(btrim(org), ',', '')), '\s+', ' ', 'g')
+      ~ ('amazon\.com|amazon technologies|amazon data services|cisco opendns|'
+         || 'cloudflare|fastly|latitude\.sh|microsoft corporation|microsoft azure|'
+         || 'azure cloud|google cloud|digitalocean|hetzner online|ovh sas|ovh hosting|'
+         || 'ovhcloud|leaseweb|oracle cloud|oracle public cloud'),
     false)
 $$;
--- Deliberately NOT matched: bare "google", "oracle corporation", consumer ISPs.
 
--- ---------------------------------------------------------------------------
--- STEP 2: replace ONLY the traffic_class / counts_as_qualified_visitor CASE
--- expressions in the saved STEP 0 body. Everything above the final SELECT
--- (CTEs/aggregation) must be copied verbatim from pg_get_viewdef output.
--- Wrap the existing body as `base` and apply the rule on top, keeping the
--- exact column order. Replace <EXISTING_VIEW_BODY> before running; the
--- statement intentionally fails if left unedited.
--- ---------------------------------------------------------------------------
+COMMENT ON FUNCTION public.is_cloud_infrastructure_org(text) IS
+  'Reporting-only: TRUE for known cloud-hosting/security AS organizations. Never used for blocking.';
+
+REVOKE ALL ON FUNCTION public.is_cloud_infrastructure_org(text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.is_cloud_infrastructure_org(text) TO service_role;
+
 CREATE OR REPLACE VIEW public.analytics_sessions_classified AS
-WITH base AS (
-  <EXISTING_VIEW_BODY>   -- paste the STEP 0 SELECT here, unchanged
-), ruled AS (
-  SELECT b.*,
-    CASE
-      WHEN coalesce(b.is_internal, false) THEN NULL                 -- keep existing
-      WHEN coalesce(b.interaction_actions, 0) > 0
-        OR coalesce(b.download_actions, 0) > 0 THEN NULL            -- keep existing
-      WHEN public.is_cloud_infrastructure_org(b.as_organization) THEN
-        CASE
-          WHEN coalesce(b.page_views, 0) <= 1
-           AND coalesce(b.human_signals, 0) = 0
-           AND coalesce(b.active_span_seconds, 0) < 30 THEN 'likely_automated'
-          ELSE 'unclassified'
-        END
-      ELSE NULL                                                     -- keep existing
-    END AS infra_override
-  FROM base b
+WITH s AS (
+  SELECT e.session_id,
+         e.visitor_id,
+         min(e.occurred_at) AS started_at,
+         max(e.occurred_at) AS ended_at,
+         (EXTRACT(epoch FROM (max(e.occurred_at) - min(e.occurred_at))))::integer AS active_span_seconds,
+         count(*) FILTER (WHERE e.event_name = 'page_view') AS page_views,
+         count(*) FILTER (WHERE e.event_name = 'human_signal') AS human_signals,
+         count(DISTINCT coalesce(e.metadata->>'action_id', e.id::text))
+           FILTER (WHERE e.event_name = 'download_served') AS download_actions,
+         count(*) FILTER (WHERE e.event_name = ANY (ARRAY['chooser_select','filter_change','search',
+           'recommendation_click','publication_click','my_table_open','signup'])) AS interaction_actions,
+         bool_or(coalesce(e.is_internal, false)) AS is_internal,
+         max(e.as_organization) AS as_organization,
+         max(e.device_type) AS device_type,
+         max(e.city) AS city,
+         max(e.region) AS region,
+         max(e.country) AS country,
+         max(e.source_group) AS source_group,
+         bool_or(e.is_new_visitor) AS is_new_visitor
+    FROM public.analytics_events e
+   WHERE e.session_id IS NOT NULL
+   GROUP BY e.session_id, e.visitor_id
 )
-SELECT
-  session_id, visitor_id, started_at, ended_at, active_span_seconds,
-  page_views, human_signals, download_actions, interaction_actions,
-  is_internal, as_organization, device_type, city, region, country,
-  source_group, is_new_visitor,
-  coalesce(infra_override, traffic_class)                         AS traffic_class,
-  CASE WHEN infra_override IS NOT NULL THEN false
-       ELSE counts_as_qualified_visitor END                       AS counts_as_qualified_visitor
-FROM ruled;
+SELECT session_id, visitor_id, started_at, ended_at, active_span_seconds,
+       page_views, human_signals, download_actions, interaction_actions,
+       is_internal, as_organization, device_type, city, region, country,
+       source_group, is_new_visitor,
+       CASE
+         WHEN is_internal THEN 'internal'
+         WHEN download_actions > 0 OR interaction_actions > 0 THEN 'qualified_human'
+         WHEN public.is_cloud_infrastructure_org(as_organization)
+              AND page_views <= 1 AND human_signals = 0 AND active_span_seconds < 30
+           THEN 'likely_automated'
+         WHEN public.is_cloud_infrastructure_org(as_organization) THEN 'unclassified'
+         WHEN human_signals > 0 OR page_views > 1 OR active_span_seconds > 30 THEN 'likely_human'
+         ELSE 'unclassified'
+       END AS traffic_class,
+       CASE
+         WHEN is_internal THEN false
+         WHEN download_actions > 0 OR interaction_actions > 0 THEN true
+         WHEN public.is_cloud_infrastructure_org(as_organization) THEN false
+         WHEN human_signals > 0 OR page_views > 1 OR active_span_seconds > 30 THEN true
+         ELSE NULL::boolean
+       END AS counts_as_qualified_visitor
+  FROM s;
 
--- Re-apply the grants captured in STEP 0 if your Postgres version reset them
--- (CREATE OR REPLACE normally preserves them). Example only:
--- GRANT SELECT ON public.analytics_sessions_classified TO service_role;
+-- Re-assert service_role-only access (no-op if already so).
+REVOKE ALL ON public.analytics_sessions_classified FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON public.analytics_sessions_classified TO service_role;
 
 COMMIT;
 
--- ---------------------------------------------------------------------------
--- STEP 3: verification (read-only)
+-- -----------------------------------------------------------------------------
+-- Verification (read-only)
 --   SELECT traffic_class, counts_as_qualified_visitor, count(*)
 --     FROM public.analytics_sessions_classified
 --    WHERE public.is_cloud_infrastructure_org(as_organization)
 --      AND started_at > now() - interval '1 day'
---    GROUP BY 1,2;
---   -- Expect: no qualified row with interaction_actions = 0 AND download_actions = 0.
+--    GROUP BY 1, 2;
+--   -- Expect no TRUE row unless interaction_actions > 0 OR download_actions > 0.
+--   SELECT public.is_cloud_infrastructure_org('Microsoft Azure Cloud (westus2)'),  -- t
+--          public.is_cloud_infrastructure_org('Google LLC'),                       -- f
+--          public.is_cloud_infrastructure_org('Verizon Business');                 -- f
+-- -----------------------------------------------------------------------------
+
 -- =============================================================================
+-- ROLLBACK (run as one block). Restores the pre-fix outer CASE, where cloud
+-- sessions fell through to the generic human_signal / page / dwell rules.
+-- Same 19 columns, same CTE, so CREATE OR REPLACE keeps grants.
+-- The helper function is left in place (harmless, unused after rollback);
+-- if it did not exist before, it may be removed AFTER this rollback with:
+--   DROP FUNCTION public.is_cloud_infrastructure_org(text);
+-- NOTE: if your saved pre-check pg_get_viewdef output differs from the block
+-- below, use that saved output instead — it is the authoritative old version.
+-- =============================================================================
+-- BEGIN;
+-- SET LOCAL lock_timeout = '5s';
+-- CREATE OR REPLACE VIEW public.analytics_sessions_classified AS
+-- WITH s AS (
+--   SELECT e.session_id,
+--          e.visitor_id,
+--          min(e.occurred_at) AS started_at,
+--          max(e.occurred_at) AS ended_at,
+--          (EXTRACT(epoch FROM (max(e.occurred_at) - min(e.occurred_at))))::integer AS active_span_seconds,
+--          count(*) FILTER (WHERE e.event_name = 'page_view') AS page_views,
+--          count(*) FILTER (WHERE e.event_name = 'human_signal') AS human_signals,
+--          count(DISTINCT coalesce(e.metadata->>'action_id', e.id::text))
+--            FILTER (WHERE e.event_name = 'download_served') AS download_actions,
+--          count(*) FILTER (WHERE e.event_name = ANY (ARRAY['chooser_select','filter_change','search',
+--            'recommendation_click','publication_click','my_table_open','signup'])) AS interaction_actions,
+--          bool_or(coalesce(e.is_internal, false)) AS is_internal,
+--          max(e.as_organization) AS as_organization,
+--          max(e.device_type) AS device_type,
+--          max(e.city) AS city,
+--          max(e.region) AS region,
+--          max(e.country) AS country,
+--          max(e.source_group) AS source_group,
+--          bool_or(e.is_new_visitor) AS is_new_visitor
+--     FROM public.analytics_events e
+--    WHERE e.session_id IS NOT NULL
+--    GROUP BY e.session_id, e.visitor_id
+-- )
+-- SELECT session_id, visitor_id, started_at, ended_at, active_span_seconds,
+--        page_views, human_signals, download_actions, interaction_actions,
+--        is_internal, as_organization, device_type, city, region, country,
+--        source_group, is_new_visitor,
+--        CASE
+--          WHEN is_internal THEN 'internal'
+--          WHEN download_actions > 0 OR interaction_actions > 0 THEN 'qualified_human'
+--          WHEN public.is_cloud_infrastructure_org(as_organization)
+--               AND page_views <= 1 AND human_signals = 0 AND active_span_seconds < 30
+--            THEN 'likely_automated'
+--          WHEN human_signals > 0 OR page_views > 1 OR active_span_seconds > 30 THEN 'likely_human'
+--          ELSE 'unclassified'
+--        END AS traffic_class,
+--        CASE
+--          WHEN is_internal THEN false
+--          WHEN download_actions > 0 OR interaction_actions > 0 THEN true
+--          WHEN public.is_cloud_infrastructure_org(as_organization)
+--               AND page_views <= 1 AND human_signals = 0 AND active_span_seconds < 30
+--            THEN false
+--          WHEN human_signals > 0 OR page_views > 1 OR active_span_seconds > 30 THEN true
+--          ELSE NULL::boolean
+--        END AS counts_as_qualified_visitor
+--   FROM s;
+-- REVOKE ALL ON public.analytics_sessions_classified FROM PUBLIC, anon, authenticated;
+-- GRANT SELECT ON public.analytics_sessions_classified TO service_role;
+-- COMMIT;
