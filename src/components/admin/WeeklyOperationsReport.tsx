@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import type { AnalyticsReportRange } from "@/integrations/supabase/admin-analytics-canonical";
 import { adminAnalyticsReport } from "@/integrations/supabase/admin-analytics-canonical";
-import AnalyticsControlCenter, { type ReportData } from "@/components/admin/AnalyticsControlCenter";
+import type { adminAnalyticsReport as AdminAnalyticsReportFn } from "@/integrations/supabase/admin-analytics-canonical";
+type ReportData = Awaited<ReturnType<typeof AdminAnalyticsReportFn>>;
 
 const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -26,6 +27,6 @@ export default function WeeklyOperationsReport({ accessToken, range, report }: {
       <div className="mt-2 overflow-x-auto"><table className="w-full min-w-[480px] text-left text-sm"><thead className="text-xs text-muted-foreground"><tr><th className="py-1">Day</th><th>Visitors</th><th>Visits</th><th>Pageviews</th><th>Counted PDF attempted opens</th></tr></thead>
         <tbody className="divide-y divide-border">{days.map((d) => <tr key={d.bucket} className={d.wd === 4 || d.wd === 5 ? "bg-accent/15 font-medium" : ""}><td className="py-1">{WEEKDAY[d.wd]} {d.bucket.slice(5, 10)}</td><td>{d.visitors}</td><td>{d.sessions}</td><td>{d.pageviews}</td><td>{d.pdfOpens}</td></tr>)}</tbody></table></div>
     </section>
-    <div className="border-t border-border pt-6"><h3 className="mb-3 font-serif text-lg font-semibold text-primary">Selected-period overview</h3><AnalyticsControlCenter data={report} accessToken={accessToken} /></div>
+    <div className="border-t border-border pt-4 text-sm text-muted-foreground">Selected period: {report.rangeLabel}. Switch to Overview for detailed metrics for that period.</div>
   </div>;
 }
