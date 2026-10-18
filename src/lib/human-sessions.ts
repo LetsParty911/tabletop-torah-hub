@@ -62,6 +62,9 @@ export const MEANINGFUL_INTENT = new Set([
   // recommendation_view is intentionally absent: it is a render-time impression.
   "chooser_select",
   "recommendation_click",
+  // An explicit click on the Seven Noahide Laws footer link is deliberate intent;
+  // it does not qualify as a PDF or Used Torah action.
+  "noahide_footer_click",
   "my_table_add",
   "my_table_remove",
   "my_table_open",

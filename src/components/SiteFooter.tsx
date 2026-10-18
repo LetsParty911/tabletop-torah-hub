@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 import { SiteLogoHorizontal } from "@/components/SiteLogo";
+import { trackFp } from "@/lib/first-party-analytics";
 
 export function SiteFooter() {
   const linkClass =
@@ -41,7 +42,11 @@ export function SiteFooter() {
         <Link to="/contact" className={linkClass}>
           Contact
         </Link>
-        <Link to="/noahide-resources" className={linkClass}>
+        <Link
+          to="/noahide-resources"
+          className={linkClass}
+          onClick={() => trackFp("noahide_footer_click", { metadata: { target_path: "/noahide-resources", placement: "site_footer" } })}
+        >
           The Seven Noahide Laws
         </Link>
         <Link to="/privacy" className={linkClass}>

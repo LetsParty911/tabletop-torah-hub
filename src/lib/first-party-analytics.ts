@@ -28,6 +28,7 @@ export type FpEventName =
   | "human_signal"
   | "scroll_depth"
   | "outbound_click"
+  | "noahide_footer_click"
   | "chooser_select"
   | "recommendation_view"
   | "recommendation_click"
@@ -437,6 +438,8 @@ const IMMEDIATE: ReadonlySet<string> = new Set<string>([
   "share_click",
   // Sent right away: the browser is usually about to leave the site.
   "outbound_click",
+  // Same-site SPA navigation can occur before a batched event is delivered.
+  "noahide_footer_click",
 ]);
 
 function send(events: WirePayload[]): void {

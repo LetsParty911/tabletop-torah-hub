@@ -1,0 +1,32 @@
+name: Verify Noahide footer link analytics
+
+on:
+  pull_request:
+    paths:
+      - "src/components/SiteFooter.tsx"
+      - "src/lib/first-party-analytics.ts"
+      - "src/routes/api/events.ts"
+      - "src/lib/human-sessions.ts"
+      - "src/lib/noahide-resources-analytics.ts"
+      - "src/components/admin/NoahideResourcesSection.tsx"
+      - "src/lib/noahide-resources-analytics.test.ts"
+      - ".github/workflows/verify-noahide-footer-analytics.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  noahide-footer-tracking:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Type check
+        run: bunx tsc --noEmit
+      - name: Analytics regressions
+        run: bun test src/lib/noahide-resources-analytics.test.ts src/lib/human-sessions.test.ts
+      - name: Build
+        run: bun run build
