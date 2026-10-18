@@ -1,0 +1,30 @@
+name: Verify admin dashboard readability changes
+
+on:
+  pull_request:
+    paths:
+      - "src/routes/admin.tsx"
+      - "src/components/admin/AdminAnalyticsReport.tsx"
+      - "src/components/admin/AnalyticsControlCenter.tsx"
+      - "src/components/admin/WeeklyOperationsReport.tsx"
+      - "src/components/admin/CountedPdfOpens.tsx"
+      - ".github/workflows/verify-admin-dashboard-ui.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  admin-dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Type check
+        run: bunx tsc --noEmit
+      - name: Relevant analytics tests
+        run: bun test src/lib/admin-analytics-display.test.ts src/lib/admin-mini-summary.test.ts src/lib/pdf-reporting.test.ts src/lib/publication-pdf-activity.test.ts
+      - name: Build
+        run: bun run build
