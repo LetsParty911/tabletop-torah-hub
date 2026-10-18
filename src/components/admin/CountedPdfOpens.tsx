@@ -1,12 +1,9 @@
 import PublicationPdfActivity from "./PublicationPdfActivity";
 import type { adminAnalyticsReport } from "@/integrations/supabase/admin-analytics-canonical";
 import { csvCell } from "@/lib/open-pdf-clicks";
+import { formatCountRate } from "@/lib/admin-analytics-display";
 
 type ReportData = Awaited<ReturnType<typeof adminAnalyticsReport>>;
-
-function pct(n: number) {
-  return `${Math.round(n * 100)}%`;
-}
 
 /** One-line audit: how raw PDF-access actions became the counted headline. */
 export function pdfAccessAuditLine(m: ReportData["report"]["metrics"]): string {
@@ -48,7 +45,7 @@ export default function CountedPdfOpens({ data, showRanking = true }: { data: Re
         <Fig label="Counted PDF attempted opens" value={m.countedPdfOpens} />
         <Fig label="Visitors with attempted opens" value={m.countedPdfOpenVisitors} />
         <Fig label="Distinct PDFs requested" value={m.countedUniquePdfs} />
-        <Fig label="PDF attempted-open rate" value={m.sessions > 0 ? pct(m.pdfOpenRate) : "—"} note={`${m.countedPdfOpenSessions} of ${m.sessions} visits`} />
+        <Fig label="PDF attempted-open rate" value={formatCountRate(m.countedPdfOpenSessions, m.sessions).split(" · ")[0]} note={`${m.countedPdfOpenSessions} of ${m.sessions} visits`} />
       </div>
       <p className="text-xs text-muted-foreground">{pdfAccessAuditLine(m)}{m.pdfAccessMissingPublicationId > 0 ? ` ${m.pdfAccessMissingPublicationId} counted actions have no publication ID and are excluded from the ranking.` : ""}</p>
       {showRanking && (access.byPublication.length === 0 ? (
@@ -56,10 +53,10 @@ export default function CountedPdfOpens({ data, showRanking = true }: { data: Re
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-left text-xs">
-            <thead className="text-muted-foreground"><tr><th className="py-1 pr-2">Publication</th><th className="pr-2">Series</th><th className="pr-2">Parsha</th><th className="pr-2">Attempted opens</th><th className="pr-2">Visitors</th><th>Top source</th></tr></thead>
+            <thead className="text-muted-foreground"><tr><th className="py-1 pr-2">Publication</th><th className="pr-2">Series</th><th className="pr-2">Parsha</th><th className="pr-2">Attempted opens</th><th className="pr-2">Visitors</th><th className="pr-2">Share of attempts</th><th>Top source</th></tr></thead>
             <tbody className="divide-y divide-border">
               {access.byPublication.map((p) => (
-                <tr key={p.publicationId}><td className="py-1 pr-2">{p.title}</td><td className="pr-2">{p.series ?? "—"}</td><td className="pr-2">{p.parsha ?? "—"}</td><td className="pr-2 font-semibold">{p.opens}</td><td className="pr-2">{p.uniqueVisitors}</td><td>{p.topSource ?? "—"}</td></tr>
+                <tr key={p.publicationId}><td className="py-1 pr-2">{p.title}</td><td className="pr-2">{p.series ?? "—"}</td><td className="pr-2">{p.parsha ?? "—"}</td><td className="pr-2 font-semibold">{p.opens}</td><td className="pr-2">{p.uniqueVisitors}</td><td className="pr-2">{m.countedPdfOpens > 0 ? `${(100 * p.opens / m.countedPdfOpens).toFixed(1)}%` : "—"}</td><td>{p.topSource ?? "—"}</td></tr>
               ))}
             </tbody>
           </table>

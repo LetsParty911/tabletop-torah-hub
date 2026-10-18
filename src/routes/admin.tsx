@@ -215,7 +215,7 @@ function AdminPage() {
   const [wnpVersion, setWnpVersion] = useState<string>("0");
   const [busy, setBusy] = useState(false);
   const [yearFilter, setYearFilter] = useState<string>("all");
-  const [showAllPdfs, setShowAllPdfs] = useState(false);
+  const [showAllPdfs, setShowAllPdfs] = useState(true);
 
   const [msg, setMsg] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
@@ -1364,10 +1364,13 @@ function AdminPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-4 py-8 space-y-8">
-        <header className="flex items-center justify-between">
-          <h1 className="font-serif text-3xl md:text-4xl font-bold text-primary">Admin Dashboard</h1>
-          <div className="text-sm text-muted-foreground flex items-center gap-3">
-            <span>{session.user.email}</span>
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="font-serif text-3xl md:text-4xl font-bold text-primary">Admin Dashboard</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Manage weekly publications, the PDF library, subscribers, and site operations.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground sm:justify-end sm:text-sm">
+            <span className="break-all">{session.user.email}</span>
             <button onClick={signOut} className="underline text-primary">
               Sign out
             </button>
@@ -1413,15 +1416,15 @@ function AdminPage() {
         </section>
 
         <Tabs defaultValue="this-week" className="w-full">
-          <TabsList className="flex flex-wrap h-auto gap-1">
+          <TabsList aria-label="Admin sections" className="grid h-auto w-full grid-cols-2 gap-1 rounded-md bg-muted/60 p-2 sm:flex sm:flex-wrap sm:justify-start">
             <TabsTrigger value="this-week">This Week</TabsTrigger>
-            <TabsTrigger value="site-content">Site Content</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="pdf-library">PDF Library</TabsTrigger>
+            <TabsTrigger value="site-content">Banners</TabsTrigger>
             <TabsTrigger value="subscribers-analytics">Subscribers</TabsTrigger>
-            <TabsTrigger value="visitor-activity">Visitor Activity</TabsTrigger>
-            <TabsTrigger value="blocked-visits">Blocked Visits</TabsTrigger>
-            <TabsTrigger value="vpn-tracking">VPN Tracking</TabsTrigger>
-            <TabsTrigger value="notifications">Alerts & Notifications</TabsTrigger>
+            <TabsTrigger value="visitor-activity">Visitors</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="notifications">Alerts</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
           <TabsContent value="this-week" className="space-y-8 mt-8">
         <section className="parchment-frame">
@@ -1544,6 +1547,23 @@ function AdminPage() {
         </section>
         <section className="parchment-frame">
           <div className="parchment-panel">
+            <WeeklyEmailSection
+              weekly={weekly}
+              weeklyLoading={weeklyLoading}
+              weeklySending={weeklySending}
+              weeklyHistory={weeklyHistory}
+              onSend={handleSendWeeklyEmail}
+            />
+          </div>
+        </section>
+          </TabsContent>
+          <TabsContent value="pdf-library" className="space-y-6 mt-8">
+            <div>
+              <h2 className="font-serif text-2xl font-semibold text-primary">PDF Library</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Search and manage all publications here. Weekly uploads and the release checklist remain under This Week.</p>
+            </div>
+        <section className="parchment-frame">
+          <div className="parchment-panel">
             <PdfListSection
               pdfs={pdfs}
               showAllPdfs={showAllPdfs}
@@ -1589,17 +1609,6 @@ function AdminPage() {
               onEditMetaBadgeChange={setEditMetaBadge}
               savingMeta={savingMeta}
               onSaveMeta={handleSaveMeta}
-            />
-          </div>
-        </section>
-        <section className="parchment-frame">
-          <div className="parchment-panel">
-            <WeeklyEmailSection
-              weekly={weekly}
-              weeklyLoading={weeklyLoading}
-              weeklySending={weeklySending}
-              weeklyHistory={weeklyHistory}
-              onSend={handleSendWeeklyEmail}
             />
           </div>
         </section>
@@ -1764,10 +1773,12 @@ function AdminPage() {
           <TabsContent value="visitor-activity" className="space-y-8 mt-8">
             <VisitorActivitySection accessToken={accessToken} />
           </TabsContent>
-          <TabsContent value="vpn-tracking" className="space-y-8 mt-8"><VpnTrackingSection accessToken={accessToken} /></TabsContent>
-          <TabsContent value="notifications" className="space-y-8 mt-8"><NotificationsSection accessToken={accessToken} /></TabsContent>
-          <TabsContent value="blocked-visits" className="space-y-8 mt-8">
+          <TabsContent value="security" className="space-y-8 mt-8">
             <BlockedVisitsSection accessToken={accessToken} />
+            <VpnTrackingSection accessToken={accessToken} />
+          </TabsContent>
+          <TabsContent value="notifications" className="space-y-8 mt-8">
+            <NotificationsSection accessToken={accessToken} />
           </TabsContent>
         </Tabs>
       </div>
