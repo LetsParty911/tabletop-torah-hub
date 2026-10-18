@@ -68,6 +68,8 @@ type SessionStat = {
   firstAt: string;
   pageviews: number;
   clicks: Record<NoahideDestination, number>;
+  footerClicks: number;
+  footerSources: Map<string, number>;
   humanSignal: boolean;
   maxScroll: number;
   activeSeconds: number;
@@ -100,7 +102,17 @@ export function summarizeNoahideResources(
 ) {
   const seen = new Set<string>();
   const pageRows: NoahideEventRow[] = [];
+  const footerRows: NoahideEventRow[] = [];
   for (const row of rows) {
+    if (row.event_name === "noahide_footer_click") {
+      if (row.metadata?.target_path !== NOAHIDE_PATH || row.metadata?.placement !== "site_footer") continue;
+      if (row.event_id) {
+        if (seen.has(row.event_id)) continue;
+        seen.add(row.event_id);
+      }
+      footerRows.push(row);
+      continue;
+    }
     if (normalizePath(row.path) !== NOAHIDE_PATH) continue;
     if (row.event_id) {
       if (seen.has(row.event_id)) continue;
@@ -144,6 +156,8 @@ export function summarizeNoahideResources(
       firstAt: pv.occurred_at,
       pageviews: 0,
       clicks: { ask_noah: 0, chabad: 0 },
+      footerClicks: 0,
+      footerSources: new Map(),
       humanSignal: false,
       maxScroll: 0,
       activeSeconds: 0,
@@ -189,6 +203,33 @@ export function summarizeNoahideResources(
     stats.set(sid, stat);
   }
 
+  const footerSessions = new Map<string, { visitorId: string | null; count: number; source: string }>();
+  for (const row of footerRows) {
+    const sid = row.session_id?.trim();
+    if (!sid) continue;
+    const existing = footerSessions.get(sid);
+    footerSessions.set(sid, {
+      visitorId: existing?.visitorId ?? row.visitor_id?.trim() ?? null,
+      count: (existing?.count ?? 0) + 1,
+      source: existing?.source ?? normalizePath(row.path) ?? "/",
+    });
+    const pageSession = stats.get(sid);
+    if (pageSession) {
+      pageSession.footerClicks += 1;
+      bump(pageSession.footerSources, normalizePath(row.path) || "/");
+    }
+  }
+  const qualifyingFooter = [...footerSessions.entries()].filter(([sid]) => isHeadlineConfidence(classified.confidence.get(sid) ?? "uncertain"));
+  const footerSourceCounts = new Map<string, number>();
+  for (const [, record] of qualifyingFooter) bump(footerSourceCounts, record.source);
+  const footerSummary = {
+    clicks: qualifyingFooter.reduce((total, [, record]) => total + record.count, 0),
+    sessions: qualifyingFooter.length,
+    visitors: new Set(qualifyingFooter.map(([, record]) => record.visitorId).filter(Boolean)).size,
+    rawClicks: footerRows.length,
+    sources: ranked(footerSourceCounts),
+  };
+
   const all = [...stats.values()];
   const human = all.filter((s) => isHeadlineConfidence(s.confidence));
   const byConfidence = emptyByConfidence();
@@ -233,6 +274,7 @@ export function summarizeNoahideResources(
 
   return {
     path: NOAHIDE_PATH,
+    footer: footerSummary,
     headline: {
       visitors: visitors.size,
       sessions: human.length,
@@ -280,6 +322,7 @@ export function summarizeNoahideResources(
         pageviews: s.pageviews,
         askNoahClicks: s.clicks.ask_noah,
         chabadClicks: s.clicks.chabad,
+        footerClicks: s.footerClicks,
         activeSeconds: s.heartbeatSampled ? s.activeSeconds : null,
         maxScroll: s.maxScroll,
       })),
