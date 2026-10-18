@@ -91,6 +91,32 @@ describe("noahide resources analytics", () => {
     expect(r.journeys).toHaveLength(1);
   });
 
+  it("tracks footer clicks independently from the Noahide page views and PDF use", () => {
+    const click = ev({ event_name: "noahide_footer_click", path: "/", metadata: { placement: "site_footer", target_path: "/noahide-resources" } });
+    const rows = [click, { ...click }, ev({ path: "/" }), human("s1"), ev({})];
+    const result = summarizeNoahideResources(rows);
+    expect(result.footer.rawClicks).toBe(1);
+    expect(result.footer.clicks).toBe(1);
+    expect(result.footer.sessions).toBe(1);
+    expect(result.footer.visitors).toBe(1);
+    expect(result.footer.sources).toEqual([{ label: "/", sessions: 1 }]);
+    expect(result.headline.pageviews).toBe(1);
+    expect(result.journeys[0].footerClicks).toBe(1);
+    const canonical = summarizeCanonical(rows as never);
+    expect(canonical.downloadActions).toBe(0);
+    expect(canonical.openPdfClicks).toBe(0);
+  });
+
+  it("filters internal footer clicks from qualified counts", () => {
+    const result = summarizeNoahideResources([
+      ev({ session_id: "internal", visitor_id: "i", is_internal: true, event_name: "noahide_footer_click", path: "/", metadata: { placement: "site_footer", target_path: "/noahide-resources" } }),
+      ev({ session_id: "external", visitor_id: "e", event_name: "noahide_footer_click", path: "/about", metadata: { placement: "site_footer", target_path: "/noahide-resources" } }),
+    ]);
+    expect(result.footer.rawClicks).toBe(2);
+    expect(result.footer.clicks).toBe(1);
+    expect(result.headline.sessions).toBe(0);
+  });
+
   it("does not change PDF counters", () => {
     const rows = [ev({ session_id: "p", visitor_id: "vp" }), human("p", "vp"), ev({ session_id: "p", visitor_id: "vp", event_name: "outbound_click", metadata: ASK })];
     const s = summarizeCanonical(rows as never);
