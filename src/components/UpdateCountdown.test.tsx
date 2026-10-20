@@ -11,7 +11,7 @@ afterEach(() => {
 
 for (const reducedMotion of [false, true]) {
   for (const activation of ["keyboard", "pointer"]) {
-    it(`targets the top email field on ${activation} activation (reduced motion: ${reducedMotion})`, async () => {
+    it(`targets the single homepage email field on ${activation} activation (reduced motion: ${reducedMotion})`, async () => {
       Object.defineProperty(window, "matchMedia", {
         configurable: true,
         value: vi.fn(() => ({ matches: reducedMotion })),
@@ -20,17 +20,14 @@ for (const reducedMotion of [false, true]) {
       render(
         <>
           <UpdateCountdown liveParshaLabel="Noach" readingDate="2026-10-24" />
-          <div id="weekly-email-signup-top">
-            <input type="email" aria-label="Top email" />
-          </div>
           <div id="weekly-email-signup">
-            <input type="email" aria-label="Lower email" />
+            <input type="email" aria-label="Weekly email" />
           </div>
         </>,
       );
-      document.getElementById("weekly-email-signup-top")!.scrollIntoView = scroll;
+      document.getElementById("weekly-email-signup")!.scrollIntoView = scroll;
       const link = screen.getByRole("link", { name: "Subscribe" });
-      expect(link.getAttribute("href")).toBe("#weekly-email-signup-top");
+      expect(link.getAttribute("href")).toBe("#weekly-email-signup");
       if (activation === "keyboard") {
         await userEvent.tab();
         expect(document.activeElement).toBe(link);
@@ -42,7 +39,7 @@ for (const reducedMotion of [false, true]) {
         behavior: reducedMotion ? "auto" : "smooth",
         block: "start",
       });
-      expect(document.activeElement).toBe(screen.getByLabelText("Top email"));
+      expect(document.activeElement).toBe(screen.getByLabelText("Weekly email"));
     });
   }
 }

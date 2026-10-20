@@ -9,6 +9,9 @@ on:
       - "src/routes/short-vorts.tsx"
       - "src/routes/view.$id.tsx"
       - "src/routes/index.tsx"
+      - "src/components/UpdateCountdown.tsx"
+      - "src/components/UpdateCountdown.test.tsx"
+      - "src/components/WeeklyEmailSignup.test.tsx"
       - ".github/workflows/verify-website-improvements.yml"
   workflow_dispatch:
 
@@ -35,5 +38,9 @@ jobs:
             exit 1
           fi
           bun test "${tests[@]}"
+      - name: Run signup and countdown regression tests
+        run: bun run test:signup
+      - name: Verify maintenance, VPN and IP classification safeguards
+        run: bunx vitest run src/lib/maintenance.test.ts src/lib/vpn-block.test.ts src/lib/ip-geo.test.ts
       - name: Build application
         run: bun run build

@@ -84,9 +84,7 @@ export const Route = createFileRoute("/view/$id")({
     );
 
     const url = `https://torahforthetable.com/view/${params.id}`;
-    const ogParams = new URLSearchParams({ title });
-    if (rawParsha) ogParams.set("parsha", rawParsha);
-    const image = `https://torahforthetable.com/og/image.png?${ogParams.toString()}`;
+    const image = "https://torahforthetable.com/og-image.png";
 
     const toIso = (v: string | null | undefined): string | null => {
       if (!v) return null;
