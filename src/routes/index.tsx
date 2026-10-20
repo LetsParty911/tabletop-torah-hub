@@ -16,7 +16,7 @@ import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
-import { collectionCountLine, displayContentType, isCollectionComplete } from "@/lib/collection-status";
+import { collectionCountLine, displayContentType, hasDisplayedCollectionChanged, isCollectionComplete } from "@/lib/collection-status";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { publicationLabel } from "@/lib/badges";
 
@@ -324,7 +324,16 @@ function Index() {
           return;
         }
         const latest = await listHomepageWeek({ data: { parshaKey: currentParshaKey } });
-        if (!cancelled) setResources(latest.resources as Resource[]);
+        if (cancelled) return;
+        if (hasDisplayedCollectionChanged(
+          { isFallback, fallbackParshaKey },
+          { isFallback: latest.isFallback, fallbackParshaKey: latest.fallbackParshaKey },
+        )) {
+          // Keep the heading, share link, and PDFs aligned across publication rollovers.
+          await router.invalidate();
+          return;
+        }
+        setResources(latest.resources as Resource[]);
       } catch (error) {
         console.error("Failed to refresh current collection", error);
       }
@@ -333,7 +342,7 @@ function Index() {
     return () => {
       cancelled = true;
     };
-  }, [currentParshaKey, router]);
+  }, [currentParshaKey, isFallback, fallbackParshaKey, router]);
   useEffect(() => {
     setResources(loaderData.resources ?? []);
   }, [loaderData.resources]);
