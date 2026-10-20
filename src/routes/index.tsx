@@ -271,11 +271,6 @@ function Index() {
 
   const displayedLabel = isFallback && fallbackParshaLabel ? fallbackParshaLabel : currentLabel;
   const displayedParshaKey = isFallback && fallbackParshaKey ? fallbackParshaKey : currentParshaKey;
-  const normalizedCurrentKey = (currentParshaKey ?? currentLabel)
-    .replace(/^Parshas\s+/i, "")
-    .trim()
-    .toLowerCase();
-  const notificationReadingLabel = currentLabel.replace(/^Parshas\s+/i, "").trim();
   const heroDateLine = readingDate
     ? new Date(`${readingDate}T12:00:00Z`)
         .toLocaleDateString("en-US", {
@@ -516,7 +511,7 @@ function Index() {
     </a>
   );
 
-  const isHaazinuWeek = normalizedCurrentKey === "ha'azinu";
+  const isHaazinuWeek = normalizedCollectionKey === "ha'azinu";
   const haazinuQaTitle = "Parsha Questions & Answers – Haazinu";
   const duplicateTitleCounts = resources.reduce((counts, resource) => {
     counts.set(resource.title, (counts.get(resource.title) ?? 0) + 1);
@@ -695,21 +690,34 @@ function Index() {
                     {standardizeCopy(chooseReason(r))}
                   </p>
                   <div className="mt-auto pt-4">
-                    <DownloadAndPrintButtons
-                      href={`/view/${r.id}/pdf`}
-                      publicationId={r.id}
-                      publicationName={displayPublicationName(r)}
-                      publicationTitle={r.title}
-                      publisher={r.publisher}
-                      publicationSeries={r.publication}
-                      parsha={r.parsha_key ?? displayedParshaKey}
-                      className="w-full px-3 py-2.5 text-sm"
-                    />
+                    <Link
+                      to="/view/$id"
+                      params={{ id: r.id }}
+                      onClick={() => trackFp("recommendation_click", {
+                        publication_id: r.id,
+                        publication_title: r.title,
+                        parsha: r.parsha_key ?? displayedParshaKey,
+                        metadata: { chooser: key, placement: "homepage_start_here" },
+                      })}
+                      className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary px-4 py-2.5 font-serif text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground"
+                    >
+                      Read this Dvar Torah
+                    </Link>
                   </div>
                 </article>
               ))}
             </div>
-            <button type="button" onClick={() => setShowAllResources(true)} className="mt-4 inline-block text-sm font-semibold text-primary underline underline-offset-4 hover:text-accent">
+            <button
+              type="button"
+              onClick={() => {
+                setShowAllResources(true);
+                requestAnimationFrame(() => document.getElementById("this-weeks-collection")?.scrollIntoView({
+                  behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+                  block: "start",
+                }));
+              }}
+              className="mt-4 inline-block text-sm font-semibold text-primary underline underline-offset-4 hover:text-accent"
+            >
               Browse the complete collection
             </button>
           </section>
