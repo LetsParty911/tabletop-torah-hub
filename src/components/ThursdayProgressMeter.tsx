@@ -27,6 +27,8 @@ type ThursdayProgressMeterProps = {
   badgeLabel?: string;
   /** Optional destination shown when the upload reaches 100%. */
   completeHref?: string;
+  /** Optional action before following the completed collection link. */
+  onCompleteClick?: () => void;
   /** Optional CTA text shown when the upload reaches 100%. */
   completeCtaLabel?: string;
 };
@@ -38,6 +40,7 @@ export function ThursdayProgressMeter({
   message,
   badgeLabel = "Upcoming",
   completeHref,
+  onCompleteClick,
   completeCtaLabel = "Browse the new collection",
 }: ThursdayProgressMeterProps) {
   const [fillStep, setFillStep] = useState<FillStep | null>(null);
@@ -113,6 +116,7 @@ export function ThursdayProgressMeter({
             {completeHref && (
               <a
                 href={completeHref}
+                onClick={onCompleteClick}
                 className="mt-3 inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 font-serif text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 {completeCtaLabel}

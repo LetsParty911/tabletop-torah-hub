@@ -329,7 +329,7 @@ function Index() {
           { isFallback, fallbackParshaKey },
           { isFallback: latest.isFallback, fallbackParshaKey: latest.fallbackParshaKey },
         )) {
-          // Keep the heading, share link, and PDFs aligned across publication rollovers.
+          // Keep the displayed heading, share link and PDFs aligned across weekly release changes.
           await router.invalidate();
           return;
         }
@@ -560,6 +560,17 @@ function Index() {
     setContentTypeFilter("All");
   };
 
+  // Progressive disclosure must never hide the target of a browse/chooser CTA.
+  const revealCollection = (targetId = "this-weeks-collection") => {
+    setShowAllResources(true);
+    window.requestAnimationFrame(() => {
+      document.getElementById(targetId)?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block: "start",
+      });
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <AnnouncementBanner initialBanner={Route.useLoaderData().announcement} />
@@ -641,6 +652,7 @@ function Index() {
               <div className="mt-4 flex flex-col items-center justify-center gap-2.5 sm:flex-row">
                 <a
                   href={starterSelections.length > 0 ? "#starter-selections-heading" : "#this-weeks-collection"}
+                  onClick={() => { if (starterSelections.length === 0) setShowAllResources(true); }}
                   className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary px-6 py-2.5 font-serif text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
                 >
                   Choose a ready Dvar Torah
@@ -658,7 +670,7 @@ function Index() {
                   href="#this-weeks-collection"
                   onClick={(e) => {
                     e.preventDefault();
-                    document.getElementById("shabbos-table-chooser")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    revealCollection("shabbos-table-chooser");
                   }}
                   className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
                 >
@@ -718,13 +730,7 @@ function Index() {
             </div>
             <button
               type="button"
-              onClick={() => {
-                setShowAllResources(true);
-                requestAnimationFrame(() => document.getElementById("this-weeks-collection")?.scrollIntoView({
-                  behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-                  block: "start",
-                }));
-              }}
+              onClick={() => revealCollection()}
               className="mt-4 inline-block text-sm font-semibold text-primary underline underline-offset-4 hover:text-accent"
             >
               Browse the complete collection
@@ -799,6 +805,7 @@ function Index() {
           badgeLabel="This Shabbos"
           message="New Divrei Torah will be added then."
           completeHref="#this-weeks-collection"
+          onCompleteClick={() => setShowAllResources(true)}
           completeCtaLabel={`Browse ${displayedLabel}`}
           ariaLabel={(fillStep) =>
             `${currentLabel} upload progress: ${fillStep}% complete`

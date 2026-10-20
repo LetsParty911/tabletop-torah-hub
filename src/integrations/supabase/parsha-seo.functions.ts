@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
-import { PARSHIYOS_54, formatReadingLabel } from "@/lib/parshiyos";
+import { YOM_TOV_KEYS, formatReadingLabel } from "@/lib/parshiyos";
+import { DIRECTORY_PARSHIYOS, canonicalParshaForSlug, isDirectoryParshaSlug } from "@/lib/parsha-directory";
 import { readingSlug } from "@/lib/reading-page";
 import { standardizeCopy } from "@/lib/standardize-copy";
 
@@ -28,9 +29,6 @@ export type ParshaSeoPage = {
   type_counts: Record<string, number>;
 };
 
-function canonicalParshaForSlug(slug: string): string | null {
-  return PARSHIYOS_54.find((name) => readingSlug(name) === slug) ?? null;
-}
 
 export const getParshaSeoPage = createServerFn({ method: "GET" })
   .inputValidator((input: { slug: string }) =>
@@ -126,7 +124,7 @@ export const listParshaSeoSummaries = createServerFn({ method: "GET" }).handler(
     if (!error) {
       for (const row of data ?? []) {
         const slug = readingSlug(String((row as any).parsha_key ?? ""));
-        if (!PARSHIYOS_54.some((name) => readingSlug(name) === slug)) continue;
+        if (!isDirectoryParshaSlug(slug)) continue;
         const entry = counts.get(slug) ?? { count: 0, years: new Set<number>() };
         entry.count += 1;
         const year = (row as any).jewish_year as number | null;
@@ -137,7 +135,7 @@ export const listParshaSeoSummaries = createServerFn({ method: "GET" }).handler(
       console.error("listParshaSeoSummaries error", error);
     }
 
-    return PARSHIYOS_54.map((parsha_key) => {
+    return DIRECTORY_PARSHIYOS.map((parsha_key) => {
       const slug = readingSlug(parsha_key);
       const entry = counts.get(slug);
       return {
@@ -147,6 +145,41 @@ export const listParshaSeoSummaries = createServerFn({ method: "GET" }).handler(
         count: entry?.count ?? 0,
         years: [...(entry?.years ?? new Set<number>())].sort((a, b) => b - a),
       };
+    });
+  },
+);
+
+/** Public holiday collection links, derived from the same published PDF set as the archive. */
+export const listYomTovSeoSummaries = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Array<{ key: string; slug: string; label: string; count: number; years: Array<{ year: number; count: number }> }>> => {
+    const admin = getSupabaseAdmin();
+    const { data, error } = await admin
+      .from("pdfs")
+      .select("parsha_key, jewish_year")
+      .eq("published", true)
+      .in("parsha_key", YOM_TOV_KEYS);
+    if (error) {
+      console.error("listYomTovSeoSummaries error", error);
+      return [];
+    }
+
+    const grouped = new Map<string, Map<number, number>>();
+    for (const row of data ?? []) {
+      const key = String((row as any).parsha_key ?? "");
+      const year = (row as any).jewish_year as number | null;
+      if (!YOM_TOV_KEYS.includes(key) || !Number.isInteger(year)) continue;
+      const years = grouped.get(key) ?? new Map<number, number>();
+      years.set(year!, (years.get(year!) ?? 0) + 1);
+      grouped.set(key, years);
+    }
+
+    return YOM_TOV_KEYS.flatMap((key) => {
+      const counts = grouped.get(key);
+      if (!counts) return [];
+      const years = [...counts.entries()]
+        .map(([year, count]) => ({ year, count }))
+        .sort((a, b) => b.year - a.year);
+      return [{ key, slug: readingSlug(key), label: formatReadingLabel(key), count: years.reduce((sum, item) => sum + item.count, 0), years }];
     });
   },
 );
