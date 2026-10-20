@@ -2,10 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, ChevronRight } from "lucide-react";
 import { SiteFooter } from "@/components/SiteFooter";
 import { fitPageTitle } from "@/lib/page-title";
-import { listParshaSeoSummaries } from "@/integrations/supabase/parsha-seo.functions";
+import { listParshaSeoSummaries, listYomTovSeoSummaries } from "@/integrations/supabase/parsha-seo.functions";
 
 export const Route = createFileRoute("/divrei-torah-parsha")({
-  loader: () => listParshaSeoSummaries(),
+  loader: async () => {
+    const [parshiyos, yomTov] = await Promise.all([listParshaSeoSummaries(), listYomTovSeoSummaries()]);
+    return { parshiyos, yomTov };
+  },
   head: () => {
     const title = fitPageTitle("Divrei Torah on the Parsha", " — Weekly Dvar Torah Library");
     const description =
@@ -46,7 +49,7 @@ export const Route = createFileRoute("/divrei-torah-parsha")({
 });
 
 function DivreiTorahParshaPage() {
-  const parshiyos = Route.useLoaderData();
+  const { parshiyos, yomTov } = Route.useLoaderData();
   const available = parshiyos.filter((p) => p.count > 0);
 
   return (
@@ -96,6 +99,35 @@ function DivreiTorahParshaPage() {
           </p>
         </section>
 
+        {yomTov.length > 0 && (
+          <section className="mt-10 rounded-2xl border border-accent/25 bg-card/30 p-5 sm:p-7">
+            <h2 className="font-serif text-2xl font-bold text-primary">Yom Tov Collections</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Explore the published holiday sheets for each Jewish year. These collections also remain available in the archive.
+            </p>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              {yomTov.map((holiday) => (
+                <article key={holiday.key} className="rounded-xl border border-accent/25 bg-background/70 p-4">
+                  <h3 className="font-serif text-lg font-bold text-primary">{holiday.label}</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">{holiday.count} {holiday.count === 1 ? "selection" : "selections"}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {holiday.years.map(({ year, count }) => (
+                      <Link
+                        key={year}
+                        to="/yom-tov/$slug/$year"
+                        params={{ slug: holiday.slug, year: String(year) }}
+                        className="inline-flex rounded-full border border-accent/40 bg-card px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-accent/10"
+                      >
+                        {year} · {count} {count === 1 ? "selection" : "selections"}
+                      </Link>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className="mt-10 grid gap-5 md:grid-cols-2">
           <article className="rounded-2xl border border-accent/25 bg-card/25 p-5">
             <BookOpen className="h-5 w-5 text-accent" aria-hidden="true" />
@@ -117,7 +149,7 @@ function DivreiTorahParshaPage() {
 
         {available.length > 0 && (
           <p className="mt-8 text-center text-xs text-muted-foreground">
-            Currently available across {available.length} parsha pages. Additional collections are
+            Currently available across {available.length} parsha pages and {yomTov.length} Yom Tov collections. Additional collections are
             added as the weekly library grows.
           </p>
         )}
