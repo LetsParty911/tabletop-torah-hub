@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
-import { PARSHIYOS, YOM_TOV_KEYS, formatReadingLabel } from "@/lib/parshiyos";
+import { YOM_TOV_KEYS, formatReadingLabel } from "@/lib/parshiyos";
+import { DIRECTORY_PARSHIYOS, canonicalParshaForSlug, isDirectoryParshaSlug } from "@/lib/parsha-directory";
 import { readingSlug } from "@/lib/reading-page";
 import { standardizeCopy } from "@/lib/standardize-copy";
 
@@ -28,12 +29,6 @@ export type ParshaSeoPage = {
   type_counts: Record<string, number>;
 };
 
-// The archive contains combined parshiyos; omitting them makes genuine PDFs unreachable from the directory.
-const DIRECTORY_PARSHIYOS = PARSHIYOS.filter((key) => !YOM_TOV_KEYS.includes(key));
-
-function canonicalParshaForSlug(slug: string): string | null {
-  return DIRECTORY_PARSHIYOS.find((name) => readingSlug(name) === slug) ?? null;
-}
 
 export const getParshaSeoPage = createServerFn({ method: "GET" })
   .inputValidator((input: { slug: string }) =>
@@ -129,7 +124,7 @@ export const listParshaSeoSummaries = createServerFn({ method: "GET" }).handler(
     if (!error) {
       for (const row of data ?? []) {
         const slug = readingSlug(String((row as any).parsha_key ?? ""));
-        if (!DIRECTORY_PARSHIYOS.some((name) => readingSlug(name) === slug)) continue;
+        if (!isDirectoryParshaSlug(slug)) continue;
         const entry = counts.get(slug) ?? { count: 0, years: new Set<number>() };
         entry.count += 1;
         const year = (row as any).jewish_year as number | null;
