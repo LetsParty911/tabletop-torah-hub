@@ -34,3 +34,18 @@ export function displayContentType(
   if (contentType === "Questions & Answers") return "Questions & Answers";
   return formatLabel(formatType) ?? formatLabel(contentType);
 }
+
+/**
+ * The loader owns the displayed parsha label and fallback identity. If the
+ * client refresh observes a different collection (e.g. newly published PDFs
+ * replace last week's fallback), invalidate the entire route before showing
+ * those resources. Otherwise the heading and WhatsApp share text can continue
+ * to identify last week's collection while the cards show the new week.
+ */
+export function hasDisplayedCollectionChanged(
+  previous: { isFallback: boolean; fallbackParshaKey: string | null },
+  latest: { isFallback: boolean; fallbackParshaKey: string | null },
+): boolean {
+  return previous.isFallback !== latest.isFallback ||
+    (latest.isFallback && previous.fallbackParshaKey !== latest.fallbackParshaKey);
+}
