@@ -6,10 +6,13 @@ import { getParshaSeoPage } from "@/integrations/supabase/parsha-seo.functions";
 import { VORTS } from "@/data/vorts";
 import { readingSlug } from "@/lib/reading-page";
 import { PARSHIYOS_54, formatReadingLabel } from "@/lib/parshiyos";
+import { formatTypeLabel } from "@/lib/format-labels";
 import { fitPageTitle } from "@/lib/page-title";
 
 function seferForParsha(parshaKey: string): string {
-  const index = PARSHIYOS_54.indexOf(parshaKey);
+  // Combined readings are listed by their first component in the canonical 54-reading order.
+  const firstReading = parshaKey.split("-")[0];
+  const index = PARSHIYOS_54.indexOf(firstReading);
   if (index <= 11) return "Sefer Bereishis";
   if (index <= 22) return "Sefer Shemos";
   if (index <= 32) return "Sefer Vayikra";
@@ -236,7 +239,7 @@ function PermanentParshaPage() {
                   resource.audience,
                   resource.content_type === "Questions & Answers"
                     ? resource.content_type
-                    : resource.format_type || resource.content_type,
+                    : formatTypeLabel(resource.format_type || resource.content_type),
                   resource.page_count
                     ? `${resource.page_count} ${resource.page_count === 1 ? "page" : "pages"}`
                     : null,
