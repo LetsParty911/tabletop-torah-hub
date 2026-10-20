@@ -329,6 +329,13 @@ function SiteNav() {
               Archive
             </Link>
             <Link
+              to="/divrei-torah-parsha"
+              className={linkCls}
+              activeProps={{ className: `${linkCls} ${activeCls}` }}
+            >
+              By Parsha
+            </Link>
+            <Link
               to="/publications"
               className={linkCls}
               activeProps={{ className: `${linkCls} ${activeCls}` }}
@@ -412,6 +419,13 @@ function SiteNav() {
                 activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
               >
                 Archive
+              </Link>
+              <Link
+                to="/divrei-torah-parsha"
+                className={mobileLinkCls}
+                activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
+              >
+                By Parsha
               </Link>
               <Link
                 to="/publications"
