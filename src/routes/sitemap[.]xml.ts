@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { publicationSlug } from "@/lib/publication-slug";
 import { readingPagePath, readingSlug } from "@/lib/reading-page";
-import { PARSHIYOS_54 } from "@/lib/parshiyos";
+import { isDirectoryParshaSlug } from "@/lib/parsha-directory";
 
 const SITE_URL = "https://torahforthetable.com";
 
@@ -125,7 +125,7 @@ export const Route = createFileRoute("/sitemap.xml")({
             if (row.parsha_key && row.jewish_year) {
               collectionPaths.add(readingPagePath(row.parsha_key, row.jewish_year));
               const slug = readingSlug(row.parsha_key);
-              if (PARSHIYOS_54.some((name) => readingSlug(name) === slug)) permanentParshaSlugs.add(slug);
+              if (isDirectoryParshaSlug(slug)) permanentParshaSlugs.add(slug);
             }
           }
 
