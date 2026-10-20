@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectionCountLine, displayContentType, isCollectionComplete, pdfActionHrefs } from "./collection-status";
+import { collectionCountLine, displayContentType, hasDisplayedCollectionChanged, isCollectionComplete, pdfActionHrefs } from "./collection-status";
 import { formatTypeLabel } from "./format-labels";
 
 describe("collection status", () => {
@@ -30,5 +30,39 @@ describe("Questions & Answers label", () => {
     expect(displayContentType("Questions & Answers", "Short Vorts", formatTypeLabel)).toBe("Questions & Answers");
     expect(displayContentType("Brief Insights", "Short Vorts", formatTypeLabel)).toBe("Brief Insights");
     expect(displayContentType(null, "Stories", formatTypeLabel)).toBe("Stories");
+  });
+});
+
+describe("home collection identity after hydration", () => {
+  it("invalidates the route when the next parsha is published", () => {
+    expect(hasDisplayedCollectionChanged(
+      { isFallback: true, fallbackParshaKey: "Noach" },
+      { isFallback: false, fallbackParshaKey: null },
+    )).toBe(true);
+  });
+
+  it("invalidates when an existing live collection becomes a fallback", () => {
+    expect(hasDisplayedCollectionChanged(
+      { isFallback: false, fallbackParshaKey: null },
+      { isFallback: true, fallbackParshaKey: "Noach" },
+    )).toBe(true);
+  });
+
+  it("invalidates when the fallback collection switches", () => {
+    expect(hasDisplayedCollectionChanged(
+      { isFallback: true, fallbackParshaKey: "Bereishis" },
+      { isFallback: true, fallbackParshaKey: "Noach" },
+    )).toBe(true);
+  });
+
+  it("updates PDFs without routing when collection identity is unchanged", () => {
+    expect(hasDisplayedCollectionChanged(
+      { isFallback: true, fallbackParshaKey: "Noach" },
+      { isFallback: true, fallbackParshaKey: "Noach" },
+    )).toBe(false);
+    expect(hasDisplayedCollectionChanged(
+      { isFallback: false, fallbackParshaKey: null },
+      { isFallback: false, fallbackParshaKey: null },
+    )).toBe(false);
   });
 });

@@ -5,10 +5,15 @@ on:
     paths:
       - "src/lib/page-title*"
       - "src/lib/table-chooser*"
+      - "src/lib/collection-status*"
       - "src/routes/archive.tsx"
       - "src/routes/short-vorts.tsx"
       - "src/routes/view.$id.tsx"
       - "src/routes/index.tsx"
+      - "src/tests/homepage.smoke.test.tsx"
+      - "src/components/UpdateCountdown.tsx"
+      - "src/components/UpdateCountdown.test.tsx"
+      - "src/components/WeeklyEmailSignup.test.tsx"
       - ".github/workflows/verify-website-improvements.yml"
   workflow_dispatch:
 
@@ -27,7 +32,7 @@ jobs:
         shell: bash
         run: |
           tests=()
-          for file in src/lib/page-title.test.ts src/lib/table-chooser.starter.test.ts; do
+          for file in src/lib/page-title.test.ts src/lib/table-chooser.starter.test.ts src/lib/collection-status.test.ts; do
             if [[ -f "$file" ]]; then tests+=("$file"); fi
           done
           if (( ${#tests[@]} == 0 )); then
@@ -35,5 +40,11 @@ jobs:
             exit 1
           fi
           bun test "${tests[@]}"
+      - name: Run signup and countdown regression tests
+        run: bun run test:signup
+      - name: Verify maintenance, VPN and IP classification safeguards
+        run: bunx vitest run src/lib/maintenance.test.ts src/lib/vpn-block.test.ts src/lib/ip-geo.test.ts
+      - name: Run isolated homepage interaction smoke tests
+        run: bunx vitest run --config vitest.signup.config.ts src/tests/homepage.smoke.test.tsx
       - name: Build application
         run: bun run build

@@ -9,39 +9,35 @@ vi.mock("@/lib/first-party-analytics", () => ({ trackFp: vi.fn() }));
 
 import { WeeklyEmailSignup } from "./WeeklyEmailSignup";
 
-describe("homepage Thursday signup placements", () => {
-  it("renders unique anchors, input labels and named forms while retaining the lower anchor", () => {
-    const html = renderToStaticMarkup(<>
-      <WeeklyEmailSignup variant="compact" sourceId="homepage-top" anchorId="weekly-email-signup-top" />
-      <WeeklyEmailSignup sourceId="homepage" />
-    </>);
+describe("homepage weekly email signup", () => {
+  it("retains a single accessible signup with explicit consent and a stable anchor", () => {
+    const html = renderToStaticMarkup(<WeeklyEmailSignup sourceId="homepage" />);
     const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids).toContain("weekly-email-signup-top");
     expect(ids).toContain("weekly-email-signup");
-    for (const id of ["weekly-email-signup-top-email", "weekly-email-signup-email"]) {
-      expect(html).toContain(`for="${id}"`);
-      expect(html).toContain(`id="${id}"`);
-    }
-    expect(html).toContain("Weekly Torah signup — homepage-top");
+    expect(html).toContain('for="weekly-email-signup-email"');
+    expect(html).toContain('id="weekly-email-signup-email"');
     expect(html).toContain("Weekly Torah signup — homepage");
-    expect((html.match(/type="checkbox"/g) ?? []).length).toBe(2);
+    expect((html.match(/type="checkbox"/g) ?? []).length).toBe(1);
     expect(html).toContain("You can unsubscribe at any time.");
   });
 
-  it("places the compact signup after the PDF discovery introduction and before featured picks", () => {
-    const source = readFileSync("src/routes/index.tsx", "utf8");
-    const top = source.indexOf('sourceId="homepage-top"');
-    expect(top).toBeGreaterThan(source.indexOf("Help me choose a Dvar Torah"));
-    expect(top).toBeLessThan(source.indexOf('aria-labelledby="starter-selections-heading"'));
-    expect(top).toBeLessThan(source.indexOf('sourceId="homepage"'));
-    expect(source).toContain('anchorId="weekly-email-signup-top"');
-    expect(source).toContain("One free email each Thursday when the next Divrei Torah collection is ready.");
-    expect(source).toContain('href="#weekly-email-signup-top"');
-    expect(source).not.toContain('href="#weekly-email-signup"');
+  it("puts exactly one signup after the resource chooser and preserves the Subscribe link", () => {
+    const homepage = readFileSync("src/routes/index.tsx", "utf8");
+    const countdown = readFileSync("src/components/UpdateCountdown.tsx", "utf8");
+    expect(homepage).not.toContain('sourceId="homepage-top"');
+    expect((homepage.match(/sourceId="homepage"/g) ?? []).length).toBe(1);
+    expect(homepage.indexOf('sourceId="homepage"')).toBeGreaterThan(
+      homepage.indexOf('id="this-weeks-collection"'),
+    );
+    expect(homepage).toContain("Show all {resources.length} selections");
+    expect(homepage).toContain("Read this Dvar Torah");
+    expect(countdown).toContain('href="#weekly-email-signup"');
+    expect(countdown).toContain('getElementById("weekly-email-signup")');
+    expect(countdown).not.toContain("weekly-email-signup-top");
   });
 
-  it("preserves explicit consent, existing subscription flow and independent placement attribution", () => {
+  it("preserves consent, existing subscription flow and analytics attribution", () => {
     const source = readFileSync("src/components/WeeklyEmailSignup.tsx", "utf8");
     expect(source.indexOf("if (!consent)")).toBeLessThan(source.indexOf("await subscribeEmail"));
     expect(source).toContain("email, consent: true, source: sourceId");

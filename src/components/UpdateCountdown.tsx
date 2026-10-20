@@ -142,7 +142,7 @@ export function UpdateCountdown({
 
   const scrollToSignup = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    const signup = document.getElementById("weekly-email-signup-top");
+    const signup = document.getElementById("weekly-email-signup");
     signup?.scrollIntoView({
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
       block: "start",
@@ -195,7 +195,7 @@ export function UpdateCountdown({
       <div className="mt-2 flex items-center justify-center gap-2 text-primary">
         <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
         <p className="font-serif text-[1.05rem] font-bold leading-tight sm:text-xl">
-          {label} is coming {releaseDateLabel} at 8:00 PM Eastern Time
+          The {label} collection is planned for {releaseDateLabel} at 8:00 PM Eastern Time
         </p>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
@@ -229,12 +229,12 @@ export function UpdateCountdown({
         </div>
       ) : (
         <p className="mt-2 text-sm font-semibold text-primary" aria-live="polite">
-          Scheduled for today — the banner will switch to available as soon as the collection is live.
+          The collection will appear when it is published.
         </p>
       )}
 
       <a
-        href="#weekly-email-signup-top"
+        href="#weekly-email-signup"
         onClick={scrollToSignup}
         className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-[#b8790b] bg-gradient-to-b from-[#ffd96b] to-[#f1b52f] px-6 py-3 font-serif text-lg font-bold text-[#082c55] shadow-[0_5px_16px_rgba(184,121,11,0.22)] transition-transform hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:w-auto sm:min-w-72"
       >
