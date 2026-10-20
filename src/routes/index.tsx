@@ -860,83 +860,9 @@ function Index() {
               </section>
             )}
 
-            {featuredPicks.length > 0 && !activeChooser && (
-              <p className="mt-5 text-center font-sans text-sm text-muted-foreground">
-                Start with four curated choices, or choose what fits your table.
-              </p>
-            )}
-
+            {/* Keep the three quick-start choices, chooser, filters and complete catalog.
+                The four-card featured block repeated the same PDFs and actions here. */}
             <>
-            {featuredPicks.length > 0 && (
-              <>
-                <section className="parchment-frame">
-                  <div className="parchment-panel">
-                    <p className="text-center font-sans text-[0.65rem] font-bold uppercase tracking-[0.2em] text-accent-readable sm:text-xs">
-                      <span aria-hidden="true">★</span> Featured
-                    </p>
-                    <h2 className="mt-1 font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
-                      This Week's Recommended Picks
-                    </h2>
-                    <div className="mt-5 grid gap-4 grid-cols-1 sm:grid-cols-2">
-                      {featuredPicks.map(({ key, label, resource }) => {
-                        const r = resource!;
-                        return (
-                          <PublicationCardTracker
-                            key={key}
-                            className="h-full rounded-xl border border-accent/50 bg-background/70 p-4 sm:p-5 flex flex-col"
-                            publication_id={r.id}
-                            publication_title={r.title}
-                            publication_series={r.publication ?? null}
-                            publisher={r.publisher ?? null}
-                            parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey ?? null}
-                          >
-                            <span className="self-start rounded-full bg-accent px-3 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-accent-foreground">
-                              {label}
-                            </span>
-                            <h3 className="mt-3 font-serif text-base sm:text-xl font-bold text-primary leading-snug">
-                              <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline transition-colors duration-150">
-                                {displayTitle(r)}
-                              </Link>
-                            </h3>
-                            {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
-                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-3">{standardizeCopy(r.subtitle || chooseReason(r))}</p>
-                            {pageCountLabel(r) && (
-                              <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                {pageCountLabel(r)}
-                              </p>
-                            )}
-                            <div className="mt-auto pt-4">
-                              <DownloadAndPrintButtons
-                                href={`/view/${r.id}/pdf`}
-                                publicationId={r.id}
-                                publicationName={displayPublicationName(r)}
-                                publicationTitle={r.title}
-                                publisher={r.publisher}
-                                publicationSeries={r.publication}
-                                parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
-                                className="w-full px-3 py-2.5 lg:py-2"
-                              />
-                               <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-                                 <SharePublicationButton
-                                   pdfId={r.id}
-                                   title={r.title}
-                                   parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
-                                 />
-                               </div>
-                            </div>
-                          </PublicationCardTracker>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </section>
-
-                <div className="gold-divider" aria-hidden>
-                  <span className="gold-divider-dot" />
-                </div>
-              </>
-            )}
-
             {resources.length === 0 ? (
               <p className="mt-6 text-center text-muted-foreground max-w-md mx-auto">
                 New Divrei Torah for {currentLabel} are being prepared. Check back soon!
