@@ -44,7 +44,7 @@ describe("homepage Thursday signup placements", () => {
   it("preserves explicit consent, existing subscription flow and independent placement attribution", () => {
     const source = readFileSync("src/components/WeeklyEmailSignup.tsx", "utf8");
     expect(source.indexOf("if (!consent)")).toBeLessThan(source.indexOf("await subscribeEmail"));
-    expect(source).toContain("email, consent: true, source: sourceId");
+    expect(source).toContain("email: parsedEmail.data, consent: true, source: sourceId");
     expect(source).toContain("source_id: sourceId");
     expect(source).toContain("newsletter_signup:${sourceId}");
     expect(source).toContain('role="alert"');
