@@ -263,7 +263,7 @@ function SiteNav() {
   if (isAdmin) return null;
 
   const linkCls =
-    "font-serif whitespace-nowrap text-base text-primary/80 hover:text-primary hover:underline transition-colors duration-150";
+    "font-serif whitespace-nowrap text-sm xl:text-base text-primary/80 hover:text-primary hover:underline transition-colors duration-150";
   const activeCls = "text-primary font-semibold";
   const mobileLinkCls =
     "block rounded-lg px-3 py-2.5 font-serif text-base text-primary/90 transition-colors hover:bg-accent/10 hover:text-primary";
@@ -309,10 +309,10 @@ function SiteNav() {
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
         <div className="flex items-center justify-between gap-3 py-1.5 md:py-2.5">
           <Link to="/" aria-label="Torah For The Table — home" className="shrink-0">
-            <SiteLogoHorizontal />
+            <SiteLogoHorizontal className="lg:!text-[1.35rem] xl:!text-[1.45rem]" />
           </Link>
 
-          <div className="hidden items-center gap-5 md:flex">
+          <div className="hidden items-center gap-3 lg:flex">
             <Link
               to="/"
               activeOptions={{ exact: true }}
@@ -387,7 +387,7 @@ function SiteNav() {
             aria-expanded={mobileOpen}
             aria-controls="mobile-navigation"
             onClick={() => setMobileOpen((open) => !open)}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center text-primary md:hidden"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center text-primary lg:hidden"
           >
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-accent/35 bg-background transition-colors hover:bg-accent/10">
               {mobileOpen ? (
@@ -399,10 +399,10 @@ function SiteNav() {
           </button>
         </div>
 
-        {searchOpen && <div className="hidden border-t border-accent/15 pt-3 md:block"><SearchForm /></div>}
+        {searchOpen && <div className="hidden border-t border-accent/15 pt-3 lg:block"><SearchForm /></div>}
 
         {mobileOpen && (
-          <div id="mobile-navigation" className="border-t border-accent/20 pb-3 pt-2 md:hidden">
+          <div id="mobile-navigation" className="border-t border-accent/20 pb-3 pt-2 lg:hidden">
             <SearchForm mobile />
             <div className="grid gap-1">
               <Link
