@@ -6,6 +6,6 @@ export default defineConfig({
   esbuild: { jsx: "automatic" },
   test: {
     environment: "jsdom",
-    include: ["src/components/*Signup*.test.tsx", "src/components/UpdateCountdown.test.tsx"],
+    include: ["src/components/*Signup*.test.tsx", "src/components/UpdateCountdown.test.tsx", "src/tests/homepage.smoke.test.tsx"],
   },
 });
