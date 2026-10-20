@@ -560,13 +560,20 @@ function Index() {
     <div className="min-h-screen bg-background">
       <AnnouncementBanner initialBanner={Route.useLoaderData().announcement} />
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
-        <UpdateCountdown
-          contentLive={!isFallback && resources.length > 0}
-          liveParshaLabel={currentLabel}
-          readingDate={readingDate}
-          availableCount={resources.length}
-          collectionComplete={collectionComplete}
-        />
+        {isFallback && resources.length > 0 ? (
+          <div className="rounded-xl border border-accent/45 bg-accent/10 px-4 py-3 text-center text-sm text-primary">
+            <span className="font-semibold">Coming next: {currentLabel}.</span>{" "}
+            The new collection is planned for Thursday at 8:00 PM Eastern. In the meantime, {displayedLabel} is ready to read and print below.
+          </div>
+        ) : (
+          <UpdateCountdown
+            contentLive={!isFallback && resources.length > 0}
+            liveParshaLabel={currentLabel}
+            readingDate={readingDate}
+            availableCount={resources.length}
+            collectionComplete={collectionComplete}
+          />
+        )}
         <section className="parchment-frame">
           <div className="parchment-panel py-5 text-center sm:py-7">
             <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
@@ -702,9 +709,9 @@ function Index() {
                 </article>
               ))}
             </div>
-            <a href="#this-weeks-collection" className="mt-4 inline-block text-sm font-semibold text-primary underline underline-offset-4 hover:text-accent">
+            <button type="button" onClick={() => setShowAllResources(true)} className="mt-4 inline-block text-sm font-semibold text-primary underline underline-offset-4 hover:text-accent">
               Browse the complete collection
-            </a>
+            </button>
           </section>
         )}
 
@@ -754,12 +761,13 @@ function Index() {
             {resources.length > 0 && (
               <a
                 href={starterSelections.length > 0 ? "#starter-selections-heading" : "#this-weeks-collection"}
-                onClick={() =>
+                onClick={() => {
+                  if (starterSelections.length === 0) setShowAllResources(true);
                   trackFp("recommendation_click", {
                     parsha: displayedParshaKey,
                     metadata: { chooser: "start_here", target: starterSelections.length > 0 ? "starter_picks" : "collection" },
-                  })
-                }
+                  });
+                }}
                 className="mt-2.5 inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-2.5 font-serif text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 {starterSelections.length > 0 ? "Not sure? See our recommended picks" : "Browse all available Divrei Torah"}
