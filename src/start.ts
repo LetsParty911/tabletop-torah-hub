@@ -106,6 +106,18 @@ const vpnGate = createMiddleware().server(async ({ next, request }) => {
 });
 
 /**
+ * Visitor-local Shabbos/Yom Tov screen. Runs only after the existing VPN,
+ * IP and city restrictions. The manual maintenance setting stays separate
+ * and takes precedence inside checkShabbosGate().
+ */
+const shabbosGate = createMiddleware().server(async ({ next, request }) => {
+  const { checkShabbosGate } = await import("@/lib/shabbos-gate.server");
+  const closed = await checkShabbosGate(request);
+  if (closed) return { response: closed } as never;
+  return next();
+});
+
+/**
  * Maintenance traffic: after the response exists, log a sanitized row when a
  * real public HTML navigation was served while persistent maintenance is ON.
  * Runs after geoBlock, so blocked-city requests stay only in blocked_visits.
@@ -125,5 +137,5 @@ const maintenanceTraffic = createMiddleware().server(async ({ next, request }) =
 
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [dotOrgRedirect, vpnGate, geoBlock, maintenanceTraffic, cacheControl],
+  requestMiddleware: [dotOrgRedirect, vpnGate, geoBlock, shabbosGate, maintenanceTraffic, cacheControl],
 }));
