@@ -28,22 +28,39 @@ async function resolveGroupId(token: string): Promise<string | null> {
   if (configured && configured.trim()) return configured.trim();
   if (cachedGroupId) return cachedGroupId;
 
+  // Sender groups are paginated. A first-page-only lookup can incorrectly
+  // reject signups when the configured group is on a subsequent page.
   try {
-    const res = await fetch(`${API_BASE}/groups`, { headers: authHeaders(token) });
-    if (!res.ok) {
-      console.error("[sender] groups lookup failed", res.status);
-      return null;
+    for (let page = 1; page <= 20; page++) {
+      const res = await fetch(`${API_BASE}/groups?page=${page}&limit=100`, {
+        headers: authHeaders(token),
+      });
+      if (!res.ok) {
+        console.error("[sender] groups lookup failed", res.status);
+        return null;
+      }
+
+      const body = (await res.json()) as {
+        data?: Array<{ id?: string; title?: string }>;
+        meta?: { current_page?: number; last_page?: number };
+      };
+      const match = (body.data ?? []).find(
+        (g) => (g.title ?? "").trim().toLowerCase() === SENDER_GROUP_TITLE.toLowerCase(),
+      );
+      if (match?.id) {
+        cachedGroupId = match.id;
+        return cachedGroupId;
+      }
+
+      const lastPage = body.meta?.last_page;
+      if (!Number.isInteger(lastPage) || !lastPage || page >= lastPage) {
+        console.error("[sender] group not found by title");
+        return null;
+      }
     }
-    const body = (await res.json()) as { data?: Array<{ id?: string; title?: string }> };
-    const match = (body.data ?? []).find(
-      (g) => (g.title ?? "").trim().toLowerCase() === SENDER_GROUP_TITLE.toLowerCase(),
-    );
-    if (!match?.id) {
-      console.error("[sender] group not found by title");
-      return null;
-    }
-    cachedGroupId = match.id;
-    return cachedGroupId;
+
+    console.error("[sender] group lookup exceeded 20 pages; configure SENDER_GROUP_ID");
+    return null;
   } catch (e) {
     console.error("[sender] groups lookup exception", e);
     return null;
@@ -73,8 +90,7 @@ export async function addSubscriberToSenderGroup(email: string): Promise<SenderS
     const text = (await res.text()).slice(0, 400);
     const looksDuplicate =
       res.status === 409 ||
-      res.status === 422 ||
-      /already|exist|taken|duplicate/i.test(text);
+      ((res.status === 400 || res.status === 422) && /already|exist|taken|duplicate/i.test(text));
 
     if (looksDuplicate) {
       // Subscriber exists — make sure they're in the group anyway.

@@ -473,17 +473,6 @@ function Index() {
     ...slot,
     resource: resources.find((r) => (r.featured_slot ?? "").trim().toLowerCase() === slot.key),
   })).filter((p) => !!p.resource);
-  const quickChoices = (["quick", "family", "kids", "story"] as const).map((key) => {
-    const chooser = CHOOSERS.find((option) => option.key === key);
-    const labels: Record<(typeof key), string> = {
-      quick: "Brief Insights",
-      family: "Family Table",
-      kids: "Children",
-      story: "Stories",
-    };
-    return { key, label: labels[key], trackingLabel: chooser?.label ?? labels[key] };
-  });
-
   const pageCountLabel = (r: Resource) => {
     if (typeof r.page_count !== "number") return null;
     const pages = `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`;
@@ -729,67 +718,6 @@ function Index() {
             >
               Browse the complete collection
             </button>
-          </section>
-        )}
-
-        {resources.length > 0 && (
-          <section aria-labelledby="mobile-quick-choices" className="sm:hidden">
-            <h2 id="mobile-quick-choices" className="sr-only">Choose what fits your table</h2>
-            <div className="grid grid-cols-2 gap-2">
-              {quickChoices.map((choice) => {
-                const active = mobileQuickChoice === choice.key;
-                return (
-                  <button
-                    key={choice.key}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => {
-                      setSelectedChooser(null);
-                      setActiveChooser(null);
-                      setAudienceFilter("All");
-                      setContentTypeFilter("All");
-                      setLengthFilter("All");
-                      setMobileQuickChoice(active ? null : choice.key);
-                      setShowAllResources(true);
-                      setFiltersOpen(false);
-                      trackFp("filter_change", {
-                        metadata: { filter: "mobile_quick_choice", value: active ? "All" : choice.key },
-                      });
-                      window.requestAnimationFrame(() => {
-                        document.getElementById("this-weeks-collection")?.scrollIntoView({
-                          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                            ? "auto"
-                            : "smooth",
-                          block: "start",
-                        });
-                      });
-                    }}
-                    className={`min-w-0 rounded-lg border px-3 py-2.5 font-serif text-sm font-semibold transition-colors ${
-                      active
-                        ? "border-accent bg-accent/15 text-primary shadow-sm"
-                        : "border-accent/40 bg-background/70 text-primary hover:bg-accent/10"
-                    }`}
-                  >
-                    {choice.label}
-                  </button>
-                );
-              })}
-            </div>
-            {resources.length > 0 && (
-              <a
-                href={starterSelections.length > 0 ? "#starter-selections-heading" : "#this-weeks-collection"}
-                onClick={() => {
-                  if (starterSelections.length === 0) setShowAllResources(true);
-                  trackFp("recommendation_click", {
-                    parsha: displayedParshaKey,
-                    metadata: { chooser: "start_here", target: starterSelections.length > 0 ? "starter_picks" : "collection" },
-                  });
-                }}
-                className="mt-2.5 inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-2.5 font-serif text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-              >
-                {starterSelections.length > 0 ? "Not sure? See our recommended picks" : "Browse all available Divrei Torah"}
-              </a>
-            )}
           </section>
         )}
 

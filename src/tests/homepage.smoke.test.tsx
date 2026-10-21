@@ -140,6 +140,22 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(message).not.toContain("Parshas Lech-Lecha");
   });
 
+  it("avoids duplicate featured cards and mobile topic chips when starter selections exist", () => {
+    setHomepage(true);
+    // Exercise the previously duplicated featured path, not just a collection
+    // with no featured slots.
+    state.loader.resources[0].featured_slot = "children";
+    state.loader.resources[1].featured_slot = "family";
+    render(<Homepage />);
+    expect(screen.getByRole("heading", { name: /New here\? Start with one Dvar Torah/i })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "This Week's Recommended Picks" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Choose what fits your table" })).toBeNull();
+    expect(screen.getAllByRole("form", { name: /Weekly Torah signup/i })).toHaveLength(1);
+    // The full collection remains reachable rather than being removed.
+    fireEvent.click(screen.getByRole("button", { name: "Show all 4 selections" }));
+    expect(screen.getByTestId("table-chooser")).toBeTruthy();
+  });
+
   it("reveals complete PDF selection and chooser only on explicit request", () => {
     setHomepage(true);
     render(<Homepage />);
