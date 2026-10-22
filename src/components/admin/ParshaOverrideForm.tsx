@@ -9,6 +9,8 @@ type ParshaOverrideFormProps = {
   staleOverride: string | null;
   explicitOverride: boolean;
   onExplicitOverrideChange: (value: boolean) => void;
+  currentReadingLabel: string;
+  currentReadingDate: string | null;
 };
 
 export default function ParshaOverrideForm({
@@ -19,6 +21,8 @@ export default function ParshaOverrideForm({
   staleOverride,
   explicitOverride,
   onExplicitOverrideChange,
+  currentReadingLabel,
+  currentReadingDate,
 }: ParshaOverrideFormProps) {
   return (
     <>
@@ -46,7 +50,7 @@ export default function ParshaOverrideForm({
         </div>
         <label className="flex items-start gap-2 text-sm text-muted-foreground">
           <input type="checkbox" checked={explicitOverride} disabled={busy || !override.trim()} onChange={e => onExplicitOverrideChange(e.target.checked)} className="mt-1" />
-          I intentionally want this manual reading for the current week even if it differs from Hebcal (including special Yom Tov cases).
+          I intentionally want this manual reading for {currentReadingDate ?? "the current week"} instead of {currentReadingLabel} if it differs from Hebcal (including special Yom Tov cases).
         </label>
       </form>
     </>

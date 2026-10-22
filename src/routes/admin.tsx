@@ -474,6 +474,7 @@ function AdminPage() {
   // week changes — regardless of stale overrides left in the database.
   const [liveParshaKey, setLiveParshaKey] = useState<string | null>(null);
   const [liveParshaLabel, setLiveParshaLabel] = useState<string>("Loading…");
+  const [liveReadingDate, setLiveReadingDate] = useState<string | null>(null);
   const [liveParshaLoading, setLiveParshaLoading] = useState(true);
   useEffect(() => {
     let cancelled = false;
@@ -483,6 +484,7 @@ function AdminPage() {
         if (cancelled) return;
         setLiveParshaKey(r.parshaKey);
         setLiveParshaLabel(r.displayLabel);
+        setLiveReadingDate(r.shabbosDate);
       } catch {
         // ignore — keep loading label
       } finally {
@@ -1309,7 +1311,7 @@ function AdminPage() {
         data: {
           accessToken,
           override: override.trim() || null,
-          confirmedReadingDate: explicitOverride ? (await getLiveCurrentParsha()).shabbosDate : null,
+          confirmedReadingDate: explicitOverride ? liveReadingDate : null,
         },
       });
       setStaleOverride(null);
@@ -1702,6 +1704,8 @@ function AdminPage() {
               onOverrideChange={(value) => { setOverride(value); setExplicitOverride(false); }}
               staleOverride={staleOverride}
               explicitOverride={explicitOverride}
+              currentReadingLabel={liveParshaLabel}
+              currentReadingDate={liveReadingDate}
               onExplicitOverrideChange={setExplicitOverride}
               busy={busy}
             />
