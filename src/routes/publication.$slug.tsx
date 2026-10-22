@@ -22,7 +22,7 @@ export const Route = createFileRoute("/publication/$slug")({
     const description = leadWithPublicationTitle(
       name,
       publication?.default_description?.trim() ||
-        `Browse current and earlier editions of ${name} on Torah For The Table.`,
+        `${name} offers current and earlier printable editions on Torah For The Table.`,
     ) ?? "";
     const url = `https://torahforthetable.com/publication/${params.slug}`;
     const title = fitPageTitle(name, " — Divrei Torah & Printable Editions");
