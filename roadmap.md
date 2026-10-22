@@ -1,3 +1,8 @@
+## Country-only deny (no publish)
+- [ ] Audit hosting country provenance, request coverage and upstream WAF availability
+- [ ] Add first-request gate for only IN/PK/BD/VN/CN without exemptions or side effects
+- [ ] Run focused/security regressions and document enforcement boundaries and QA
+
 ## Trusted VPN browser (preview only)
 - [x] Add independent signed cookie, authenticated enable/revoke and admin controls
 - [x] Test token, authentication, VPN-only exemption and unchanged city/IP gates
