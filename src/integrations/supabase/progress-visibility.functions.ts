@@ -67,7 +67,6 @@ export const adminSetProgressVisibility = createServerFn({ method: "POST" })
       .from("settings")
       .update({
         progress_visible: data.visible,
-        updated_at: new Date().toISOString(),
       })
       .eq("id", 1);
 

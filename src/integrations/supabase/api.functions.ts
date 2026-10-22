@@ -8,6 +8,8 @@ import { fetchHebcalShabbatData, resolveReadingFromHebcal } from "@/lib/hebcal";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { purgePdfEdgeCache, warmPdfEdgeCache } from "@/lib/pdf-edge-cache";
 import { checkRateLimit } from "@/lib/rate-limit.server";
+import { isOverrideCurrent, validateParshaOverride } from "@/lib/parsha-override";
+import { currentYearRows } from "@/lib/collection-status";
 
 // Recompresses safe embedded JPEGs (grayscale/RGB, never CMYK) via MozJPEG
 // and losslessly repacks the file's internal structure. See
@@ -150,25 +152,6 @@ async function fetchCurrentShabbosDate(): Promise<string | null> {
 // after the Sunday before the upcoming Shabbos and no later than that Shabbos.
 // If the override is older than that, it's considered stale and ignored so
 // Hebcal automatically takes over.
-function isOverrideCurrent(updatedAt: string | null, shabbosDate: string | null): boolean {
-  if (!updatedAt || !shabbosDate) return false;
-  const updated = new Date(updatedAt);
-  if (Number.isNaN(updated.getTime())) return false;
-
-  // Compare calendar dates in the site's local timezone. A Saturday-evening
-  // edit can already be Sunday in UTC and must still belong to that Shabbos.
-  const updatedLocalDate = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(updated);
-  const shabbos = new Date(`${shabbosDate}T00:00:00Z`);
-  const windowStart = new Date(shabbos.getTime() - 6 * 24 * 60 * 60 * 1000);
-  const windowStartDate = windowStart.toISOString().slice(0, 10);
-  return updatedLocalDate >= windowStartDate && updatedLocalDate <= shabbosDate;
-}
-
 // Read the parsha override only if it is still active for the current week.
 // Stale overrides (set for a previous Shabbos) return null so Hebcal wins.
 async function readActiveParshaOverride(
@@ -356,6 +339,7 @@ async function buildResources(
 async function resolveDisplayedCollection(
   admin: ReturnType<typeof getSupabaseAdmin>,
   liveComparableKeys: string[],
+  currentYear?: number | null,
 ): Promise<{
   comparableKey: string | null;
   parshaKey: string | null;
@@ -366,9 +350,9 @@ async function resolveDisplayedCollection(
   const allRows = await fetchAllPublishedRows(admin);
   if (liveComparableKeys.length > 0) {
     const wanted = new Set(liveComparableKeys);
-    const liveRows = allRows.filter((r: any) =>
-      wanted.has(toParshaComparableKey(r.parsha_key)),
-    );
+    const liveRows = currentYear === undefined
+      ? allRows.filter((r: any) => wanted.has(toParshaComparableKey(r.parsha_key)))
+      : currentYearRows(allRows, liveComparableKeys, currentYear, toParshaComparableKey);
     if (liveRows.length > 0) {
       let latestYear: number | null = null;
       for (const r of liveRows as any[]) {
@@ -446,7 +430,8 @@ export const listHomepageWeek = createServerFn({ method: "GET" })
     if (sukkosSeasonKeys.some((key) => currentKeys.has(key))) {
       liveComparable = Array.from(new Set([...liveComparable, ...sukkosSeasonKeys]));
     }
-    const displayed = await resolveDisplayedCollection(admin, liveComparable);
+    const current = await resolveCurrentFeatured();
+    const displayed = await resolveDisplayedCollection(admin, liveComparable, current.jewishYear);
     const resources = await buildResources(admin, displayed.rows);
     return {
       resources,
@@ -1683,20 +1668,25 @@ export const adminDeletePdf = createServerFn({ method: "POST" })
 
 // ---------- Admin: set parsha override ----------
 export const adminSetParshaOverride = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; override: string | null }) =>
+  .inputValidator((input: { accessToken: string; override: string | null; confirmedReadingDate?: string | null }) =>
     z
       .object({
         accessToken: z.string().min(10),
         override: z.string().max(120).nullable(),
+        confirmedReadingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
+    const reading = data.override?.trim()
+      ? resolveReadingFromHebcal(await fetchHebcalShabbatData())
+      : null;
+    const override = validateParshaOverride(data.override, reading?.parshaKey ?? null, reading?.readingDate ?? null, data.confirmedReadingDate);
     const admin = getSupabaseAdmin();
     const { error } = await admin
       .from("settings")
-      .update({ parsha_override: data.override, updated_at: new Date().toISOString() })
+      .update({ parsha_override: override, updated_at: new Date().toISOString() })
       .eq("id", 1);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -1992,7 +1982,6 @@ export const adminSetAnnouncementBanner = createServerFn({ method: "POST" })
         announcement_text: data.text && data.text.length > 0 ? data.text : null,
         announcement_link_url: data.linkUrl && data.linkUrl.length > 0 ? data.linkUrl : null,
         announcement_link_label: data.linkLabel && data.linkLabel.length > 0 ? data.linkLabel : null,
-        updated_at: new Date().toISOString(),
       })
       .eq("id", 1);
     if (error) throw new Error(error.message);
@@ -2058,7 +2047,6 @@ export const adminSetThursdayProgress = createServerFn({ method: "POST" })
       .update({
         progress_fill_step: data.fillStep,
         progress_eta: data.eta,
-        updated_at: new Date().toISOString(),
       })
       .eq("id", 1);
     if (error) throw new Error(error.message);

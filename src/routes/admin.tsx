@@ -65,6 +65,7 @@ import {
 } from "@/lib/badges";
 
 import { getCurrentJewishYear } from "@/lib/jewish-year";
+import { editableParshaOverride } from "@/lib/parsha-override";
 
 // Mobile browsers (esp. Android Chrome) invalidate the picked file handle after a
 // short time or when the source app releases it, which makes a later
@@ -196,6 +197,8 @@ function AdminPage() {
   const [contactMessages, setContactMessages] = useState<ContactMessageRow[]>([]);
   const [contactMessagesError, setContactMessagesError] = useState<string | null>(null);
   const [override, setOverride] = useState<string>("");
+  const [staleOverride, setStaleOverride] = useState<string | null>(null);
+  const [explicitOverride, setExplicitOverride] = useState(false);
   const [annEnabled, setAnnEnabled] = useState(false);
   const [annText, setAnnText] = useState("");
   const [annLinkUrl, setAnnLinkUrl] = useState("");
@@ -471,6 +474,7 @@ function AdminPage() {
   // week changes — regardless of stale overrides left in the database.
   const [liveParshaKey, setLiveParshaKey] = useState<string | null>(null);
   const [liveParshaLabel, setLiveParshaLabel] = useState<string>("Loading…");
+  const [liveReadingDate, setLiveReadingDate] = useState<string | null>(null);
   const [liveParshaLoading, setLiveParshaLoading] = useState(true);
   useEffect(() => {
     let cancelled = false;
@@ -480,6 +484,7 @@ function AdminPage() {
         if (cancelled) return;
         setLiveParshaKey(r.parshaKey);
         setLiveParshaLabel(r.displayLabel);
+        setLiveReadingDate(r.shabbosDate);
       } catch {
         // ignore — keep loading label
       } finally {
@@ -766,7 +771,9 @@ function AdminPage() {
     ]);
     setPdfs(p.pdfs as PdfRow[]);
     setSubscribers(s.subscribers as Subscriber[]);
-    setOverride(o.override ?? "");
+    setOverride(editableParshaOverride(o));
+    setStaleOverride(!o.isActive ? o.override : null);
+    setExplicitOverride(false);
     setSources(cs.sources as ChecklistSource[]);
     setAnnEnabled(ann.enabled);
     setAnnText(ann.text ?? "");
@@ -1301,9 +1308,17 @@ function AdminPage() {
     setBusy(true);
     try {
       await adminSetParshaOverride({
-        data: { accessToken, override: override.trim() ? override.trim() : null },
+        data: {
+          accessToken,
+          override: override.trim() || null,
+          confirmedReadingDate: explicitOverride ? liveReadingDate : null,
+        },
       });
+      setStaleOverride(null);
+      setExplicitOverride(false);
       setMsg({ kind: "success", text: "Override saved." });
+    } catch (error) {
+      setMsg({ kind: "error", text: error instanceof Error ? error.message : "Override save failed." });
     } finally {
       setBusy(false);
     }
@@ -1686,7 +1701,12 @@ function AdminPage() {
             <ParshaOverrideForm
               onSubmit={handleOverride}
               override={override}
-              onOverrideChange={setOverride}
+              onOverrideChange={(value) => { setOverride(value); setExplicitOverride(false); }}
+              staleOverride={staleOverride}
+              explicitOverride={explicitOverride}
+              currentReadingLabel={liveParshaLabel}
+              currentReadingDate={liveReadingDate}
+              onExplicitOverrideChange={setExplicitOverride}
               busy={busy}
             />
           </div>
