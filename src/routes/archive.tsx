@@ -13,7 +13,6 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { fitPageTitle } from "@/lib/page-title";
 import { normalizeAudience, audienceLabel, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
-import { standardizeCopy } from "@/lib/standardize-copy";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { publicationLabel } from "@/lib/badges";
 import { formatReadingLabel, displayReadingName } from "@/lib/parshiyos";
