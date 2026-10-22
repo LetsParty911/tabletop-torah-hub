@@ -5,13 +5,17 @@ export const TRUSTED_VPN_MAX_AGE = 90 * 24 * 60 * 60;
 /** Request-time Worker binding first, then native workerd env, then Node/Vercel. */
 export async function trustedVpnSecret(request: Request): Promise<string | null> {
   const runtime = (request as Request & { runtime?: { cloudflare?: { env?: Record<string, unknown> } } }).runtime;
-  const bound = runtime?.cloudflare?.env?.["TRUSTED_VPN_BROWSER_SECRET"];
-  if (typeof bound === "string" && bound.trim()) return bound;
+  if (runtime?.cloudflare?.env) {
+    const bound = runtime.cloudflare.env["TRUSTED_VPN_BROWSER_SECRET"];
+    return typeof bound === "string" && bound.trim() ? bound : null;
+  }
   try {
     const module = "cloudflare:workers";
     const cf = await import(/* @vite-ignore */ module) as { env?: Record<string, unknown> };
-    const value = cf.env?.["TRUSTED_VPN_BROWSER_SECRET"];
-    if (typeof value === "string" && value.trim()) return value;
+    if (cf.env) {
+      const value = cf.env["TRUSTED_VPN_BROWSER_SECRET"];
+      return typeof value === "string" && value.trim() ? value : null;
+    }
   } catch { /* Node/Vercel has no native Worker module. */ }
   const value = typeof process === "undefined" ? undefined : process.env["TRUSTED_VPN_BROWSER_SECRET"];
   return typeof value === "string" && value.trim() ? value : null;
@@ -55,9 +59,11 @@ export function trustedVpnCookieValue(request: Request): string | null {
 }
 
 export async function trustedVpnExpiry(request: Request): Promise<number | null> {
-  const token = trustedVpnCookieValue(request);
-  if (!token) return null;
-  return verifyTrustedVpnToken(token, await trustedVpnSecret(request));
+  try {
+    const token = trustedVpnCookieValue(request);
+    if (!token) return null;
+    return verifyTrustedVpnToken(token, await trustedVpnSecret(request));
+  } catch { return null; }
 }
 
 export async function isTrustedVpnBrowser(request: Request): Promise<boolean> {

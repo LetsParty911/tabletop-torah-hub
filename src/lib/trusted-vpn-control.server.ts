@@ -1,5 +1,5 @@
 import { verifyAdminAccessToken } from "./admin-auth.server";
-import { issueTrustedVpnToken, trustedVpnSecret, trustedVpnExpiry, trustedVpnCookieHeader } from "./trusted-vpn-browser.server";
+import { issueTrustedVpnToken, trustedVpnSecret, trustedVpnExpiry, trustedVpnCookieHeader, verifyTrustedVpnToken } from "./trusted-vpn-browser.server";
 
 const json = (body: unknown, status = 200, cookie?: string) => Response.json(body, {
   status, headers: { "Cache-Control": "private, no-store", ...(cookie ? { "Set-Cookie": cookie } : {}) },
@@ -32,8 +32,7 @@ export async function trustedVpnControl(request: Request): Promise<Response> {
   const secret = await trustedVpnSecret(request);
   if (!secret) return json({ error: "Trusted VPN browsing unavailable: signing secret missing" }, 503);
   const value = await issueTrustedVpnToken(secret);
-  const expiresAt = await trustedVpnExpiry(new Request(request.url, { headers: { cookie: `tftt_trusted_vpn=${value}` } }))
-    // Only the expiry is returned, never the capability value in JSON.
-    ?? Number(value.split(".")[3]) * 1000;
+  // Only the expiry is returned, never the capability value in JSON.
+  const expiresAt = await verifyTrustedVpnToken(value, secret);
   return json({ trusted: true, expiresAt }, 200, trustedVpnCookieHeader(request, value));
 }
