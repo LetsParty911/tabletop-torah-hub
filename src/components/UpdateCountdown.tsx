@@ -13,6 +13,8 @@ type UpdateCountdownProps = {
   availableCount?: number | null;
   /** True when the admin progress meter is at 100% for the live collection. */
   collectionComplete?: boolean;
+  /** Loader snapshot keeps SSR and the first client render on the same second. */
+  initialNow?: number;
 };
 
 const NEW_YORK_TIME_ZONE = "America/New_York";
@@ -56,10 +58,12 @@ export function UpdateCountdown({
   readingDate,
   availableCount,
   collectionComplete = false,
+  initialNow = 0,
 }: UpdateCountdownProps) {
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(initialNow);
 
   useEffect(() => {
+    setNow(Date.now());
     const id = window.setInterval(() => setNow(Date.now()), 1_000);
     return () => window.clearInterval(id);
   }, []);

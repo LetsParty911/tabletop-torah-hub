@@ -78,6 +78,7 @@ type LoaderData = {
   announcement: AnnouncementBannerData;
   progressFillStep?: number | null;
   progressEta?: string | null;
+  renderedAt?: number;
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
@@ -164,6 +165,7 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     announcement,
     progressFillStep,
     progressEta,
+    renderedAt: Date.now(),
   };
 }
 
@@ -590,6 +592,7 @@ function Index() {
           readingDate={readingDate}
           availableCount={currentPublishedCount}
           collectionComplete={collectionComplete}
+          initialNow={loaderData.renderedAt}
         />
         <section className="parchment-frame">
           <div className="parchment-panel py-5 text-center sm:py-7">
