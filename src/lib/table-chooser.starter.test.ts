@@ -19,6 +19,33 @@ describe("homepage starter selections", () => {
     expect(new Set(picks.map((p) => p.resource.id)).size).toBe(picks.length);
     expect(picks.length).toBe(1);
   });
+  it("prioritizes the three named series in exact order regardless of category score", () => {
+    const rows = [
+      make("other-quick", "Adults", "Short Vorts", 1),
+      make("other-kids", "Children", "Stories", 2),
+      make("In the Margins", "Adults", "Essays", 8),
+      make("Stories for the Shabbos Table", "Families", "Stories", 4),
+      make("Parsha Questions & Answers", "Children", "Short Vorts", 3),
+    ];
+    const picks = pickStarterSelections(rows);
+    expect(picks.map((p) => p.resource.title)).toEqual([
+      "Parsha Questions & Answers",
+      "Stories for the Shabbos Table",
+      "In the Margins",
+    ]);
+    expect(picks.map((p) => p.key)).toEqual(["kids", "story", "deeper"]);
+  });
+  it("fills an absent priority series from published candidates without duplicates", () => {
+    const rows = [
+      make("Parsha Questions & Answers", "Children", "Short Vorts", 3),
+      make("another-story", "Families", "Stories", 2),
+      make("other-quick", "Adults", "Short Vorts", 2),
+    ];
+    const picks = pickStarterSelections(rows);
+    expect(picks[0].resource.title).toBe("Parsha Questions & Answers");
+    expect(new Set(picks.map((p) => p.resource.id)).size).toBe(picks.length);
+    expect(picks.length).toBe(3);
+  });
   it("handles an unpublished weekly collection without showing fake choices", () => {
     expect(pickStarterSelections([])).toEqual([]);
   });
