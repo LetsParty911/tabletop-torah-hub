@@ -2,7 +2,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 const mocks = vi.hoisted(() => ({ mode: vi.fn(), insert: vi.fn(), notification: vi.fn(), provider: vi.fn(), internal: vi.fn(), resolveGeo: vi.fn() }));
 vi.mock("@vercel/functions", () => ({ waitUntil: () => { throw new Error("test inline background"); } }));
 vi.mock("./internal-marker.server", () => ({ isInternalRequest: mocks.internal }));
-vi.mock("@/integrations/supabase/ext.server", () => ({ getSupabaseAdmin: () => ({ from: (table: string) => table === "vpn_block_settings" ? { select: () => ({ eq: () => ({ single: mocks.mode }) }) } : { insert: (...args: unknown[]) => { mocks.insert(...args); return { select: () => ({ single: async () => ({ data: { id: "test-audit" }, error: null }) }) }; } }) }));
+vi.mock("@/integrations/supabase/ext.server", () => ({
+  getSupabaseAdmin: () => ({
+    from: (table: string) => table === "vpn_block_settings"
+      ? { select: () => ({ eq: () => ({ single: mocks.mode }) }) }
+      : { insert: (...args: unknown[]) => {
+        mocks.insert(...args);
+        return { select: () => ({ single: async () => ({ data: { id: "test-audit" }, error: null }) }) };
+      } },
+  }),
+}));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from: () => ({ insert: mocks.insert }) } }));
 vi.mock("./vpn-notify.server", () => ({ workerEnv: () => undefined, recordProviderOutcome: mocks.provider, notifyBlocked: mocks.notification }));
 vi.mock("./known-vpn-lists.server", () => ({ checkKnownNetwork: async () => ({ signal: null, status: "ok" }) }));
