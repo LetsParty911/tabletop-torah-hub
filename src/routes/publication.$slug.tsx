@@ -4,7 +4,7 @@ import { getPublicationPage } from "@/integrations/supabase/publication-pages.fu
 import { formatReadingLabel } from "@/lib/parshiyos";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
-import { standardizeCopy } from "@/lib/standardize-copy";
+import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { isYomTovReading, readingSlug } from "@/lib/reading-page";
 import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -19,9 +19,11 @@ export const Route = createFileRoute("/publication/$slug")({
   head: ({ loaderData, params }) => {
     const publication = loaderData?.publication;
     const name = publication?.name ?? "Publication";
-    const description =
+    const description = leadWithPublicationTitle(
+      name,
       publication?.default_description?.trim() ||
-      `Browse current and earlier editions of ${name} on Torah For The Table.`;
+        `${name} offers current and earlier printable editions on Torah For The Table.`,
+    ) ?? "";
     const url = `https://torahforthetable.com/publication/${params.slug}`;
     const title = fitPageTitle(name, " — Divrei Torah & Printable Editions");
     const image = `https://torahforthetable.com/og/image.png?title=${encodeURIComponent(name)}`;
@@ -116,7 +118,7 @@ function PublicationPage() {
     const reading = formatReadingLabel(edition.parsha_key);
     const label = edition.jewish_year ? `${reading} ${edition.jewish_year}` : reading;
     const meta = editionMeta(edition);
-    const description = standardizeCopy(edition.description || edition.subtitle);
+    const description = leadWithPublicationTitle(edition.title, edition.description || edition.subtitle);
 
     return (
       <article
@@ -194,7 +196,7 @@ function PublicationPage() {
                 )}
                 {publication.default_description && (
                   <p className="mt-4 max-w-3xl font-serif text-base sm:text-lg leading-relaxed text-primary/85">
-                    {publication.default_description}
+                    {leadWithPublicationTitle(publication.name, publication.default_description)}
                   </p>
                 )}
                 <p className="mt-4 text-sm text-muted-foreground">

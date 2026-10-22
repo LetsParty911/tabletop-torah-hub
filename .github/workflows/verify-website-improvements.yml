@@ -5,6 +5,7 @@ on:
     paths:
       - "src/lib/page-title*"
       - "src/lib/table-chooser*"
+      - "src/lib/publication-description*"
       - "src/lib/collection-status*"
       - "src/routes/archive.tsx"
       - "src/routes/short-vorts.tsx"
@@ -32,7 +33,7 @@ jobs:
         shell: bash
         run: |
           tests=()
-          for file in src/lib/page-title.test.ts src/lib/table-chooser.starter.test.ts src/lib/collection-status.test.ts; do
+          for file in src/lib/page-title.test.ts src/lib/table-chooser.starter.test.ts src/lib/collection-status.test.ts src/lib/publication-description.test.ts; do
             if [[ -f "$file" ]]; then tests+=("$file"); fi
           done
           if (( ${#tests[@]} == 0 )); then

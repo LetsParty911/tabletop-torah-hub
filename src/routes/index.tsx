@@ -17,7 +17,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { collectionCountLine, displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
-import { standardizeCopy } from "@/lib/standardize-copy";
+import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { publicationLabel } from "@/lib/badges";
 
 import {
@@ -712,7 +712,7 @@ function Index() {
                     </Link>
                   </h3>
                   <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
-                    {standardizeCopy(chooseReason(r))}
+                    {leadWithPublicationTitle(displayTitle(r), chooseReason(r))}
                   </p>
                   <div className="mt-auto pt-4">
                     <Link
@@ -907,7 +907,7 @@ function Index() {
                               </Link>
                             </h3>
                             {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
-                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-3">{standardizeCopy(r.subtitle || chooseReason(r))}</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-3">{leadWithPublicationTitle(displayTitle(r), r.subtitle || chooseReason(r))}</p>
                             {pageCountLabel(r) && (
                               <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                 {pageCountLabel(r)}
@@ -1179,7 +1179,7 @@ function Index() {
                           {(() => {
                             const summary = r.summary_quick || r.subtitle || r.description;
                             return summary ? (
-                              <p className="mt-1 text-xs sm:text-sm text-muted-foreground line-clamp-3">{standardizeCopy(summary)}</p>
+                              <p className="mt-1 text-xs sm:text-sm text-muted-foreground line-clamp-3">{leadWithPublicationTitle(displayTitle(r), summary)}</p>
                             ) : null;
                           })()}
                           {(r.audience || r.format_type || typeof r.page_count === "number") && (

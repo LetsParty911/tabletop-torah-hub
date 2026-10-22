@@ -1,4 +1,5 @@
 import { standardizeCopy } from "@/lib/standardize-copy";
+import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { fitPageTitle } from "@/lib/page-title";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
@@ -76,11 +77,14 @@ export const Route = createFileRoute("/view/$id")({
       return `${(space > 100 ? cut.slice(0, space) : cut).trimEnd()}…`;
     };
     const description = clamp(
-      loaderData?.pdf?.description?.trim() ||
-        subtitle?.trim() ||
-        (parshaLabel
-          ? `A printable Dvar Torah for ${parshaLabel}, free from Torah For The Table.`
-          : "A printable Dvar Torah, free from Torah For The Table."),
+      leadWithPublicationTitle(
+        title,
+        loaderData?.pdf?.description?.trim() ||
+          subtitle?.trim() ||
+          (parshaLabel
+            ? `A printable Dvar Torah for ${parshaLabel}, free from Torah For The Table.`
+            : "A printable Dvar Torah, free from Torah For The Table."),
+      ) ?? "",
     );
 
     const url = `https://torahforthetable.com/view/${params.id}`;
@@ -285,7 +289,7 @@ function ViewPdf() {
               What you'll find
             </p>
             <p className="mt-2 font-serif text-base leading-relaxed text-primary/85">
-              {standardizeCopy(pdf.description)}
+              {leadWithPublicationTitle(pdf.title, pdf.description)}
             </p>
           </section>
         )}
@@ -299,7 +303,7 @@ function ViewPdf() {
               Summary
             </h2>
             <p className="mt-2 font-serif text-base leading-relaxed text-primary/85 whitespace-pre-line">
-              {chosenSummary}
+              {leadWithPublicationTitle(pdf.title, chosenSummary)}
             </p>
           </section>
         )}
@@ -410,7 +414,7 @@ function ViewPdf() {
                     {itemMeta && <p className="mt-2 text-xs text-muted-foreground">{itemMeta}</p>}
                     {item.description && (
                       <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                        {item.description}
+                        {leadWithPublicationTitle(item.title, item.description)}
                       </p>
                     )}
                   </Link>
@@ -476,7 +480,7 @@ function ViewPdf() {
                     {relatedMeta && <p className="mt-2 text-xs text-muted-foreground">{relatedMeta}</p>}
                     {edition.description && (
                       <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                        {edition.description}
+                        {leadWithPublicationTitle(edition.title, edition.description)}
                       </p>
                     )}
                   </Link>

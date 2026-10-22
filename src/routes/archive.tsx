@@ -13,7 +13,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { fitPageTitle } from "@/lib/page-title";
 import { normalizeAudience, audienceLabel, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
-import { standardizeCopy } from "@/lib/standardize-copy";
+import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { publicationLabel } from "@/lib/badges";
 import { formatReadingLabel, displayReadingName } from "@/lib/parshiyos";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
@@ -656,9 +656,9 @@ function ArchivePage() {
                                       From {publicationLabel(r.publication)}
                                     </p>
                                   ) : null}
-                                  {r.subtitle && (
+                                  {(r.subtitle || r.description) && (
                                     <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                                      {standardizeCopy(r.subtitle)}
+                                      {leadWithPublicationTitle(r.title, r.subtitle || r.description)}
                                     </p>
                                   )}
                                   {(r.audience || r.format_type || typeof r.page_count === "number") && (

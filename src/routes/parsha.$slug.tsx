@@ -7,6 +7,7 @@ import { VORTS } from "@/data/vorts";
 import { readingSlug } from "@/lib/reading-page";
 import { PARSHIYOS_54, formatReadingLabel } from "@/lib/parshiyos";
 import { fitPageTitle } from "@/lib/page-title";
+import { leadWithPublicationTitle } from "@/lib/publication-description";
 
 function seferForParsha(parshaKey: string): string {
   const index = PARSHIYOS_54.indexOf(parshaKey);
@@ -265,7 +266,7 @@ function PermanentParshaPage() {
                         )}
                         {description && (
                           <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                            {description}
+                            {leadWithPublicationTitle(resource.title, description)}
                           </p>
                         )}
                       </div>
