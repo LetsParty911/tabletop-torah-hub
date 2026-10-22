@@ -1,7 +1,7 @@
 /**
  * "Open PDF" button clicks.
  *
- * The public Open PDF button (DownloadToPrintButton) emits the existing
+ * The public Read Now button (DownloadToPrintButton) emits the existing
  * `publication_click` event tagged with metadata.action = "open_pdf". That
  * tagged event is the only thing counted here. It is deliberately separate
  * from:
