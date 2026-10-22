@@ -74,12 +74,12 @@ export function DownloadToPrintButton({
         target="_blank"
         rel="nofollow noopener noreferrer"
         onClick={recordOpen}
-        aria-label={"Open PDF: " + title}
+        aria-label={"Read Now — open PDF: " + title}
         title="Open the PDF, then use your viewer to print or save"
         className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground active:bg-accent active:text-accent-foreground touch-manipulation"
       >
         <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
-        <span>Open PDF</span>
+        <span>Read Now</span>
       </a>
     </div>
   );
