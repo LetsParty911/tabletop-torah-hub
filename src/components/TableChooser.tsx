@@ -7,7 +7,7 @@ import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { normalizeAudience } from "@/lib/audience";
 import { trackFp } from "@/lib/first-party-analytics";
 import { formatTypeLabel } from "@/lib/format-labels";
-import { standardizeCopy } from "@/lib/standardize-copy";
+import { leadWithPublicationTitle } from "@/lib/publication-description";
 
 import {
   CHOOSERS,
@@ -241,7 +241,7 @@ export function TableChooser({
                     </Link>
                   </h3>
                   <p className="mt-1 line-clamp-3 text-xs text-muted-foreground sm:text-sm">
-                    {standardizeCopy(chooseReason(r))}
+                    {leadWithPublicationTitle(displayTitle(r), chooseReason(r))}
                   </p>
                   {chooserMetaLine(r) && (
                     <p className="mt-2 text-[0.7rem] font-medium uppercase tracking-wide text-muted-foreground">
