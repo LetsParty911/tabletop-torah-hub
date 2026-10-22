@@ -39,6 +39,7 @@ import { Route as ApiSiteVersionRouteImport } from './routes/api/site-version'
 import { Route as ApiTrackDownloadRouteImport } from './routes/api/track-download'
 import { Route as ApiTrackSearchRouteImport } from './routes/api/track-search'
 import { Route as ApiTrackViewRouteImport } from './routes/api/track-view'
+import { Route as ApiTrustedVpnBrowserRouteImport } from './routes/api/trusted-vpn-browser'
 import { Route as ApiVpnDiagnosticRouteImport } from './routes/api/vpn-diagnostic'
 import { Route as ManageTableTokenRouteImport } from './routes/manage-table.$token'
 import { Route as OgImageDotpngRouteImport } from './routes/og.image[.]png'
@@ -203,6 +204,11 @@ const ApiTrackViewRoute = ApiTrackViewRouteImport.update({
   path: '/api/track-view',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTrustedVpnBrowserRoute = ApiTrustedVpnBrowserRouteImport.update({
+  id: '/api/trusted-vpn-browser',
+  path: '/api/trusted-vpn-browser',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiVpnDiagnosticRoute = ApiVpnDiagnosticRouteImport.update({
   id: '/api/vpn-diagnostic',
   path: '/api/vpn-diagnostic',
@@ -300,6 +306,7 @@ export interface FileRoutesByFullPath {
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
+  '/api/trusted-vpn-browser': typeof ApiTrustedVpnBrowserRoute
   '/api/vpn-diagnostic': typeof ApiVpnDiagnosticRoute
   '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
@@ -345,6 +352,7 @@ export interface FileRoutesByTo {
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
+  '/api/trusted-vpn-browser': typeof ApiTrustedVpnBrowserRoute
   '/api/vpn-diagnostic': typeof ApiVpnDiagnosticRoute
   '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
@@ -391,6 +399,7 @@ export interface FileRoutesById {
   '/api/track-download': typeof ApiTrackDownloadRoute
   '/api/track-search': typeof ApiTrackSearchRoute
   '/api/track-view': typeof ApiTrackViewRoute
+  '/api/trusted-vpn-browser': typeof ApiTrustedVpnBrowserRoute
   '/api/vpn-diagnostic': typeof ApiVpnDiagnosticRoute
   '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
@@ -438,6 +447,7 @@ export interface FileRouteTypes {
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
+    | '/api/trusted-vpn-browser'
     | '/api/vpn-diagnostic'
     | '/manage-table/$token'
     | '/og/image.png'
@@ -483,6 +493,7 @@ export interface FileRouteTypes {
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
+    | '/api/trusted-vpn-browser'
     | '/api/vpn-diagnostic'
     | '/manage-table/$token'
     | '/og/image.png'
@@ -528,6 +539,7 @@ export interface FileRouteTypes {
     | '/api/track-download'
     | '/api/track-search'
     | '/api/track-view'
+    | '/api/trusted-vpn-browser'
     | '/api/vpn-diagnostic'
     | '/manage-table/$token'
     | '/og/image.png'
@@ -574,6 +586,7 @@ export interface RootRouteChildren {
   ApiTrackDownloadRoute: typeof ApiTrackDownloadRoute
   ApiTrackSearchRoute: typeof ApiTrackSearchRoute
   ApiTrackViewRoute: typeof ApiTrackViewRoute
+  ApiTrustedVpnBrowserRoute: typeof ApiTrustedVpnBrowserRoute
   ApiVpnDiagnosticRoute: typeof ApiVpnDiagnosticRoute
   ManageTableTokenRoute: typeof ManageTableTokenRoute
   OgImageDotpngRoute: typeof OgImageDotpngRoute
@@ -798,6 +811,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTrackViewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/trusted-vpn-browser': {
+      id: '/api/trusted-vpn-browser'
+      path: '/api/trusted-vpn-browser'
+      fullPath: '/api/trusted-vpn-browser'
+      preLoaderRoute: typeof ApiTrustedVpnBrowserRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/vpn-diagnostic': {
       id: '/api/vpn-diagnostic'
       path: '/api/vpn-diagnostic'
@@ -948,6 +968,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTrackDownloadRoute: ApiTrackDownloadRoute,
   ApiTrackSearchRoute: ApiTrackSearchRoute,
   ApiTrackViewRoute: ApiTrackViewRoute,
+  ApiTrustedVpnBrowserRoute: ApiTrustedVpnBrowserRoute,
   ApiVpnDiagnosticRoute: ApiVpnDiagnosticRoute,
   ManageTableTokenRoute: ManageTableTokenRoute,
   OgImageDotpngRoute: OgImageDotpngRoute,
