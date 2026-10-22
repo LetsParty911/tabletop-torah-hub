@@ -3,6 +3,7 @@ import { BookOpen, ArrowLeft } from "lucide-react";
 import { listPublicationPages } from "@/integrations/supabase/publication-pages.functions";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
+import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { SiteFooter } from "@/components/SiteFooter";
 
 export const Route = createFileRoute("/publications")({
@@ -92,7 +93,7 @@ function PublicationsPage() {
                     </p>
                     {publication.default_description && (
                       <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                        {publication.default_description}
+                        {leadWithPublicationTitle(publication.name, publication.default_description)}
                       </p>
                     )}
                   </div>
