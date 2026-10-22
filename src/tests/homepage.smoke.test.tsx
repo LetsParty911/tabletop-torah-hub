@@ -17,6 +17,21 @@ vi.mock("@tanstack/react-router", async () => {
       ...options,
       useLoaderData: () => state.loader,
     }),
+    lazyRouteComponent: (getComp: unknown) => {
+      // The TanStack Start transform rewrites `component: Index` to a
+      // lazyRouteComponent reference; resolve it so the real component renders.
+      const loaded = typeof getComp === "function" ? (getComp as () => unknown)() : getComp;
+      if (typeof loaded === "function") return loaded;
+      const LazyRoute = (props: Record<string, unknown>) => {
+        const [Comp, setComp] = React.useState<any>(null);
+        React.useEffect(() => {
+          Promise.resolve(loaded).then((m: unknown) => setComp((m as any)?.default ?? m));
+        }, []);
+        if (!Comp) return null;
+        return createElement(Comp, props);
+      };
+      return LazyRoute;
+    },
     useRouter: () => ({ invalidate: state.invalidate }),
     Link: ({ to, params, children, ...props }: any) =>
       createElement(
@@ -63,7 +78,7 @@ vi.mock("@/components/AnnouncementBanner", () => ({ AnnouncementBanner: () => nu
 vi.mock("@/components/UpdateCountdown", () => ({ UpdateCountdown: (props: unknown) => { state.countdown(props); return <div>Release countdown</div>; } }));
 vi.mock("@/components/ThursdayProgressMeter", () => ({ ThursdayProgressMeter: () => null }));
 vi.mock("@/components/DownloadAndPrintButtons", () => ({
-  DownloadAndPrintButtons: ({ href }: { href: string }) => <a href={href}>Open PDF</a>,
+  DownloadAndPrintButtons: ({ href }: { href: string }) => <a href={href}>Read Now</a>,
 }));
 vi.mock("@/components/PublicationCardTracker", () => ({
   PublicationCardTracker: ({ children }: { children: React.ReactNode }) => <article>{children}</article>,
@@ -148,7 +163,7 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     fireEvent.click(screen.getByRole("button", { name: "Show all 4 selections" }));
     expect(screen.getByTestId("table-chooser")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Sample Torah Sheet 4" })).toBeTruthy();
-    expect(screen.getAllByRole("link", { name: "Open PDF" }).length).toBe(4);
+    expect(screen.getAllByRole("link", { name: "Read Now" }).length).toBe(4);
   });
 
   it("stops labeling a live Lech-Lecha collection as an upcoming fallback", () => {
