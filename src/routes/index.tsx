@@ -17,7 +17,6 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { collectionCountLine, displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
-import { standardizeCopy } from "@/lib/standardize-copy";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { publicationLabel } from "@/lib/badges";
 
