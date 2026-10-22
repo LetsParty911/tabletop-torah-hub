@@ -9,3 +9,4 @@
 - Reuse WeeklyEmailSignup for additional signup placements with distinct anchorId and sourceId props, leaving its default anchor on the lower homepage form. Why: consent, feedback, attribution, and existing scrolling remain consistent without duplicate DOM IDs.
 - Reserve external settings.updated_at for explicit parsha override saves; unrelated settings writers must omit it. Why: shared timestamp renewal otherwise reactivates archived overrides without consent.
 - Keep weekly deadline and override validation in pure helpers; availability requires current-year published rows, and completion requires week-bound progress evidence. Why: last-week fallback PDFs and legacy progress cannot prove a current release.
+- Run weekly handler mocks with vitest.weekly.config.ts, separate from the framework Vite config. Why: RPC transformation replaces the handlers that isolated tests must actually exercise.
