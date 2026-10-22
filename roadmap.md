@@ -1,7 +1,7 @@
 ## Lech Lecha weekly-state repair (no publish)
-- [ ] Restore pending countdown and current-week heading with previous PDFs preserved
-- [ ] Prevent stale override renewal and require conscious off-calendar override
-- [ ] Verify deadline, publication, rollover, admin safeguards and unchanged gates
+- [x] Restore pending countdown and current-week heading with previous PDFs preserved
+- [x] Prevent stale override renewal and require conscious off-calendar override
+- [x] Verify deadline, publication, rollover, admin safeguards and unchanged gates
 
 ## Urgent Sukkos feature
 - [x] Locate the supplied artwork and download file — exact artwork is not currently attached
