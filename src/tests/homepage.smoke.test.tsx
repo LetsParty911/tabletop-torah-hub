@@ -7,6 +7,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 const state = vi.hoisted(() => ({
   loader: null as any,
   invalidate: vi.fn(async () => {}),
+  countdown: vi.fn(),
 }));
 
 vi.mock("@tanstack/react-router", async () => {
@@ -59,7 +60,7 @@ vi.mock("@/lib/table-chooser", () => ({
 }));
 
 vi.mock("@/components/AnnouncementBanner", () => ({ AnnouncementBanner: () => null }));
-vi.mock("@/components/UpdateCountdown", () => ({ UpdateCountdown: () => <div>Release countdown</div> }));
+vi.mock("@/components/UpdateCountdown", () => ({ UpdateCountdown: (props: unknown) => { state.countdown(props); return <div>Release countdown</div>; } }));
 vi.mock("@/components/ThursdayProgressMeter", () => ({ ThursdayProgressMeter: () => null }));
 vi.mock("@/components/DownloadAndPrintButtons", () => ({
   DownloadAndPrintButtons: ({ href }: { href: string }) => <a href={href}>Open PDF</a>,
@@ -116,7 +117,8 @@ function setHomepage(isFallback: boolean) {
     readingDate: "2026-10-24",
     upcomingAfterYomTovKey: null,
     announcement: { enabled: false, text: null, linkUrl: null, linkLabel: null },
-    progressFillStep: null,
+    progressFillStep: 100,
+    progressEta: "2026-10-15T20:00:00-04:00",
   };
 }
 
@@ -126,16 +128,15 @@ beforeEach(() => state.invalidate.mockClear());
 afterEach(() => cleanup());
 
 describe("homepage publication and discovery smoke test with isolated data", () => {
-  it("shows published Noach, not unpublished Lech-Lecha, as the main fallback collection", () => {
+  it("keeps Noach PDFs available while countdown represents unpublished Lech-Lecha", () => {
     setHomepage(true);
     render(<Homepage />);
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toContain("Parshas Noach");
-    expect(screen.getByText(/Coming next: Parshas Lech-Lecha/)).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Choose a ready Dvar Torah/i })).toBeTruthy();
+    expect(state.countdown).toHaveBeenLastCalledWith(expect.objectContaining({ contentLive: false, availableCount: 0, liveParshaLabel: "Parshas Lech-Lecha", readingDate: "2026-10-24", collectionComplete: false }));
+    expect(screen.getByRole("link", { name: /Get notification/i }).getAttribute("href")).toBe("#weekly-email-signup");
     expect(screen.getAllByRole("form", { name: /Weekly Torah signup/i })).toHaveLength(1);
 
     const share = screen.getByRole("link", { name: "Share Torah For The Table" });
-    const message = new URL(share.getAttribute("href")!).searchParams.get("text")!;
+    const message = new URL(share.getAttribute("href") ?? "").searchParams.get("text") ?? "";
     expect(message).toContain("Parshas Noach");
     expect(message).not.toContain("Parshas Lech-Lecha");
   });
@@ -157,8 +158,23 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.queryByText(/Coming next: Parshas Lech-Lecha/)).toBeNull();
     expect(screen.getAllByRole("form", { name: /Weekly Torah signup/i })).toHaveLength(1);
     const share = screen.getByRole("link", { name: "Share Torah For The Table" });
-    const message = new URL(share.getAttribute("href")!).searchParams.get("text")!;
+    const message = new URL(share.getAttribute("href") ?? "").searchParams.get("text") ?? "";
     expect(message).toContain("Parshas Lech-Lecha");
     expect(message).not.toContain("Parshas Noach");
   });
+});
+
+it("polls actual publications and invalidates when the first current PDF goes live", async () => {
+  vi.useFakeTimers();
+  try {
+    setHomepage(true);
+    render(<Homepage />);
+    const { act } = await import("@testing-library/react");
+    await act(async () => {});
+    state.invalidate.mockClear();
+    const { listHomepageWeek } = await import("@/integrations/supabase/api.functions");
+    vi.mocked(listHomepageWeek).mockResolvedValueOnce({ resources: [example(1, "Lech-Lecha")], isFallback: false, fallbackParshaKey: null } as any);
+    await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+    expect(state.invalidate).toHaveBeenCalledTimes(1);
+  } finally { vi.useRealTimers(); }
 });
