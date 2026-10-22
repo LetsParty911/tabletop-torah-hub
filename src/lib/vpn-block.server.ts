@@ -335,6 +335,13 @@ export async function auditPrivacy(
 
 /** Audit each eligible document navigation, including clean and failed classifications. */
 export async function checkVpnBlock(request: Request): Promise<Response | null> {
+  // Apply the existing path/method eligibility before any database work.
+  // In particular, an unavailable VPN-settings backend must not delay admin
+  // sign-in, server functions, API calls or static assets that this gate
+  // already exempts. Country/geo/maintenance/auth gates remain independent.
+  const path = new URL(request.url).pathname;
+  if (request.method !== "GET" || !shouldCheck(request, path)) return null;
+
   // This capability skips ONLY this gate, not downstream geo/IP or site/PDF gates.
   // Check before mode/audit/provider work; failures never grant an exemption.
   if (await isTrustedVpnBrowser(request)) return null;
@@ -342,8 +349,6 @@ export async function checkVpnBlock(request: Request): Promise<Response | null> 
   if (mode === "off") return null;
   let denied = false;
   try {
-    const path = new URL(request.url).pathname;
-    if (request.method !== "GET" || !shouldCheck(request, path)) return null;
     if (await isInternalRequest(request)) return null;
     const t = getRequestTelemetry(request);
     const ip = t.ipAddress;
