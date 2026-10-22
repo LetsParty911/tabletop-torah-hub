@@ -11,3 +11,4 @@
 - Keep weekly deadline and override validation in pure helpers; availability requires current-year published rows, and completion requires week-bound progress evidence. Why: last-week fallback PDFs and legacy progress cannot prove a current release.
 - Run weekly handler mocks with vitest.weekly.config.ts, separate from the framework Vite config. Why: RPC transformation replaces the handlers that isolated tests must actually exercise.
 - Keep trusted VPN browser capabilities independent of the internal analytics marker and verify them only inside the VPN gate with request-time secrets. Why: browser opt-in must never bypass geographic/site/PDF gates or change analytics classification.
+- Keep the country deny as the first Start request middleware, reading only cf-ipcountry without identity exemptions or side effects. Why: every request reaching Start must stop before all other gates; static/edge and public storage need separate upstream enforcement.

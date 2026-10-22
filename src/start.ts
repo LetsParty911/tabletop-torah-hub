@@ -1,6 +1,15 @@
 import { createStart, createMiddleware } from "@tanstack/react-start";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
+// All methods and paths reaching Start, before redirects/auth/security/telemetry.
+// No admin, internal-device or trusted-VPN exemptions. Not a static-assets WAF.
+const countryGate = createMiddleware().server(async ({ next, request }) => {
+  const { checkCountryBlock } = await import("@/lib/country-block.server");
+  const denied = checkCountryBlock(request);
+  if (denied) return { response: denied } as never;
+  return next();
+});
+
 /**
  * Cache-Control header policy for the HTML entry point and static assets.
  *
@@ -125,5 +134,5 @@ const maintenanceTraffic = createMiddleware().server(async ({ next, request }) =
 
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [dotOrgRedirect, vpnGate, geoBlock, maintenanceTraffic, cacheControl],
+  requestMiddleware: [countryGate, dotOrgRedirect, vpnGate, geoBlock, maintenanceTraffic, cacheControl],
 }));
