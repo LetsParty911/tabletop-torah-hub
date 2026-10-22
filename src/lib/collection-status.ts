@@ -49,3 +49,21 @@ export function hasDisplayedCollectionChanged(
   return previous.isFallback !== latest.isFallback ||
     (latest.isFallback && previous.fallbackParshaKey !== latest.fallbackParshaKey);
 }
+
+/** Only a current-week ETA binds unscoped legacy progress to this reading. */
+export function isProgressForReading(eta: string | null | undefined, readingDate: string | null): boolean {
+  if (!eta || !readingDate) return false;
+  const date = new Date(eta);
+  const reading = new Date(`${readingDate}T12:00:00Z`);
+  if (!Number.isFinite(date.getTime()) || !Number.isFinite(reading.getTime())) return false;
+  const local = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+  reading.setUTCDate(reading.getUTCDate() - 6);
+  return local >= reading.toISOString().slice(0, 10) && local <= readingDate;
+}
+
+/** Historical PDFs for the same parsha are not evidence of this year's release. */
+export function currentYearRows<T extends { parsha_key: string; jewish_year: number | null }>(rows: T[], comparableKeys: string[], year: number | null, normalize: (key: string) => string): T[] {
+  if (!year) return [];
+  const wanted = new Set(comparableKeys);
+  return rows.filter(row => row.jewish_year === year && wanted.has(normalize(row.parsha_key)));
+}
