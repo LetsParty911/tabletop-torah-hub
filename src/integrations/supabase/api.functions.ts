@@ -3034,7 +3034,7 @@ Respond ONLY with a JSON object with exactly these keys:
   "audience": string,          // exactly one of: "Adults", "Families", "Children"
   "format_type": string        // exactly one of: "Short Vorts", "Stories", "Halacha", "Essays"
 }
-Choose the single best value for audience and format_type. No prose, no code fences.`;
+The description MUST start with the exact publication title provided by the user, followed by a natural descriptive verb such as offers, explores, provides, or shares. Never start with 'This publication', 'This Dvar Torah', or another generic subject. Keep the substance specific to the attached PDF. Choose the single best value for audience and format_type. No prose, no code fences.`;
     const userPrompt = `Publication title: ${row.title}${row.subtitle ? ` — ${row.subtitle}` : ""}
 Analyze the attached PDF and return the json object described in the system prompt.`;
 
