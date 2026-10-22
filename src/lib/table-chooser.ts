@@ -155,28 +155,55 @@ export function pickRecommendations<T extends ChooserResource>(
 }
 
 /**
- * Three distinct, immediately useful options near the homepage hero.
- * Uses published weekly resources supplied by the homepage loader and the
- * same structured category membership as the full chooser.
- * Missing categories are omitted rather than inventing a recommendation.
+ * The owner's three priority series appear first whenever they are published
+ * in the currently displayed weekly collection. We match canonical publication
+ * titles, not file IDs, and never pull a PDF from a different week.
+ *
+ * If a series has not been uploaded for this week, complete the row with the
+ * existing category-based choices (with no duplicates).
  */
 export type StarterSelection<T extends ChooserResource> = {
-  key: "quick" | "kids" | "family";
+  key: ChooserKey;
   label: string;
   resource: T;
 };
 
+const PRIORITY_STARTER_SERIES = [
+  { title: "Parsha Questions & Answers", key: "kids", label: "Questions & Answers" },
+  { title: "Stories for the Shabbos Table", key: "story", label: "Shabbos Stories" },
+  { title: "In the Margins", key: "deeper", label: "Deeper Learning" },
+] as const;
+
+const starterTitleKey = (value: string) =>
+  value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+
 export function pickStarterSelections<T extends ChooserResource>(
   resources: readonly T[],
 ): StarterSelection<T>[] {
-  const choices = [
+  const used = new Set<string>();
+  const picks: StarterSelection<T>[] = [];
+
+  // Fixed series priority, independent of category scoring and database order.
+  for (const { title, key, label } of PRIORITY_STARTER_SERIES) {
+    const wanted = starterTitleKey(title);
+    const resource = resources.find(
+      (r) => starterTitleKey(r.title) === wanted && !used.has(r.id),
+    );
+    if (!resource) continue;
+    used.add(resource.id);
+    picks.push({ key, label, resource });
+  }
+
+  if (picks.length === 3) return picks;
+
+  // A weekly series can be temporarily absent: preserve three useful choices.
+  const fallbackChoices = [
     { key: "quick", label: "A Quick Vort" },
     { key: "kids", label: "For Children" },
     { key: "family", label: "Family Table" },
   ] as const;
-  const used = new Set<string>();
-  const picks: StarterSelection<T>[] = [];
-  for (const { key, label } of choices) {
+  for (const { key, label } of fallbackChoices) {
+    if (picks.length === 3) break;
     const resource = pickRecommendations(resources, key).find((r) => !used.has(r.id));
     if (!resource) continue;
     used.add(resource.id);
