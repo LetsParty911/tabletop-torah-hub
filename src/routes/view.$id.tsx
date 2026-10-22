@@ -378,7 +378,7 @@ function ViewPdf() {
                 />
               ) : (
                 <p className="mt-3 text-sm text-foreground/80">
-                  Tap Open PDF above to read the full document in your browser. Use the browser menu if you want to print or save it.
+                Tap Read Now above to read the full document in your browser. Use the browser menu if you want to print or save it.
                 </p>
               )}
             </div>
