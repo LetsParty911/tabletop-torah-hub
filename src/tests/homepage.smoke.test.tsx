@@ -17,6 +17,21 @@ vi.mock("@tanstack/react-router", async () => {
       ...options,
       useLoaderData: () => state.loader,
     }),
+    lazyRouteComponent: (getComp: unknown) => {
+      // The TanStack Start transform rewrites `component: Index` to a
+      // lazyRouteComponent reference; resolve it so the real component renders.
+      const loaded = typeof getComp === "function" ? (getComp as () => unknown)() : getComp;
+      if (typeof loaded === "function") return loaded;
+      const LazyRoute = (props: Record<string, unknown>) => {
+        const [Comp, setComp] = React.useState<any>(null);
+        React.useEffect(() => {
+          Promise.resolve(loaded).then((m: unknown) => setComp((m as any)?.default ?? m));
+        }, []);
+        if (!Comp) return null;
+        return createElement(Comp, props);
+      };
+      return LazyRoute;
+    },
     useRouter: () => ({ invalidate: state.invalidate }),
     Link: ({ to, params, children, ...props }: any) =>
       createElement(
