@@ -28,6 +28,12 @@ describe("admin-only browser enrollment and revocation", () => {
     }
     expect(auth).not.toHaveBeenCalled();
   });
+  it("rejects cross-site fetch metadata even with a matching origin", async () => {
+    const request = post({ action: "enable", accessToken: "test-admin-token" });
+    request.headers.set("sec-fetch-site", "cross-site");
+    expect((await trustedVpnControl(request)).status).toBe(403);
+    expect(auth).not.toHaveBeenCalled();
+  });
   it("issues a verifiable cookie only for an authenticated admin; status reads it back", async () => {
     const response = await trustedVpnControl(post({ action: "enable", accessToken: "test-admin-token" }));
     expect(response.status).toBe(200);
@@ -35,7 +41,9 @@ describe("admin-only browser enrollment and revocation", () => {
     const cookie = response.headers.get("set-cookie") ?? "";
     const value = cookie.split(";")[0].slice(TRUSTED_VPN_COOKIE.length + 1);
     expect(await verifyTrustedVpnToken(value, secret)).not.toBeNull();
-    expect(await response.json()).toMatchObject({ trusted: true });
+    const body = await response.json();
+    expect(Object.keys(body).sort()).toEqual(["expiresAt", "trusted"]);
+    expect(body).toMatchObject({ trusted: true });
     const state = await trustedVpnControl(new Request(url, { headers: { authorization: "Bearer test-admin-token", cookie } }));
     expect(await state.json()).toMatchObject({ trusted: true, available: true });
   });

@@ -60,6 +60,16 @@ describe("trusted cookie exempts only the existing VPN gate", () => {
     expect(await checkVpnBlock(request("tftt_internal=test-marker"))).toBeNull();
     expect(fetch).not.toHaveBeenCalled();
   });
+  it("preserves off and monitor behavior for non-enrolled browsers", async () => {
+    mocks.mode.mockResolvedValue({ data: { mode: "off" }, error: null });
+    expect(await checkVpnBlock(request())).toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
+    clearVpnModeCache();
+    mocks.mode.mockResolvedValue({ data: { mode: "monitor" }, error: null });
+    expect(await checkVpnBlock(request())).toBeNull();
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(mocks.notification).not.toHaveBeenCalled();
+  });
   it("trusted browser still gets exact-IP denial from the downstream geo gate", async () => {
     const cookie = `${TRUSTED_VPN_COOKIE}=${await issueTrustedVpnToken(secret)}`;
     const req = request(cookie, "/view/test-publication/pdf", "12.75.139.6");
