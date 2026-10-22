@@ -16,7 +16,7 @@ import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
-import { collectionCountLine, displayContentType, hasDisplayedCollectionChanged, isCollectionComplete } from "@/lib/collection-status";
+import { collectionCountLine, displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { publicationLabel } from "@/lib/badges";
 
@@ -77,6 +77,7 @@ type LoaderData = {
   upcomingAfterYomTovKey: string | null;
   announcement: AnnouncementBannerData;
   progressFillStep?: number | null;
+  progressEta?: string | null;
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
@@ -100,11 +101,11 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     // ignore
   }
 
+  const resolved = await resolveHebcalParsha();
+  readingDate = resolved.readingDate;
   if (!parshaKey) {
-    const resolved = await resolveHebcalParsha();
     parshaKey = resolved.parshaKey;
     label = resolved.label;
-    readingDate = resolved.readingDate;
   }
 
   let resources: Resource[] = [];
@@ -141,8 +142,11 @@ async function loadCurrentWeek(): Promise<LoaderData> {
 
   const announcement = await announcementPromise;
   let progressFillStep: number | null = null;
+  let progressEta: string | null = null;
   try {
-    progressFillStep = (await getThursdayProgress()).fillStep;
+    const progress = await getThursdayProgress();
+    progressFillStep = progress.fillStep;
+    progressEta = progress.eta;
   } catch {
     progressFillStep = null;
   }
@@ -159,6 +163,7 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     upcomingAfterYomTovKey,
     announcement,
     progressFillStep,
+    progressEta,
   };
 }
 
@@ -339,8 +344,16 @@ function Index() {
       }
     };
     void refreshCurrentCollection();
+    // Recheck real publications/reading while the page remains open; no synthetic events.
+    let refreshing = false;
+    const interval = window.setInterval(async () => {
+      if (document.visibilityState !== "visible" || refreshing) return;
+      refreshing = true;
+      try { await refreshCurrentCollection(); } finally { refreshing = false; }
+    }, 60_000);
     return () => {
       cancelled = true;
+      window.clearInterval(interval);
     };
   }, [currentParshaKey, isFallback, fallbackParshaKey, router]);
   useEffect(() => {
@@ -352,19 +365,26 @@ function Index() {
   const [progressFillStep, setProgressFillStep] = useState<number | null>(
     loaderData.progressFillStep ?? null,
   );
+  const [progressEta, setProgressEta] = useState<string | null>(loaderData.progressEta ?? null);
+  useEffect(() => {
+    setProgressFillStep(loaderData.progressFillStep ?? null);
+    setProgressEta(loaderData.progressEta ?? null);
+  }, [loaderData.progressFillStep, loaderData.progressEta]);
   useEffect(() => {
     let cancelled = false;
     void getThursdayProgress()
       .then((progress) => {
-        if (!cancelled) setProgressFillStep(progress.fillStep);
+        if (!cancelled) { setProgressFillStep(progress.fillStep); setProgressEta(progress.eta); }
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, []);
+  const progressForCurrentReading = isProgressForReading(progressEta, readingDate);
+  const currentPublishedCount = isFallback ? 0 : resources.length;
   const collectionComplete = isCollectionComplete(
-    progressFillStep,
+    progressForCurrentReading ? progressFillStep : null,
     isFallback,
     resources.length,
   );
@@ -564,28 +584,19 @@ function Index() {
     <div className="min-h-screen bg-background">
       <AnnouncementBanner initialBanner={Route.useLoaderData().announcement} />
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
-        {isFallback && resources.length > 0 ? (
-          <div className="rounded-xl border border-accent/45 bg-accent/10 px-4 py-3 text-center text-sm text-primary">
-            <span className="font-semibold">Coming next: {currentLabel}.</span>{" "}
-            The new collection is planned for Thursday at 8:00 PM Eastern. In the meantime, {displayedLabel} is ready to read and print below.
-          </div>
-        ) : (
-          <UpdateCountdown
-            contentLive={!isFallback && resources.length > 0}
-            liveParshaLabel={currentLabel}
-            readingDate={readingDate}
-            availableCount={resources.length}
-            collectionComplete={collectionComplete}
-          />
-        )}
+        <UpdateCountdown
+          contentLive={currentPublishedCount > 0}
+          liveParshaLabel={currentLabel}
+          readingDate={readingDate}
+          availableCount={currentPublishedCount}
+          collectionComplete={collectionComplete}
+        />
         <section className="parchment-frame">
           <div className="parchment-panel py-5 text-center sm:py-7">
             <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
               {isCurrentYomKippur
                 ? "Yom Kippur Resources"
-                : isFallback
-                  ? "Latest Available Collection"
-                  : "Weekly Divrei Torah"}
+                : "This week's collection"}
             </p>
             <h1 className="mt-2 font-serif text-[1.6rem] leading-[1.1] font-bold tracking-tight text-primary sm:text-4xl md:text-5xl">
               <span>
@@ -594,7 +605,7 @@ function Index() {
                   : isSukkosSeason
                     ? sukkosSeasonTitle
                     : isFallback
-                      ? `${displayedLabel} — Divrei Torah Ready to Print`
+                      ? currentLabel
                       : postShabbos
                         ? `Divrei Torah for ${displayedLabel}`
                         : "Torah For The Table — Free Weekly Divrei Torah"}
@@ -603,7 +614,9 @@ function Index() {
             <p className="mx-auto mt-2 max-w-md font-serif text-sm leading-relaxed text-primary sm:hidden">
               Choose a Dvar Torah for your table — free, and ready to print.
             </p>
-            {!isFallback && (
+            {isFallback ? (
+              <p className="mt-3 font-serif text-base font-semibold text-primary" role="status">Collection in progress</p>
+            ) : (
               <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-accent-readable sm:hidden">
                 {collectionComplete
                   ? `All ${resources.length} available • collection complete`
@@ -640,16 +653,16 @@ function Index() {
             {isFallback && !isCurrentYomKippur ? (
               <div className="mt-4 flex flex-col items-center justify-center gap-2.5 sm:flex-row">
                 <a
-                  href={starterSelections.length > 0 ? "#starter-selections-heading" : "#this-weeks-collection"}
+                  href="#weekly-email-signup"
                   className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary px-6 py-2.5 font-serif text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
                 >
-                  Choose a ready Dvar Torah
+                  Get notification when published
                 </a>
                 <Link
                   to="/archive"
                   className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-accent/70 px-6 py-2.5 font-serif text-sm font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
                 >
-                  Browse the archive
+                  Browse previous collections
                 </Link>
               </div>
             ) : (
@@ -681,7 +694,7 @@ function Index() {
         {starterSelections.length > 0 && !isCurrentYomKippur && (
           <section aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border border-accent/40 bg-card/50 px-4 py-5 sm:px-6">
             <h2 id="starter-selections-heading" className="font-serif text-xl font-bold text-primary sm:text-2xl">
-              New here? Start with one Dvar Torah
+              Start here — ready to read or print
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {`Choose one selection from our ${displayedLabel} collection. Open the PDF to read or print; no account is needed.`}
@@ -793,7 +806,7 @@ function Index() {
           </section>
         )}
 
-        {!isFallback && <ThursdayProgressMeter
+        {!isFallback && currentPublishedCount > 0 && progressForCurrentReading && <ThursdayProgressMeter
           // Upload progress belongs to the active reading, not the following week's parsha.
           heading={currentLabel}
           badgeLabel="This Shabbos"
@@ -867,7 +880,7 @@ function Index() {
                       <span aria-hidden="true">★</span> Featured
                     </p>
                     <h2 className="mt-1 font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
-                      This Week's Recommended Picks
+                      {isFallback ? `${displayedLabel} Recommended Picks` : "This Week's Recommended Picks"}
                     </h2>
                     <div className="mt-5 grid gap-4 grid-cols-1 sm:grid-cols-2">
                       {featuredPicks.map(({ key, label, resource }) => {
