@@ -14,7 +14,8 @@
 
 ## QA
 
-- `bunx vitest run --config vitest.trusted-vpn.config.ts`: focused token/auth/CSRF/runtime/cookie/gate regressions.
+- `bunx vitest run --config vitest.trusted-vpn.config.ts`: 22 passed; token/auth/CSRF/runtime/cookie/gate regressions.
+- `bunx vitest run src/lib/vpn-block.test.ts src/lib/secondary-vpn.test.ts src/lib/geo-block-rules.test.ts src/lib/geo-block-page.test.ts src/lib/geo-block-memo.test.ts src/lib/maintenance-traffic.test.ts`: 39 passed.
 - `bunx vitest run --config vitest.signup.config.ts`: 24 passed.
 - `bunx vitest run --config vitest.weekly.config.ts`: 33 passed.
 - `bun test src/lib/hebcal.test.ts src/lib/sukkah-sign-downloads.test.ts`: 12 passed.
