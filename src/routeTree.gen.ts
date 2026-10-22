@@ -30,6 +30,7 @@ import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SRouteImport } from './routes/s'
 import { Route as ShortVortsRouteImport } from './routes/short-vorts'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as StRouteImport } from './routes/st'
 import { Route as WaRouteImport } from './routes/wa'
 import { Route as ApiEnhancedFingerprintRouteImport } from './routes/api/enhanced-fingerprint'
 import { Route as ApiEventsRouteImport } from './routes/api/events'
@@ -157,6 +158,11 @@ const ShortVortsRoute = ShortVortsRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StRoute = StRouteImport.update({
+  id: '/st',
+  path: '/st',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WaRoute = WaRouteImport.update({
@@ -297,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/s': typeof SRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/st': typeof StRoute
   '/wa': typeof WaRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
@@ -343,6 +350,7 @@ export interface FileRoutesByTo {
   '/s': typeof SRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/st': typeof StRoute
   '/wa': typeof WaRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
@@ -390,6 +398,7 @@ export interface FileRoutesById {
   '/s': typeof SRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/st': typeof StRoute
   '/wa': typeof WaRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
@@ -438,6 +447,7 @@ export interface FileRouteTypes {
     | '/s'
     | '/short-vorts'
     | '/sitemap.xml'
+    | '/st'
     | '/wa'
     | '/api/enhanced-fingerprint'
     | '/api/events'
@@ -484,6 +494,7 @@ export interface FileRouteTypes {
     | '/s'
     | '/short-vorts'
     | '/sitemap.xml'
+    | '/st'
     | '/wa'
     | '/api/enhanced-fingerprint'
     | '/api/events'
@@ -530,6 +541,7 @@ export interface FileRouteTypes {
     | '/s'
     | '/short-vorts'
     | '/sitemap.xml'
+    | '/st'
     | '/wa'
     | '/api/enhanced-fingerprint'
     | '/api/events'
@@ -577,6 +589,7 @@ export interface RootRouteChildren {
   SRoute: typeof SRoute
   ShortVortsRoute: typeof ShortVortsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  StRoute: typeof StRoute
   WaRoute: typeof WaRoute
   ApiEnhancedFingerprintRoute: typeof ApiEnhancedFingerprintRoute
   ApiEventsRoute: typeof ApiEventsRoute
@@ -746,6 +759,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/st': {
+      id: '/st'
+      path: '/st'
+      fullPath: '/st'
+      preLoaderRoute: typeof StRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/wa': {
@@ -959,6 +979,7 @@ const rootRouteChildren: RootRouteChildren = {
   SRoute: SRoute,
   ShortVortsRoute: ShortVortsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  StRoute: StRoute,
   WaRoute: WaRoute,
   ApiEnhancedFingerprintRoute: ApiEnhancedFingerprintRoute,
   ApiEventsRoute: ApiEventsRoute,
