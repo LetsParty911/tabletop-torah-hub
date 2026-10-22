@@ -7,6 +7,7 @@ import type {
 } from "@/integrations/supabase/reading-pages.functions";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
+import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -260,7 +261,7 @@ export function ReadingCollectionView({
                     )}
                     {description && (
                       <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                        {description}
+                        {leadWithPublicationTitle(resource.title, description)}
                       </p>
                     )}
                   </div>
