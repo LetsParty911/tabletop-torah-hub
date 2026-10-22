@@ -5,6 +5,7 @@ import { adminGetVpnMode, adminSetVpnMode } from "@/lib/vpn-mode.functions";
 import VpnSecurityPanel, { type VpnSecurity } from "./VpnSecurityPanel";
 import { formatUaSummary, parseUserAgent } from "@/lib/ua-parse";
 import { EVIDENCE_LABEL, type ReaderEvidence } from "@/lib/vpn-reader-evidence";
+import TrustedVpnBrowserControl from "./TrustedVpnBrowserControl";
 
 type VpnRow = {
  id:string;created_at:string;ip_address:string|null;country:string|null;region:string|null;city:string|null;
@@ -54,6 +55,7 @@ export default function VpnTrackingSection({accessToken}:{accessToken:string|nul
   <div className="flex flex-wrap justify-between items-center gap-3"><div><h2 className="font-serif text-2xl font-bold text-primary">VPN Connection Tracking</h2><p className="text-sm text-muted-foreground">Audits public document navigations. Provider errors are unknown, never clean. Admin and static/API routes are excluded. CSV exports the visible page only.</p></div>
    <div className="flex gap-2"><button className="rounded border px-3 py-2 text-sm" onClick={()=>setRevision(x=>x+1)}>Refresh</button><button className="rounded border px-3 py-2 text-sm" disabled={!rows.length} onClick={exportCsv}>CSV (this page)</button></div>
   </div>
+  <TrustedVpnBrowserControl accessToken={accessToken} />
   <div className="rounded-lg border p-4 space-y-3"><h3 className="font-semibold">VPN protection mode: {mode??"Loading…"}</h3><p className="text-sm text-muted-foreground">Off disables checks; Monitor records classifications but allows visits; Block denies confidently identified VPN/proxy/Tor traffic. Changes may take up to 10 seconds to reach every server.</p>
    <div className="flex flex-wrap gap-2">{(["off","monitor","block"] as const).map(x=><button key={x} type="button" disabled={modeBusy||!mode||mode===x} onClick={()=>changeMode(x)} className="rounded border px-3 py-2 text-sm disabled:opacity-50">{x==="off"?"Off":x==="monitor"?"Monitor":"Block"}</button>)}</div>{modeError&&<p className="text-sm text-destructive">{modeError}</p>}</div>
   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">{cards.map(([label,val])=><div className="rounded-md border p-3" key={String(label)}><div className="text-xs text-muted-foreground">{label}</div><div className="font-semibold text-xl">{num(val as number)}</div></div>)}</div>

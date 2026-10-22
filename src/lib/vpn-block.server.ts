@@ -5,6 +5,7 @@ import { waitUntil } from "@vercel/functions";
 import { getRequestTelemetry, isAutomatedAgent } from "./request-telemetry.server";
 import { shouldCheck } from "./geo-block.server";
 import { isInternalRequest } from "./internal-marker.server";
+import { isTrustedVpnBrowser } from "./trusted-vpn-browser.server";
 
 export type VpnBlockMode = "off" | "monitor" | "block";
 export type PrivacySignal = "VPN" | "Proxy" | "Tor";
@@ -334,6 +335,9 @@ export async function auditPrivacy(
 
 /** Audit each eligible document navigation, including clean and failed classifications. */
 export async function checkVpnBlock(request: Request): Promise<Response | null> {
+  // This capability skips ONLY this gate, not downstream geo/IP or site/PDF gates.
+  // Check before mode/audit/provider work; failures never grant an exemption.
+  if (await isTrustedVpnBrowser(request)) return null;
   const mode = await getVpnBlockMode();
   if (mode === "off") return null;
   let denied = false;

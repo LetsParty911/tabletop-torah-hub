@@ -1,3 +1,8 @@
+## Trusted VPN browser (preview only)
+- [ ] Add independent signed cookie, authenticated enable/revoke and admin controls
+- [ ] Test token, authentication, VPN-only exemption and unchanged city/IP gates
+- [ ] Verify authenticated desktop/mobile controls and compilation; do not publish
+
 ## Lech Lecha weekly-state repair (no publish)
 - [x] Restore pending countdown and current-week heading with previous PDFs preserved
 - [x] Prevent stale override renewal and require conscious off-calendar override
