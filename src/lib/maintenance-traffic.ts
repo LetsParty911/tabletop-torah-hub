@@ -8,7 +8,7 @@ export type DeviceBucket = "mobile" | "tablet" | "desktop" | "unknown";
 
 const STATIC_EXT = /\.(?:js|mjs|css|map|png|jpe?g|gif|webp|avif|svg|ico|txt|xml|json|webmanifest|pdf|woff2?|ttf|otf|mp4|mp3|zip)$/i;
 const EXCLUDED_PREFIXES = ["/admin", "/api", "/assets", "/_serverFn", "/_build", "/@", "/node_modules", "/src/", "/view/", "/og.image"];
-const REDIRECT_PATHS = new Set(["/r", "/s", "/j", "/wa", "/offline"]);
+const REDIRECT_PATHS = new Set(["/r", "/s", "/j", "/wa", "/st", "/l", "/offline"]);
 
 /** Request-level eligibility (before the response is known). */
 export function isTrackableNavigation(request: Request): boolean {

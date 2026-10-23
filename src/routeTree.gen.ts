@@ -17,6 +17,7 @@ import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DivreiTorahParshaRouteImport } from './routes/divrei-torah-parsha'
 import { Route as JRouteImport } from './routes/j'
+import { Route as LRouteImport } from './routes/l'
 import { Route as MissionRouteImport } from './routes/mission'
 import { Route as MyTableRouteImport } from './routes/my-table'
 import { Route as NoahideResourcesRouteImport } from './routes/noahide-resources'
@@ -93,6 +94,11 @@ const DivreiTorahParshaRoute = DivreiTorahParshaRouteImport.update({
 const JRoute = JRouteImport.update({
   id: '/j',
   path: '/j',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LRoute = LRouteImport.update({
+  id: '/l',
+  path: '/l',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MissionRoute = MissionRouteImport.update({
@@ -434,6 +440,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/divrei-torah-parsha'
     | '/j'
+    | '/l'
     | '/mission'
     | '/my-table'
     | '/noahide-resources'
@@ -481,6 +488,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/divrei-torah-parsha'
     | '/j'
+    | '/l'
     | '/mission'
     | '/my-table'
     | '/noahide-resources'
@@ -528,6 +536,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/divrei-torah-parsha'
     | '/j'
+    | '/l'
     | '/mission'
     | '/my-table'
     | '/noahide-resources'
@@ -576,6 +585,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   DivreiTorahParshaRoute: typeof DivreiTorahParshaRoute
   JRoute: typeof JRoute
+  LRoute: typeof LRoute
   MissionRoute: typeof MissionRoute
   MyTableRoute: typeof MyTableRoute
   NoahideResourcesRoute: typeof NoahideResourcesRoute
@@ -668,6 +678,13 @@ declare module '@tanstack/react-router' {
       path: '/j'
       fullPath: '/j'
       preLoaderRoute: typeof JRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/l': {
+      id: '/l'
+      path: '/l'
+      fullPath: '/l'
+      preLoaderRoute: typeof LRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mission': {
@@ -966,6 +983,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   DivreiTorahParshaRoute: DivreiTorahParshaRoute,
   JRoute: JRoute,
+  LRoute: LRoute,
   MissionRoute: MissionRoute,
   MyTableRoute: MyTableRoute,
   NoahideResourcesRoute: NoahideResourcesRoute,
