@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { checkRateLimit } from "@/lib/rate-limit.server";
-import { isShulPosterSource } from "@/lib/source-group";
+import { sourceGroupForIngest } from "@/lib/source-group";
 import {
   getRequestTelemetry,
   isAdminPath,
@@ -165,12 +165,12 @@ export const Route = createFileRoute("/api/events")({
               utm_campaign: str("utm_campaign", 200),
               utm_content: str("utm_content", 200),
               is_internal: isInternal,
-              source_group: isShulPosterSource({
+              source_group: sourceGroupForIngest({
+                referrer_host: str("referrer_host", 200),
                 utm_source: str("utm_source", 120),
                 utm_medium: str("utm_medium", 120),
-              })
-                ? "Shul Poster"
-                : (str("source_group", 40) ?? "Direct"),
+                utm_campaign: str("utm_campaign", 200),
+              }, str("source_group", 40)),
               country: geo.country,
               region: geo.region,
               city: geo.city,
