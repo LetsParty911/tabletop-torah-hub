@@ -29,7 +29,19 @@ describe("Fulton, KY city rule", () => {
     expect(matchBlockedCity({ city: "Fulton", region: "New York", country: "US" })).toBeNull();
     expect(matchBlockedCity({ city: "Fulton", region: "Kentucky", country: "CA" })).toBeNull();
   });
-  it("keeps the existing nine rules", () => {
-    expect(BLOCKED_CITIES.length).toBe(10);
+  it("keeps the existing ten rules", () => {
+    expect(BLOCKED_CITIES.length).toBe(11);
+  });
+});
+
+describe("Langhorne, PA city rule", () => {
+  it("blocks exact Langhorne, Pennsylvania, US, including abbreviation", () => {
+    expect(matchBlockedCity({ city: "Langhorne", region: "Pennsylvania", country: "US" })?.label).toBe("Langhorne, PA");
+    expect(matchBlockedCity({ city: "langhorne", region: "PA", country: "us" })?.label).toBe("Langhorne, PA");
+  });
+  it("does not block neighboring towns or other states", () => {
+    expect(matchBlockedCity({ city: "Newtown", region: "PA", country: "US" })).toBeNull();
+    expect(matchBlockedCity({ city: "Langhorne", region: "NJ", country: "US" })).toBeNull();
+    expect(matchBlockedCity({ city: "Langhorne", region: "PA", country: "CA" })).toBeNull();
   });
 });

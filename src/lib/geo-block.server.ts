@@ -43,6 +43,7 @@ export const BLOCKED_CITIES: BlockedCity[] = [
   { city: "blackburn", regions: ["england"], country: "gb", label: "Blackburn, England" },
   { city: "the dalles", regions: ["oregon", "or"], country: "us", label: "The Dalles, OR" },
   { city: "fulton", regions: ["kentucky", "ky"], country: "us", label: "Fulton, KY" },
+  { city: "langhorne", regions: ["pennsylvania", "pa"], country: "us", label: "Langhorne, PA" },
 ];
 
 /** Exact single-IP denials (owner-authorized). Checked before any geo lookup. */

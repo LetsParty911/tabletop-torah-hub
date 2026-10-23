@@ -56,7 +56,7 @@ describe("blocking policy unchanged", () => {
     expect(matchBlockedCity(ashburn)?.label).toBe("Ashburn, VA");
     expect(matchBlockedCity({ city: null, region: null, country: "US" })).toBeNull();
     expect(matchBlockedCity({ city: "Ashburn", region: "Ohio", country: "US" })).toBeNull();
-    expect(BLOCKED_CITIES).toHaveLength(10);
+    expect(BLOCKED_CITIES).toHaveLength(11);
   });
   it("edge-country fast path skips countries without blocked cities", () => {
     const set = blockedCountries(BLOCKED_CITIES);
