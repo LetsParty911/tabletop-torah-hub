@@ -119,6 +119,7 @@ const CHANNEL_PRESETS: Array<{ label: string; source: string; medium: string }> 
   { label: "WhatsApp", source: "whatsapp", medium: "message" },
   { label: "Email", source: "email", medium: "newsletter" },
   { label: "Sender.net", source: "sender", medium: "email" },
+  { label: "OurKehilla", source: "ourkehilla", medium: "email" },
   { label: "Facebook", source: "facebook", medium: "social" },
   { label: "Instagram", source: "instagram", medium: "social" },
   { label: "QR / Print", source: "print", medium: "qr" },
