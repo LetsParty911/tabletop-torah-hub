@@ -614,6 +614,40 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
     countedPdfOpens: [...pdfAccess.countedActions].reverse().map((a) => detailFor(a.row, a.kind === "open_pdf_click" ? "Clicked Open PDF (attempted open)" : a.kind === "download_served" ? "Historical PDF redirect issued (not confirmed download)" : "Historical download request/action")),
   };
 
+  // Exact tagged email channel comparison. Existing historical 'newsletter'
+  // tags remain generic: they do not identify which mailing provider delivered
+  // the message. Session and visitor counts are deduplicated per channel.
+  const emailBuckets = new Map<string, {
+    visitors: Set<string>; sessions: Set<string>; pdfOpens: number; downloadActions: number;
+  }>();
+  const namedEmail = (row: EventRow): string | null => {
+    const source = row.utm_source?.trim().toLowerCase();
+    const medium = row.utm_medium?.trim().toLowerCase();
+    if (medium !== "email" && medium !== "newsletter") return null;
+    if (source === "ourkehilla") return "OurKehilla Email";
+    if (source === "sender") return "Sender.net Email";
+    return "Email (other or unknown)";
+  };
+  for (const row of keptRows) {
+    const label = namedEmail(row);
+    if (!label) continue;
+    const bucket = emailBuckets.get(label) ?? {
+      visitors: new Set<string>(), sessions: new Set<string>(), pdfOpens: 0, downloadActions: 0,
+    };
+    if (row.visitor_id?.trim()) bucket.visitors.add(row.visitor_id.trim());
+    if (row.session_id?.trim()) bucket.sessions.add(row.session_id.trim());
+    if (row.event_name === "pdf_open") bucket.pdfOpens += 1;
+    if (row.event_name === "download") bucket.downloadActions += 1;
+    emailBuckets.set(label, bucket);
+  }
+  const emailChannels = [...emailBuckets.entries()].map(([label, bucket]) => ({
+    label,
+    visitors: bucket.visitors.size,
+    sessions: bucket.sessions.size,
+    pdfOpens: bucket.pdfOpens,
+    downloadActions: bucket.downloadActions,
+  })).sort((a, b) => b.sessions - a.sessions || a.label.localeCompare(b.label));
+
   // Attribution of counted PDF opens by grouped source and named campaign.
   const pdfBySource = new Map<string, number>();
   const pdfByCampaign = new Map<string, number>();
@@ -685,6 +719,7 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
     sessions: sessionDetails,
     recentActivity: keptRows.slice(-20).reverse().map((row) => detailFor(row)),
     sources: canonical.sources,
+    emailChannels,
     devices: canonical.devices,
     publications,
     utmSources: [...utmSources.entries()].map(([label, set]) => ({ label, sessions: set.size })).sort((a, b) => b.sessions - a.sessions),
