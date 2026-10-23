@@ -16,8 +16,8 @@ export function isShulPosterSource(input: Pick<SourceGroupInput, "utm_source" | 
 
 export function normalizeSourceGroup(input: SourceGroupInput): string {
   const host = (input.referrer_host ?? "").toLowerCase();
-  const src = (input.utm_source ?? "").toLowerCase();
-  const med = (input.utm_medium ?? "").toLowerCase();
+  const src = (input.utm_source ?? "").trim().toLowerCase();
+  const med = (input.utm_medium ?? "").trim().toLowerCase();
   const hasCampaign = Boolean(input.utm_source || input.utm_medium || input.utm_campaign);
   const any = [host, src, med].join(" ");
 
@@ -26,6 +26,7 @@ export function normalizeSourceGroup(input: SourceGroupInput): string {
   // Require an email medium; the same organizations may use other channels.
   if (src === "ourkehilla" && (med === "email" || med === "newsletter")) return "OurKehilla Email";
   if (src === "sender" && (med === "email" || med === "newsletter")) return "Sender.net Email";
+  if ((src === "sender" || src === "ourkehilla") && med && med !== "email" && med !== "newsletter") return "Other Campaign";
   if (/whatsapp|wa\.me|chat\.whatsapp/.test(any)) return "WhatsApp";
   if (/(^|\W)(email|newsletter|mail)(\W|$)/.test(" " + med + " ") || /email|newsletter|sender|resend|mailchimp/.test(src))
     return "Email";
