@@ -88,4 +88,17 @@ describe("trusted cookie exempts only the existing VPN gate", () => {
     for (const path of ["/admin", "/api/trusted-vpn-browser"]) expect(await checkVpnBlock(request("", path))).toBeNull();
     expect(fetch).not.toHaveBeenCalled();
   });
+
+  it("does not consult an unavailable mode database for already-exempt requests", async () => {
+    mocks.mode.mockImplementation(() => { throw new Error("settings backend unavailable"); });
+    for (const path of ["/admin", "/admin/settings", "/admin-analytics", "/api/trusted-vpn-browser", "/_serverFn/test", "/assets/app.js"]) {
+      expect(await checkVpnBlock(request("", path))).toBeNull();
+    }
+    const post = new Request("https://torahforthetable.com/", { method: "POST", headers: { accept: "text/html" } });
+    expect(await checkVpnBlock(post)).toBeNull();
+    expect(mocks.mode).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+    expect(mocks.insert).not.toHaveBeenCalled();
+    expect(mocks.notification).not.toHaveBeenCalled();
+  });
 });
