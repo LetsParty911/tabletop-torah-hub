@@ -99,11 +99,36 @@ export function shouldDenyPrivacy(lookup: PrivacyLookup | null): boolean {
     lookup.confidence !== null && lookup.confidence >= 90);
 }
 
+/**
+ * Permit a narrowly identified iCloud Private Relay exit, not generic Apple
+ * networks or any browser-reported claim. Proxycheck supplies this operator
+ * classification; all other independent proxy/Tor detections still block.
+ *
+ * This only exempts the VPN gate. Country, city, exact-IP, and site/PDF gates
+ * execute independently and retain their existing behavior.
+ * Apple's published guidance explicitly permits relying on geo-IP providers'
+ * Private Relay operator classification.
+ */
+export function isIcloudPrivateRelayException(
+  proxycheck: PrivacyLookup | null,
+  secondary: { proxy: boolean; tor: boolean } | null,
+  strictListSignal: PrivacySignal | null,
+): boolean {
+  if (!proxycheck || proxycheck.confidence === null || proxycheck.confidence < 90) return false;
+  const operator = (proxycheck.operator ?? "").trim().toLowerCase();
+  if (!["icloud", "icloud private relay", "apple icloud private relay"].includes(operator)) return false;
+  if (proxycheck.signals.length !== 1 || proxycheck.signals[0] !== "VPN") return false;
+  return secondary?.proxy !== true && secondary?.tor !== true &&
+    strictListSignal !== "Proxy" && strictListSignal !== "Tor";
+}
+
 /** Single policy function for the response and its audit record. */
 export function shouldBlockPrivacy(
   lookup: PrivacyLookup | null, additionalBlock: boolean, brooklynVpnException: boolean,
+  icloudRelayException = false,
 ): boolean {
-  return !brooklynVpnException && (shouldDenyPrivacy(lookup) || additionalBlock);
+  return !brooklynVpnException && !icloudRelayException &&
+    (shouldDenyPrivacy(lookup) || additionalBlock);
 }
 
 const RESTRICTED_PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Connection restricted — TorahForTheTable.com</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f7f2e7;color:#1b2a4a;font-family:Georgia,serif;text-align:center;padding:24px}main{max-width:580px}h1{font-size:1.1rem;letter-spacing:.08em;color:#b08a3e;margin:0 0 16px}h2{font-size:2rem;margin:0 0 12px}p{font:1rem/1.65 system-ui,sans-serif;color:#4a5570}</style></head><body><main><h1>TorahForTheTable.com</h1><h2>Connection Restricted</h2><p>Access is unavailable through your current network connection. Please turn off your VPN or proxy, then revisit our website using your regular internet connection.</p><p>If you are not using a VPN or proxy, try another connection. We apologize for the inconvenience.</p></main></body></html>`;
@@ -120,7 +145,7 @@ export function privacyRestrictedResponse(): Response {
   });
 }
 
-type CheckResult = { value: PrivacyLookup | null; source: "provider" | "cache" | "inflight"; status: string; elapsed: number; additionalBlock?: boolean; brooklynVpnException?: boolean };
+type CheckResult = { value: PrivacyLookup | null; source: "provider" | "cache" | "inflight"; status: string; elapsed: number; additionalBlock?: boolean; brooklynVpnException?: boolean; icloudRelayException?: boolean };
 type Cached = { value: PrivacyLookup | null; status: string; expires: number };
 const lookupCache = new Map<string, Cached>();
 const inFlight = new Map<string, Promise<CheckResult>>();
@@ -297,7 +322,7 @@ export async function auditPrivacy(
   const t = getRequestTelemetry(request);
   const url = new URL(request.url);
   const lookup = result?.value ?? null;
-  const denied = mode === "block" && shouldBlockPrivacy(lookup, Boolean(result?.additionalBlock), Boolean(result?.brooklynVpnException));
+  const denied = mode === "block" && shouldBlockPrivacy(lookup, Boolean(result?.additionalBlock), Boolean(result?.brooklynVpnException), Boolean(result?.icloudRelayException));
   const verdict = skippedReason ? "skipped" : result?.additionalBlock ? "detected" : !lookup ? "unknown" : lookup.signals.length ? "detected" : "clean";
   const hostname = (() => { try { return new URL(request.headers.get("referer") ?? "").hostname.slice(0, 150) || null; } catch { return null; } })();
   const row: Record<string, unknown> = {
@@ -410,6 +435,7 @@ export async function checkVpnBlock(request: Request): Promise<Response | null> 
       primary.value?.signals.includes("Tor") ||
       secondary.value?.tor === true || listSignal === "Tor"
     );
+    const icloudRelayException = isIcloudPrivateRelayException(primary.value, secondary.value, listSignal);
     let brooklynVpnException =
       isTemporaryBrooklynVpnException(primary.value, vpnDetected, torDetected) ||
       isTemporaryBrooklynVpnException(t, vpnDetected, torDetected);
@@ -439,12 +465,13 @@ export async function checkVpnBlock(request: Request): Promise<Response | null> 
 
     const result: CheckResult = {
       value: selected, source: primary.source,
-      status: providerStatus + (brooklynVpnException ? ";policy:temporary_brooklyn_vpn_exception" : ""),
+      status: providerStatus + (brooklynVpnException ? ";policy:temporary_brooklyn_vpn_exception" : "") +
+        (icloudRelayException ? ";policy:icloud_private_relay_exception" : ""),
       elapsed: Math.max(primary.elapsed,secondary.elapsed),
-      additionalBlock, brooklynVpnException,
+      additionalBlock, brooklynVpnException, icloudRelayException,
     };
     // Decide BEFORE any logging: the response and audit use the same policy.
-    denied = shouldBlockPrivacy(primary.value, additionalBlock, brooklynVpnException);
+    denied = shouldBlockPrivacy(primary.value, additionalBlock, brooklynVpnException, icloudRelayException);
     const attribution = buildAttribution({
       proxycheck: primary.value, proxycheckStatus: primary.status, proxycheckQualifies: shouldDenyPrivacy(primary.value),
       ipapi: secondary.value, ipapiStatus: secondary.status, listSignal, listStatus: listed.status,

@@ -401,6 +401,20 @@ function Index() {
   const [contentTypeFilter, setContentTypeFilter] = useState<string>("All");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [showAllResources, setShowAllResources] = useState(false);
+  const [scrollToChooser, setScrollToChooser] = useState(false);
+  // The chooser is only mounted when the full collection is visible.
+  // Run after React commits that state change, otherwise the CTA targets
+  // a nonexistent element and appears to do nothing.
+  useEffect(() => {
+    if (!scrollToChooser || !showAllResources) return;
+    const target = document.getElementById("shabbos-table-chooser") ??
+      document.getElementById("this-weeks-collection");
+    if (target) {
+      const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+      target.scrollIntoView?.({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+    }
+    setScrollToChooser(false);
+  }, [scrollToChooser, showAllResources]);
   // When a guided-chooser category is active the page enters focused mode and
   // the full weekly collection (plus its filter controls) is hidden.
   const [activeChooser, setActiveChooser] = useState<string | null>(null);
@@ -674,7 +688,8 @@ function Index() {
                   href="#this-weeks-collection"
                   onClick={(e) => {
                     e.preventDefault();
-                    document.getElementById("shabbos-table-chooser")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    setScrollToChooser(true);
+                    setShowAllResources(true);
                   }}
                   className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
                 >

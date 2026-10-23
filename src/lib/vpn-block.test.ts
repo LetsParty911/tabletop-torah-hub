@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseProxycheckResponse, shouldDenyPrivacy, shouldBlockPrivacy, isTemporaryBrooklynVpnException, privacyRestrictedResponse, classifyProxycheckDenial, chooseProxycheckKey, getWorkerProxycheckBinding, readProxycheckKey, proxycheckKeyShape } from "./vpn-block.server";
+import { parseProxycheckResponse, shouldDenyPrivacy, shouldBlockPrivacy, isIcloudPrivateRelayException, isTemporaryBrooklynVpnException, privacyRestrictedResponse, classifyProxycheckDenial, chooseProxycheckKey, getWorkerProxycheckBinding, readProxycheckKey, proxycheckKeyShape } from "./vpn-block.server";
 
 const reply = (ip: string, detections: object, overrides: object = {}) => ({
   status: "ok", [ip]: {
@@ -119,5 +119,40 @@ describe("temporary Brooklyn VPN exemption", () => {
     expect(shouldBlockPrivacy({ ...vpn, signals: ["Tor"] }, false, false)).toBe(true);
     expect(shouldBlockPrivacy({ ...vpn, signals: ["Proxy"] }, false, false)).toBe(true);
     expect(shouldBlockPrivacy(null, false, false)).toBe(false);
+  });
+});
+
+describe("iCloud Private Relay false-positive exception", () => {
+  const privateRelay = {
+    signals: ["VPN"] as ("VPN" | "Proxy" | "Tor")[],
+    confidence: 100,
+    operator: "iCloud",
+    city: "Richmond",
+    region: "Virginia",
+    country: "US",
+  };
+  const cleanSecondary = { proxy: false, tor: false };
+
+  it("permits confirmed iCloud relay even when the strict VPN list also flags it", () => {
+    expect(isIcloudPrivateRelayException(privateRelay, cleanSecondary, "VPN")).toBe(true);
+    expect(shouldBlockPrivacy(privateRelay, true, false, true)).toBe(false);
+    expect(isIcloudPrivateRelayException({ ...privateRelay, operator: "iCloud Private Relay" }, cleanSecondary, "VPN")).toBe(true);
+  });
+
+  it("does not exempt other VPN providers or spoofable partial names", () => {
+    for (const operator of [null, "Apple", "Apple VPN", "NordVPN", "Fake iCloud VPN", "iCloud Proxy"]) {
+      expect(isIcloudPrivateRelayException({ ...privateRelay, operator }, cleanSecondary, "VPN")).toBe(false);
+    }
+    expect(isIcloudPrivateRelayException({ ...privateRelay, confidence: 85 }, cleanSecondary, "VPN")).toBe(false);
+    expect(isIcloudPrivateRelayException(null, cleanSecondary, "VPN")).toBe(false);
+  });
+
+  it("still blocks proxy and Tor detections from any independent source", () => {
+    expect(isIcloudPrivateRelayException({ ...privateRelay, signals: ["VPN", "Tor"] }, cleanSecondary, "VPN")).toBe(false);
+    expect(isIcloudPrivateRelayException({ ...privateRelay, signals: ["VPN", "Proxy"] }, cleanSecondary, "VPN")).toBe(false);
+    expect(isIcloudPrivateRelayException(privateRelay, { proxy: true, tor: false }, "VPN")).toBe(false);
+    expect(isIcloudPrivateRelayException(privateRelay, { proxy: false, tor: true }, "VPN")).toBe(false);
+    expect(isIcloudPrivateRelayException(privateRelay, cleanSecondary, "Tor")).toBe(false);
+    expect(shouldBlockPrivacy(privateRelay, true, false, false)).toBe(true);
   });
 });

@@ -151,6 +151,14 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.getAllByRole("link", { name: "Open PDF" }).length).toBe(4);
   });
 
+  it("reveals the hidden chooser when the homepage Help me choose link is clicked", () => {
+    setHomepage(false);
+    render(<Homepage />);
+    expect(screen.queryByTestId("table-chooser")).toBeNull();
+    fireEvent.click(screen.getByRole("link", { name: "Help me choose a Dvar Torah" }));
+    expect(screen.getByTestId("table-chooser")).toBeTruthy();
+  });
+
   it("stops labeling a live Lech-Lecha collection as an upcoming fallback", () => {
     setHomepage(false);
     render(<Homepage />);
