@@ -60,6 +60,30 @@ for (const placement of placements) {
       },
     );
 
+    it("rejects malformed email locally before any signup request or analytics", async () => {
+      render(<WeeklyEmailSignup {...placement} />);
+      await userEvent.type(screen.getByRole("textbox"), "invalid-address");
+      await userEvent.click(screen.getByRole("checkbox"));
+      await userEvent.click(screen.getByRole("button", { name: "Subscribe" }));
+      expect(screen.getByRole("alert").textContent).toContain("valid email address");
+      expect(document.activeElement).toBe(screen.getByRole("textbox"));
+      expect(subscribeEmail).not.toHaveBeenCalled();
+      expect(trackEvent).not.toHaveBeenCalled();
+    });
+
+    it("trims submitted addresses and does not promise an unverified welcome email", async () => {
+      vi.mocked(subscribeEmail).mockResolvedValue({ ok: true } as never);
+      render(<WeeklyEmailSignup {...placement} />);
+      await userEvent.type(screen.getByRole("textbox"), " reader@example.test ");
+      await userEvent.click(screen.getByRole("checkbox"));
+      await userEvent.click(screen.getByRole("button", { name: "Subscribe" }));
+      await waitFor(() => expect(screen.getByRole("status")).toBeTruthy());
+      expect(subscribeEmail).toHaveBeenCalledWith({
+        data: { email: "reader@example.test", consent: true, source: placement.sourceId },
+      });
+      expect(screen.getByRole("status").textContent).not.toContain("welcome email");
+    });
+
     it("shows a recoverable error for a rejected request without success analytics", async () => {
       const log = vi.spyOn(console, "error").mockImplementation(() => {});
       vi.mocked(subscribeEmail).mockRejectedValueOnce(new Error("Network unavailable"));
