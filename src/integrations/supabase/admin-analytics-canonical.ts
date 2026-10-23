@@ -2045,3 +2045,47 @@ export const adminAnalyticsHealth = createServerFn({ method: "POST" })
 
     return { windowStart: start, windowEnd: end, events: total, checks };
   });
+
+/** Owner-only Thursday 6pm ET acquisition cohorts; source of truth is service-role-only view. */
+export const adminNewcomerCohorts = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string }) => z.object({ accessToken: z.string().min(10) }).parse(input))
+  .handler(async ({ data }) => {
+    await requireAnalyticsAdmin(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const since = new Date(Date.now() - 25 * 86400000).toISOString();
+    const rows: Array<Record<string, any>> = [];
+    for (let offset = 0; offset < 12000; offset += 1000) {
+      const { data: page, error } = await admin.from("analytics_newcomer_cohorts_v1")
+        .select("*").gte("first_seen_at", since).order("first_seen_at", { ascending: false })
+        .range(offset, offset + 999);
+      if (error) throw new Error(error.message);
+      rows.push(...(page ?? []));
+      if (!page || page.length < 1000) break;
+    }
+    const weekKeys = [...new Set(rows.map(r => r.week_start_at as string))].sort().reverse().slice(0, 3);
+    const weeks = weekKeys.map(key => {
+      const items = rows.filter(r => r.week_start_at === key);
+      const qualified = items.filter(r => r.qualified_in_first_week);
+      const counter = (items: Array<Record<string, any>>, fn: (r: Record<string, any>) => string) => {
+        const counts = new Map<string, number>();
+        for (const r of items) {
+          const v = fn(r);
+          counts.set(v, (counts.get(v) ?? 0) + 1);
+        }
+        return [...counts].map(([label, count]) => ({ label, count })).sort((a,b) => b.count-a.count);
+      };
+      return {
+        weekStart: key, weekEnd: items[0]?.week_end_at as string | null,
+        rawNew: items.length, qualifiedNew: qualified.length, excludedOrUncertain: items.length-qualified.length,
+        returningLater: qualified.filter(r => Number(r.qualified_later_week_sessions) > 0).length,
+        multipleFirstWeekSessions: qualified.filter(r => Number(r.qualified_first_week_sessions) > 1).length,
+        withPdfClick: qualified.filter(r => Number(r.open_pdf_clicks) > 0).length,
+        withDownloadRequest: qualified.filter(r => Number(r.download_requests) > 0).length,
+        withPublicationClick: qualified.filter(r => Number(r.publication_clicks) > 0).length,
+        sources: counter(qualified, r => r.first_utm_source || r.first_source_group || "Direct"),
+        devices: counter(qualified, r => r.first_device || "Unknown"),
+        cities: counter(qualified, r => [r.first_city, r.first_region].filter(Boolean).join(", ") || "Unknown"),
+      };
+    });
+    return { weeks, generatedAt: new Date().toISOString(), note: "Browser IDs, not confirmed people. An ID is new only at its first recorded non-internal event. Qualified means at least one qualified session in its first publication week. Source is first observed touch. Thursday 6pm ET week boundary. Raw and excluded numbers remain visible for audit. Later-week returns are incomplete for the latest week." };
+  });
