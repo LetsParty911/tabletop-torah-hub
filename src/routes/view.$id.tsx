@@ -173,6 +173,7 @@ function ViewPdf() {
   const [mounted, setMounted] = useState(false);
   const [thumbFailed, setThumbFailed] = useState(false);
   const pdfOpenTrackedRef = useRef<string | null>(null);
+  const pdfFocusTrackedRef = useRef<string | null>(null);
   useEffect(() => setMounted(true), []);
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -355,6 +356,16 @@ function ViewPdf() {
                 onLoad={() => {
                   setIframeLoaded(true);
                   trackCanonicalPdfOpen();
+                }}
+                onFocus={() => {
+                  if (pdfFocusTrackedRef.current === pdf.id) return;
+                  pdfFocusTrackedRef.current = pdf.id;
+                  trackFp("pdf_preview_focus", {
+                    publication_id: pdf.id,
+                    publication_title: pdf.title,
+                    publication_series: publication?.name ?? pdf.publication ?? null,
+                    parsha: pdf.parsha_key ?? null,
+                  });
                 }}
               />
             </>
