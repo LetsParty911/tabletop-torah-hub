@@ -28,6 +28,7 @@ for (const placement of placements) {
       expect(document.activeElement).toBe(screen.getByRole("checkbox"));
       expect(subscribeEmail).not.toHaveBeenCalled();
       expect(trackEvent).not.toHaveBeenCalled();
+      expect(trackFp).not.toHaveBeenCalled();
     });
 
     it.each([false, true])(
@@ -45,6 +46,11 @@ for (const placement of placements) {
         expect(trackEvent).toHaveBeenCalledWith("newsletter_signup_submit", {
           form_name: "weekly_torah_notifications",
         });
+        expect(trackFp).toHaveBeenCalledWith("signup_attempt", { metadata: {
+          source_id: placement.sourceId,
+          form_id: "weekly_torah_notifications",
+        } });
+        expect(trackFp).not.toHaveBeenCalledWith("signup_failure", expect.anything());
         expect(trackEventOnce).toHaveBeenCalledWith(
           "newsletter_signup",
           { form_name: "weekly_torah_notifications", already_subscribed: alreadySubscribed },
@@ -72,7 +78,16 @@ for (const placement of placements) {
       );
       expect((screen.getByRole("button") as HTMLButtonElement).disabled).toBe(false);
       expect(trackEventOnce).not.toHaveBeenCalled();
-      expect(trackFp).not.toHaveBeenCalled();
+      expect(trackFp).toHaveBeenCalledWith("signup_attempt", { metadata: {
+        source_id: placement.sourceId,
+        form_id: "weekly_torah_notifications",
+      } });
+      expect(trackFp).toHaveBeenCalledWith("signup_failure", { metadata: {
+        source_id: placement.sourceId,
+        form_id: "weekly_torah_notifications",
+        failure_type: "network_or_runtime",
+      } });
+      expect(trackFp).not.toHaveBeenCalledWith("signup", expect.anything());
       log.mockRestore();
     });
 
@@ -93,11 +108,23 @@ for (const placement of placements) {
       resolve({ ok: false, error: "Please try again" });
       await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("Please try again"));
       expect((screen.getByRole("button") as HTMLButtonElement).disabled).toBe(false);
-      expect(trackFp).not.toHaveBeenCalled();
+      expect(trackFp).toHaveBeenCalledWith("signup_attempt", { metadata: {
+        source_id: placement.sourceId,
+        form_id: "weekly_torah_notifications",
+      } });
+      expect(trackFp).toHaveBeenCalledWith("signup_failure", { metadata: {
+        source_id: placement.sourceId,
+        form_id: "weekly_torah_notifications",
+        failure_type: "service_response",
+      } });
+      expect(trackFp).not.toHaveBeenCalledWith("signup", expect.anything());
       expect(trackEventOnce).not.toHaveBeenCalled();
       vi.mocked(subscribeEmail).mockResolvedValueOnce({ ok: true } as never);
       await userEvent.click(screen.getByRole("button"));
       await waitFor(() => expect(screen.getByRole("status")).toBeTruthy());
+      expect(subscribeEmail).toHaveBeenCalledTimes(2);
+      expect(trackFp).toHaveBeenCalledWith("signup", expect.anything());
+      expect(trackEventOnce).toHaveBeenCalledTimes(1);
     });
   });
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import CountedPdfOpens from "@/components/admin/CountedPdfOpens";
+import SevenWeekAudience from "@/components/admin/SevenWeekAudience";
 import OpenPdfClicksPanel, { scrollToOpenPdfPublications } from "@/components/admin/OpenPdfClicksPanel";
 import {
   adminRetentionCohorts,
@@ -67,6 +68,8 @@ export default function OwnerSummary({
   const confidence = report.confidence;
   const [cohorts, setCohorts] = useState<CohortData | null>(null);
   const [cohortError, setCohortError] = useState<string | null>(null);
+  // Historical report is expensive; never fetch the full event stream on a routine dashboard load.
+  const [showSevenWeekAudience, setShowSevenWeekAudience] = useState(false);
 
   const loadCohorts = useCallback(async () => {
     try {
@@ -386,6 +389,18 @@ export default function OwnerSummary({
           </div>
         )}
       </Block>
+
+      <section className="space-y-3">
+        <button
+          type="button"
+          aria-expanded={showSevenWeekAudience}
+          onClick={() => setShowSevenWeekAudience((shown) => !shown)}
+          className="rounded-md border border-border px-4 py-2 text-left font-serif text-lg font-semibold text-primary hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {showSevenWeekAudience ? "Hide" : "Load"} seven-week audience report
+        </button>
+        {showSevenWeekAudience && <SevenWeekAudience accessToken={accessToken} />}
+      </section>
 
       <Block title="Weekly Reader Loyalty">
         {!cohorts && !cohortError && <p className="text-sm text-muted-foreground">Loading weekly reader activity…</p>}
