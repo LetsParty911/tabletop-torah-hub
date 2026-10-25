@@ -47,6 +47,7 @@ export function WeeklyEmailSignup({
     }
 
     setSubmitting(true);
+    trackFp("signup_attempt", { metadata: { source_id: sourceId, form_id: "weekly_torah_notifications" } });
 
     trackEvent("newsletter_signup_submit", {
       form_name: "weekly_torah_notifications",
@@ -72,11 +73,13 @@ export function WeeklyEmailSignup({
           },
         });
       } else {
+        trackFp("signup_failure", { metadata: { source_id: sourceId, form_id: "weekly_torah_notifications", failure_type: "service_response" } });
         setSignupMsg(
           r.error ?? "We couldn't complete your subscription right now. Please try again.",
         );
       }
     } catch (error) {
+      trackFp("signup_failure", { metadata: { source_id: sourceId, form_id: "weekly_torah_notifications", failure_type: "network_or_runtime" } });
       console.error("[newsletter-signup] error", error);
       setSignupMsg("We couldn't complete your subscription right now. Please try again.");
     } finally {
