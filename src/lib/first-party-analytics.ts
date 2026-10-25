@@ -24,6 +24,8 @@ export type FpEventName =
   | "print_click"
   | "share_click"
   | "signup"
+  | "signup_attempt"
+  | "signup_failure"
   | "heartbeat"
   | "human_signal"
   | "scroll_depth"
