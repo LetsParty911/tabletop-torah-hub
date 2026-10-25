@@ -32,6 +32,8 @@ const ALLOWED_EVENTS = new Set([
   "print_click",
   "share_click",
   "signup",
+  "signup_attempt",
+  "signup_failure",
   "heartbeat",
   "human_signal",
   "scroll_depth",
