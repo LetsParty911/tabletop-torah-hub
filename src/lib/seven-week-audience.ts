@@ -65,7 +65,15 @@ export function sevenWeekAudience(rows: AudienceEvent[], now: Date = new Date())
   const bySeries = new Map<string, Map<string, Set<string>>>();
   const eligibleRows = rows
     .filter((row) => row.visitor_id?.trim() && row.session_id?.trim())
-    .sort((a, b) => a.occurred_at.localeCompare(b.occurred_at));
+    .sort((a, b) => Date.parse(a.occurred_at) - Date.parse(b.occurred_at));
+  // A session can cross Sunday midnight. Attribute its visits to its first
+  // observed week, never count one session as a cross-week return.
+  const sessionFirstWeek = new Map<string, string>();
+  for (const row of eligibleRows) {
+    const sessionId = row.session_id!.trim();
+    const week = sundayWeekKey(row.occurred_at);
+    if (week && !sessionFirstWeek.has(sessionId)) sessionFirstWeek.set(sessionId, week);
+  }
 
   for (const row of eligibleRows) {
     const visitor = row.visitor_id!.trim(), session = row.session_id!.trim();
@@ -76,8 +84,11 @@ export function sevenWeekAudience(rows: AudienceEvent[], now: Date = new Date())
     if (!qualified.humanIds.has(session)) continue;
     if (!sourceFirst.has(visitor)) sourceFirst.set(visitor, attribution(row));
 
-    const week = sundayWeekKey(row.occurred_at);
-    if (!week || week < firstWeek || week >= currentWeek) continue;
+    const actionWeek = sundayWeekKey(row.occurred_at);
+    // The report covers only completed weeks; discard activity after Saturday.
+    if (!actionWeek || actionWeek < firstWeek || actionWeek >= currentWeek) continue;
+    const week = sessionFirstWeek.get(session) ?? actionWeek;
+    if (week < firstWeek || week >= currentWeek) continue;
     const group = byWeek.get(week);
     if (!group) continue;
     let entry = group.get(visitor);
