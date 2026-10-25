@@ -3,6 +3,11 @@ name: Verify reader loyalty and PDF diagnostics
 on:
   pull_request:
     paths:
+      - "src/lib/seven-week-audience*"
+      - "src/components/admin/SevenWeekAudience.tsx"
+      - "src/components/WeeklyEmailSignup.tsx"
+      - "src/routes/api/events.ts"
+      - "src/lib/first-party-analytics.ts"
       - "src/lib/weekly-reader-loyalty*"
       - "src/lib/visitor-return-evidence*"
       - "src/lib/publication-pdf-activity*"
@@ -32,6 +37,6 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - name: Run tracking regressions
-        run: bun test src/lib/weekly-reader-loyalty.test.ts src/lib/wa-redirect.test.ts src/lib/retention-cohorts.test.ts src/lib/human-sessions.test.ts src/lib/admin-mini-summary.test.ts src/integrations/supabase/admin-analytics-canonical.test.ts src/lib/visitor-return-evidence.test.ts src/lib/publication-pdf-activity.test.ts src/lib/publication-funnel.test.ts src/lib/pdf-route-diagnostics.test.ts
+        run: bun test src/lib/seven-week-audience.test.ts src/lib/weekly-reader-loyalty.test.ts src/lib/wa-redirect.test.ts src/lib/retention-cohorts.test.ts src/lib/human-sessions.test.ts src/lib/admin-mini-summary.test.ts src/integrations/supabase/admin-analytics-canonical.test.ts src/lib/visitor-return-evidence.test.ts src/lib/publication-pdf-activity.test.ts src/lib/publication-funnel.test.ts src/lib/pdf-route-diagnostics.test.ts
       - name: Build application
         run: bun run build
