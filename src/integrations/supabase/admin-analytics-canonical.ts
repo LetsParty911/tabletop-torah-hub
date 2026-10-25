@@ -19,6 +19,7 @@ import {
 } from "@/lib/retention-cohorts";
 import { aggregatePublications } from "@/lib/publication-funnel";
 import { weeklyReaderLoyalty } from "@/lib/weekly-reader-loyalty";
+import { sevenWeekAudience } from "@/lib/seven-week-audience";
 import { isOpenPdfClick, openPdfClicksForReport, shapeOpenPdfClickDetails } from "@/lib/open-pdf-clicks";
 import { describeRecentStoryAction } from "@/lib/recent-story";
 import { pdfEventLabel } from "@/lib/pdf-reporting";
@@ -1845,6 +1846,28 @@ export const adminRetentionCohorts = createServerFn({ method: "POST" })
       loyalty: computeWeeklyLoyalty(timelines.filter((timeline) => !timeline.hasPriorHistory)),
       weeklyReaders: weeklyReaderLoyalty(rows),
     };
+  });
+
+
+/** Private seven completed Sunday-Saturday weeks, with complete pages (no row cap). */
+export const adminSevenWeekAudience = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string }) =>
+    z.object({ accessToken: z.string().min(10) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireAnalyticsAdmin(data.accessToken);
+    const { sundayWeekKey } = await import("@/lib/seven-week-audience");
+    const currentSunday = sundayWeekKey(new Date().toISOString());
+    const windowStart = new Date(Date.parse(currentSunday + "T00:00:00Z") - 49 * 86400000)
+      .toISOString().slice(0, 10);
+    // Begin at midnight ET, including the daylight saving transition.
+    const start = new Date(windowStart + "T12:00:00Z");
+    const offset = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York",
+      hour: "2-digit", hourCycle: "h23", }).format(start);
+    const midnightHour = Number(offset);
+    const startIso = new Date(start.getTime() - midnightHour * 3600000).toISOString();
+    const rows = await fetchEventsBetween(startIso, new Date().toISOString());
+    return sevenWeekAudience(rows);
   });
 
 // ---------------------------------------------------------------------------
