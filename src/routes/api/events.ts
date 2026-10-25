@@ -28,6 +28,7 @@ const ALLOWED_EVENTS = new Set([
   "filter_change",
   "search",
   "pdf_open",
+  "pdf_preview_focus",
   "download",
   "print_click",
   "share_click",
