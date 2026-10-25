@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import CountedPdfOpens from "@/components/admin/CountedPdfOpens";
+import SevenWeekAudience from "@/components/admin/SevenWeekAudience";
 import OpenPdfClicksPanel, { scrollToOpenPdfPublications } from "@/components/admin/OpenPdfClicksPanel";
 import {
   adminRetentionCohorts,
@@ -386,6 +387,8 @@ export default function OwnerSummary({
           </div>
         )}
       </Block>
+
+      <SevenWeekAudience accessToken={accessToken} />
 
       <Block title="Weekly Reader Loyalty">
         {!cohorts && !cohortError && <p className="text-sm text-muted-foreground">Loading weekly reader activity…</p>}
