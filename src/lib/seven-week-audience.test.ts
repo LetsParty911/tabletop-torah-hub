@@ -37,6 +37,34 @@ describe("Seven completed Sunday-Saturday weeks", () => {
     expect(report.seriesLoyalty[0]?.multiWeekReaders).toBe(1);
   });
 
+  it("attributes a Saturday-night session to one week, not two", () => {
+    const report = sevenWeekAudience([
+      ev("boundary-reader", "same-session", "2026-10-11T03:58:00Z"),
+      ev("boundary-reader", "same-session", "2026-10-11T04:02:00Z", "download"),
+      ev("boundary-reader", "another-session", "2026-10-18T13:00:00Z"),
+    ], new Date("2026-10-25T16:00:00Z"));
+    const before = report.weeks.find(w => w.week === "2026-10-04")!;
+    const after = report.weeks.find(w => w.week === "2026-10-11")!;
+    const next = report.weeks.find(w => w.week === "2026-10-18")!;
+    expect(before.visitors).toBe(1);
+    expect(after.visitors).toBe(0);
+    expect(after.priorWeekRepeat).toBe(0);
+    expect(next.visitors).toBe(1);
+    expect(report.inTwoPlusWeeks).toBe(1);
+    expect(report.consecutiveWeekVisitors).toBe(0);
+  });
+
+  it("includes actual B&H corporate visitors when they make human-qualified actions", () => {
+    const report = sevenWeekAudience([
+      ev("bh-person", "bh-session-1", "2026-10-11T13:00:00Z", "publication_click",
+        { as_organization: "B&H Foto & Electronics" }),
+      ev("bh-person", "bh-session-2", "2026-10-18T13:00:00Z", "publication_click",
+        { as_organization: "B&H Foto & Electronics" }),
+    ], new Date("2026-10-25T16:00:00Z"));
+    expect(report.inTwoPlusWeeks).toBe(1);
+    expect(report.consecutiveWeekVisitors).toBe(1);
+  });
+
   it("does not treat automatic viewer loads as PDF clicks or deliberate engagement", () => {
     const report = sevenWeekAudience([
       ev("a", "s1", "2026-10-15T13:00:00Z", "pdf_open", { metadata: {} }),
