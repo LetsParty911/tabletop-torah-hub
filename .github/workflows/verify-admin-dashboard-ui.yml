@@ -6,6 +6,8 @@ on:
       - "src/routes/admin.tsx"
       - "src/components/admin/AdminAnalyticsReport.tsx"
       - "src/components/admin/AnalyticsControlCenter.tsx"
+      - "src/components/admin/VisitorInsights.tsx"
+      - "src/lib/visitor-insights*"
       - "src/components/admin/WeeklyOperationsReport.tsx"
       - "src/components/admin/CountedPdfOpens.tsx"
       - ".github/workflows/verify-admin-dashboard-ui.yml"
@@ -25,6 +27,6 @@ jobs:
       - name: Type check
         run: bunx tsc --noEmit
       - name: Relevant analytics tests
-        run: bun test src/lib/admin-analytics-display.test.ts src/lib/admin-mini-summary.test.ts src/lib/pdf-reporting.test.ts src/lib/publication-pdf-activity.test.ts
+        run: bun test src/lib/visitor-insights.test.ts src/lib/admin-analytics-display.test.ts src/lib/admin-mini-summary.test.ts src/lib/pdf-reporting.test.ts src/lib/publication-pdf-activity.test.ts
       - name: Build
         run: bun run build
