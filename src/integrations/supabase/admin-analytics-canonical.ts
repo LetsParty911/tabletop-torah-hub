@@ -25,6 +25,7 @@ import { describeRecentStoryAction } from "@/lib/recent-story";
 import { pdfEventLabel } from "@/lib/pdf-reporting";
 import { pdfAccessActions, summarizePdfAccess, pdfOpenRate, type PdfAccessSummary } from "@/lib/pdf-access";
 import { buildOverview } from "@/lib/overview-analytics";
+import { summarizeVisitorInsights } from "@/lib/visitor-insights";
 import { summarizeGeoInsights } from "@/lib/geo-insights";
 import { summarizeHomepageSharing } from "@/lib/homepage-sharing";
 import {
@@ -80,6 +81,7 @@ export type EventRow = {
   as_organization?: string | null;
   metadata?: Record<string, unknown> | null;
   user_agent?: string | null;
+  accept_language?: string | null;
 };
 
 type WindowDef = { parsha: string; start: string; end: string };
@@ -142,7 +144,7 @@ const BASE_COLUMNS =
 // Newer columns. Some environments may not have every one of them yet, so the
 // first query probes once and the answer is cached for the worker instance.
 const EXTRA_COLUMNS =
-  "utm_content, is_internal, geo_source, geo_provider, geo_reliability, network_type, as_organization";
+  "utm_content, is_internal, geo_source, geo_provider, geo_reliability, network_type, as_organization, accept_language";
 
 let cachedColumns: string | null = null;
 
@@ -637,6 +639,7 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
 
   return {
     overview,
+    visitorInsights: summarizeVisitorInsights(keptRows, countedRows, returning),
     geoInsights: summarizeGeoInsights(keptRows),
     noahideResources: summarizeNoahideResources(rows, priorVisitors, classified),
     homepageSharing: summarizeHomepageSharing(keptRows, countedRows),
