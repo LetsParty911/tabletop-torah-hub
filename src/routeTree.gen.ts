@@ -296,6 +296,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
   '/j': typeof JRoute
+  '/l': typeof LRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
   '/noahide-resources': typeof NoahideResourcesRoute
@@ -343,6 +344,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
   '/j': typeof JRoute
+  '/l': typeof LRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
   '/noahide-resources': typeof NoahideResourcesRoute
@@ -391,6 +393,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
   '/j': typeof JRoute
+  '/l': typeof LRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
   '/noahide-resources': typeof NoahideResourcesRoute
