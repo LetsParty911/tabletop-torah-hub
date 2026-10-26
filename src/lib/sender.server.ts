@@ -23,30 +23,59 @@ function authHeaders(token: string): Record<string, string> {
   };
 }
 
-async function resolveGroupId(token: string): Promise<string | null> {
-  const configured = process.env['SENDER_GROUP_ID'];
-  if (configured && configured.trim()) return configured.trim();
-  if (cachedGroupId) return cachedGroupId;
+type SenderGroupLookup =
+  | { ok: true; id: string }
+  | { ok: false; reason: "no_group" | "api_error"; status?: number };
 
+async function resolveGroupId(token: string): Promise<SenderGroupLookup> {
+  const configured = process.env['SENDER_GROUP_ID'];
+  if (configured && configured.trim()) return { ok: true, id: configured.trim() };
+  if (cachedGroupId) return { ok: true, id: cachedGroupId };
+
+  // Sender's groups endpoint is paginated. Do not incorrectly treat an
+  // authentication/API failure as evidence that the mailing list is missing.
   try {
-    const res = await fetch(`${API_BASE}/groups`, { headers: authHeaders(token) });
-    if (!res.ok) {
-      console.error("[sender] groups lookup failed", res.status);
-      return null;
+    for (let page = 1; page <= 20; page++) {
+      const res = await fetch(API_BASE + "/groups?page=" + page + "&limit=100", {
+        headers: authHeaders(token),
+      });
+      if (!res.ok) {
+        console.error("[sender] groups lookup failed", res.status);
+        return { ok: false, reason: "api_error", status: res.status };
+      }
+
+      const body = (await res.json()) as {
+        data?: Array<{ id?: string; title?: string }>;
+        meta?: { last_page?: number };
+      };
+      if (!Array.isArray(body.data)) {
+        console.error("[sender] malformed groups response");
+        return { ok: false, reason: "api_error" };
+      }
+      const match = body.data.find(
+        (g) => (g.title ?? "").trim().toLowerCase() === SENDER_GROUP_TITLE.toLowerCase(),
+      );
+      if (match?.id) {
+        cachedGroupId = match.id;
+        return { ok: true, id: cachedGroupId };
+      }
+
+      const lastPage = body.meta?.last_page;
+      if (!Number.isInteger(lastPage) || !lastPage || lastPage < 1) {
+        console.error("[sender] missing groups pagination metadata");
+        return { ok: false, reason: "api_error" };
+      }
+      if (page >= lastPage) {
+        console.error("[sender] group not found by title");
+        return { ok: false, reason: "no_group" };
+      }
     }
-    const body = (await res.json()) as { data?: Array<{ id?: string; title?: string }> };
-    const match = (body.data ?? []).find(
-      (g) => (g.title ?? "").trim().toLowerCase() === SENDER_GROUP_TITLE.toLowerCase(),
-    );
-    if (!match?.id) {
-      console.error("[sender] group not found by title");
-      return null;
-    }
-    cachedGroupId = match.id;
-    return cachedGroupId;
+
+    console.error("[sender] group lookup exceeded 20 pages; configure SENDER_GROUP_ID");
+    return { ok: false, reason: "api_error" };
   } catch (e) {
     console.error("[sender] groups lookup exception", e);
-    return null;
+    return { ok: false, reason: "api_error" };
   }
 }
 
@@ -58,8 +87,9 @@ export async function addSubscriberToSenderGroup(email: string): Promise<SenderS
     return { ok: false, reason: "not_configured" };
   }
 
-  const groupId = await resolveGroupId(token);
-  if (!groupId) return { ok: false, reason: "no_group" };
+  const lookup = await resolveGroupId(token);
+  if (!lookup.ok) return lookup;
+  const groupId = lookup.id;
 
   try {
     const res = await fetch(`${API_BASE}/subscribers`, {
@@ -73,8 +103,7 @@ export async function addSubscriberToSenderGroup(email: string): Promise<SenderS
     const text = (await res.text()).slice(0, 400);
     const looksDuplicate =
       res.status === 409 ||
-      res.status === 422 ||
-      /already|exist|taken|duplicate/i.test(text);
+      ((res.status === 400 || res.status === 422) && /already|exist|taken|duplicate/i.test(text));
 
     if (looksDuplicate) {
       // Subscriber exists — make sure they're in the group anyway.
@@ -88,7 +117,7 @@ export async function addSubscriberToSenderGroup(email: string): Promise<SenderS
       return { ok: false, reason: "api_error", status: addRes.status };
     }
 
-    console.error("[sender] create subscriber failed", res.status, text);
+    console.error("[sender] create subscriber failed", res.status);
     return { ok: false, reason: "api_error", status: res.status };
   } catch (e) {
     console.error("[sender] request exception", e);
