@@ -15,6 +15,9 @@ on:
       - "src/components/UpdateCountdown.tsx"
       - "src/components/UpdateCountdown.test.tsx"
       - "src/components/WeeklyEmailSignup.test.tsx"
+      - "src/lib/sender.server.ts"
+      - "src/lib/sender.server.test.ts"
+      - "vitest.signup.config.ts"
       - ".github/workflows/verify-website-improvements.yml"
   workflow_dispatch:
 
