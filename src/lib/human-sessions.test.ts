@@ -74,6 +74,30 @@ describe("classifySessions (headline filter)", () => {
 });
 
 describe("2026-10-16 passive cloud-infrastructure sessions", () => {
+  it("labels a passive Cloudflare privacy-page visit as suspected automation", () => {
+    const org = { as_organization: "Cloudflare, Inc.", device_type: "desktop", source_group: "Direct", path: "/privacy" };
+    const r = classifySessions([
+      ev("cf-privacy", "session_start", 0, org),
+      ev("cf-privacy", "page_view", 16, org),
+    ]);
+    expect(r.confidence.get("cf-privacy")).toBe("suspected_automation");
+    expect(r.counts.suspected_automation).toBe(1);
+    expect(r.humanIds.has("cf-privacy")).toBe(false);
+  });
+
+  it("does not qualify a passive Microsoft PDF-viewer load as deliberate readership", () => {
+    const org = { as_organization: "Microsoft Corporation", device_type: "desktop", source_group: "Direct", path: "/view/pdf" };
+    const r = classifySessions([
+      ev("ms-auto-viewer", "session_start", 0, org),
+      ev("ms-auto-viewer", "page_view", 16, org),
+      ev("ms-auto-viewer", "pdf_open", 700, org),
+      ev("ms-intent", "page_view", 1000, org),
+      ev("ms-intent", "publication_click", 1500, org),
+    ]);
+    expect(r.humanIds.has("ms-auto-viewer")).toBe(false);
+    expect(r.humanIds.has("ms-intent")).toBe(true);
+  });
+
   function passive(session: string, org: string, extra: Partial<SessionEventRow> = {}): SessionEventRow[] {
     const base = { as_organization: org, source_group: "Direct", device_type: "desktop", ...extra };
     return [
