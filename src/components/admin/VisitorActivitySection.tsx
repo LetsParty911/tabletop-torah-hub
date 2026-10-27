@@ -3,6 +3,7 @@ import { adminVisitorActivity } from "@/integrations/supabase/admin-analytics-ca
 import { formatUaSummary, parseUserAgent } from "@/lib/ua-parse";
 import { pdfEventLabel, pdfReasonLabel } from "@/lib/pdf-reporting";
 import { Button } from "@/components/ui/button";
+import { CONFIDENCE_LABELS } from "@/lib/traffic-confidence";
 
 type VisitorActivityData = Awaited<ReturnType<typeof adminVisitorActivity>>;
 type Visitor = VisitorActivityData["visitors"][number];
@@ -406,11 +407,9 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
                       {timeLabel(s.startedAt)} → {clockLabel(s.endedAt)}
                     </span>
                     <span className="text-muted-foreground">{s.pageviews} pageviews</span>
-                    {s.suspected && (
-                      <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-destructive">
-                        Suspected
-                      </span>
-                    )}
+                    <span className={`rounded px-1.5 py-0.5 ${s.suspected ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
+                      {CONFIDENCE_LABELS[s.confidence]}
+                    </span>
                   </div>
                   <ul className="mt-1.5 space-y-0.5 text-xs text-foreground/85">
                     {s.timeline.map((e, i) => (
