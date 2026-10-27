@@ -29,7 +29,6 @@ import { summarizeVisitorInsights } from "@/lib/visitor-insights";
 import { summarizeGeoInsights } from "@/lib/geo-insights";
 import { summarizeHomepageSharing } from "@/lib/homepage-sharing";
 import {
-  buildSessions,
   classifyAutomation,
   classifyKnownIncident,
   classifySessions,
@@ -1150,8 +1149,10 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
 
     const rows = await fetchVisitorEvents(start, end);
 
-    // Reuse the EXISTING canonical session/automation rules — no new bot filter.
-    const sessions = buildSessions(rows);
+    // Use the same reporting-only confidence classifier as the main dashboard.
+    // Raw visitors and events remain visible; no security gate is changed.
+    const classified = classifySessions(rows);
+    const sessions = classified.sessions;
     const sessionList = [...sessions.values()];
     const burstOrHeartbeat = classifyAutomation(sessionList);
     const knownIncident = classifyKnownIncident(sessionList);
@@ -1161,6 +1162,7 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       startedAt: string;
       endedAt: string;
       pageviews: number;
+      confidence: TrafficConfidence;
       suspected: boolean;
       suspicionReasons: string[];
       timeline: Array<{
@@ -1364,15 +1366,21 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       if (sid) {
         let detail = v.sessionDetails.get(sid);
         if (!detail) {
+          const confidence = classified.confidence.get(sid) ?? "uncertain";
           const reasons: string[] = [];
-          if (burstOrHeartbeat.has(sid)) reasons.push("Matches canonical high-confidence automation rule");
-          if (knownIncident.has(sid)) reasons.push("Inside known automated traffic incident window");
+          if (confidence === "suspected_automation") {
+            if (burstOrHeartbeat.has(sid)) reasons.push("Matches canonical high-confidence automation rule");
+            if (knownIncident.has(sid)) reasons.push("Inside known automated traffic incident window");
+            if (reasons.length === 0)
+              reasons.push("Brief passive visit from cloud/security infrastructure without a deliberate action");
+          }
           detail = {
             sessionId: sid,
             startedAt: at,
             endedAt: at,
             pageviews: 0,
-            suspected: reasons.length > 0,
+            confidence,
+            suspected: confidence === "suspected_automation",
             suspicionReasons: reasons,
             timeline: [],
           };
@@ -1571,7 +1579,7 @@ export const adminVisitorActivity = createServerFn({ method: "POST" })
       downloads: rows.filter((r) => r.event_name === "download").length,
       pdfAccessActionsRaw: rawPdfAccess.length,
       signups: rows.filter((r) => r.event_name === "signup").length,
-      suspectedSessions: new Set([...burstOrHeartbeat, ...knownIncident]).size,
+      suspectedSessions: classified.counts.suspected_automation,
       eventsScanned: rows.length,
     };
 
