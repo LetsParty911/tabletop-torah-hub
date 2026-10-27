@@ -15,7 +15,9 @@ async function groupClusterAlert(record: Record<string, unknown>): Promise<"ordi
     if (!response.ok) return "ordinary";
     const rows = await response.json();
     if (!Array.isArray(rows) || !isAutomationCluster(record, rows[0] ?? null)) return "ordinary";
-    const dayEt = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+    const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+    const part = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+    const dayEt = `${part("year")}-${part("month")}-${part("day")}`;
     const claim = await fetch(`${base}/rest/v1/rpc/claim_visitor_alert_cluster_day`, {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json" },
