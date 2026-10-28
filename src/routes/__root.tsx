@@ -347,7 +347,7 @@ function SiteNav() {
               className={linkCls}
               activeProps={{ className: `${linkCls} ${activeCls}` }}
             >
-              Resources
+              Our Originals
             </Link>
             <Link
               to="/about"
@@ -432,7 +432,7 @@ function SiteNav() {
                 className={mobileLinkCls}
                 activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
               >
-                Resources
+                Our Originals
               </Link>
               <Link
                 to="/about"
