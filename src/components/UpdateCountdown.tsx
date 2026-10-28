@@ -150,7 +150,7 @@ export function UpdateCountdown({
 
       {countdown ? (
         <div
-          className="mt-3 grid grid-cols-4 overflow-hidden rounded-xl border border-accent/30 bg-background/55 shadow-sm"
+          className="mx-auto mt-2 grid w-full max-w-[22rem] grid-cols-4 overflow-hidden rounded-lg border border-accent/30 bg-background/55 sm:max-w-[26rem]"
           role="timer"
           aria-label={`${countdown.days} days, ${countdown.hours} hours, ${countdown.minutes} minutes, and ${countdown.seconds} seconds until the next collection`}
         >
@@ -162,12 +162,12 @@ export function UpdateCountdown({
           ].map(([unit, value], index) => (
             <div
               key={unit}
-              className={`px-1.5 py-2.5 text-center sm:py-3 ${index > 0 ? "border-l border-accent/25" : ""}`}
+              className={`px-1 py-1.5 text-center sm:py-2 ${index > 0 ? "border-l border-accent/25" : ""}`}
             >
-              <span className="mx-auto block min-w-[2ch] font-serif text-[1.15rem] font-bold leading-none text-primary tabular-nums sm:text-[1.35rem]">
+              <span className="mx-auto block min-w-[2ch] font-serif text-base font-bold leading-none text-primary tabular-nums sm:text-lg">
                 {value}
               </span>
-              <span className="mt-1 block text-[0.58rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:text-[0.65rem]">
+              <span className="mt-0.5 block text-[0.55rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground sm:text-[0.6rem]">
                 {unit}
               </span>
             </div>
