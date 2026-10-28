@@ -73,6 +73,17 @@ describe("classifySessions (headline filter)", () => {
   });
 });
 
+
+  it("records a Noahide footer click without treating it as engaged Torah readership", () => {
+    const r = classifySessions([
+      ev("footer-only", "page_view", 0, { path: "/" }),
+      ev("footer-only", "noahide_footer_click", 1000, { path: "/" }),
+    ]);
+    expect(r.sessions.get("footer-only")?.meaningfulIntent).toBe(false);
+    expect(r.sessions.get("footer-only")?.engaged).toBe(false);
+    expect(r.humanIds.has("footer-only")).toBe(false);
+  });
+
 describe("2026-10-16 passive cloud-infrastructure sessions", () => {
   it("labels a passive Cloudflare privacy-page visit as suspected automation", () => {
     const org = { as_organization: "Cloudflare, Inc.", device_type: "desktop", source_group: "Direct", path: "/privacy" };
