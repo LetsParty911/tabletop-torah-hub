@@ -753,7 +753,7 @@ function Index() {
                       })}
                       className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary px-4 py-2.5 font-serif text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground"
                     >
-                      Read this Dvar Torah
+                      Open PDF
                     </Link>
                   </div>
                 </article>
