@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, ArrowLeft } from "lucide-react";
-import { listPublicationPages } from "@/integrations/supabase/publication-pages.functions";
+import { listPublicationPages, type PublicationPageSummary } from "@/integrations/supabase/publication-pages.functions";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
@@ -84,7 +84,7 @@ function PublicationsPage() {
   );
 }
 
-function renderPublicationCards(publications: ReturnType<typeof Route.useLoaderData>["publications"]) {
+function renderPublicationCards(publications: PublicationPageSummary[]) {
   return publications.map((publication) => {
             const original = tfttOriginalSeriesById(publication.id);
             const meta = [
