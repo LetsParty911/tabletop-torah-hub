@@ -71,8 +71,6 @@ describe("classifySessions (headline filter)", () => {
     expect(result.confidence.get("internal")).toBe("internal_test");
     expect(result.humanIds.size).toBe(3); // reader, deliberate open, and non-infrastructure signal-only
   });
-});
-
 
   it("records a Noahide footer click without treating it as engaged Torah readership", () => {
     const r = classifySessions([
