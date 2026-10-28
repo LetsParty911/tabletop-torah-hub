@@ -61,10 +61,11 @@ function pageLevelSource(): {
   utm_medium: string | null;
   utm_campaign: string | null;
 } {
+  const firstView = !firstViewTracked;
   const params = new URLSearchParams(window.location.search);
   let referrer: string | null = null;
   let referrerHost: string | null = null;
-  if (!firstViewTracked && document.referrer) {
+  if (firstView && document.referrer) {
     try {
       const host = new URL(document.referrer).hostname;
       if (host && host !== window.location.hostname) {
@@ -79,9 +80,13 @@ function pageLevelSource(): {
   return {
     referrer,
     referrer_host: referrerHost,
-    utm_source: params.get("utm_source"),
-    utm_medium: params.get("utm_medium"),
-    utm_campaign: params.get("utm_campaign"),
+    // Legacy page_views is a per-page audit feed. Campaign UTM parameters
+    // describe entry attribution, not subsequent SPA navigation. Keep them
+    // only on the first recorded document view; canonical analytics separately
+    // retains the session's first-touch campaign on session_start.
+    utm_source: firstView ? params.get("utm_source") : null,
+    utm_medium: firstView ? params.get("utm_medium") : null,
+    utm_campaign: firstView ? params.get("utm_campaign") : null,
   };
 }
 
