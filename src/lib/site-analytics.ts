@@ -61,10 +61,11 @@ function pageLevelSource(): {
   utm_medium: string | null;
   utm_campaign: string | null;
 } {
+  const firstView = !firstViewTracked;
   const params = new URLSearchParams(window.location.search);
   let referrer: string | null = null;
   let referrerHost: string | null = null;
-  if (!firstViewTracked && document.referrer) {
+  if (firstView && document.referrer) {
     try {
       const host = new URL(document.referrer).hostname;
       if (host && host !== window.location.hostname) {
