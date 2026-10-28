@@ -81,6 +81,7 @@ describe("classifySessions (headline filter)", () => {
     expect(r.sessions.get("footer-only")?.engaged).toBe(false);
     expect(r.humanIds.has("footer-only")).toBe(false);
   });
+});
 
 describe("2026-10-16 passive cloud-infrastructure sessions", () => {
   it("labels a passive Cloudflare privacy-page visit as suspected automation", () => {
