@@ -28,7 +28,6 @@ import {
   isPastReading,
 } from "@/lib/hebcal";
 import { formatReadingLabel } from "@/lib/parshiyos";
-import { isYomTovReading, readingSlug } from "@/lib/reading-page";
 import {
   listHomepageWeek,
   getParshaOverride,
@@ -293,15 +292,6 @@ function Index() {
     .replace(/^Parshas\s+/i, "")
     .trim()
     .toLowerCase();
-  const isYomTovCollection = [
-    "rosh hashanah",
-    "yom kippur",
-    "sukkos",
-    "shemini atzeres",
-    "simchas torah",
-    "pesach",
-    "shavuos",
-  ].includes(normalizedCollectionKey);
   const isCurrentYomKippur = normalizedCollectionKey === "yom kippur";
   const isSukkosSeason = ["sukkos", "shemini atzeres", "simchas torah"].includes(normalizedCollectionKey);
   const sukkosSeasonTitle = "Divrei Torah for Sukkos, Shmini Atzeres & Simchas Torah";
@@ -855,7 +845,7 @@ function Index() {
               {isCurrentYomKippur
                 ? "Yom Kippur Divrei Torah and preparation"
                 : isFallback
-                  ? `${displayedLabel} — Browse All ${resources.length} Selections`
+                  ? `Divrei Torah for ${displayedLabel}`
                   : "This Week's Collection"}
             </h2>
             {!isCurrentYomKippur && (
@@ -872,16 +862,20 @@ function Index() {
                 </p>
               </div>
             )}
-            {displayedParshaKey && !isYomTovCollection && !isYomTovReading(displayedParshaKey) && (
-              <p className="mt-2 text-center text-sm text-muted-foreground">
-                <Link
-                  to="/parsha/$slug"
-                  params={{ slug: readingSlug(displayedParshaKey) }}
-                  className="text-accent underline decoration-accent/60 underline-offset-4 hover:text-primary"
+
+            {resources.length > 0 && !showAllResources && (
+              <div className="mx-auto mt-5 max-w-2xl text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAllResources(true);
+                    setScrollToChooser(true);
+                  }}
+                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-primary bg-primary px-6 py-2.5 font-serif font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                 >
-                  Browse all {formatReadingLabel(displayedParshaKey)} Divrei Torah
-                </Link>
-              </p>
+                  Browse all {resources.length} selections
+                </button>
+              </div>
             )}
 
             {resources.length > 0 && !isCurrentYomKippur && (
@@ -978,20 +972,6 @@ function Index() {
               </>
             )}
 
-            {resources.length > 0 && !showAllResources && (
-              <div className="mt-6 text-center">
-                <p className="mb-3 text-sm text-muted-foreground">
-                  Want more choices? The complete {displayedLabel} collection has {resources.length} printable selections.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowAllResources(true)}
-                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-primary bg-primary px-6 py-2.5 font-serif font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                >
-                  Show all {resources.length} selections
-                </button>
-              </div>
-            )}
             {resources.length === 0 ? (
               <p className="mt-6 text-center text-muted-foreground max-w-md mx-auto">
                 New Divrei Torah for {currentLabel} are being prepared. Check back soon!
