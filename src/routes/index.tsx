@@ -707,7 +707,7 @@ function Index() {
         </section>
 
         {starterSelections.length > 0 && !isCurrentYomKippur && (
-          <section aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border border-accent/40 bg-card/50 px-4 py-5 sm:px-6">
+          <section aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border-2 border-accent/50 bg-card/50 px-4 py-5 sm:px-6">
             <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-xs">
               Home of the original Torah For The Table series
             </p>
