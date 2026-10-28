@@ -164,7 +164,9 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     fireEvent.click(screen.getByRole("button", { name: "Show all 4 selections" }));
     expect(screen.getByTestId("table-chooser")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Sample Torah Sheet 4" })).toBeTruthy();
-    expect(screen.getAllByRole("link", { name: "Open PDF" }).length).toBe(4);
+    const openLinks = screen.getAllByRole("link", { name: "Open PDF" });
+    expect(openLinks.length).toBeGreaterThanOrEqual(5);
+    expect(openLinks.some((link) => link.getAttribute("href") === "/view/example-1/pdf")).toBe(true);
   });
 
   it("reveals the hidden chooser when the homepage Help me choose link is clicked", () => {

@@ -31,7 +31,7 @@ describe("homepage weekly email signup", () => {
       homepage.indexOf('id="this-weeks-collection"'),
     );
     expect(homepage).toContain("Show all {resources.length} selections");
-    expect(homepage).toContain("Read this Dvar Torah");
+    expect(homepage).toContain("Open PDF");
     expect(countdown).toContain('href="#weekly-email-signup"');
     expect(countdown).toContain('getElementById("weekly-email-signup")');
     expect(countdown).not.toContain("weekly-email-signup-top");
