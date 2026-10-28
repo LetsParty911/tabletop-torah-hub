@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/SiteFooter";
 import { fitPageTitle } from "@/lib/page-title";
+import { TFTT_ORIGINAL_SERIES } from "@/lib/tftt-originals";
 
 export const Route = createFileRoute("/resources")({
   component: ResourcesPage,
   head: () => {
     const title = fitPageTitle("Torah For The Table Originals", " — In-House Torah Learning Resources");
     const description =
-      "Original educational material created in-house for the Shabbos table: Brief Insights, Stories for the Shabbos Table and Parsha Questions & Answers — all free of charge.";
+      "Three Torah For The Table original weekly series: Parsha Questions & Answers, Stories for the Shabbos Table, and In the Margins — free for the Shabbos table.";
     const url = "https://torahforthetable.com/resources";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -41,30 +42,31 @@ type SeriesCard = {
 
 const SERIES: SeriesCard[] = [
   {
-    title: "Brief Insights",
+    title: TFTT_ORIGINAL_SERIES[0].title,
     description:
-      "Brief, focused divrei Torah written in-house each week. Each vort is drawn from a classical source — Rashi, Midrash, or Chazal — and rewritten in a few sentences so it can be said over at the table without preparation.",
-    sample: "What to expect: one source, one clear idea, about a minute to say over.",
-    linkTo: "/short-vorts",
-    cta: "Read this week's Brief Insights →",
+      TFTT_ORIGINAL_SERIES[0].shortDescription,
+    sample: TFTT_ORIGINAL_SERIES[0].expectation,
+    linkTo: "/archive",
+    linkSearch: { q: "Parsha Questions & Answers" },
+    cta: "Browse Parsha Questions & Answers →",
   },
   {
-    title: "Stories for the Shabbos Table",
+    title: TFTT_ORIGINAL_SERIES[1].title,
     description:
-      "Source-based stories from Chazal and Tanach, retold for the table. Each story opens with the original Hebrew source and its translation, followed by a plain-English retelling and a “For the Table” discussion question that draws everyone into the conversation.",
-    sample: "What to expect: source, translation, story, and one discussion question.",
+      TFTT_ORIGINAL_SERIES[1].shortDescription,
+    sample: TFTT_ORIGINAL_SERIES[1].expectation,
     linkTo: "/archive",
     linkSearch: { q: "Stories for the Shabbos Table" },
     cta: "Browse Stories for the Shabbos Table →",
   },
   {
-    title: "Parsha Q&A",
+    title: TFTT_ORIGINAL_SERIES[2].title,
     description:
-      "Source-based questions and answers on the parsha each week, written for learning together at the table. Every set is accompanied by a Kids' Corner page with riddles and picture puzzles so younger children have their own way in.",
-    sample: "What to expect: table-ready questions, answers, plus a Kids' Corner.",
+      TFTT_ORIGINAL_SERIES[2].shortDescription,
+    sample: TFTT_ORIGINAL_SERIES[2].expectation,
     linkTo: "/archive",
-    linkSearch: { q: "Questions & Answers" },
-    cta: "Browse Parsha Q&A →",
+    linkSearch: { q: "In the Margins" },
+    cta: "Browse In the Margins →",
   },
 ];
 

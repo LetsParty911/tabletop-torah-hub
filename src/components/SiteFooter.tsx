@@ -34,7 +34,7 @@ export function SiteFooter() {
           Brief Insights
         </Link>
         <Link to="/resources" className={linkClass}>
-          Resources
+          Our Originals
         </Link>
         <Link to="/about" className={linkClass}>
           About

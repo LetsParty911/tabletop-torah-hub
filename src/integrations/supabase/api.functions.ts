@@ -273,15 +273,15 @@ async function selectAllPublished(admin: ReturnType<typeof getSupabaseAdmin>, co
 }
 
 async function fetchAllPublishedRows(admin: ReturnType<typeof getSupabaseAdmin>) {
-  const withSlot = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, description, audience, format_type, page_count, badge, featured_slot");
+  const withSlot = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, description, audience, format_type, page_count, badge, featured_slot, publication_id");
   if (!withSlot.error) return withSlot.data ?? [];
-  const withMeta = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, description, audience, format_type, page_count, badge");
+  const withMeta = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, description, audience, format_type, page_count, badge, publication_id");
   if (!withMeta.error) return withMeta.data ?? [];
-  const withPub = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication");
+  const withPub = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, publication_id");
   if (!withPub.error) return withPub.data ?? [];
-  const withCats = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags");
+  const withCats = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication_id");
   if (!withCats.error) return withCats.data ?? [];
-  const fb = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path");
+  const fb = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, publication_id");
   if (fb.error) {
     console.error("fetchAllPublishedRows error", fb.error);
     return [];
