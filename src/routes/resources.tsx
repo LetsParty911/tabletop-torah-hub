@@ -46,8 +46,8 @@ const SERIES: SeriesCard[] = [
     description:
       TFTT_ORIGINAL_SERIES[0].shortDescription,
     sample: TFTT_ORIGINAL_SERIES[0].expectation,
-    linkTo: "/publication/$slug",
-    linkSearch: undefined,
+    linkTo: "/archive",
+    linkSearch: { q: "Parsha Questions & Answers" },
     cta: "Browse Parsha Questions & Answers →",
   },
   {
