@@ -81,6 +81,7 @@ vi.mock("@/lib/analytics", () => ({ trackEvent: vi.fn() }));
 vi.mock("@/lib/first-party-analytics", () => ({ trackFp: vi.fn() }));
 
 import { Route } from "../routes/index";
+import { TFTT_ORIGINAL_SERIES } from "@/lib/tftt-originals";
 
 const example = (index: number, parshaKey: string) => ({
   id: `example-${index}`,
@@ -139,6 +140,21 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     const message = new URL(share.getAttribute("href") ?? "").searchParams.get("text") ?? "";
     expect(message).toContain("Parshas Noach");
     expect(message).not.toContain("Parshas Lech-Lecha");
+  });
+
+  it("shows full descriptions for the three original series without a line clamp", () => {
+    setHomepage(false);
+    state.loader.resources = TFTT_ORIGINAL_SERIES.map((series, index) => ({
+      ...example(index + 1, "Lech-Lecha"),
+      title: series.title,
+      publication_id: series.id,
+    }));
+    render(<Homepage />);
+    for (const series of TFTT_ORIGINAL_SERIES) {
+      const description = screen.getByText(series.shortDescription);
+      expect(description.className).not.toContain("line-clamp");
+    }
+    expect(screen.getByText("Our Original Weekly Series")).toBeTruthy();
   });
 
   it("reveals complete PDF selection and chooser only on explicit request", () => {
