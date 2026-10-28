@@ -71,9 +71,10 @@ export function DownloadToPrintButton({
     <div className={["flex w-full items-center gap-2", className].join(" ")}>
       <a
         href={openHref}
+        target="_blank"
         onClick={(event) => recordOpen(event, "open_pdf")}
-        rel="nofollow"
-        aria-label={"Open PDF: " + title}
+        rel="nofollow noopener noreferrer"
+        aria-label={"Open PDF in a new tab: " + title}
         className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
       >
         <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />

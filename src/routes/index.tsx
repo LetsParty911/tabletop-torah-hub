@@ -744,6 +744,8 @@ function Index() {
                   <div className="mt-auto pt-4">
                     <a
                       href={`/view/${encodeURIComponent(r.id)}/pdf`}
+                      target="_blank"
+                      rel="nofollow noopener noreferrer"
                       onClick={() => trackFp("recommendation_click", {
                         publication_id: r.id,
                         publication_title: r.title,
