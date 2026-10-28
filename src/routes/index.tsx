@@ -195,7 +195,7 @@ export const Route = createFileRoute("/")({
   head: () => {
     const title = "Torah For The Table | Free Printable Weekly Divrei Torah";
     const description =
-      "Free printable Divrei Torah for the weekly parsha and Yom Tov, curated for children, families, and adults. Choose, print, and bring Torah to your table.";
+      "Original weekly Parsha Questions & Answers, Stories for the Shabbos Table and In the Margins, alongside free printable Divrei Torah from respected Torah publishers.";
     const url = "https://torahforthetable.com/";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -583,10 +583,14 @@ function Index() {
   const TFTT_ORIGINAL_PUBLICATION_IDS = new Set([
     "0fa3db5f-c153-4311-a007-415c3c022143", // Parsha Questions & Answers
     "88719788-42fb-4e0b-a34b-3ea1868e750d", // Stories for the Shabbos Table
+    "86d9b1b2-cebf-42e5-b623-dfc1b5c5b411", // In the Margins
   ]);
   const isTfttOriginal = (r: Resource) =>
     r.publication === "tftt_original" ||
     Boolean(r.publication_id && TFTT_ORIGINAL_PUBLICATION_IDS.has(r.publication_id));
+  // The starter row includes other publishers if one of our originals is not yet available.
+  const starterShowsThreeOriginals = starterSelections.length === 3 &&
+    starterSelections.every(({ resource }) => isTfttOriginal(resource));
 
   const clearFilters = () => {
     setSelectedChooser(null);
@@ -711,16 +715,31 @@ function Index() {
 
         {starterSelections.length > 0 && !isCurrentYomKippur && (
           <section aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border border-accent/40 bg-card/50 px-4 py-5 sm:px-6">
-            <h2 id="starter-selections-heading" className="font-serif text-xl font-bold text-primary sm:text-2xl">
-              Start here — ready to read or print
+            <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-xs">
+              Home of the original Torah For The Table series
+            </p>
+            <h2 id="starter-selections-heading" className="mt-1 font-serif text-xl font-bold text-primary sm:text-2xl">
+              {starterShowsThreeOriginals ? "Our Original Weekly Series" : "Start here — ready to read or print"}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {`Choose one selection from our ${displayedLabel} collection. Open the PDF to read or print; no account is needed.`}
+              {starterShowsThreeOriginals
+                ? "Three original publications prepared for each parsha, available here to read or print, alongside our collection of Divrei Torah from respected Torah publishers."
+                : `Choose one selection from our ${displayedLabel} collection. Open the PDF to read or print; no account is needed.`}
             </p>
+            {starterShowsThreeOriginals && (
+              <p className="mt-2 text-xs font-medium text-primary">New editions every Thursday · Always free</p>
+            )}
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {starterSelections.map(({ key, label, resource: r }) => (
                 <article key={r.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{label}</p>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{label}</p>
+                    {isTfttOriginal(r) && (
+                      <span className="rounded-full border border-accent/60 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                        TFTT Original
+                      </span>
+                    )}
+                  </div>
                   <h3 className="mt-2 font-serif text-base font-bold leading-snug text-primary">
                     <Link to="/view/$id" params={{ id: r.id }} onClick={() => trackFp("recommendation_click", { publication_id: r.id, publication_title: r.title, parsha: r.parsha_key ?? displayedParshaKey, metadata: { chooser: key, placement: "homepage_start_here" } })} className="hover:text-accent hover:underline">
                       {displayTitle(r)}
@@ -845,6 +864,11 @@ function Index() {
                   ? `${displayedLabel} — Browse All ${resources.length} Selections`
                   : "This Week's Collection"}
             </h2>
+            {!isCurrentYomKippur && (
+              <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-muted-foreground">
+                Our original weekly publications and selections from respected Torah publishers, together in one free collection.
+              </p>
+            )}
             {!isFallback && resources.length > 0 && !postShabbos && (
               <div className="mx-auto mt-4 max-w-2xl rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-center">
                 <p className="font-serif text-sm leading-relaxed text-primary sm:text-base">
@@ -1251,7 +1275,8 @@ function Index() {
         <section aria-label="Stay connected" className="mx-auto max-w-2xl">
           <WeeklyEmailSignup
             sourceId="homepage"
-            heading="GET EACH NEW COLLECTION EVERY THURSDAY"
+            heading="Our Originals, Every Thursday"
+            description="One weekly email when our original series and the complete Shabbos collection are ready."
           />
         </section>
 

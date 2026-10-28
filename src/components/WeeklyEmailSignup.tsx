@@ -16,6 +16,8 @@ type WeeklyEmailSignupProps = {
   ctaLabel?: string;
   /** Optional heading for the full signup card. */
   heading?: string;
+  /** Optional supporting copy for the full signup card. */
+  description?: string;
 };
 
 export function WeeklyEmailSignup({
@@ -25,6 +27,7 @@ export function WeeklyEmailSignup({
   variant = "full",
   ctaLabel = "Get the new Shabbos collection every Thursday",
   heading = "Don't Miss a Week",
+  description = "One weekly email when the new collection is ready.",
 }: WeeklyEmailSignupProps) {
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
@@ -174,7 +177,7 @@ export function WeeklyEmailSignup({
           {heading}
         </h2>
         <p className="mt-2 font-serif italic font-medium text-sm sm:text-base text-primary max-w-md mx-auto">
-          One weekly email when the new collection is ready.
+          {description}
         </p>
         {done ? (
           <div
