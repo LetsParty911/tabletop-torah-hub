@@ -743,7 +743,7 @@ function Index() {
                   </p>
                   <div className="mt-auto pt-4">
                     <Link
-                      to="/view/$id"
+                      to="/view/$id/pdf"
                       params={{ id: r.id }}
                       onClick={() => trackFp("recommendation_click", {
                         publication_id: r.id,
