@@ -742,9 +742,8 @@ function Index() {
                     {tfttOriginalSeriesById(r.publication_id)?.shortDescription ?? leadWithPublicationTitle(displayTitle(r), chooseReason(r))}
                   </p>
                   <div className="mt-auto pt-4">
-                    <Link
-                      to="/view/$id/pdf"
-                      params={{ id: r.id }}
+                    <a
+                      href={`/view/${encodeURIComponent(r.id)}/pdf`}
                       onClick={() => trackFp("recommendation_click", {
                         publication_id: r.id,
                         publication_title: r.title,
@@ -754,7 +753,7 @@ function Index() {
                       className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary px-4 py-2.5 font-serif text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground"
                     >
                       Open PDF
-                    </Link>
+                    </a>
                   </div>
                 </article>
               ))}
