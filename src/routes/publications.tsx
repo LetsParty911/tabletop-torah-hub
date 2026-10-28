@@ -5,6 +5,7 @@ import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { SiteFooter } from "@/components/SiteFooter";
+import { TFTT_ORIGINAL_SERIES, tfttOriginalSeriesById } from "@/lib/tftt-originals";
 
 export const Route = createFileRoute("/publications")({
   loader: () => listPublicationPages(),
@@ -31,6 +32,10 @@ export const Route = createFileRoute("/publications")({
 
 function PublicationsPage() {
   const { publications } = Route.useLoaderData();
+  const originalPublications = TFTT_ORIGINAL_SERIES.flatMap((series) =>
+    publications.filter((publication) => publication.id === series.id),
+  );
+  const otherPublications = publications.filter((publication) => !tfttOriginalSeriesById(publication.id));
 
   return (
     <div className="min-h-screen bg-background">
@@ -57,8 +62,31 @@ function PublicationsPage() {
           </div>
         </section>
 
-        <div className="mt-7 grid gap-4 sm:grid-cols-2">
-          {publications.map((publication) => {
+        {originalPublications.length > 0 && (
+          <section className="mt-8" aria-labelledby="original-series-heading">
+            <h2 id="original-series-heading" className="font-serif text-2xl font-bold text-primary">Our Original Weekly Series</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Three original publications prepared for the Shabbos table, free to read or print.</p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {renderPublicationCards(originalPublications)}
+            </div>
+          </section>
+        )}
+        <section className="mt-8" aria-labelledby="other-publications-heading">
+          <h2 id="other-publications-heading" className="font-serif text-2xl font-bold text-primary">More Torah Publications</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Browse other available publications and their earlier editions.</p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {renderPublicationCards(otherPublications)}
+          </div>
+        </section>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
+
+function renderPublicationCards(publications: ReturnType<typeof Route.useLoaderData>["publications"]) {
+  return publications.map((publication) => {
+            const original = tfttOriginalSeriesById(publication.id);
             const meta = [
               publication.default_audience
                 ? audienceLabel(normalizeAudience(publication.default_audience, publication.name)) ??
@@ -91,19 +119,14 @@ function PublicationsPage() {
                     <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       {meta}
                     </p>
-                    {publication.default_description && (
+                    {(original || publication.default_description) && (
                       <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                        {leadWithPublicationTitle(publication.name, publication.default_description)}
+                        {original?.shortDescription ?? leadWithPublicationTitle(publication.name, publication.default_description)}
                       </p>
                     )}
                   </div>
                 </div>
               </Link>
             );
-          })}
-        </div>
-      </main>
-      <SiteFooter />
-    </div>
-  );
+          });
 }
