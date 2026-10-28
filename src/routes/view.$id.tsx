@@ -225,6 +225,13 @@ function ViewPdf() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <main className="flex-1 mx-auto w-full max-w-5xl px-4 sm:px-6 py-6 sm:py-10">
+        <Link
+          to={isCurrentWeek ? "/" : "/archive"}
+          className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-full border border-accent/45 bg-background px-4 py-2 text-sm font-semibold text-primary hover:bg-accent/10"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {isCurrentWeek ? "Back to this week's collection" : "Back to Archive"}
+        </Link>
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-start gap-2">
