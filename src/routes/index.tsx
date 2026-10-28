@@ -18,6 +18,7 @@ import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { collectionCountLine, displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
+import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
 import { publicationLabel } from "@/lib/badges";
 
 import {
@@ -579,15 +580,7 @@ function Index() {
       ? haazinuQaTitle
       : publicationLabel(r.publication || r.title) || r.title;
 
-  // Ownership is explicit rather than inferred from a title.
-  const TFTT_ORIGINAL_PUBLICATION_IDS = new Set([
-    "0fa3db5f-c153-4311-a007-415c3c022143", // Parsha Questions & Answers
-    "88719788-42fb-4e0b-a34b-3ea1868e750d", // Stories for the Shabbos Table
-    "86d9b1b2-cebf-42e5-b623-dfc1b5c5b411", // In the Margins
-  ]);
-  const isTfttOriginal = (r: Resource) =>
-    r.publication === "tftt_original" ||
-    Boolean(r.publication_id && TFTT_ORIGINAL_PUBLICATION_IDS.has(r.publication_id));
+  const isTfttOriginal = (r: Resource) => Boolean(tfttOriginalSeriesById(r.publication_id));
   // The starter row includes other publishers if one of our originals is not yet available.
   const starterShowsThreeOriginals = starterSelections.length === 3 &&
     starterSelections.every(({ resource }) => isTfttOriginal(resource));
@@ -733,7 +726,7 @@ function Index() {
               {starterSelections.map(({ key, label, resource: r }) => (
                 <article key={r.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{label}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{isTfttOriginal(r) && key === "deeper" ? "Parsha Insight" : label}</p>
                     {isTfttOriginal(r) && (
                       <span className="rounded-full border border-accent/60 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
                         TFTT Original
@@ -746,7 +739,7 @@ function Index() {
                     </Link>
                   </h3>
                   <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
-                    {leadWithPublicationTitle(displayTitle(r), chooseReason(r))}
+                    {tfttOriginalSeriesById(r.publication_id)?.shortDescription ?? leadWithPublicationTitle(displayTitle(r), chooseReason(r))}
                   </p>
                   <div className="mt-auto pt-4">
                     <Link
