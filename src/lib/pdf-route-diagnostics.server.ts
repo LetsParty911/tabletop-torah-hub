@@ -118,6 +118,18 @@ export async function resolveWaitUntil(request: Request): Promise<WaitUntilFn | 
   const ctx = (request as unknown as { runtime?: { cloudflare?: { context?: { waitUntil?: WaitUntilFn } } } })
     .runtime?.cloudflare?.context;
   if (typeof ctx?.waitUntil === "function") return (p) => ctx.waitUntil!(p);
+
+  // On Vercel, use the platform's real request-lifetime hook so analytics
+  // never holds up the PDF redirect for the 250 ms fallback budget.
+  // Do not call this package outside Vercel: it was a no-op on the old Worker.
+  if (typeof process !== "undefined" && process.env["VERCEL"] === "1") {
+    try {
+      const { waitUntil } = await import("@vercel/functions");
+      if (typeof waitUntil === "function") return (p) => waitUntil(p);
+    } catch {
+      // Keep the bounded fallback on unsupported runtimes.
+    }
+  }
   try {
     const mod = "cloudflare:workers";
     const cf = (await import(/* @vite-ignore */ mod)) as { waitUntil?: WaitUntilFn };
