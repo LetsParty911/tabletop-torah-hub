@@ -28,23 +28,31 @@ export const Route = createFileRoute("/view/$id/pdf")({
             adminBypass = false;
           }
         }
-        if (!adminBypass) {
-          const { maintenanceGate } = await import("@/lib/maintenance.server");
-          const closed = await maintenanceGate(requestUrl.pathname);
-          if (closed) return closed;
-        }
         const id = params.id;
         if (!/^[0-9a-f-]{36}$/i.test(id)) {
           return new Response("Bad request", { status: 400, headers: NOINDEX });
         }
 
         try {
+          // Independent reads can proceed together, but maintenance MUST be
+          // checked before any PDF URL is revealed. Read failures still close.
+          const maintenancePromise = adminBypass
+            ? Promise.resolve(null)
+            : import("@/lib/maintenance.server").then(({ maintenanceGate }) =>
+                maintenanceGate(requestUrl.pathname),
+              );
           const admin = getSupabaseAdmin();
-          const { data: row, error } = await admin
+          const publicationPromise = admin
             .from("pdfs")
             .select("file_path, published")
             .eq("id", id)
             .maybeSingle();
+
+          const [closed, { data: row, error }] = await Promise.all([
+            maintenancePromise,
+            publicationPromise,
+          ]);
+          if (closed) return closed;
 
           if (error || !row || !row.published || !row.file_path) {
             await recordPdfRouteOutcome(request, id, 404);
