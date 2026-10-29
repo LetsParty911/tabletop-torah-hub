@@ -208,6 +208,16 @@ function ViewPdf() {
   const chosenSummary = (pdf.summary_full?.trim() || pdf.summary_quick?.trim() || "") as string;
   const showSummary = chosenSummary.length > 0 && norm(chosenSummary) !== norm(pdf.description);
 
+  // Show the date only when the publication has an explicit week_of value.
+  const shabbosDate = (() => {
+    const week = pdf.weekOf?.slice(0, 10);
+    if (!week || !/^\\d{4}-\\d{2}-\\d{2}$/.test(week)) return null;
+    const date = new Date(`${week}T12:00:00Z`);
+    if (!Number.isFinite(date.getTime())) return null;
+    date.setUTCDate(date.getUTCDate() + ((6 - date.getUTCDay() + 7) % 7));
+    return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(date);
+  })();
+
   const metaLine = [
     audienceLabel(normalizeAudience(pdf.audience, pdf.title)) ?? pdf.audience,
     pdf.content_type === "Questions & Answers"
@@ -234,6 +244,11 @@ function ViewPdf() {
         </Link>
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
+            {(pdf.parsha_key || shabbosDate) && (
+              <p className="mb-2 text-sm font-semibold text-accent-readable">
+                {[pdf.parsha_key ? formatReadingLabel(pdf.parsha_key) : null, shabbosDate ? `Shabbos, ${shabbosDate}` : null].filter(Boolean).join(" · ")}
+              </p>
+            )}
             <div className="flex items-start gap-2">
               <h1 className="font-serif text-2xl sm:text-3xl font-bold text-primary leading-snug">
                 {pdf.title}

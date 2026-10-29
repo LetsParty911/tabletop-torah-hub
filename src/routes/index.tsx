@@ -658,9 +658,11 @@ function Index() {
                   <p className={`mt-2 text-sm text-muted-foreground ${isTfttOriginal(r) ? "" : "line-clamp-3"}`}>
                     {tfttOriginalSeriesById(r.publication_id)?.shortDescription ?? leadWithPublicationTitle(displayTitle(r), chooseReason(r))}
                   </p>
+                  {pageCountLabel(r) && <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{pageCountLabel(r)}</p>}
                   <div className="mt-auto pt-4">
                     <a
                       href={`/view/${encodeURIComponent(r.id)}/pdf`}
+                      aria-label={`Open ${displayTitle(r)} PDF in a new tab`}
                       target="_blank"
                       rel="nofollow noopener noreferrer"
                       onClick={() => trackFp("recommendation_click", {
@@ -677,19 +679,51 @@ function Index() {
                 </article>
               ))}
             </div>
+            {extraPreviewSelections.length > 0 && (
+              <div className="mt-5 border-t border-accent/25 pt-4">
+                <h3 className="font-serif text-lg font-semibold text-primary">More from this collection</h3>
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  {extraPreviewSelections.map((r) => (
+                    <article key={r.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
+                      <h4 className="font-serif text-base font-bold leading-snug text-primary">
+                        <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline">{displayTitle(r)}</Link>
+                      </h4>
+                      {r.publisher && <p className="mt-1 text-xs text-muted-foreground">By {r.publisher}</p>}
+                      <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
+                        {leadWithPublicationTitle(displayTitle(r), r.summary_quick || r.subtitle || r.description || chooseReason(r))}
+                      </p>
+                      {pageCountLabel(r) && <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{pageCountLabel(r)}</p>}
+                      <div className="mt-auto pt-3">
+                        <DownloadAndPrintButtons
+                          href={`/view/${r.id}/pdf`}
+                          publicationId={r.id}
+                          publicationName={displayPublicationName(r)}
+                          publicationTitle={displayTitle(r)}
+                          publisher={r.publisher}
+                          publicationSeries={r.publication}
+                          parsha={r.parsha_key ?? displayedParshaKey}
+                          className="w-full"
+                        />
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            )}
             {resources.length > starterSelections.length && (
               <button
                 type="button"
                 onClick={() => {
                   setShowAllResources(true);
+                  setMobileQuickChoice(null);
                   requestAnimationFrame(() => document.getElementById("this-weeks-collection")?.scrollIntoView?.({
                     behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth",
                     block: "start",
                   }));
                 }}
-                className="mt-4 inline-flex min-h-11 items-center font-serif text-sm font-semibold text-primary underline underline-offset-4 hover:text-accent"
+                className="mt-4 inline-flex min-h-11 items-center rounded-full bg-primary px-5 py-2.5 font-serif text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground"
               >
-                See all {resources.length} selections
+                {viewAllLabel}
               </button>
             )}
           </section>
