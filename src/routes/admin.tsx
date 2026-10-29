@@ -904,7 +904,14 @@ function AdminPage() {
       setShowUploadDetails(false);
       (document.getElementById("pdf-file-input") as HTMLInputElement | null)?.value &&
         ((document.getElementById("pdf-file-input") as HTMLInputElement).value = "");
-      setMsg({ kind: "success", text: "Uploaded." });
+      // Confirm from the server-returned status, never assume it.
+      setUploadResult({
+        id: uploaded.id,
+        title: submittedTitle,
+        parsha: submittedParsha,
+        jewishYear,
+        published: uploaded?.published === true,
+      });
       await refresh();
     } catch (err) {
       const detail = err instanceof Error ? err.message : "Unknown error";
@@ -917,7 +924,12 @@ function AdminPage() {
       });
     } finally {
       setBusy(false);
+      setUploadAction(null);
     }
+  };
+
+  const handleSaveDraft = () => {
+    void handleUpload(null, "draft");
   };
 
   const handleToggle = async (id: string, next: boolean) => {
