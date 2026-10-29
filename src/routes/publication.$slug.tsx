@@ -1,3 +1,4 @@
+import { publicSeriesName } from "@/lib/tftt-originals";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { BookOpen, ArrowLeft } from "lucide-react";
 import { getPublicationPage } from "@/integrations/supabase/publication-pages.functions";
@@ -150,10 +151,10 @@ function PublicationPage() {
           <DownloadAndPrintButtons
             href={`/view/${edition.id}/pdf`}
             publicationId={edition.id}
-            publicationName={publication.name}
+            publicationName={publicSeriesName(publication.name)}
             publicationTitle={edition.title}
             publisher={publication.publisher}
-            publicationSeries={publication.name}
+            publicationSeries={publicSeriesName(publication.name)}
             parsha={edition.parsha_key}
             className="w-full px-4 py-2.5"
           />
@@ -184,7 +185,7 @@ function PublicationPage() {
                   Publication
                 </p>
                 <h1 className="mt-1 font-serif text-3xl sm:text-4xl font-bold text-primary leading-tight">
-                  {publication.name}
+                  {publicSeriesName(publication.name)}
                 </h1>
                 {publication.publisher && (
                   <p className="mt-1 text-sm text-muted-foreground">Published by {publication.publisher}</p>
@@ -212,7 +213,7 @@ function PublicationPage() {
             <h2 className="font-serif text-2xl font-bold text-primary">About this Torah collection</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Torah For The Table currently has {editions.length} {editions.length === 1 ? "edition" : "editions"} of{" "}
-              <span className="font-semibold text-primary">{publication.name}</span>
+              <span className="font-semibold text-primary">{publicSeriesName(publication.name)}</span>
               {publication.publisher ? `, published by ${publication.publisher}` : ""}. The available editions cover{" "}
               {new Set(editions.map((edition) => edition.parsha_key)).size}{" "}
               {new Set(editions.map((edition) => edition.parsha_key)).size === 1 ? "parsha or Yom Tov reading" : "parshiyos and Yom Tov readings"}
