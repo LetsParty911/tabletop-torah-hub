@@ -165,15 +165,15 @@ export function WeeklyEmailSignup({
       id={anchorId}
       className={`parchment-frame max-w-2xl mx-auto scroll-mt-8 ${className}`}
     >
-      <div className="parchment-panel py-6 px-5 sm:px-6 sm:py-8 text-center">
-        <div className="flex items-center justify-center gap-3 text-accent mb-3">
+      <div className="parchment-panel py-4 px-4 sm:px-6 sm:py-5 text-center">
+        <div className="flex items-center justify-center gap-3 text-accent mb-2">
           <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
           <span className="font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em]">
             Stay Updated
           </span>
           <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
         </div>
-        <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
+        <h2 className="font-serif text-xl sm:text-2xl font-bold text-primary">
           {heading}
         </h2>
         <p className="mt-2 font-serif italic font-medium text-sm sm:text-base text-primary max-w-md mx-auto">
@@ -191,8 +191,8 @@ export function WeeklyEmailSignup({
           </div>
         ) : (
           <>
-            <form aria-label={`Weekly Torah signup — ${sourceId}`} onSubmit={handleSignup} className="mt-5 flex flex-col gap-3 max-w-md mx-auto" noValidate>
-              <div className="flex flex-col sm:flex-row gap-3">
+            <form aria-label={`Weekly Torah signup — ${sourceId}`} onSubmit={handleSignup} className="mt-3 flex flex-col gap-2 max-w-md mx-auto" noValidate>
+              <div className="flex flex-col sm:flex-row gap-2">
                 <label htmlFor={emailId} className="sr-only">Email address for weekly Torah reminders</label>
                 <input
                   id={emailId}
@@ -203,23 +203,19 @@ export function WeeklyEmailSignup({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email address"
-                  className="flex-1 rounded-full border-2 border-accent/50 bg-background px-5 py-3 font-serif text-foreground placeholder:font-serif placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                  className="flex-1 rounded-full border-2 border-accent/50 bg-background px-4 py-2.5 font-serif text-foreground placeholder:font-serif placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
                 />
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  className="h-auto rounded-full bg-primary px-8 py-3.5 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {submitting ? "Subscribing…" : "Subscribe"}
-                </Button>
               </div>
-              <label className="flex items-start gap-2 text-left text-sm text-foreground">
+              <label className="flex items-start gap-2 text-left text-xs text-foreground">
                 {consentInput}
                 <span>
                   I agree to receive emails from Torah For The Table. You can unsubscribe at any
                   time.
                 </span>
               </label>
+              <Button type="submit" disabled={submitting} className="h-auto min-h-11 rounded-full bg-primary px-6 py-2.5 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-60 disabled:cursor-not-allowed">
+                {submitting ? "Subscribing…" : "Subscribe"}
+              </Button>
             </form>
             {signupMsg && (
               <p id={messageId} className="mt-4 text-sm text-accent font-serif" role="alert">
