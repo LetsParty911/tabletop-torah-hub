@@ -133,8 +133,9 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     setHomepage(true);
     render(<Homepage />);
     expect(state.countdown).toHaveBeenLastCalledWith(expect.objectContaining({ contentLive: false, availableCount: 0, liveParshaLabel: "Parshas Lech-Lecha", readingDate: "2026-10-24", collectionComplete: false }));
-    expect(screen.getByRole("link", { name: /Get notification/i }).getAttribute("href")).toBe("#weekly-email-signup");
-    expect(screen.getAllByRole("form", { name: /Weekly Torah signup/i })).toHaveLength(1);
+    expect(screen.getByText("Release countdown")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /Get notification/i })).toBeNull();
+    expect(screen.getAllByRole("form", { name: /Weekly Torah signup/i })).toHaveLength(2);
 
     const share = screen.getByRole("link", { name: "Share Torah For The Table" });
     const message = new URL(share.getAttribute("href") ?? "").searchParams.get("text") ?? "";
@@ -154,18 +155,27 @@ describe("homepage publication and discovery smoke test with isolated data", () 
       const description = screen.getByText(series.shortDescription);
       expect(description.className).not.toContain("line-clamp");
     }
-    expect(screen.getByText("Our Original Weekly Series")).toBeTruthy();
+    expect(screen.getByText("Our Originals")).toBeTruthy();
   });
 
   it("shows every PDF and one stable collection anchor for small weekly releases", () => {
     setHomepage(false);
     state.loader.resources = [1, 2].map((n) => example(n, "Lech-Lecha"));
     render(<Homepage />);
-    expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(2);
+    expect(screen.getAllByRole("link", { name: /Open .* PDF in a new tab/ })).toHaveLength(2);
     expect(document.querySelectorAll("#this-weeks-collection")).toHaveLength(1);
     expect(screen.queryByRole("button", { name: /See all 2 selections/ })).toBeNull();
     expect(screen.queryByTestId("table-chooser")).toBeNull();
     expect(screen.getByRole("link", { name: "Share Torah For The Table" })).toBeTruthy();
+  });
+
+  it("shows six selections before expanding a larger collection", () => {
+    setHomepage(false);
+    state.loader.resources = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => example(n, "Lech-Lecha"));
+    render(<Homepage />);
+    expect(screen.getAllByRole("link", { name: /Open .* PDF in a new tab/ })).toHaveLength(3);
+    expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(3);
+    expect(screen.getByRole("button", { name: "View all 8 Lech-Lecha selections" })).toBeTruthy();
   });
 
   it("keeps four mobile category choices without a redundant recommended-picks link", () => {
@@ -178,14 +188,14 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.getByRole("button", { name: "Stories" })).toBeTruthy();
     expect(screen.queryByRole("link", { name: /Not sure\\? See our recommended picks/i })).toBeNull();
     expect(screen.queryByRole("link", { name: /Browse all available Divrei Torah/i })).toBeNull();
-    expect(screen.getByRole("button", { name: "See all 6 selections" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "View all 6 Lech-Lecha selections" })).toBeTruthy();
   });
 
   it("reveals the complete PDF selection on explicit request", () => {
     setHomepage(true);
     render(<Homepage />);
     expect(screen.queryByTestId("table-chooser")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "See all 4 selections" }));
+    fireEvent.click(screen.getByRole("button", { name: /View all 4 .* selections/ }));
     expect(screen.queryByTestId("table-chooser")).toBeNull();
     expect(screen.getAllByRole("link", { name: "Sample Torah Sheet 4" }).length).toBeGreaterThan(0);
     const openLinks = screen.getAllByRole("link", { name: "Open PDF" });
@@ -197,16 +207,16 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     setHomepage(false);
     render(<Homepage />);
     expect(screen.queryByTestId("table-chooser")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "See all 4 selections" }));
+    fireEvent.click(screen.getByRole("button", { name: /View all 4 .* selections/ }));
     expect(screen.queryByTestId("table-chooser")).toBeNull();
   });
 
   it("stops labeling a live Lech-Lecha collection as an upcoming fallback", () => {
     setHomepage(false);
     render(<Homepage />);
-    expect(screen.getByText("Release countdown")).toBeTruthy();
+    expect(screen.queryByText("Release countdown")).toBeNull();
     expect(screen.queryByText(/Coming next: Parshas Lech-Lecha/)).toBeNull();
-    expect(screen.getAllByRole("form", { name: /Weekly Torah signup/i })).toHaveLength(1);
+    expect(screen.getAllByRole("form", { name: /Weekly Torah signup/i })).toHaveLength(2);
     const share = screen.getByRole("link", { name: "Share Torah For The Table" });
     const message = new URL(share.getAttribute("href") ?? "").searchParams.get("text") ?? "";
     expect(message).toContain("Parshas Lech-Lecha");

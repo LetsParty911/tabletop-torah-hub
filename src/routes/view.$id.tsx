@@ -211,7 +211,7 @@ function ViewPdf() {
   // Show the date only when the publication has an explicit week_of value.
   const shabbosDate = (() => {
     const week = pdf.weekOf?.slice(0, 10);
-    if (!week || !/^\\d{4}-\\d{2}-\\d{2}$/.test(week)) return null;
+    if (!week || !/^\d{4}-\d{2}-\d{2}$/.test(week)) return null;
     const date = new Date(`${week}T12:00:00Z`);
     if (!Number.isFinite(date.getTime())) return null;
     date.setUTCDate(date.getUTCDate() + ((6 - date.getUTCDay() + 7) % 7));

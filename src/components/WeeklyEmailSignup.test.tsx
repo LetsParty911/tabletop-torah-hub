@@ -22,19 +22,30 @@ describe("homepage weekly email signup", () => {
     expect(html).toContain("You can unsubscribe at any time.");
   });
 
-  it("puts exactly one signup after the resource chooser and preserves the Subscribe link", () => {
+  it("places compact and full signup forms at distinct anchors and keeps the collection action", () => {
     const homepage = readFileSync("src/routes/index.tsx", "utf8");
     const countdown = readFileSync("src/components/UpdateCountdown.tsx", "utf8");
-    expect(homepage).not.toContain('sourceId="homepage-top"');
+    expect((homepage.match(/sourceId="homepage-top"/g) ?? []).length).toBe(1);
     expect((homepage.match(/sourceId="homepage"/g) ?? []).length).toBe(1);
-    expect(homepage.indexOf('sourceId="homepage"')).toBeGreaterThan(
-      homepage.indexOf('id="this-weeks-collection"'),
-    );
-    expect(homepage).toContain("See all {resources.length} selections");
+    expect(homepage).toContain('anchorId="weekly-email-signup-top"');
+    expect(homepage).toContain("{viewAllLabel}");
     expect(homepage).toContain("Open PDF");
+    expect(countdown).toContain('href="#weekly-email-signup-top"');
     expect(countdown).toContain('href="#weekly-email-signup"');
-    expect(countdown).toContain('getElementById("weekly-email-signup")');
-    expect(countdown).not.toContain("weekly-email-signup-top");
+  });
+
+  it("renders two forms with unique input IDs and independent consent", () => {
+    const html = renderToStaticMarkup(
+      <>
+        <WeeklyEmailSignup sourceId="homepage-top" anchorId="weekly-email-signup-top" variant="compact" />
+        <WeeklyEmailSignup sourceId="homepage" />
+      </>,
+    );
+    const ids = [...html.matchAll(/\\bid="([^"]+)"/g)].map((match) => match[1]);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect((html.match(/type="checkbox"/g) ?? []).length).toBe(2);
+    expect(html).toContain('id="weekly-email-signup-top"');
+    expect(html).toContain('id="weekly-email-signup"');
   });
 
   it("preserves consent, existing subscription flow and analytics attribution", () => {
