@@ -57,7 +57,7 @@ export default function ThursdayProgressForm({
     setVisibilityMessage(null);
     try {
       await adminSetProgressVisibility({ data: { accessToken, visible } });
-      setVisibilityMessage(visible ? "Progress bar is visible." : "Progress bar is hidden.");
+      setVisibilityMessage(visible ? "Public updating notice is enabled." : "Public updating notice is disabled.");
     } catch (err) {
       setProgressVisible(previous);
       setVisibilityMessage(
@@ -74,14 +74,14 @@ export default function ThursdayProgressForm({
         Thursday Upload Progress
       </h2>
       <p className="text-sm text-muted-foreground mt-1">
-        Lets visitors see how much of this week&apos;s Divrei Torah has been uploaded.
-        You can show or hide the progress bar at any time. The ETA line hides itself
-        automatically once it passes.
+        Track weekly upload progress privately. Visitors only see a small &quot;Now updating&quot;
+        notice while progress is between 0% and 100%. The notice disappears when
+        complete or switched off; percentages and ETA stay in admin.
       </p>
       <form onSubmit={onSubmit} className="mt-4 space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Progress bar visibility</label>
-          <div className="flex gap-2" role="group" aria-label="Progress bar visibility">
+          <label className="block text-sm font-medium mb-1">Public updating notice</label>
+          <div className="flex gap-2" role="group" aria-label="Public updating notice">
             <button
               type="button"
               disabled={visibilityLoading || visibilitySaving || !accessToken}
