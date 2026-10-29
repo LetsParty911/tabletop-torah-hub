@@ -802,11 +802,21 @@ function AdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken, isAdmin]);
 
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!accessToken || !file) return;
+  // Default form submit (Enter / primary button) publishes; the draft
+  // button calls this with action="draft". Guarded against double-submit.
+  const handleUpload = async (
+    e: React.FormEvent | null,
+    action: "publish" | "draft" = "publish",
+  ) => {
+    e?.preventDefault();
+    if (!accessToken || !file || busy) return;
+    const willPublish = action === "publish";
+    const submittedTitle = title;
+    const submittedParsha = parshaKey;
     setBusy(true);
+    setUploadAction(action);
     setMsg(null);
+    setUploadResult(null);
     try {
       const jewishYear = await getCurrentJewishYear();
 
