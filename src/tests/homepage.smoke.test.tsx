@@ -157,6 +157,17 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.getByText("Our Original Weekly Series")).toBeTruthy();
   });
 
+  it("shows every PDF and one stable collection anchor for small weekly releases", () => {
+    setHomepage(false);
+    state.loader.resources = [1, 2].map((n) => example(n, "Lech-Lecha"));
+    render(<Homepage />);
+    expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(2);
+    expect(document.querySelectorAll("#this-weeks-collection")).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: /See all 2 selections/ })).toBeNull();
+    expect(screen.queryByTestId("table-chooser")).toBeNull();
+    expect(screen.getByRole("link", { name: "Share Torah For The Table" })).toBeTruthy();
+  });
+
   it("reveals the complete PDF selection on explicit request", () => {
     setHomepage(true);
     render(<Homepage />);
