@@ -268,9 +268,16 @@ first-party cookie (`tftt_internal`) that `POST /api/internal-device` issues aft
 signed-in administrator. The cookie value is an HMAC derived from an existing server-only key, so it
 cannot be forged from the browser, and any `is_internal` value in the JSON payload is ignored.
 
-Internal events are kept for diagnostics and excluded from headline audience metrics; the admin
-report shows the internal session count separately. The existing exclusion of `/admin` and
-`/admin-analytics` routes is unchanged.
+Once an administrator is verified on `/admin` or `/admin-analytics`, that browser profile
+is automatically enrolled with the server-signed internal marker. Marked browsers are excluded
+from canonical event ingest, legacy page views/search/download actions, server-side PDF served
+redirects, and PDF route diagnostics. Their activity is not new reader traffic, doesn't count
+toward PDF use or trigger a visitor event alert, and remains excluded after sign-out until the
+marker is removed. Existing historical internal events retain their original audit records and
+remain excluded from headline reports. The existing exclusion of `/admin` and
+`/admin-analytics` routes is unchanged. Another browser profile or a device with cleared
+cookies must first authenticate as an admin to enroll. External analytics and platform server
+logs have separate controls and are not covered by first-party database exclusions.
 
 ## Traffic confidence (reporting only)
 
