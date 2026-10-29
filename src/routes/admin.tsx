@@ -740,6 +740,14 @@ function AdminPage() {
       }
       const r = await checkIsAdmin({ data: { accessToken } });
       setIsAdmin(r.isAdmin);
+      // Verified admins are automatically excluded from reader analytics in this browser.
+      if (r.isAdmin) {
+        void fetch("/api/internal-device", {
+          method: "POST", credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accessToken, action: "mark" }),
+        }).catch(() => undefined);
+      }
     })();
   }, [accessToken]);
 

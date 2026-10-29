@@ -56,6 +56,9 @@ async function recordDownloadServed(
 
     const { isInternalRequest } = await import("@/lib/internal-marker.server");
     const isInternal = await isInternalRequest(request);
+    // A marked admin browser can access the PDF without generating any
+    // download-served analytics event or visitor-alert side effect.
+    if (isInternal) return;
 
     const admin = getSupabaseAdmin();
 
