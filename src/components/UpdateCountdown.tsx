@@ -91,7 +91,7 @@ export function UpdateCountdown({
 
   const scrollToSignup = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    const signup = document.getElementById(compact ? "weekly-email-signup-top" : "weekly-email-signup");
+    const signup = document.getElementById("weekly-email-signup");
     signup?.scrollIntoView({
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
       block: "start",
@@ -109,7 +109,7 @@ export function UpdateCountdown({
             ? `The new ${label} collection is still being prepared.`
             : `Next: ${label} — ${releaseDateLabel} at 8:00 PM Eastern.`}
         </p>
-        <a href="#weekly-email-signup-top" onClick={scrollToSignup} className="mt-1 inline-block text-xs font-semibold text-accent-readable underline underline-offset-2 hover:text-primary">
+        <a href="#weekly-email-signup" onClick={scrollToSignup} className="mt-1 inline-block text-xs font-semibold text-accent-readable underline underline-offset-2 hover:text-primary">
           Subscribe for the weekly email
         </a>
       </section>
