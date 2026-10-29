@@ -82,12 +82,12 @@ export const adminWhatsAppLinkAnalytics = createServerFn({ method: "POST" })
     const admin = getSupabaseAdmin();
 
     const [hits, events] = await Promise.all([
-      paged<LinkHit>((start, end) => admin.from("whatsapp_group_link_hits")
+      paged<LinkHit>(async (start, end) => await admin.from("whatsapp_group_link_hits")
         .select("group_code, clicked_at, is_automated")
         .gte("clicked_at", data.start).lt("clicked_at", data.end)
         .order("clicked_at", { ascending: true })
         .range(start, end)),
-      paged<TaggedEvent>((start, end) => admin.from("analytics_events")
+      paged<TaggedEvent>(async (start, end) => await admin.from("analytics_events")
         .select("event_name, occurred_at, session_id, visitor_id, publication_id, utm_content, is_internal, metadata")
         .eq("utm_source", "whatsapp")
         .in("utm_content", Object.keys(TAG_TO_CODE))
