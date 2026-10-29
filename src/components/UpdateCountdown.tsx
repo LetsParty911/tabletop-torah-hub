@@ -112,7 +112,7 @@ export function UpdateCountdown({
           {!collectionComplete && remaining !== null && remaining > 0 && typeof availableCount === "number" && availableCount > 0
             ? `${availableCount} ${availableCount === 1 ? "selection" : "selections"} available — more coming.`
             : collectionComplete && typeof availableCount === "number" && availableCount > 0
-              ? `All ${availableCount} selections are available.`
+              ? `All ${availableCount} ${availableCount === 1 ? "selection is" : "selections are"} available.`
               : "Choose. Print. Enjoy."}
         </p>
         <a
