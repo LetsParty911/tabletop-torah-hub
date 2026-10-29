@@ -34,6 +34,9 @@ import { Route as ShortVortsRouteImport } from './routes/short-vorts'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StRouteImport } from './routes/st'
 import { Route as WaRouteImport } from './routes/wa'
+import { Route as WamRouteImport } from './routes/wam'
+import { Route as WapRouteImport } from './routes/wap'
+import { Route as WazRouteImport } from './routes/waz'
 import { Route as ApiEnhancedFingerprintRouteImport } from './routes/api/enhanced-fingerprint'
 import { Route as ApiEventsRouteImport } from './routes/api/events'
 import { Route as ApiInternalDeviceRouteImport } from './routes/api/internal-device'
@@ -182,6 +185,21 @@ const WaRoute = WaRouteImport.update({
   path: '/wa',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WamRoute = WamRouteImport.update({
+  id: '/wam',
+  path: '/wam',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WapRoute = WapRouteImport.update({
+  id: '/wap',
+  path: '/wap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WazRoute = WazRouteImport.update({
+  id: '/waz',
+  path: '/waz',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiEnhancedFingerprintRoute = ApiEnhancedFingerprintRouteImport.update({
   id: '/api/enhanced-fingerprint',
   path: '/api/enhanced-fingerprint',
@@ -319,6 +337,9 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st': typeof StRoute
   '/wa': typeof WaRoute
+  '/wam': typeof WamRoute
+  '/wap': typeof WapRoute
+  '/waz': typeof WazRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
   '/api/internal-device': typeof ApiInternalDeviceRoute
@@ -368,6 +389,9 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st': typeof StRoute
   '/wa': typeof WaRoute
+  '/wam': typeof WamRoute
+  '/wap': typeof WapRoute
+  '/waz': typeof WazRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
   '/api/internal-device': typeof ApiInternalDeviceRoute
@@ -418,6 +442,9 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st': typeof StRoute
   '/wa': typeof WaRoute
+  '/wam': typeof WamRoute
+  '/wap': typeof WapRoute
+  '/waz': typeof WazRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
   '/api/internal-device': typeof ApiInternalDeviceRoute
@@ -469,6 +496,9 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/st'
     | '/wa'
+    | '/wam'
+    | '/wap'
+    | '/waz'
     | '/api/enhanced-fingerprint'
     | '/api/events'
     | '/api/internal-device'
@@ -518,6 +548,9 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/st'
     | '/wa'
+    | '/wam'
+    | '/wap'
+    | '/waz'
     | '/api/enhanced-fingerprint'
     | '/api/events'
     | '/api/internal-device'
@@ -567,6 +600,9 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/st'
     | '/wa'
+    | '/wam'
+    | '/wap'
+    | '/waz'
     | '/api/enhanced-fingerprint'
     | '/api/events'
     | '/api/internal-device'
@@ -617,6 +653,9 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StRoute: typeof StRoute
   WaRoute: typeof WaRoute
+  WamRoute: typeof WamRoute
+  WapRoute: typeof WapRoute
+  WazRoute: typeof WazRoute
   ApiEnhancedFingerprintRoute: typeof ApiEnhancedFingerprintRoute
   ApiEventsRoute: typeof ApiEventsRoute
   ApiInternalDeviceRoute: typeof ApiInternalDeviceRoute
@@ -813,6 +852,27 @@ declare module '@tanstack/react-router' {
       path: '/wa'
       fullPath: '/wa'
       preLoaderRoute: typeof WaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wam': {
+      id: '/wam'
+      path: '/wam'
+      fullPath: '/wam'
+      preLoaderRoute: typeof WamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wap': {
+      id: '/wap'
+      path: '/wap'
+      fullPath: '/wap'
+      preLoaderRoute: typeof WapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/waz': {
+      id: '/waz'
+      path: '/waz'
+      fullPath: '/waz'
+      preLoaderRoute: typeof WazRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/enhanced-fingerprint': {
@@ -1023,6 +1083,9 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StRoute: StRoute,
   WaRoute: WaRoute,
+  WamRoute: WamRoute,
+  WapRoute: WapRoute,
+  WazRoute: WazRoute,
   ApiEnhancedFingerprintRoute: ApiEnhancedFingerprintRoute,
   ApiEventsRoute: ApiEventsRoute,
   ApiInternalDeviceRoute: ApiInternalDeviceRoute,
