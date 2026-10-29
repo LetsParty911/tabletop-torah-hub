@@ -16,7 +16,7 @@ import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
-import { collectionCountLine, displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
+import { displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
 import { publicationLabel } from "@/lib/badges";
@@ -196,7 +196,7 @@ export const Route = createFileRoute("/")({
   head: () => {
     const title = "Torah For The Table | Free Printable Weekly Divrei Torah";
     const description =
-      "Original weekly Parsha Questions & Answers, Stories for the Shabbos Table and In the Margins, alongside free printable Divrei Torah from respected Torah publishers.";
+      "Original weekly Parsha Challenge, Stories for the Shabbos Table and In the Margins, alongside free printable Divrei Torah from respected Torah publishers.";
     const url = "https://torahforthetable.com/";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -402,20 +402,6 @@ function Index() {
   const [contentTypeFilter, setContentTypeFilter] = useState<string>("All");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [showAllResources, setShowAllResources] = useState(false);
-  const [scrollToChooser, setScrollToChooser] = useState(false);
-  // The chooser is only mounted when the full collection is visible.
-  // Run after React commits that state change, otherwise the CTA targets
-  // a nonexistent element and appears to do nothing.
-  useEffect(() => {
-    if (!scrollToChooser || !showAllResources) return;
-    const target = document.getElementById("shabbos-table-chooser") ??
-      document.getElementById("this-weeks-collection");
-    if (target) {
-      const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
-      target.scrollIntoView?.({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
-    }
-    setScrollToChooser(false);
-  }, [scrollToChooser, showAllResources]);
   // When a guided-chooser category is active the page enters focused mode and
   // the full weekly collection (plus its filter controls) is hidden.
   const [activeChooser, setActiveChooser] = useState<string | null>(null);
@@ -423,7 +409,17 @@ function Index() {
   const [mobileQuickChoice, setMobileQuickChoice] = useState<ChooserKey | null>(null);
 
   const sortedResources = resources;
-  const starterSelections = pickStarterSelections(sortedResources);
+  const suggestedStarters = pickStarterSelections(sortedResources);
+  // With three or fewer PDFs, display every publication regardless of its tags.
+  const starterSelections = sortedResources.length <= 3
+    ? [
+        ...suggestedStarters,
+        ...sortedResources
+          .filter((resource) => !suggestedStarters.some((pick) => pick.resource.id === resource.id))
+          .map((resource) => ({ key: "quick" as ChooserKey, label: "More to Explore", resource })),
+      ]
+    : suggestedStarters;
+  const showCompleteCollection = showAllResources || starterSelections.length === 0 || isCurrentYomKippur;
   usePrewarmDownloads(sortedResources.map((r) => r.id));
 
 
@@ -571,7 +567,9 @@ function Index() {
     return r.parsha_key;
   };
   const displayTitle = (r: Resource) => {
-    const base = isHaazinuWeek && r.title === "Parsha Questions & Answers" ? haazinuQaTitle : r.title;
+    const base = tfttOriginalSeriesById(r.publication_id)?.title === "Parsha Challenge"
+      ? r.title.replace(/^Parsha Questions\s*(?:&|and)\s*Answers/i, "Parsha Challenge")
+      : isHaazinuWeek && r.title === "Parsha Questions & Answers" ? haazinuQaTitle : r.title;
     const qualifier = holidayQualifier(r);
     return qualifier ? `${base} — ${qualifier}` : base;
   };
@@ -603,110 +601,49 @@ function Index() {
           readingDate={readingDate}
           availableCount={currentPublishedCount}
           collectionComplete={collectionComplete}
+          collectionAnchorId={starterSelections.length > 0 ? "starter-selections-heading" : "this-weeks-collection"}
           initialNow={loaderData.renderedAt}
         />
         <section className="parchment-frame">
-          <div className="parchment-panel py-5 text-center sm:py-7">
-            <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
+          <div className="parchment-panel px-4 py-4 text-center sm:py-6">
+            <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-accent-readable sm:text-xs">
+              {isCurrentYomKippur ? "Yom Kippur Resources" : isFallback ? "Latest Available Collection" : "This Week's Parsha"}
+            </p>
+            <h1 className="mt-1 font-serif text-xl font-bold leading-tight text-primary sm:text-3xl">
               {isCurrentYomKippur
-                ? "Yom Kippur Resources"
-                : "This week's collection"}
-            </p>
-            <h1 className="mt-2 font-serif text-[1.6rem] leading-[1.1] font-bold tracking-tight text-primary sm:text-4xl md:text-5xl">
-              <span>
-                {isCurrentYomKippur
-                  ? "Yom Kippur"
-                  : isSukkosSeason
-                    ? sukkosSeasonTitle
-                    : isFallback
-                      ? currentLabel
-                      : postShabbos
-                        ? `Divrei Torah for ${displayedLabel}`
-                        : "Torah For The Table — Free Weekly Divrei Torah"}
-              </span>
+                ? "Yom Kippur Divrei Torah"
+                : isSukkosSeason
+                  ? sukkosSeasonTitle
+                  : isFallback
+                    ? `${displayedLabel} — Still Available`
+                    : `${displayedLabel} — Free Weekly Divrei Torah`}
             </h1>
-            <p className="mx-auto mt-2 max-w-md font-serif text-sm leading-relaxed text-primary sm:hidden">
-              Choose a Dvar Torah for your table — free, and ready to print.
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+              {isFallback
+                ? `Read or print ${displayedLabel} while we prepare ${currentLabel}.`
+                : postShabbos
+                  ? "These Torah sheets remain free to read or print."
+                  : resources.length > 0
+                    ? "Our original weekly series and curated Torah selections, free to read or print."
+                    : "New free Divrei Torah are prepared for your Shabbos table every Thursday."}
             </p>
-            {isFallback ? (
-              <p className="mt-3 font-serif text-base font-semibold text-primary" role="status">Collection in progress</p>
-            ) : (
-              <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-accent-readable sm:hidden">
-                {collectionComplete
-                  ? `All ${resources.length} available • collection complete`
-                  : `${resources.length} available now • more coming.`}
-              </p>
-            )}
             {heroDateLine && !isFallback && (
-              <p className="mt-2 hidden font-sans text-xs font-semibold uppercase tracking-[0.14em] text-accent-readable sm:block sm:text-sm">
-                {heroDateLine}
-              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{heroDateLine}</p>
             )}
-            <p className="mx-auto mt-3 hidden max-w-2xl font-serif text-base leading-relaxed text-primary sm:block sm:text-lg md:text-xl">
-              {isCurrentYomKippur ? (
-                <>
-                  <span className="block font-semibold">Yom Kippur Divrei Torah and preparation.</span>
-                  <span className="mt-1 block">Explore this week&apos;s Yom Kippur selections.</span>
-                </>
-              ) : isFallback ? (
-                <>
-                  <span className="font-semibold">{resources.length} selections</span> from {displayedLabel} are ready to read, print and share while we prepare {currentLabel}.
-                </>
-              ) : (
-                <>
-                  <span className="font-semibold">
-                    {resources.length} {resources.length === 1 ? "selection" : "selections"}
-                  </span>{" "}
-                  {postShabbos
-                    ? "still available to open below"
-                    : `for ${isSukkosSeason ? "Sukkos, Shmini Atzeres & Simchas Torah" : displayedLabel}`}
-                </>
-              )}
-            </p>
-
-            {isFallback && !isCurrentYomKippur ? (
-              <div className="mt-4 flex flex-col items-center justify-center gap-2.5 sm:flex-row">
-                <a
-                  href="#weekly-email-signup"
-                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary px-6 py-2.5 font-serif text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
-                >
+            {isFallback && !isCurrentYomKippur && (
+              <div className="mt-3 flex flex-col items-center justify-center gap-2 sm:flex-row">
+                <a href="#weekly-email-signup" className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary px-5 py-2 font-serif text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground sm:w-auto">
                   Get notification when published
                 </a>
-                <Link
-                  to="/archive"
-                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-accent/70 px-6 py-2.5 font-serif text-sm font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
-                >
+                <Link to="/archive" className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-accent/70 px-5 py-2 font-serif text-sm font-semibold text-primary hover:bg-accent hover:text-accent-foreground sm:w-auto">
                   Browse previous collections
                 </Link>
               </div>
-            ) : (
-              <div className="mt-5 hidden justify-center sm:flex">
-                <a
-                  href="#this-weeks-collection"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setScrollToChooser(true);
-                    setShowAllResources(true);
-                  }}
-                  className="inline-flex w-full items-center justify-center rounded-full bg-primary px-7 py-3 font-serif font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground sm:w-auto"
-                >
-                  {isCurrentYomKippur ? "Find a Yom Kippur Dvar Torah" : "Help me choose a Dvar Torah"}
-                </a>
-              </div>
-            )}
-            {resources.length > 0 && !isCurrentYomKippur && (
-              !isFallback && (
-                <p className="mt-3 hidden text-center font-sans text-sm text-muted-foreground sm:block sm:text-base">
-                  {isSukkosSeason
-                    ? "Your Sukkos, Shmini Atzeres & Simchas Torah collection is ready."
-                    : `${resources.length} ${resources.length === 1 ? "selection is" : "selections are"} ready for ${displayedLabel}.`}
-                </p>
-              )
             )}
           </div>
         </section>
 
-        {starterSelections.length > 0 && !isCurrentYomKippur && (
+        {starterSelections.length > 0 && !isCurrentYomKippur && !showAllResources && (
           <section aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border-2 border-accent/50 bg-card/50 px-4 py-5 sm:px-6">
             <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-xs">
               Home of the original Torah For The Table series
@@ -716,8 +653,8 @@ function Index() {
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {starterShowsThreeOriginals
-                ? "Three original publications prepared for each parsha, available here to read or print, alongside our collection of Divrei Torah from respected Torah publishers."
-                : `Choose one selection from our ${displayedLabel} collection. Open the PDF to read or print; no account is needed.`}
+                ? "Our own weekly publications, ready to read or print, alongside selections from respected Torah publishers."
+                : "Open any PDF to read or print for free. No account is needed."}
             </p>
             {starterShowsThreeOriginals && (
               <p className="mt-2 text-xs font-medium text-primary">New editions every Thursday · Always free</p>
@@ -760,23 +697,25 @@ function Index() {
                 </article>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setShowAllResources(true);
-                requestAnimationFrame(() => document.getElementById("this-weeks-collection")?.scrollIntoView({
-                  behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-                  block: "start",
-                }));
-              }}
-              className="mt-4 inline-block text-sm font-semibold text-primary underline underline-offset-4 hover:text-accent"
-            >
-              Browse the complete collection
-            </button>
+            {resources.length > starterSelections.length && (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAllResources(true);
+                  requestAnimationFrame(() => document.getElementById("this-weeks-collection")?.scrollIntoView({
+                    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+                    block: "start",
+                  }));
+                }}
+                className="mt-4 inline-flex min-h-11 items-center font-serif text-sm font-semibold text-primary underline underline-offset-4 hover:text-accent"
+              >
+                See all {resources.length} selections
+              </button>
+            )}
           </section>
         )}
 
-        {resources.length > 0 && (
+        {resources.length >= 6 && (
           <section aria-labelledby="mobile-quick-choices" className="sm:hidden">
             <h2 id="mobile-quick-choices" className="sr-only">Choose what fits your table</h2>
             <div className="grid grid-cols-2 gap-2">
@@ -821,17 +760,17 @@ function Index() {
             </div>
             {resources.length > 0 && (
               <a
-                href={starterSelections.length > 0 ? "#starter-selections-heading" : "#this-weeks-collection"}
+                href={starterSelections.length > 0 && !showAllResources ? "#starter-selections-heading" : "#this-weeks-collection"}
                 onClick={() => {
-                  if (starterSelections.length === 0) setShowAllResources(true);
+                  if (starterSelections.length === 0 || showAllResources) setShowAllResources(true);
                   trackFp("recommendation_click", {
                     parsha: displayedParshaKey,
-                    metadata: { chooser: "start_here", target: starterSelections.length > 0 ? "starter_picks" : "collection" },
+                    metadata: { chooser: "start_here", target: starterSelections.length > 0 && !showAllResources ? "starter_picks" : "collection" },
                   });
                 }}
                 className="mt-2.5 inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-2.5 font-serif text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
               >
-                {starterSelections.length > 0 ? "Not sure? See our recommended picks" : "Browse all available Divrei Torah"}
+                {starterSelections.length > 0 && !showAllResources ? "Not sure? See our recommended picks" : "Browse all available Divrei Torah"}
               </a>
             )}
           </section>
@@ -842,13 +781,14 @@ function Index() {
           heading={currentLabel}
           badgeLabel="This Shabbos"
           message="New Divrei Torah will be added then."
-          completeHref="#this-weeks-collection"
+          completeHref={starterSelections.length > 0 && !showAllResources ? "#starter-selections-heading" : "#this-weeks-collection"}
           completeCtaLabel={`Browse ${displayedLabel}`}
           ariaLabel={(fillStep) =>
             `${currentLabel} upload progress: ${fillStep}% complete`
           }
         />}
 
+        {(resources.length === 0 || showCompleteCollection) && (
         <section id="this-weeks-collection" className="scroll-mt-8">
           <div className="px-1 sm:px-2">
             <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
@@ -856,51 +796,13 @@ function Index() {
                 ? "Yom Kippur Divrei Torah and preparation"
                 : isFallback
                   ? `${displayedLabel} — Browse All ${resources.length} Selections`
-                  : "This Week's Collection"}
+                  : "All This Week's Selections"}
             </h2>
             {!isCurrentYomKippur && (
               <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-muted-foreground">
                 Our original weekly publications and selections from respected Torah publishers, together in one free collection.
               </p>
             )}
-            {!isFallback && resources.length > 0 && !postShabbos && (
-              <div className="mx-auto mt-4 max-w-2xl rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-center">
-                <p className="font-serif text-sm leading-relaxed text-primary sm:text-base">
-                  <span className="font-semibold">
-                    {collectionCountLine(resources.length, collectionComplete)}
-                  </span>
-                </p>
-              </div>
-            )}
-            {displayedParshaKey && !isYomTovCollection && !isYomTovReading(displayedParshaKey) && (
-              <p className="mt-2 text-center text-sm text-muted-foreground">
-                <Link
-                  to="/parsha/$slug"
-                  params={{ slug: readingSlug(displayedParshaKey) }}
-                  className="text-accent underline decoration-accent/60 underline-offset-4 hover:text-primary"
-                >
-                  Browse all {formatReadingLabel(displayedParshaKey)} Divrei Torah
-                </Link>
-              </p>
-            )}
-
-            {resources.length > 0 && !isCurrentYomKippur && (
-              <section
-                aria-label="Share Torah For The Table"
-                className="mx-auto mt-5 max-w-2xl rounded-2xl border border-accent/60 bg-card/60 px-5 py-5 text-center shadow-sm sm:px-7 sm:py-6"
-              >
-                <p dir="rtl" lang="he" className="font-serif text-2xl font-bold leading-tight text-primary sm:text-3xl">
-                  ואהבת לרעך כמוך
-                </p>
-                <p className="mx-auto mt-2 max-w-lg font-serif text-sm leading-relaxed text-primary sm:text-base">
-                  Share this free resource with a friend or two. Thank you.
-                </p>
-                <div className="mt-4 flex justify-center">
-                  <ShareButton className="w-full border-accent/45 px-5 py-3 text-base sm:w-auto sm:min-w-72" />
-                </div>
-              </section>
-            )}
-
             {featuredPicks.length > 0 && starterSelections.length === 0 && !activeChooser && (
               <p className="mt-5 text-center font-sans text-sm text-muted-foreground">
                 Start with four curated choices, or choose what fits your table.
@@ -978,26 +880,14 @@ function Index() {
               </>
             )}
 
-            {resources.length > 0 && !showAllResources && (
-              <div className="mt-6 text-center">
-                <p className="mb-3 text-sm text-muted-foreground">
-                  Want more choices? The complete {displayedLabel} collection has {resources.length} printable selections.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowAllResources(true)}
-                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-primary bg-primary px-6 py-2.5 font-serif font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                >
-                  Show all {resources.length} selections
-                </button>
-              </div>
-            )}
             {resources.length === 0 ? (
               <p className="mt-6 text-center text-muted-foreground max-w-md mx-auto">
                 New Divrei Torah for {currentLabel} are being prepared. Check back soon!
               </p>
-            ) : showAllResources ? (
+            ) : showCompleteCollection ? (
               <>
+                {sortedResources.length >= 6 && (
+                  <>
                 <TableChooser
                   resources={sortedResources}
                   parshaKey={displayedParshaKey}
@@ -1180,6 +1070,9 @@ function Index() {
                   </div>
                 </div>
 
+                  </>
+                )}
+
                 <div className="mt-5 sm:mt-6 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                   {filteredResources.map((r) => (
                     <PublicationCardTracker
@@ -1265,6 +1158,7 @@ function Index() {
 
           </div>
         </section>
+        )}
 
         <section aria-label="Stay connected" className="mx-auto max-w-2xl">
           <WeeklyEmailSignup
@@ -1273,6 +1167,16 @@ function Index() {
             description="One weekly email when our original series and the complete Shabbos collection are ready."
           />
         </section>
+
+        {resources.length > 0 && !isCurrentYomKippur && (
+          <section aria-label="Share Torah For The Table" className="mx-auto max-w-2xl rounded-xl border border-accent/40 bg-card/50 px-4 py-4 text-center sm:py-5">
+            <p dir="rtl" lang="he" className="font-serif text-xl font-bold text-primary">ואהבת לרעך כמוך</p>
+            <p className="mt-1 text-sm text-muted-foreground">Enjoyed a selection? Share it with a friend.</p>
+            <div className="mt-3 flex justify-center">
+              <ShareButton className="min-h-11 w-full max-w-sm sm:w-auto" />
+            </div>
+          </section>
+        )}
 
         <section className="mx-auto max-w-2xl text-center">
           <Link
@@ -1284,6 +1188,13 @@ function Index() {
           <p className="mx-auto mt-2 max-w-xl text-xs leading-relaxed text-muted-foreground">
             Permanent parsha pages with short vorts, printable Torah sheets, family material and archive selections.
           </p>
+          {displayedParshaKey && !isYomTovCollection && !isYomTovReading(displayedParshaKey) && (
+            <p className="mt-3 text-sm">
+              <Link to="/parsha/$slug" params={{ slug: readingSlug(displayedParshaKey) }} className="text-accent underline underline-offset-4 hover:text-primary">
+                Browse previous {formatReadingLabel(displayedParshaKey)} editions
+              </Link>
+            </p>
+          )}
         </section>
 
         <div className="gold-divider" aria-hidden>
@@ -1327,7 +1238,7 @@ function Index() {
 
         <SiteFooter />
       </div>
-      <BackToTop collectionId="this-weeks-collection" />
+      <BackToTop collectionId={starterSelections.length > 0 && !showAllResources ? "starter-selections-heading" : "this-weeks-collection"} />
     </div>
   );
 }
