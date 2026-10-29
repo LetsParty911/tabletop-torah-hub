@@ -52,8 +52,8 @@ export default function InternalDeviceControl({ accessToken }: { accessToken: st
       <h3 className="font-serif text-lg font-semibold text-primary">This device</h3>
       <p className="mt-1 text-sm text-muted-foreground">
         {internal === true
-          ? "This browser is marked internal. Its visits are still recorded for diagnostics, but they are kept out of the headline reader numbers."
-          : "Mark this browser as internal so your own testing does not count as reader activity. It applies to this browser only."}
+          ? "This browser is marked internal. Its visitor activity, PDF opens and downloads are not recorded in first-party site analytics. Other browser profiles must be marked separately."
+          : "When you sign in as an admin, this browser is automatically excluded from site analytics. It applies to this browser profile only."}
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button size="sm" disabled={busy || internal === true} onClick={() => void apply("mark")}>
