@@ -5,7 +5,7 @@ import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { SiteFooter } from "@/components/SiteFooter";
-import { TFTT_ORIGINAL_SERIES, tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { TFTT_ORIGINAL_SERIES, tfttOriginalSeriesById, publicSeriesName } from "@/lib/tftt-originals";
 
 export const Route = createFileRoute("/publications")({
   loader: () => listPublicationPages(),
@@ -111,7 +111,7 @@ function renderPublicationCards(publications: PublicationPageSummary[]) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h2 className="font-serif text-lg sm:text-xl font-bold text-primary group-hover:text-accent group-hover:underline">
-                      {publication.name}
+                      {original?.title ?? publicSeriesName(publication.name)}
                     </h2>
                     {publication.publisher && (
                       <p className="mt-0.5 text-xs text-muted-foreground">Published by {publication.publisher}</p>
