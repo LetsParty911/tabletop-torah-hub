@@ -1,22 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { whatsappGroupRedirectTarget } from "@/lib/whatsapp-group-redirect";
+import { whatsappGroupRedirectResponse } from "@/lib/whatsapp-group-clicks.server";
 
 /**
- * Dedicated WhatsApp group short link, with first-touch attribution on
- * the homepage after a 302 redirect. No intermediate page_view is logged.
+ * Per-group WhatsApp short link. Records a best-effort, server-side request
+ * before redirecting to the homepage with first-touch UTM attribution.
  */
 export const Route = createFileRoute("/wap")({
   server: {
     handlers: {
-      GET: async () =>
-        new Response(null, {
-          status: 302,
-          headers: {
-            Location: whatsappGroupRedirectTarget("wap"),
-            "Cache-Control": "no-store",
-            "X-Robots-Tag": "noindex",
-          },
-        }),
+      GET: async ({ request }) => whatsappGroupRedirectResponse(request, "wap"),
     },
   },
 });
