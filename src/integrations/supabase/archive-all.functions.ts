@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { publicationLabel, PUBLICATION_LABELS } from "@/lib/badges";
 import { readingChronoIndex } from "@/lib/parshiyos";
+import { matchesParshaSearch, toParshaComparableKey } from "@/lib/parsha-normalize";
 import { normalizeAudience, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 
@@ -175,16 +176,11 @@ export const listArchiveAll = createServerFn({ method: "GET" })
       new Set(all.map((r) => canonicalPub(r)).filter((v): v is string => !!v)),
     ).sort((a, b) => a.localeCompare(b));
 
-    const q = data.q.trim().toLowerCase();
+    const q = data.q.trim();
     const baseMatches = (r: InternalPdf, includeAudience: boolean) => {
       if (data.year !== "all" && String(r.year) !== data.year) return false;
-      if (data.parsha !== "all" && r.parshaKey !== data.parsha) return false;
-      if (
-        q &&
-        ![r.title, r.publication, r.publisher, r.subtitle, r.description]
-          .filter(Boolean)
-          .some((v) => (v as string).toLowerCase().includes(q))
-      ) return false;
+      if (data.parsha !== "all" && toParshaComparableKey(r.parshaKey) !== toParshaComparableKey(data.parsha)) return false;
+      if (q && !matchesParshaSearch(q, r)) return false;
       if (!matchesLength(r, data.length)) return false;
       if (data.type !== "All" && resourceType(r) !== data.type) return false;
       if (data.pub !== "All" && canonicalPub(r) !== data.pub) return false;
