@@ -5,6 +5,7 @@
 const PARSHA_PREFIX_RE = /^(parshas|parashat|parsha)\s+/i;
 
 const PARSHA_VARIANT_REPLACEMENTS: Array<[RegExp, string]> = [
+  [/\bvayera\b/g, "vayeira"],
   [/\bachrei\b/g, "acharei"],
   [/\bmot\b/g, "mos"],
   [/\bshmini\b/g, "shemini"],
@@ -41,6 +42,38 @@ export function toParshaComparableKey(value: string): string {
   }
 
   return normalized.replace(/[\s-]+/g, "");
+}
+
+/**
+ * Archive text search accepts both spellings of Vayeira. This changes matching
+ * only; publication titles and the preferred visible spelling are untouched.
+ */
+function normalizeSearchSpelling(text: string): string {
+  return text.toLowerCase().replace(/\bvayera\b/g, "vayeira");
+}
+
+export function matchesParshaSearch(
+  query: string,
+  record: {
+    parshaKey: string;
+    title: string;
+    publication?: string | null;
+    publisher?: string | null;
+    subtitle?: string | null;
+    description?: string | null;
+  },
+): boolean {
+  const needle = normalizeSearchSpelling(query.trim());
+  if (!needle) return true;
+  return [
+    record.parshaKey,
+    `Parshas ${record.parshaKey}`,
+    record.title,
+    record.publication,
+    record.publisher,
+    record.subtitle,
+    record.description,
+  ].some((field) => !!field && normalizeSearchSpelling(field).includes(needle));
 }
 
 // ---------------------------------------------------------------------------
