@@ -701,7 +701,7 @@ function Index() {
                 type="button"
                 onClick={() => {
                   setShowAllResources(true);
-                  requestAnimationFrame(() => document.getElementById("this-weeks-collection")?.scrollIntoView({
+                  requestAnimationFrame(() => document.getElementById("this-weeks-collection")?.scrollIntoView?.({
                     behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth",
                     block: "start",
                   }));
@@ -738,7 +738,7 @@ function Index() {
                         metadata: { filter: "mobile_quick_choice", value: active ? "All" : choice.key },
                       });
                       window.requestAnimationFrame(() => {
-                        document.getElementById("this-weeks-collection")?.scrollIntoView({
+                        document.getElementById("this-weeks-collection")?.scrollIntoView?.({
                           behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
                             ? "auto"
                             : "smooth",
