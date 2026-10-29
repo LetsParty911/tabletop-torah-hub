@@ -1,28 +1,44 @@
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { isInternalRequest } from "@/lib/internal-marker.server";
 import { isAutomatedAgent } from "@/lib/request-telemetry.server";
+import { checkRateLimit } from "@/lib/rate-limit.server";
+import { L_REDIRECT_TARGET } from "@/lib/l-redirect";
+import { ST_REDIRECT_TARGET } from "@/lib/st-redirect";
+import { WA_REDIRECT_TARGET } from "@/lib/wa-redirect";
 import {
   whatsappGroupRedirectTarget,
   type WhatsAppGroupCode,
 } from "@/lib/whatsapp-group-redirect";
 
+export type WhatsAppShortLinkCode = WhatsAppGroupCode | "wa" | "st" | "l";
+
+function redirectTarget(code: WhatsAppShortLinkCode): string {
+  if (code === "wa") return WA_REDIRECT_TARGET;
+  if (code === "st") return ST_REDIRECT_TARGET;
+  if (code === "l") return L_REDIRECT_TARGET;
+  return whatsappGroupRedirectTarget(code);
+}
+
 /**
- * Counts GET requests to a group short link before issuing the 302.
- * A redirect request is NOT a verified human click: preview crawlers can
- * request a link too. Keep those requests in a separate, flagged category.
- * Signed owner devices are omitted completely.
+ * Record GET requests to the six WhatsApp short links before issuing a 302.
+ * Requests are not proof of a deliberate tap: previews/prefetchers may also
+ * request the URL. Obvious crawlers are flagged, not counted as people.
+ * Admin-marked devices are excluded completely.
  *
- * Recording is best-effort: analytics failures must never break the link.
- * No IP address, User-Agent string, or visitor identity is persisted here.
+ * Best-effort: an analytics outage must not break redirection. No IP address,
+ * raw User-Agent, or visitor identity is persisted in the click audit table.
  */
 export async function whatsappGroupRedirectResponse(
   request: Request,
-  group: WhatsAppGroupCode,
+  code: WhatsAppShortLinkCode,
 ): Promise<Response> {
-  const target = whatsappGroupRedirectTarget(group);
+  const target = redirectTarget(code);
 
   try {
-    if (!(await isInternalRequest(request))) {
+    if (
+      !(await isInternalRequest(request)) &&
+      (await checkRateLimit(request, "whatsapp-short-link", "TRACKING_RATE_LIMITER"))
+    ) {
       const userAgent = request.headers.get("user-agent") ?? "";
       const automated = isAutomatedAgent(userAgent);
       const lower = userAgent.toLowerCase();
@@ -33,11 +49,11 @@ export async function whatsappGroupRedirectResponse(
           : "desktop";
       const { error } = await getSupabaseAdmin()
         .from("whatsapp_group_link_hits")
-        .insert({ group_code: group, is_automated: automated, device_type: deviceType });
-      if (error) console.error("[whatsapp group link] tracking failed", error.message);
+        .insert({ group_code: code, is_automated: automated, device_type: deviceType });
+      if (error) console.error("[whatsapp link] tracking failed", error.message);
     }
   } catch (error) {
-    console.error("[whatsapp group link] tracking unavailable", error);
+    console.error("[whatsapp link] tracking unavailable", error);
   }
 
   return new Response(null, {
