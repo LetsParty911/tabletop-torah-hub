@@ -852,7 +852,7 @@ function AdminPage() {
           parshaKey,
           title,
           subtitle: null,
-          published,
+          published: willPublish,
           fileName: file.name,
           fileBase64,
           jewishYear,
