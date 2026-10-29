@@ -173,8 +173,7 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     setHomepage(false);
     state.loader.resources = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => example(n, "Lech-Lecha"));
     render(<Homepage />);
-    expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(3);
-    expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(3);
+    expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(6);
     expect(screen.getByRole("button", { name: "View all 8 Lech-Lecha selections" })).toBeTruthy();
   });
 
