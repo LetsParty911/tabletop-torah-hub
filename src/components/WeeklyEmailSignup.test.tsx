@@ -22,29 +22,24 @@ describe("homepage weekly email signup", () => {
     expect(html).toContain("You can unsubscribe at any time.");
   });
 
-  it("places compact and full signup forms at distinct anchors and keeps the collection action", () => {
+  it("renders exactly one homepage signup after the PDF collection", () => {
     const homepage = readFileSync("src/routes/index.tsx", "utf8");
     const countdown = readFileSync("src/components/UpdateCountdown.tsx", "utf8");
-    expect((homepage.match(/sourceId="homepage-top"/g) ?? []).length).toBe(1);
-    expect((homepage.match(/sourceId="homepage"/g) ?? []).length).toBe(1);
-    expect(homepage).toContain('anchorId="weekly-email-signup-top"');
+    expect((homepage.match(/<WeeklyEmailSignup\b/g) ?? []).length).toBe(1);
+    expect(homepage).not.toContain('sourceId="homepage-top"');
+    expect(homepage).toContain('sourceId="homepage"');
+    expect(homepage).toContain('heading="Receive the Weekly Shabbos Collection"');
+    expect(homepage.indexOf("<WeeklyEmailSignup")).toBeGreaterThan(homepage.indexOf("filteredResources.map"));
     expect(homepage).toContain("{viewAllLabel}");
-    expect(homepage).toContain("Open PDF");
-    expect(countdown).toContain('href="#weekly-email-signup-top"');
-    expect(countdown).toContain('href="#weekly-email-signup"');
+    expect(homepage).toContain("<DownloadAndPrintButtons");
+    expect(countdown).not.toContain("#weekly-email-signup-top");
+    expect((countdown.match(/href="#weekly-email-signup"/g) ?? []).length).toBe(2);
   });
 
-  it("renders two forms with unique input IDs and independent consent", () => {
-    const html = renderToStaticMarkup(
-      <>
-        <WeeklyEmailSignup sourceId="homepage-top" anchorId="weekly-email-signup-top" variant="compact" />
-        <WeeklyEmailSignup sourceId="homepage" />
-      </>,
-    );
-    const ids = [...html.matchAll(/\\bid="([^"]+)"/g)].map((match) => match[1]);
-    expect(new Set(ids).size).toBe(ids.length);
-    expect((html.match(/type="checkbox"/g) ?? []).length).toBe(2);
-    expect(html).toContain('id="weekly-email-signup-top"');
+  it("keeps a single email field, explicit consent, and the stable signup anchor", () => {
+    const html = renderToStaticMarkup(<WeeklyEmailSignup sourceId="homepage" />);
+    expect((html.match(/type="email"/g) ?? []).length).toBe(1);
+    expect((html.match(/type="checkbox"/g) ?? []).length).toBe(1);
     expect(html).toContain('id="weekly-email-signup"');
   });
 

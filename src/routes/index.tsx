@@ -754,15 +754,6 @@ function Index() {
           </section>
         )}
 
-        <section aria-label="Get the weekly collection by email" className="mx-auto w-full max-w-2xl">
-          <WeeklyEmailSignup
-            variant="compact"
-            sourceId="homepage-top"
-            anchorId="weekly-email-signup-top"
-            ctaLabel="One free weekly email when the new Shabbos collection is ready"
-          />
-        </section>
-
         {(isFallback || resources.length === 0) && (
           <UpdateCountdown
             compact

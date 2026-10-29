@@ -53,6 +53,30 @@ it("retains collection navigation when content is live", () => {
 });
 
 
+it("scrolls the compact countdown Subscribe link to the one homepage email form", async () => {
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: vi.fn(() => ({ matches: false })),
+  });
+  const scroll = vi.fn();
+  render(
+    <>
+      <UpdateCountdown compact liveParshaLabel="Noach" readingDate="2026-10-24" />
+      <div id="weekly-email-signup">
+        <input type="email" aria-label="Weekly email" />
+      </div>
+    </>,
+  );
+  const signup = document.getElementById("weekly-email-signup");
+  if (!signup) throw new Error("Missing signup");
+  signup.scrollIntoView = scroll;
+  const link = screen.getByRole("link", { name: "Subscribe for the weekly email" });
+  expect(link.getAttribute("href")).toBe("#weekly-email-signup");
+  await userEvent.click(link);
+  expect(scroll).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
+  expect(document.activeElement).toBe(screen.getByLabelText("Weekly email"));
+});
+
 describe("real release deadline transitions", () => {
   beforeEach(() => {
     vi.useFakeTimers();
