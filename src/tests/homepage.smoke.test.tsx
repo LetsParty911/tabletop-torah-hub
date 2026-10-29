@@ -157,24 +157,24 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.getByText("Our Original Weekly Series")).toBeTruthy();
   });
 
-  it("reveals complete PDF selection and chooser only on explicit request", () => {
+  it("reveals the complete PDF selection on explicit request", () => {
     setHomepage(true);
     render(<Homepage />);
     expect(screen.queryByTestId("table-chooser")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "See all 4 selections" }));
-    expect(screen.getByTestId("table-chooser")).toBeTruthy();
+    expect(screen.queryByTestId("table-chooser")).toBeNull();
     expect(screen.getAllByRole("link", { name: "Sample Torah Sheet 4" }).length).toBeGreaterThan(0);
     const openLinks = screen.getAllByRole("link", { name: "Open PDF" });
     expect(openLinks.length).toBeGreaterThanOrEqual(4);
     expect(openLinks.some((link) => link.getAttribute("href") === "/view/example-1/pdf")).toBe(true);
   });
 
-  it("reveals the hidden chooser when the homepage Help me choose link is clicked", () => {
+  it("shows the full small collection without extra filtering", () => {
     setHomepage(false);
     render(<Homepage />);
     expect(screen.queryByTestId("table-chooser")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "See all 4 selections" }));
-    expect(screen.getByTestId("table-chooser")).toBeTruthy();
+    expect(screen.queryByTestId("table-chooser")).toBeNull();
   });
 
   it("stops labeling a live Lech-Lecha collection as an upcoming fallback", () => {
