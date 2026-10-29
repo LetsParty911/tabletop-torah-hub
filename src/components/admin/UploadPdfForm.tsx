@@ -14,8 +14,18 @@ export type CanonicalPub = {
   active: boolean;
 };
 
+export type UploadResult = {
+  id: string;
+  title: string;
+  parsha: string;
+  jewishYear: number;
+  published: boolean;
+};
+
 type UploadPdfFormProps = {
+  // Default submit (Enter / primary button) = Upload & Publish.
   onSubmit: (e: React.FormEvent) => void;
+  onSaveDraft: () => void;
   uploadParshaReady: boolean;
   parshaKey: string;
   onParshaChange: (value: string) => void;
@@ -35,9 +45,8 @@ type UploadPdfFormProps = {
   uploadDescription: string;
   onUploadDescriptionChange: (value: string) => void;
   onFileInputChange: (file: File | null) => void;
-  published: boolean;
-  onPublishedChange: (value: boolean) => void;
-  busy: boolean;
+  busyAction: "publish" | "draft" | null;
+  uploadResult: UploadResult | null;
   msg: { kind: "success" | "error"; text: string } | null;
 };
 
