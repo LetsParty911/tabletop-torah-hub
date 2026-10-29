@@ -91,6 +91,9 @@ export const Route = createFileRoute("/api/events")({
           // mark their own traffic internal.
           const { isInternalRequest } = await import("@/lib/internal-marker.server");
           const isInternal = await isInternalRequest(request);
+          // The owner's marked browser is excluded at ingest, including from
+          // raw events and visitor-alert triggers. Never trust a payload flag.
+          if (isInternal) return new Response(null, { status: 204 });
 
           // Approximate, network-derived location only, alongside the raw
           // client IP, User-Agent and request header telemetry.

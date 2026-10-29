@@ -33,10 +33,25 @@ declare global {
 function GoogleAnalytics() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAdmin =
-    pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/admin-analytics";
+    pathname === "/admin" || pathname.startsWith("/admin/") || pathname.startsWith("/admin-analytics");
+  const [internalStatus, setInternalStatus] = useState<"pending" | "internal" | "external">("pending");
 
   useEffect(() => {
     if (isAdmin) return;
+    let active = true;
+    // Check the server-signed marker before loading third-party page analytics.
+    // In case of an unavailable check, avoid accidentally counting the owner.
+    fetch("/api/internal-device", { credentials: "same-origin", cache: "no-store" })
+      .then((r) => { if (!r.ok) throw new Error("Unable to verify internal browser"); return r.json(); })
+      .then((value: { internal?: boolean }) => {
+        if (active) setInternalStatus(value.internal === true ? "internal" : "external");
+      })
+      .catch(() => { if (active) setInternalStatus("pending"); });
+    return () => { active = false; };
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (isAdmin || internalStatus !== "external") return;
     if (typeof window === "undefined") return;
     if (!GTM_CONTAINER_ID) return;
     if (document.getElementById("gtm-src")) return;
@@ -52,9 +67,9 @@ function GoogleAnalytics() {
     s.async = true;
     s.src = `https://www.googletagmanager.com/gtm.js?id=${GTM_CONTAINER_ID}`;
     document.head.appendChild(s);
-  }, [isAdmin]);
+  }, [isAdmin, internalStatus]);
 
-  if (isAdmin || !GTM_CONTAINER_ID) return null;
+  if (isAdmin || !GTM_CONTAINER_ID || internalStatus !== "external") return null;
   return (
     <noscript>
       <iframe

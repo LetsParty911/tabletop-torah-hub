@@ -750,6 +750,16 @@ function AdminPage() {
       }
       const r = await checkIsAdmin({ data: { accessToken } });
       setIsAdmin(r.isAdmin);
+      // A verified owner/admin browser is automatically opted out of analytics.
+      // This is scoped to this browser profile and survives sign-out.
+      if (r.isAdmin) {
+        void fetch("/api/internal-device", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accessToken, action: "mark" }),
+        }).catch(() => undefined);
+      }
     })();
   }, [accessToken]);
 
