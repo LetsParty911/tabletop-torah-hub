@@ -237,7 +237,17 @@ function AdminPage() {
   const [parshaUserTouched, setParshaUserTouched] = useState(false);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
-  const [published, setPublished] = useState(false);
+  // Upload intent: the form has two explicit actions (Upload & Publish /
+  // Save as Draft) instead of an ambiguous checkbox. uploadAction tracks
+  // which one is in flight; uploadResult is the persistent confirmation.
+  const [uploadAction, setUploadAction] = useState<"publish" | "draft" | null>(null);
+  const [uploadResult, setUploadResult] = useState<{
+    id: string;
+    title: string;
+    parsha: string;
+    jewishYear: number;
+    published: boolean;
+  } | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [uploadPublication, setUploadPublication] = useState<string>("");
   // Canonical publications (publications table). Empty before the migration runs,
