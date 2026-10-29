@@ -1480,9 +1480,9 @@ function AdminPage() {
                   setMsg({ kind: "error", text: FILE_READ_HINT });
                 }
               }}
-              published={published}
-              onPublishedChange={setPublished}
-              busy={busy}
+              onSaveDraft={handleSaveDraft}
+              busyAction={uploadAction}
+              uploadResult={uploadResult}
               msg={msg}
             />
 
