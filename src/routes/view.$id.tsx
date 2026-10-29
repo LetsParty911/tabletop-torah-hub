@@ -351,6 +351,7 @@ function ViewPdf() {
           <DownloadToPrintButton
             href={`/view/${pdf.id}/pdf`}
             publicationId={pdf.id}
+            showDownload
             publicationName={publication?.name ?? pdf.publication ?? pdf.title}
             publicationTitle={pdf.title}
             parsha={pdf.parsha_key}
@@ -413,7 +414,7 @@ function ViewPdf() {
                 />
               ) : (
                 <p className="mt-3 text-sm text-foreground/80">
-                  Tap Open PDF above to read the full document in your browser. Use the browser menu if you want to print or save it.
+                  Tap Open PDF above to read in your browser, or use Download PDF to save a copy. You can print from your PDF viewer.
                 </p>
               )}
             </div>
