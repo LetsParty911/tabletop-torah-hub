@@ -1,4 +1,5 @@
 import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack/react-router";
+import { publicSeriesName } from "@/lib/tftt-originals";
 import { FileText, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
@@ -308,7 +309,7 @@ function ArchivePage() {
             <div className="mt-6 flex items-center justify-center gap-3 sm:gap-4 text-accent">
               <span aria-hidden className="h-px w-8 sm:w-16 bg-accent/60" />
               <span className="font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em]">
-                {archiveTotal} {archiveTotal === 1 ? "Dvar" : "Divrei"} Torah
+                {archiveTotal} {archiveTotal === 1 ? "Dvar" : "Divrei"} Torah · All Years
               </span>
               <span aria-hidden className="h-px w-8 sm:w-16 bg-accent/60" />
             </div>
@@ -527,7 +528,7 @@ function ArchivePage() {
                         <option value="All">All publications</option>
                         {publicationOptions.map((p) => (
                           <option key={p} value={p}>
-                            {publicationLabel(p) ?? p}
+                            {publicSeriesName(publicationLabel(p) ?? p)}
                           </option>
                         ))}
                       </select>
@@ -653,7 +654,7 @@ function ArchivePage() {
                                     </p>
                                   ) : r.publication && publicationLabel(r.publication) !== r.title ? (
                                     <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">
-                                      From {publicationLabel(r.publication)}
+                                      From {publicSeriesName(publicationLabel(r.publication) ?? "")}
                                     </p>
                                   ) : null}
                                   {(r.subtitle || r.description) && (
