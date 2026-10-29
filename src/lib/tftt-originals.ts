@@ -26,6 +26,13 @@ export const TFTT_ORIGINAL_SERIES = [
   },
 ] as const;
 
+/** Display rename only: legacy database names, URLs and PDF filenames remain unchanged. */
+export function publicSeriesName(name: string): string {
+  return /^(?:Parsha Questions\s*(?:&|and)\s*Answers)(.*)$/i.test(name)
+    ? name.replace(/^Parsha Questions\s*(?:&|and)\s*Answers/i, "Parsha Challenge")
+    : name;
+}
+
 export function tfttOriginalSeriesById(publicationId: string | null | undefined) {
   if (!publicationId) return null;
   return TFTT_ORIGINAL_SERIES.find((series) => series.id === publicationId) ?? null;
