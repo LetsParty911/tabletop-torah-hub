@@ -52,6 +52,7 @@ type UploadPdfFormProps = {
 
 export default function UploadPdfForm({
   onSubmit,
+  onSaveDraft,
   uploadParshaReady,
   parshaKey,
   onParshaChange,
@@ -71,11 +72,11 @@ export default function UploadPdfForm({
   uploadDescription,
   onUploadDescriptionChange,
   onFileInputChange,
-  published,
-  onPublishedChange,
-  busy,
+  busyAction,
+  uploadResult,
   msg,
 }: UploadPdfFormProps) {
+  const busy = busyAction !== null;
   return (
     <form onSubmit={onSubmit} className="mt-4 grid gap-4 md:grid-cols-2">
       <label className="block">
