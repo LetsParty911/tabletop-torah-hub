@@ -29,6 +29,7 @@ import { Route as RRouteImport } from './routes/r'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SRouteImport } from './routes/s'
+import { Route as BriefInsightsRouteImport } from './routes/brief-insights'
 import { Route as ShortVortsRouteImport } from './routes/short-vorts'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StRouteImport } from './routes/st'
@@ -154,6 +155,11 @@ const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
 const SRoute = SRouteImport.update({
   id: '/s',
   path: '/s',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BriefInsightsRoute = BriefInsightsRouteImport.update({
+  id: '/brief-insights',
+  path: '/brief-insights',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShortVortsRoute = ShortVortsRouteImport.update({
@@ -308,6 +314,7 @@ export interface FileRoutesByFullPath {
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/s': typeof SRoute
+  '/brief-insights': typeof BriefInsightsRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st': typeof StRoute
@@ -356,6 +363,7 @@ export interface FileRoutesByTo {
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/s': typeof SRoute
+  '/brief-insights': typeof BriefInsightsRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st': typeof StRoute
@@ -405,6 +413,7 @@ export interface FileRoutesById {
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/s': typeof SRoute
+  '/brief-insights': typeof BriefInsightsRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st': typeof StRoute
@@ -455,6 +464,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/robots.txt'
     | '/s'
+    | '/brief-insights'
     | '/short-vorts'
     | '/sitemap.xml'
     | '/st'
@@ -503,6 +513,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/robots.txt'
     | '/s'
+    | '/brief-insights'
     | '/short-vorts'
     | '/sitemap.xml'
     | '/st'
@@ -551,6 +562,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/robots.txt'
     | '/s'
+    | '/brief-insights'
     | '/short-vorts'
     | '/sitemap.xml'
     | '/st'
@@ -600,6 +612,7 @@ export interface RootRouteChildren {
   ResourcesRoute: typeof ResourcesRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SRoute: typeof SRoute
+  BriefInsightsRoute: typeof BriefInsightsRoute
   ShortVortsRoute: typeof ShortVortsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StRoute: typeof StRoute
@@ -765,6 +778,13 @@ declare module '@tanstack/react-router' {
       path: '/s'
       fullPath: '/s'
       preLoaderRoute: typeof SRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brief-insights': {
+      id: '/brief-insights'
+      path: '/brief-insights'
+      fullPath: '/brief-insights'
+      preLoaderRoute: typeof BriefInsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/short-vorts': {
@@ -998,6 +1018,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResourcesRoute: ResourcesRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SRoute: SRoute,
+  BriefInsightsRoute: BriefInsightsRoute,
   ShortVortsRoute: ShortVortsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StRoute: StRoute,

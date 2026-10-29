@@ -30,10 +30,10 @@ export function SiteFooter() {
         <Link to="/publications" className={linkClass}>
           Publications
         </Link>
-        <Link to="/short-vorts" className={linkClass}>
+        <Link to="/brief-insights" className={linkClass}>
           Brief Insights
         </Link>
-        <Link to="/resources" className={linkClass}>
+        <Link to="/originals" className={linkClass}>
           Our Originals
         </Link>
         <Link to="/about" className={linkClass}>
@@ -47,7 +47,7 @@ export function SiteFooter() {
           className={linkClass}
           onClick={() => trackFp("noahide_footer_click", { metadata: { target_path: "/noahide-resources", placement: "site_footer" } })}
         >
-          The Seven Noahide Laws
+          The Seven Noahide Laws (for non-Jewish visitors)
         </Link>
         <Link to="/privacy" className={linkClass}>
           Privacy
@@ -61,7 +61,7 @@ export function SiteFooter() {
           to="/about"
           className="hover:text-primary hover:underline transition-colors duration-150"
         >
-          Torah For The Table is a registered 501(c)(3) nonprofit organization.
+          Torah For The Table is a nonprofit Torah-distribution project.
         </Link>
       </p>
     </footer>

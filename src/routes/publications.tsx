@@ -64,7 +64,7 @@ function PublicationsPage() {
 
         {originalPublications.length > 0 && (
           <section className="mt-8" aria-labelledby="original-series-heading">
-            <h2 id="original-series-heading" className="font-serif text-2xl font-bold text-primary">Our Original Weekly Series</h2>
+            <h2 id="original-series-heading" className="font-serif text-2xl font-bold text-primary">Our Originals</h2>
             <p className="mt-1 text-sm text-muted-foreground">Three original publications prepared for the Shabbos table, free to read or print.</p>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {renderPublicationCards(originalPublications)}
@@ -111,7 +111,7 @@ function renderPublicationCards(publications: PublicationPageSummary[]) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h2 className="font-serif text-lg sm:text-xl font-bold text-primary group-hover:text-accent group-hover:underline">
-                      {publication.name}
+                      {original?.title ?? publication.name}
                     </h2>
                     {publication.publisher && (
                       <p className="mt-0.5 text-xs text-muted-foreground">Published by {publication.publisher}</p>

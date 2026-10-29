@@ -61,7 +61,7 @@ export function BackToTop({ collectionId }: Props) {
       }`}
     >
       <ArrowUp className="h-3.5 w-3.5" />
-      <span className="hidden sm:inline">Top</span>
+      <span className="hidden sm:inline">Back to top</span>
     </button>
   );
 }

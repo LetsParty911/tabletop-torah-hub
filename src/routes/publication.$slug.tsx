@@ -9,6 +9,7 @@ import { isYomTovReading, readingSlug } from "@/lib/reading-page";
 import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { SiteFooter } from "@/components/SiteFooter";
 import { fitPageTitle } from "@/lib/page-title";
+import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
 
 export const Route = createFileRoute("/publication/$slug")({
   loader: async ({ params }) => {
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/publication/$slug")({
   },
   head: ({ loaderData, params }) => {
     const publication = loaderData?.publication;
-    const name = publication?.name ?? "Publication";
+    const name = tfttOriginalSeriesById(publication?.id)?.title ?? publication?.name ?? "Publication";
     const description = leadWithPublicationTitle(
       name,
       publication?.default_description?.trim() ||
@@ -87,6 +88,7 @@ export const Route = createFileRoute("/publication/$slug")({
 
 function PublicationPage() {
   const { publication, editions } = Route.useLoaderData();
+  const displayName = tfttOriginalSeriesById(publication.id)?.title ?? publication.name;
   const latest = editions[0] ?? null;
   const earlier = editions.slice(1);
   const defaultMeta = [
@@ -118,7 +120,8 @@ function PublicationPage() {
     const reading = formatReadingLabel(edition.parsha_key);
     const label = edition.jewish_year ? `${reading} ${edition.jewish_year}` : reading;
     const meta = editionMeta(edition);
-    const description = leadWithPublicationTitle(edition.title, edition.description || edition.subtitle);
+    const editionTitle = tfttOriginalSeriesById(publication.id)?.title ?? edition.title;
+    const description = leadWithPublicationTitle(editionTitle, edition.description || edition.subtitle);
 
     return (
       <article
@@ -141,7 +144,7 @@ function PublicationPage() {
         </p>
         <h3 className="mt-1 font-serif text-lg sm:text-xl font-bold text-primary leading-snug">
           <Link to="/view/$id" params={{ id: edition.id }} className="hover:text-accent hover:underline">
-            {edition.title === publication.name ? publication.name : edition.title}
+            {editionTitle}
           </Link>
         </h3>
         {meta && <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{meta}</p>}
@@ -150,10 +153,10 @@ function PublicationPage() {
           <DownloadAndPrintButtons
             href={`/view/${edition.id}/pdf`}
             publicationId={edition.id}
-            publicationName={publication.name}
-            publicationTitle={edition.title}
+            publicationName={displayName}
+            publicationTitle={editionTitle}
             publisher={publication.publisher}
-            publicationSeries={publication.name}
+            publicationSeries={displayName}
             parsha={edition.parsha_key}
             className="w-full px-4 py-2.5"
           />
@@ -184,7 +187,7 @@ function PublicationPage() {
                   Publication
                 </p>
                 <h1 className="mt-1 font-serif text-3xl sm:text-4xl font-bold text-primary leading-tight">
-                  {publication.name}
+                  {displayName}
                 </h1>
                 {publication.publisher && (
                   <p className="mt-1 text-sm text-muted-foreground">Published by {publication.publisher}</p>
@@ -196,7 +199,7 @@ function PublicationPage() {
                 )}
                 {publication.default_description && (
                   <p className="mt-4 max-w-3xl font-serif text-base sm:text-lg leading-relaxed text-primary/85">
-                    {leadWithPublicationTitle(publication.name, publication.default_description)}
+                    {leadWithPublicationTitle(displayName, publication.default_description)}
                   </p>
                 )}
                 <p className="mt-4 text-sm text-muted-foreground">
@@ -212,7 +215,7 @@ function PublicationPage() {
             <h2 className="font-serif text-2xl font-bold text-primary">About this Torah collection</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Torah For The Table currently has {editions.length} {editions.length === 1 ? "edition" : "editions"} of{" "}
-              <span className="font-semibold text-primary">{publication.name}</span>
+              <span className="font-semibold text-primary">{displayName}</span>
               {publication.publisher ? `, published by ${publication.publisher}` : ""}. The available editions cover{" "}
               {new Set(editions.map((edition) => edition.parsha_key)).size}{" "}
               {new Set(editions.map((edition) => edition.parsha_key)).size === 1 ? "parsha or Yom Tov reading" : "parshiyos and Yom Tov readings"}

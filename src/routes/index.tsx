@@ -420,6 +420,8 @@ function Index() {
       ]
     : suggestedStarters;
   const showCompleteCollection = showAllResources || starterSelections.length === 0 || isCurrentYomKippur;
+  const extraPreviewSelections = sortedResources.filter((resource) => !starterSelections.some((pick) => pick.resource.id === resource.id)).slice(0, 3);
+  const viewAllLabel = `View all ${resources.length} ${displayedLabel.replace(/^Parshas\s+/i, "")} selections`;
   usePrewarmDownloads(sortedResources.map((r) => r.id));
 
 
@@ -595,14 +597,6 @@ function Index() {
     <div className="min-h-screen bg-background">
       <AnnouncementBanner initialBanner={Route.useLoaderData().announcement} />
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
-        <UpdateCountdown
-          contentLive={currentPublishedCount > 0}
-          liveParshaLabel={currentLabel}
-          readingDate={readingDate}
-          availableCount={currentPublishedCount}
-          collectionComplete={collectionComplete}
-          initialNow={loaderData.renderedAt}
-        />
         <section className="parchment-frame">
           <div className="parchment-panel px-4 py-4 text-center sm:py-6">
             <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-accent-readable sm:text-xs">
@@ -619,25 +613,15 @@ function Index() {
             </h1>
             <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
               {isFallback
-                ? `Read or print ${displayedLabel} while we prepare ${currentLabel}.`
+                ? `${resources.length} selections from last week remain available to read or print while we prepare ${currentLabel}.`
                 : postShabbos
                   ? "These Torah sheets remain free to read or print."
                   : resources.length > 0
-                    ? "Our original weekly series and curated Torah selections, free to read or print."
+                    ? `${resources.length} free selections for the Shabbos table. New editions every Thursday.`
                     : "New free Divrei Torah are prepared for your Shabbos table every Thursday."}
             </p>
             {heroDateLine && !isFallback && (
               <p className="mt-1 text-xs text-muted-foreground">{heroDateLine}</p>
-            )}
-            {isFallback && !isCurrentYomKippur && (
-              <div className="mt-3 flex flex-col items-center justify-center gap-2 sm:flex-row">
-                <a href="#weekly-email-signup" className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary px-5 py-2 font-serif text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground sm:w-auto">
-                  Get notification when published
-                </a>
-                <Link to="/archive" className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-accent/70 px-5 py-2 font-serif text-sm font-semibold text-primary hover:bg-accent hover:text-accent-foreground sm:w-auto">
-                  Browse previous collections
-                </Link>
-              </div>
             )}
           </div>
         </section>
@@ -648,21 +632,18 @@ function Index() {
               Home of the original Torah For The Table series
             </p>
             <h2 id="starter-selections-heading" className="mt-1 font-serif text-xl font-bold text-primary sm:text-2xl">
-              {starterShowsThreeOriginals ? "Our Original Weekly Series" : "Start here — ready to read or print"}
+              {starterShowsThreeOriginals ? "Our Originals" : "Start here — ready to read or print"}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {starterShowsThreeOriginals
                 ? "Our own weekly publications, ready to read or print, alongside selections from respected Torah publishers."
                 : "Open any PDF to read or print for free. No account is needed."}
             </p>
-            {starterShowsThreeOriginals && (
-              <p className="mt-2 text-xs font-medium text-primary">New editions every Thursday · Always free</p>
-            )}
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {starterSelections.map(({ key, label, resource: r }) => (
                 <article key={r.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{isTfttOriginal(r) && key === "deeper" ? "Parsha Insight" : label}</p>
+                    {!isTfttOriginal(r) && <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{label}</p>}
                     {isTfttOriginal(r) && (
                       <span className="rounded-full border border-accent/60 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
                         TFTT Original
@@ -677,9 +658,11 @@ function Index() {
                   <p className={`mt-2 text-sm text-muted-foreground ${isTfttOriginal(r) ? "" : "line-clamp-3"}`}>
                     {tfttOriginalSeriesById(r.publication_id)?.shortDescription ?? leadWithPublicationTitle(displayTitle(r), chooseReason(r))}
                   </p>
+                  {pageCountLabel(r) && <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{pageCountLabel(r)}</p>}
                   <div className="mt-auto pt-4">
                     <a
                       href={`/view/${encodeURIComponent(r.id)}/pdf`}
+                      aria-label={`Open ${displayTitle(r)} PDF in a new tab`}
                       target="_blank"
                       rel="nofollow noopener noreferrer"
                       onClick={() => trackFp("recommendation_click", {
@@ -696,27 +679,81 @@ function Index() {
                 </article>
               ))}
             </div>
+            {extraPreviewSelections.length > 0 && (
+              <div className="mt-5 border-t border-accent/25 pt-4">
+                <h3 className="font-serif text-lg font-semibold text-primary">More from this collection</h3>
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  {extraPreviewSelections.map((r) => (
+                    <article key={r.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
+                      <h4 className="font-serif text-base font-bold leading-snug text-primary">
+                        <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline">{displayTitle(r)}</Link>
+                      </h4>
+                      {r.publisher && <p className="mt-1 text-xs text-muted-foreground">By {r.publisher}</p>}
+                      <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
+                        {leadWithPublicationTitle(displayTitle(r), r.summary_quick || r.subtitle || r.description || chooseReason(r))}
+                      </p>
+                      {pageCountLabel(r) && <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{pageCountLabel(r)}</p>}
+                      <div className="mt-auto pt-3">
+                        <DownloadAndPrintButtons
+                          href={`/view/${r.id}/pdf`}
+                          publicationId={r.id}
+                          publicationName={displayPublicationName(r)}
+                          publicationTitle={displayTitle(r)}
+                          publisher={r.publisher}
+                          publicationSeries={r.publication}
+                          parsha={r.parsha_key ?? displayedParshaKey}
+                          className="w-full"
+                        />
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            )}
             {resources.length > starterSelections.length && (
               <button
                 type="button"
                 onClick={() => {
                   setShowAllResources(true);
+                  setMobileQuickChoice(null);
                   requestAnimationFrame(() => document.getElementById("this-weeks-collection")?.scrollIntoView?.({
                     behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth",
                     block: "start",
                   }));
                 }}
-                className="mt-4 inline-flex min-h-11 items-center font-serif text-sm font-semibold text-primary underline underline-offset-4 hover:text-accent"
+                className="mt-4 inline-flex min-h-11 items-center rounded-full bg-primary px-5 py-2.5 font-serif text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground"
               >
-                See all {resources.length} selections
+                {viewAllLabel}
               </button>
             )}
           </section>
         )}
 
+        <section aria-label="Get the weekly collection by email" className="mx-auto w-full max-w-2xl">
+          <WeeklyEmailSignup
+            variant="compact"
+            sourceId="homepage-top"
+            anchorId="weekly-email-signup-top"
+            ctaLabel="One free weekly email when the new Shabbos collection is ready"
+          />
+        </section>
+
+        {(isFallback || resources.length === 0) && (
+          <UpdateCountdown
+            compact
+            contentLive={false}
+            liveParshaLabel={currentLabel}
+            readingDate={readingDate}
+            availableCount={0}
+            collectionComplete={false}
+            initialNow={loaderData.renderedAt}
+          />
+        )}
+
         {resources.length >= 6 && (
           <section aria-labelledby="mobile-quick-choices" className="sm:hidden">
             <h2 id="mobile-quick-choices" className="sr-only">Choose what fits your table</h2>
+            <p className="mb-2 text-xs text-muted-foreground">Choose a category to show matching PDFs below.</p>
             <div className="grid grid-cols-2 gap-2">
               {quickChoices.map((choice) => {
                 const active = mobileQuickChoice === choice.key;
@@ -1139,15 +1176,15 @@ function Index() {
         <section aria-label="Stay connected" className="mx-auto max-w-2xl">
           <WeeklyEmailSignup
             sourceId="homepage"
-            heading="Our Originals, Every Thursday"
-            description="One weekly email when our original series and the complete Shabbos collection are ready."
+            heading="Receive the Weekly Shabbos Collection"
+            description="One free email each week when the new collection is ready, including Parsha Challenge, Stories for the Shabbos Table, In the Margins, and other free Divrei Torah. Read or print before Shabbos."
           />
         </section>
 
         {resources.length > 0 && !isCurrentYomKippur && (
           <section aria-label="Share Torah For The Table" className="mx-auto max-w-2xl rounded-xl border border-accent/40 bg-card/50 px-4 py-4 text-center sm:py-5">
             <p dir="rtl" lang="he" className="font-serif text-xl font-bold text-primary">ואהבת לרעך כמוך</p>
-            <p className="mt-1 text-sm text-muted-foreground">Enjoyed a selection? Share it with a friend.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Found something worth sharing? Pass it on to another Shabbos table.</p>
             <div className="mt-3 flex justify-center">
               <ShareButton className="min-h-11 w-full max-w-sm sm:w-auto" />
             </div>
@@ -1159,7 +1196,7 @@ function Index() {
             to="/divrei-torah-parsha"
             className="inline-flex items-center justify-center rounded-full border border-accent/45 bg-background px-5 py-2.5 font-serif font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
           >
-            Browse Divrei Torah for Every Parsha
+            Browse Available Parshas
           </Link>
           <p className="mx-auto mt-2 max-w-xl text-xs leading-relaxed text-muted-foreground">
             Permanent parsha pages with short vorts, printable Torah sheets, family material and archive selections.

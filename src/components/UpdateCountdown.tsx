@@ -16,6 +16,8 @@ type UpdateCountdownProps = {
   /** Loader snapshot keeps SSR and the first client render on the same second. */
   initialNow?: number;
   collectionAnchorId?: string;
+  /** Show a small next-edition note below the available readings. */
+  compact?: boolean;
 };
 
 const NEW_YORK_TIME_ZONE = "America/New_York";
@@ -61,6 +63,7 @@ export function UpdateCountdown({
   collectionComplete = false,
   initialNow = 0,
   collectionAnchorId = "this-weeks-collection",
+  compact = false,
 }: UpdateCountdownProps) {
   const [now, setNow] = useState(initialNow);
 
@@ -88,7 +91,7 @@ export function UpdateCountdown({
 
   const scrollToSignup = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    const signup = document.getElementById("weekly-email-signup");
+    const signup = document.getElementById(compact ? "weekly-email-signup-top" : "weekly-email-signup");
     signup?.scrollIntoView({
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
       block: "start",
@@ -97,6 +100,21 @@ export function UpdateCountdown({
   };
 
   const status = weeklyReleaseState(readingDate, contentLive && typeof availableCount === "number" ? availableCount : 0, now);
+
+  if (compact && status !== "published" && releaseAt) {
+    return (
+      <section aria-label="Next weekly collection" className="rounded-xl border border-accent/30 bg-card/30 px-4 py-2.5 text-center">
+        <p className="text-sm font-medium text-primary">
+          {status === "delayed"
+            ? `The new ${label} collection is still being prepared.`
+            : `Next: ${label} — ${releaseDateLabel} at 8:00 PM Eastern.`}
+        </p>
+        <a href="#weekly-email-signup-top" onClick={scrollToSignup} className="mt-1 inline-block text-xs font-semibold text-accent-readable underline underline-offset-2 hover:text-primary">
+          Subscribe for the weekly email
+        </a>
+      </section>
+    );
+  }
 
   if (status === "published") {
     return (

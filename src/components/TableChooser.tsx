@@ -194,6 +194,8 @@ export function TableChooser({
           })}
         </div>
 
+        {!selected && <p className="mt-3 text-center text-xs text-muted-foreground">Choose a category above to see matching PDFs here, or browse the complete collection below.</p>}
+
         {selected && recommendations.length === 0 && (
           <div ref={resultsRef} className="mt-5 scroll-mt-24 border-t border-accent/25 pt-4 text-center">
             <p className="font-serif text-base font-semibold text-primary">

@@ -53,7 +53,7 @@ const TOP = 15;
 const DRILL_CAP = 40;
 const SCROLL_THRESHOLDS = [25, 50, 75, 100] as const;
 
-const COLLECTION_PATH = /^\/(parsha|yom-tov|publications|archive|short-vorts)(\/|$)/;
+const COLLECTION_PATH = /^\/(parsha|yom-tov|publications|archive|short-vorts|brief-insights|originals|resources)(\/|$)/;
 const INTERACTION = new Set(["publication_click", "recommendation_click", "chooser_select"]);
 
 function median(values: number[]): number {

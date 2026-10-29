@@ -1,3 +1,4 @@
+import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
@@ -721,7 +722,7 @@ export const getPdfById = createServerFn({ method: "GET" })
           .eq("id", pubId)
           .maybeSingle();
         const name = (pub.data as any)?.name as string | undefined;
-        if (name) displayTitle = name;
+        if (name) displayTitle = tfttOriginalSeriesById(pubId)?.title ?? name;
         publisher = ((pub.data as any)?.publisher as string | null) ?? null;
       }
     } catch {
