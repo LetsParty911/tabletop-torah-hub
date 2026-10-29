@@ -329,6 +329,8 @@ async function buildResources(
         page_count: typeof r.page_count === "number" ? r.page_count : null,
         badge: (r.badge as string | null) ?? null,
         featured_slot: (r.featured_slot as string | null) ?? null,
+        // First-page artwork only for canonical TFTT originals (this row's own upload thumb).
+        thumb_url: tfttOriginalSeriesById(r.publication_id as string | null) ? pdfThumbUrl(r.id as string) : null,
       };
     }),
   );
