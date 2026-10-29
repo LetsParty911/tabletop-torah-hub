@@ -1,3 +1,4 @@
+import { publicSeriesName } from "@/lib/tftt-originals";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { fitPageTitle } from "@/lib/page-title";
@@ -208,6 +209,7 @@ function ViewPdf() {
   const chosenSummary = (pdf.summary_full?.trim() || pdf.summary_quick?.trim() || "") as string;
   const showSummary = chosenSummary.length > 0 && norm(chosenSummary) !== norm(pdf.description);
 
+  const readingLabel = pdf.parsha_key ? formatReadingLabel(pdf.parsha_key) : null;
   const metaLine = [
     audienceLabel(normalizeAudience(pdf.audience, pdf.title)) ?? pdf.audience,
     pdf.content_type === "Questions & Answers"
@@ -236,7 +238,7 @@ function ViewPdf() {
           <div className="min-w-0 flex-1">
             <div className="flex items-start gap-2">
               <h1 className="font-serif text-2xl sm:text-3xl font-bold text-primary leading-snug">
-                {pdf.title}
+                {publicSeriesName(pdf.title)}
               </h1>
               {pdf.badge && (
                 <span className="mt-1 shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
@@ -244,6 +246,9 @@ function ViewPdf() {
                 </span>
               )}
             </div>
+            {readingLabel && (
+              <p className="mt-1 font-serif text-sm font-semibold text-primary">{readingLabel}</p>
+            )}
             {(publication?.publisher || pdf.publisher) && (
               <p className="mt-1 text-sm font-normal text-muted-foreground">
                 Published by {publication?.publisher || pdf.publisher}
@@ -265,7 +270,7 @@ function ViewPdf() {
                   params={{ slug: publication.slug }}
                   className="font-medium text-accent underline hover:text-primary"
                 >
-                  {publication.name}
+                  {publicSeriesName(publication.name)}
                 </Link>
               </p>
             )}
