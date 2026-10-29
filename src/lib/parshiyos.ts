@@ -43,6 +43,7 @@ export function normalizeHebcalName(title: string): string {
 export function hebcalToParshaKey(hebcalTitle: string): string {
   const cleaned = normalizeHebcalName(hebcalTitle);
   const map: Record<string, string> = {
+    "Vayera": "Vayeira",
     "Vaera": "Va'eira",
     "Va'era": "Va'eira",
     "Acharei Mot": "Acharei Mos",
@@ -131,6 +132,7 @@ export function formatReadingLabel(key: string): string {
  */
 export function displayReadingName(key: string): string {
   return key
+    .replace(/\bVayera\b/g, "Vayeira")
     .replace(/\bShemini Atzeres\b/g, "Shmini Atzeres")
     .replace(/\bHa['\u2019]azinu\b/g, "Haazinu");
 }
