@@ -591,18 +591,18 @@ function Index() {
     setContentTypeFilter("All");
   };
 
+  const revealFullCollection = () => {
+    setShowAllResources(true);
+    requestAnimationFrame(() => document.getElementById("this-weeks-collection")?.scrollIntoView?.({
+      behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth",
+      block: "start",
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <AnnouncementBanner initialBanner={Route.useLoaderData().announcement} />
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
-        <UpdateCountdown
-          contentLive={currentPublishedCount > 0}
-          liveParshaLabel={currentLabel}
-          readingDate={readingDate}
-          availableCount={currentPublishedCount}
-          collectionComplete={collectionComplete}
-          initialNow={loaderData.renderedAt}
-        />
         <section className="parchment-frame">
           <div className="parchment-panel px-4 py-4 text-center sm:py-6">
             <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-accent-readable sm:text-xs">
@@ -629,11 +629,18 @@ function Index() {
             {heroDateLine && !isFallback && (
               <p className="mt-1 text-xs text-muted-foreground">{heroDateLine}</p>
             )}
+            {resources.length > 0 && !isCurrentYomKippur && (
+              <button
+                type="button"
+                onClick={revealFullCollection}
+                aria-controls="this-weeks-collection"
+                className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary px-5 py-2.5 font-serif text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground sm:w-auto"
+              >
+                View all {resources.length} {displayedLabel.replace(/^Parshas\s+/i, "")} selections
+              </button>
+            )}
             {isFallback && !isCurrentYomKippur && (
               <div className="mt-3 flex flex-col items-center justify-center gap-2 sm:flex-row">
-                <a href="#weekly-email-signup" className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary px-5 py-2 font-serif text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground sm:w-auto">
-                  Get notification when published
-                </a>
                 <Link to="/archive" className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-accent/70 px-5 py-2 font-serif text-sm font-semibold text-primary hover:bg-accent hover:text-accent-foreground sm:w-auto">
                   Browse previous collections
                 </Link>
@@ -677,11 +684,15 @@ function Index() {
                   <p className={`mt-2 text-sm text-muted-foreground ${isTfttOriginal(r) ? "" : "line-clamp-3"}`}>
                     {tfttOriginalSeriesById(r.publication_id)?.shortDescription ?? leadWithPublicationTitle(displayTitle(r), chooseReason(r))}
                   </p>
+                  {pageCountLabel(r) && (
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{pageCountLabel(r)}</p>
+                  )}
                   <div className="mt-auto pt-4">
                     <a
                       href={`/view/${encodeURIComponent(r.id)}/pdf`}
                       target="_blank"
                       rel="nofollow noopener noreferrer"
+                      aria-label={`Open ${displayTitle(r)} PDF in a new tab`}
                       onClick={() => trackFp("recommendation_click", {
                         publication_id: r.id,
                         publication_title: r.title,
@@ -696,23 +707,18 @@ function Index() {
                 </article>
               ))}
             </div>
-            {resources.length > starterSelections.length && (
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAllResources(true);
-                  requestAnimationFrame(() => document.getElementById("this-weeks-collection")?.scrollIntoView?.({
-                    behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth",
-                    block: "start",
-                  }));
-                }}
-                className="mt-4 inline-flex min-h-11 items-center font-serif text-sm font-semibold text-primary underline underline-offset-4 hover:text-accent"
-              >
-                See all {resources.length} selections
-              </button>
-            )}
           </section>
         )}
+
+        <UpdateCountdown
+          contentLive={currentPublishedCount > 0}
+          liveParshaLabel={currentLabel}
+          readingDate={readingDate}
+          availableCount={currentPublishedCount}
+          collectionComplete={collectionComplete}
+          initialNow={loaderData.renderedAt}
+          hidePublishedAction
+        />
 
         {resources.length >= 6 && (
           <section aria-labelledby="mobile-quick-choices" className="sm:hidden">
@@ -1139,8 +1145,8 @@ function Index() {
         <section aria-label="Stay connected" className="mx-auto max-w-2xl">
           <WeeklyEmailSignup
             sourceId="homepage"
-            heading="Our Originals, Every Thursday"
-            description="One weekly email when our original series and the complete Shabbos collection are ready."
+            heading="Get the Weekly Torah Collection"
+            description="One email every Thursday with our original publications and the complete collection of Divrei Torah for Shabbos."
           />
         </section>
 
@@ -1159,7 +1165,7 @@ function Index() {
             to="/divrei-torah-parsha"
             className="inline-flex items-center justify-center rounded-full border border-accent/45 bg-background px-5 py-2.5 font-serif font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
           >
-            Browse Divrei Torah for Every Parsha
+            Browse Available Parshiyos
           </Link>
           <p className="mx-auto mt-2 max-w-xl text-xs leading-relaxed text-muted-foreground">
             Permanent parsha pages with short vorts, printable Torah sheets, family material and archive selections.
