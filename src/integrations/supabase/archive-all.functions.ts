@@ -7,6 +7,7 @@ import { readingChronoIndex } from "@/lib/parshiyos";
 import { matchesParshaSearch, toParshaComparableKey } from "@/lib/parsha-normalize";
 import { normalizeAudience, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
+import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
 
 export type ArchivePdfAll = {
   id: string;
@@ -142,13 +143,14 @@ export const listArchiveAll = createServerFn({ method: "GET" })
       const canonical = row.publication_id
         ? pubMap.get(row.publication_id as string)
         : undefined;
+      const original = tfttOriginalSeriesById(row.publication_id as string | null);
 
       all.push({
         id: row.id as string,
-        title: canonical?.name ?? (row.title as string),
+        title: original?.title ?? canonical?.name ?? (row.title as string),
         publisher: canonical?.publisher ?? null,
         publication:
-          canonical?.name ??
+          original?.title ?? canonical?.name ??
           (row.publication && PUBLICATION_LABELS[row.publication as string]
             ? publicationLabel(row.publication as string)
             : null),

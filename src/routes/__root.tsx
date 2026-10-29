@@ -351,14 +351,14 @@ function SiteNav() {
               Publications
             </Link>
             <Link
-              to="/short-vorts"
+              to="/brief-insights"
               className={linkCls}
               activeProps={{ className: `${linkCls} ${activeCls}` }}
             >
               Brief Insights
             </Link>
             <Link
-              to="/resources"
+              to="/originals"
               className={linkCls}
               activeProps={{ className: `${linkCls} ${activeCls}` }}
             >
@@ -436,14 +436,14 @@ function SiteNav() {
                 Publications
               </Link>
               <Link
-                to="/short-vorts"
+                to="/brief-insights"
                 className={mobileLinkCls}
                 activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
               >
                 Brief Insights
               </Link>
               <Link
-                to="/resources"
+                to="/originals"
                 className={mobileLinkCls}
                 activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
               >
