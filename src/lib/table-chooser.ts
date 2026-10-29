@@ -169,7 +169,7 @@ export type StarterSelection<T extends ChooserResource> = {
 };
 
 const PRIORITY_STARTER_SERIES = [
-  { title: "Parsha Questions & Answers", key: "kids", label: "Questions & Answers" },
+  { title: "Parsha Challenge", key: "kids", label: "Parsha Challenge" },
   { title: "Stories for the Shabbos Table", key: "story", label: "Shabbos Stories" },
   { title: "In the Margins", key: "deeper", label: "Deeper Learning" },
 ] as const;
@@ -187,7 +187,7 @@ export function pickStarterSelections<T extends ChooserResource>(
   for (const { title, key, label } of PRIORITY_STARTER_SERIES) {
     const wanted = starterTitleKey(title);
     const resource = resources.find(
-      (r) => starterTitleKey(r.title) === wanted && !used.has(r.id),
+      (r) => (starterTitleKey(r.title) === wanted || (title === "Parsha Challenge" && starterTitleKey(r.title) === starterTitleKey("Parsha Questions & Answers"))) && !used.has(r.id),
     );
     if (!resource) continue;
     used.add(resource.id);
