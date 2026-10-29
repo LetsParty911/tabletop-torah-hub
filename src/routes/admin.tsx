@@ -4,7 +4,6 @@ import SubscribersManager, { type Subscriber } from "@/components/admin/Subscrib
 import UploadPdfForm from "@/components/admin/UploadPdfForm";
 import SimpleBannerForm from "@/components/admin/SimpleBannerForm";
 import WhatsNewPopupForm from "@/components/admin/WhatsNewPopupForm";
-import WeeklyEmailSection from "@/components/admin/WeeklyEmailSection";
 import ParshaOverrideForm from "@/components/admin/ParshaOverrideForm";
 import ThursdayProgressForm from "@/components/admin/ThursdayProgressForm";
 import WeeklyChecklistSection from "@/components/admin/WeeklyChecklistSection";
@@ -49,9 +48,6 @@ import {
   adminSetWhatsNewBanner,
   getWhatsNewPopup,
   adminSetWhatsNewPopup,
-  adminGetWeeklyEmailPreview,
-  adminSendWeeklyEmail,
-  adminListWeeklyEmailSends,
   getLiveCurrentParsha,
   adminGenerateSummary,
   adminGeneratePublicationMeta,
@@ -221,23 +217,6 @@ function AdminPage() {
   const [showAllPdfs, setShowAllPdfs] = useState(true);
 
   const [msg, setMsg] = useState<{ kind: "success" | "error"; text: string } | null>(null);
-
-  // Weekly email state
-  type WeeklyPreview = Awaited<ReturnType<typeof adminGetWeeklyEmailPreview>>;
-  type WeeklySend = {
-    id: string;
-    parsha_key: string;
-    jewish_year: number;
-    subject: string;
-    sent_at: string;
-    sent_count: number;
-    provider: string | null;
-    notes: string | null;
-  };
-  const [weekly, setWeekly] = useState<WeeklyPreview | null>(null);
-  const [weeklyLoading, setWeeklyLoading] = useState(false);
-  const [weeklySending, setWeeklySending] = useState(false);
-  const [weeklyHistory, setWeeklyHistory] = useState<WeeklySend[]>([]);
 
   // Checklist sources (admin-managed)
   type ChecklistSource = {
@@ -804,68 +783,6 @@ function AdminPage() {
     } else {
       setContactMessages([]);
       setContactMessagesError("Could not load contact messages.");
-    }
-    // Weekly email preview + history (don't block other admin loads on error)
-    setWeeklyLoading(true);
-    try {
-      const [wp, wh] = await Promise.all([
-        adminGetWeeklyEmailPreview({ data: { accessToken } }),
-        adminListWeeklyEmailSends({ data: { accessToken } }),
-      ]);
-      setWeekly(wp);
-      setWeeklyHistory(wh.sends as WeeklySend[]);
-    } catch {
-      // ignore — UI will show "Could not load"
-    } finally {
-      setWeeklyLoading(false);
-    }
-  };
-
-  const handleSendWeeklyEmail = async () => {
-    if (!accessToken || !weekly?.ready) return;
-    if (
-      !confirm(
-        `Send this week's email to ${weekly.activeSubscriberCount} active subscriber${weekly.activeSubscriberCount === 1 ? "" : "s"}?`,
-      )
-    ) {
-      return;
-    }
-    setWeeklySending(true);
-    setMsg(null);
-    try {
-      const r = await adminSendWeeklyEmail({ data: { accessToken } });
-      if (!r.ok) {
-        setMsg({ kind: "error", text: r.error ?? "Send failed." });
-      } else {
-        const sent = (r as { sentCount?: number }).sentCount ?? 0;
-        const failed = (r as { failedCount?: number }).failedCount ?? 0;
-        const warning = (r as { warning?: string | null }).warning ?? null;
-        setMsg({
-          kind: "success",
-          text: warning
-            ? `Sent ${sent}. ${warning}`
-            : `Weekly email sent to ${sent} subscriber${sent === 1 ? "" : "s"}.${failed ? ` ${failed} failed.` : ""}`,
-        });
-        try {
-          (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag?.(
-            "event",
-            "weekly_email_send",
-            {
-              parsha_key: weekly.parshaKey,
-              jewish_year: weekly.jewishYear,
-              sent_count: sent,
-            },
-          );
-        } catch { /* ignore */ }
-      }
-      await refresh();
-    } catch (err) {
-      setMsg({
-        kind: "error",
-        text: `Send failed: ${err instanceof Error ? err.message : "unknown error"}`,
-      });
-    } finally {
-      setWeeklySending(false);
     }
   };
 
@@ -1558,17 +1475,6 @@ function AdminPage() {
                   : `${unpublishedForCurrent.length} draft PDF${unpublishedForCurrent.length === 1 ? "" : "s"} for ${currentParshaLabel} waiting to go live.`}
               </span>
             </div>
-          </div>
-        </section>
-        <section className="parchment-frame">
-          <div className="parchment-panel">
-            <WeeklyEmailSection
-              weekly={weekly}
-              weeklyLoading={weeklyLoading}
-              weeklySending={weeklySending}
-              weeklyHistory={weeklyHistory}
-              onSend={handleSendWeeklyEmail}
-            />
           </div>
         </section>
           </TabsContent>
