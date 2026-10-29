@@ -775,17 +775,9 @@ function Index() {
           </section>
         )}
 
-        {!isFallback && currentPublishedCount > 0 && progressForCurrentReading && <ThursdayProgressMeter
-          // Upload progress belongs to the active reading, not the following week's parsha.
-          heading={currentLabel}
-          badgeLabel="This Shabbos"
-          message="New Divrei Torah will be added then."
-          completeHref={starterSelections.length > 0 && !showAllResources ? "#starter-selections-heading" : "#this-weeks-collection"}
-          completeCtaLabel={`Browse ${displayedLabel}`}
-          ariaLabel={(fillStep) =>
-            `${currentLabel} upload progress: ${fillStep}% complete`
-          }
-        />}
+        {!isFallback && currentPublishedCount > 0 && progressForCurrentReading && (
+          <ThursdayProgressMeter heading={currentLabel} />
+        )}
 
         {(resources.length === 0 || showCompleteCollection) && (
         <section id="this-weeks-collection" className="scroll-mt-8">
