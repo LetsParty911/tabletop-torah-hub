@@ -6,6 +6,8 @@ type DownloadToPrintButtonProps = {
   href: string;
   onClick?: () => void;
   className?: string;
+  /** Display an explicitly labeled download option only on the PDF detail page. */
+  showDownload?: boolean;
   publicationId?: string;
   publicationName?: string;
   publicationTitle?: string;
@@ -18,8 +20,9 @@ type DownloadToPrintButtonProps = {
 };
 
 /**
- * One public action per PDF: Open PDF. The browser's PDF viewer then provides
- * its normal print/save controls. Keep the existing inline /pdf route.
+ * Collection cards show one public action: Open PDF. The individual PDF detail
+ * page can opt in to a clearly labeled Download PDF action for saving/printing.
+ * Keep the existing validated /pdf and /download routes.
  *
  * Count each deliberate button click as publication_click with
  * metadata.action = "open_pdf", exactly as the existing admin analytics does.
@@ -29,6 +32,8 @@ type DownloadToPrintButtonProps = {
 export function DownloadToPrintButton({
   href,
   className = "",
+  showDownload = false,
+  onClick,
   publicationId,
   publicationName,
   publicationTitle,
@@ -72,7 +77,7 @@ export function DownloadToPrintButton({
       <a
         href={openHref}
         target="_blank"
-        onClick={(event) => recordOpen(event, "open_pdf")}
+        onClick={(event) => { recordOpen(event, "open_pdf"); onClick?.(); }}
         rel="nofollow noopener noreferrer"
         aria-label={"Open PDF in a new tab: " + title}
         className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
@@ -80,15 +85,16 @@ export function DownloadToPrintButton({
         <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
         <span>Open PDF</span>
       </a>
-      {publicationId && (
+      {showDownload && publicationId && (
         <a
           href={pdfActionHrefs(publicationId).download}
           onClick={(event) => recordOpen(event, "download")}
           aria-label={"Download PDF: " + title}
           title="Download PDF to save or print"
-          className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full border border-accent/50 bg-background text-primary transition-colors hover:bg-accent/10"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-accent/50 bg-background px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-accent/10"
         >
           <Download className="h-4 w-4" aria-hidden="true" />
+          <span>Download PDF</span>
         </a>
       )}
     </div>
