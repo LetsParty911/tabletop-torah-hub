@@ -65,10 +65,10 @@ describe("writePdfOutcome", () => {
     expect(await writePdfOutcome(good(), PUB, 302, d)).toBe(false);
     expect(write).not.toHaveBeenCalled();
   });
-  it("internal flag comes only from server marker", async () => {
+  it("marked internal browsers never write PDF route analytics", async () => {
     const { write, d } = deps({ isInternal: async () => true });
-    await writePdfOutcome(req({ a: ACTION, s: SID, v: VID, internal: "0" }), PUB, 302, d);
-    expect(write.mock.calls[0][0].is_internal).toBe(true);
+    expect(await writePdfOutcome(req({ a: ACTION, s: SID, v: VID, internal: "0" }), PUB, 302, d)).toBe(false);
+    expect(write).not.toHaveBeenCalled();
   });
   it("failed write is swallowed", async () => {
     const { d } = deps({ write: async () => { throw new Error("db down"); } });
