@@ -157,24 +157,35 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.getByText("Our Original Weekly Series")).toBeTruthy();
   });
 
-  it("reveals complete PDF selection and chooser only on explicit request", () => {
+  it("shows every PDF and one stable collection anchor for small weekly releases", () => {
+    setHomepage(false);
+    state.loader.resources = [1, 2].map((n) => example(n, "Lech-Lecha"));
+    render(<Homepage />);
+    expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(2);
+    expect(document.querySelectorAll("#this-weeks-collection")).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: /See all 2 selections/ })).toBeNull();
+    expect(screen.queryByTestId("table-chooser")).toBeNull();
+    expect(screen.getByRole("link", { name: "Share Torah For The Table" })).toBeTruthy();
+  });
+
+  it("reveals the complete PDF selection on explicit request", () => {
     setHomepage(true);
     render(<Homepage />);
     expect(screen.queryByTestId("table-chooser")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Show all 4 selections" }));
-    expect(screen.getByTestId("table-chooser")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Sample Torah Sheet 4" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "See all 4 selections" }));
+    expect(screen.queryByTestId("table-chooser")).toBeNull();
+    expect(screen.getAllByRole("link", { name: "Sample Torah Sheet 4" }).length).toBeGreaterThan(0);
     const openLinks = screen.getAllByRole("link", { name: "Open PDF" });
-    expect(openLinks.length).toBeGreaterThanOrEqual(5);
+    expect(openLinks.length).toBeGreaterThanOrEqual(4);
     expect(openLinks.some((link) => link.getAttribute("href") === "/view/example-1/pdf")).toBe(true);
   });
 
-  it("reveals the hidden chooser when the homepage Help me choose link is clicked", () => {
+  it("shows the full small collection without extra filtering", () => {
     setHomepage(false);
     render(<Homepage />);
     expect(screen.queryByTestId("table-chooser")).toBeNull();
-    fireEvent.click(screen.getByRole("link", { name: "Help me choose a Dvar Torah" }));
-    expect(screen.getByTestId("table-chooser")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "See all 4 selections" }));
+    expect(screen.queryByTestId("table-chooser")).toBeNull();
   });
 
   it("stops labeling a live Lech-Lecha collection as an upcoming fallback", () => {

@@ -30,7 +30,7 @@ describe("homepage weekly email signup", () => {
     expect(homepage.indexOf('sourceId="homepage"')).toBeGreaterThan(
       homepage.indexOf('id="this-weeks-collection"'),
     );
-    expect(homepage).toContain("Show all {resources.length} selections");
+    expect(homepage).toContain("See all {resources.length} selections");
     expect(homepage).toContain("Open PDF");
     expect(countdown).toContain('href="#weekly-email-signup"');
     expect(countdown).toContain('getElementById("weekly-email-signup")');

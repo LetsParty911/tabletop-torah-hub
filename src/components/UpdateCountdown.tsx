@@ -15,6 +15,7 @@ type UpdateCountdownProps = {
   collectionComplete?: boolean;
   /** Loader snapshot keeps SSR and the first client render on the same second. */
   initialNow?: number;
+  collectionAnchorId?: string;
 };
 
 const NEW_YORK_TIME_ZONE = "America/New_York";
@@ -59,6 +60,7 @@ export function UpdateCountdown({
   availableCount,
   collectionComplete = false,
   initialNow = 0,
+  collectionAnchorId = "this-weeks-collection",
 }: UpdateCountdownProps) {
   const [now, setNow] = useState(initialNow);
 
@@ -80,7 +82,7 @@ export function UpdateCountdown({
   const scrollToCollection = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     document
-      .getElementById("this-weeks-collection")
+      .getElementById(collectionAnchorId)
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -108,17 +110,17 @@ export function UpdateCountdown({
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
           {!collectionComplete && remaining !== null && remaining > 0 && typeof availableCount === "number" && availableCount > 0
-            ? `${availableCount} ${availableCount === 1 ? "Dvar Torah posted" : "Divrei Torah posted"} so far — more coming.`
+            ? `${availableCount} ${availableCount === 1 ? "selection" : "selections"} available — more coming.`
             : collectionComplete && typeof availableCount === "number" && availableCount > 0
-              ? `All ${availableCount} ${availableCount === 1 ? "Dvar Torah is" : "Divrei Torah are"} posted — the collection is complete.`
+              ? `All ${availableCount} ${availableCount === 1 ? "selection is" : "selections are"} available.`
               : "Choose. Print. Enjoy."}
         </p>
         <a
-          href="#this-weeks-collection"
+          href={`#${collectionAnchorId}`}
           onClick={scrollToCollection}
           className="mt-2 inline-flex rounded-full border border-accent bg-background px-4 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
         >
-          View this week&apos;s collection
+          Browse this week&apos;s selections
         </a>
       </section>
     );

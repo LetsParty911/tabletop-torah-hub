@@ -64,10 +64,10 @@ describe("real release deadline transitions", () => {
     expect(screen.getByRole("timer")).toBeTruthy();
     await act(async () => { vi.advanceTimersByTime(1000); });
     expect(screen.queryByRole("timer")).toBeNull();
-    expect(screen.queryByRole("link", { name: /View this week/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Browse this week/ })).toBeNull();
     view.rerender(<UpdateCountdown contentLive liveParshaLabel="Lech-Lecha" readingDate="2026-10-24" availableCount={0} />);
-    expect(screen.queryByRole("link", { name: /View this week/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Browse this week/ })).toBeNull();
     view.rerender(<UpdateCountdown contentLive liveParshaLabel="Lech-Lecha" readingDate="2026-10-24" availableCount={1} />);
-    expect(screen.getByRole("link", { name: /View this week/ }).getAttribute("href")).toBe("#this-weeks-collection");
+    expect(screen.getByRole("link", { name: /Browse this week/ }).getAttribute("href")).toBe("#this-weeks-collection");
   });
 });

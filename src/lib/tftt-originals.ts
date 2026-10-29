@@ -8,7 +8,7 @@
 export const TFTT_ORIGINAL_SERIES = [
   {
     id: "0fa3db5f-c153-4311-a007-415c3c022143",
-    title: "Parsha Questions & Answers",
+    title: "Parsha Challenge",
     shortDescription: "Questions based on Rashi to get children and adults involved at the Shabbos table.",
     expectation: "Questions and answers based on Rashi.",
   },
