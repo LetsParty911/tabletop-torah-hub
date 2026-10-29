@@ -237,7 +237,17 @@ function AdminPage() {
   const [parshaUserTouched, setParshaUserTouched] = useState(false);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
-  const [published, setPublished] = useState(false);
+  // Upload intent: the form has two explicit actions (Upload & Publish /
+  // Save as Draft) instead of an ambiguous checkbox. uploadAction tracks
+  // which one is in flight; uploadResult is the persistent confirmation.
+  const [uploadAction, setUploadAction] = useState<"publish" | "draft" | null>(null);
+  const [uploadResult, setUploadResult] = useState<{
+    id: string;
+    title: string;
+    parsha: string;
+    jewishYear: number;
+    published: boolean;
+  } | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [uploadPublication, setUploadPublication] = useState<string>("");
   // Canonical publications (publications table). Empty before the migration runs,
@@ -792,11 +802,21 @@ function AdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken, isAdmin]);
 
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!accessToken || !file) return;
+  // Default form submit (Enter / primary button) publishes; the draft
+  // button calls this with action="draft". Guarded against double-submit.
+  const handleUpload = async (
+    e: React.FormEvent | null,
+    action: "publish" | "draft" = "publish",
+  ) => {
+    e?.preventDefault();
+    if (!accessToken || !file || busy) return;
+    const willPublish = action === "publish";
+    const submittedTitle = title;
+    const submittedParsha = parshaKey;
     setBusy(true);
+    setUploadAction(action);
     setMsg(null);
+    setUploadResult(null);
     try {
       const jewishYear = await getCurrentJewishYear();
 
@@ -832,7 +852,7 @@ function AdminPage() {
           parshaKey,
           title,
           subtitle: null,
-          published,
+          published: willPublish,
           fileName: file.name,
           fileBase64,
           jewishYear,
@@ -884,7 +904,14 @@ function AdminPage() {
       setShowUploadDetails(false);
       (document.getElementById("pdf-file-input") as HTMLInputElement | null)?.value &&
         ((document.getElementById("pdf-file-input") as HTMLInputElement).value = "");
-      setMsg({ kind: "success", text: "Uploaded." });
+      // Confirm from the server-returned status, never assume it.
+      setUploadResult({
+        id: uploaded.id,
+        title: submittedTitle,
+        parsha: submittedParsha,
+        jewishYear,
+        published: uploaded?.published === true,
+      });
       await refresh();
     } catch (err) {
       const detail = err instanceof Error ? err.message : "Unknown error";
@@ -897,7 +924,12 @@ function AdminPage() {
       });
     } finally {
       setBusy(false);
+      setUploadAction(null);
     }
+  };
+
+  const handleSaveDraft = () => {
+    void handleUpload(null, "draft");
   };
 
   const handleToggle = async (id: string, next: boolean) => {
@@ -1448,9 +1480,9 @@ function AdminPage() {
                   setMsg({ kind: "error", text: FILE_READ_HINT });
                 }
               }}
-              published={published}
-              onPublishedChange={setPublished}
-              busy={busy}
+              onSaveDraft={handleSaveDraft}
+              busyAction={uploadAction}
+              uploadResult={uploadResult}
               msg={msg}
             />
 
