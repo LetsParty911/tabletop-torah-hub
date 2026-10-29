@@ -757,21 +757,6 @@ function Index() {
                 );
               })}
             </div>
-            {resources.length > 0 && (
-              <a
-                href={starterSelections.length > 0 && !showAllResources ? "#starter-selections-heading" : "#this-weeks-collection"}
-                onClick={() => {
-                  if (starterSelections.length === 0 || showAllResources) setShowAllResources(true);
-                  trackFp("recommendation_click", {
-                    parsha: displayedParshaKey,
-                    metadata: { chooser: "start_here", target: starterSelections.length > 0 && !showAllResources ? "starter_picks" : "collection" },
-                  });
-                }}
-                className="mt-2.5 inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-2.5 font-serif text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-              >
-                {starterSelections.length > 0 && !showAllResources ? "Not sure? See our recommended picks" : "Browse all available Divrei Torah"}
-              </a>
-            )}
           </section>
         )}
 
