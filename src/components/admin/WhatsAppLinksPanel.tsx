@@ -51,7 +51,7 @@ export default function WhatsAppLinksPanel({
     <section className="space-y-4 rounded-lg border border-border p-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="font-serif text-xl font-semibold text-primary">WhatsApp short-link clicks by group</h3>
+          <h3 className="font-serif text-xl font-semibold text-primary">WhatsApp link requests and visits by group</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             Link requests, probable previews, qualified website sessions, and actual Open PDF actions.
             Uses the report's selected time period.
@@ -75,6 +75,7 @@ export default function WhatsAppLinksPanel({
                 <th className="p-2 text-right font-semibold">Qualified visits</th>
                 <th className="p-2 text-right font-semibold">Visitors</th>
                 <th className="p-2 text-right font-semibold">Open PDF clicks</th>
+                <th className="p-2 text-right font-semibold">PDF viewer loads</th>
                 <th className="p-2 text-right font-semibold">Download actions</th>
               </tr>
             </thead>
@@ -85,12 +86,14 @@ export default function WhatsAppLinksPanel({
                     {row.label}
                     <span className="block text-xs font-normal text-muted-foreground">/{row.code}</span>
                     <span className="block text-[11px] font-normal text-muted-foreground">Last request: {dateTime(row.lastRequestAt)}</span>
+                    <span className="block text-[11px] font-normal text-muted-foreground">Last visit: {dateTime(row.lastVisitAt)}</span>
                   </td>
                   <td className="p-2 text-right tabular-nums">{row.browserLikeHits}</td>
                   <td className="p-2 text-right tabular-nums">{row.botOrPreviewHits}</td>
                   <td className="p-2 text-right tabular-nums">{row.websiteSessions}</td>
                   <td className="p-2 text-right tabular-nums">{row.uniqueWebsiteVisitors}</td>
                   <td className="p-2 text-right tabular-nums">{row.pdfOpenClicks}</td>
+                  <td className="p-2 text-right tabular-nums">{row.pdfViewerLoads}</td>
                   <td className="p-2 text-right tabular-nums">{row.downloadActions}</td>
                 </tr>
               ))}
