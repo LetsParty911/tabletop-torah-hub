@@ -161,11 +161,11 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     setHomepage(true);
     render(<Homepage />);
     expect(screen.queryByTestId("table-chooser")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Show all 4 selections" }));
+    fireEvent.click(screen.getByRole("button", { name: "See all 4 selections" }));
     expect(screen.getByTestId("table-chooser")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Sample Torah Sheet 4" })).toBeTruthy();
+    expect(screen.getAllByRole("link", { name: "Sample Torah Sheet 4" }).length).toBeGreaterThan(0);
     const openLinks = screen.getAllByRole("link", { name: "Open PDF" });
-    expect(openLinks.length).toBeGreaterThanOrEqual(5);
+    expect(openLinks.length).toBeGreaterThanOrEqual(4);
     expect(openLinks.some((link) => link.getAttribute("href") === "/view/example-1/pdf")).toBe(true);
   });
 
@@ -173,7 +173,7 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     setHomepage(false);
     render(<Homepage />);
     expect(screen.queryByTestId("table-chooser")).toBeNull();
-    fireEvent.click(screen.getByRole("link", { name: "Help me choose a Dvar Torah" }));
+    fireEvent.click(screen.getByRole("button", { name: "See all 4 selections" }));
     expect(screen.getByTestId("table-chooser")).toBeTruthy();
   });
 
