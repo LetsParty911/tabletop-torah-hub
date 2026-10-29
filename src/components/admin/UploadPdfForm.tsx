@@ -217,16 +217,21 @@ export default function UploadPdfForm({
           className="mt-1 w-full"
         />
       </label>
-      <label className="flex items-center gap-2">
-        <input type="checkbox" checked={published} onChange={(e) => onPublishedChange(e.target.checked)} />
-        <span className="text-sm">Published</span>
-      </label>
       <div className="md:col-span-2 flex flex-wrap items-center gap-3">
         <button
+          type="submit"
           disabled={busy}
           className="rounded-full bg-primary px-6 py-2 text-primary-foreground disabled:opacity-50"
         >
-          {busy ? "Uploading…" : "Upload"}
+          {busyAction === "publish" ? "Uploading & publishing…" : "Upload & Publish"}
+        </button>
+        <button
+          type="button"
+          onClick={onSaveDraft}
+          disabled={busy}
+          className="rounded-full border-2 border-primary px-6 py-2 text-primary disabled:opacity-50"
+        >
+          {busyAction === "draft" ? "Saving draft…" : "Save as Draft"}
         </button>
         {msg && (
           <span
@@ -241,6 +246,35 @@ export default function UploadPdfForm({
           </span>
         )}
       </div>
+      {uploadResult && (
+        <div
+          className="md:col-span-2 rounded-md border-2 border-accent/60 bg-background p-4"
+          role="status"
+        >
+          <p className="text-sm font-semibold text-primary">
+            {uploadResult.published
+              ? "Published — visible to readers"
+              : "Saved as draft — not visible to readers"}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {uploadResult.title} · Parshas {uploadResult.parsha} · {uploadResult.jewishYear}
+          </p>
+          {uploadResult.published ? (
+            <a
+              href={`/view/${uploadResult.id}/pdf`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-block text-sm font-semibold text-accent underline"
+            >
+              Open PDF
+            </a>
+          ) : (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Publish it later from the PDF list below.
+            </p>
+          )}
+        </div>
+      )}
     </form>
   );
 }
