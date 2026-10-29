@@ -121,7 +121,7 @@ function renderPublicationCards(publications: PublicationPageSummary[]) {
                     </p>
                     {(original || publication.default_description) && (
                       <p className={`mt-2 text-sm leading-relaxed text-muted-foreground ${original ? "" : "line-clamp-3"}`}>
-                        {original?.shortDescription ?? leadWithPublicationTitle(original?.title ?? publication.name, publication.default_description)}
+                        {original?.shortDescription ?? leadWithPublicationTitle(publication.name, publication.default_description)}
                       </p>
                     )}
                   </div>
