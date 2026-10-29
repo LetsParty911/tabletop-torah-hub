@@ -729,6 +729,13 @@ function AdminPage() {
       }
       const r = await checkIsAdmin({ data: { accessToken } });
       setIsAdmin(r.isAdmin);
+      if (r.isAdmin) {
+        void fetch("/api/internal-device", {
+          method: "POST", credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accessToken, action: "mark" }),
+        }).catch(() => undefined);
+      }
     })();
   }, [accessToken]);
 
