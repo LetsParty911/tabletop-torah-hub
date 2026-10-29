@@ -40,8 +40,17 @@ export async function whatsappGroupRedirectResponse(
       (await checkRateLimit(request, "whatsapp-short-link", "TRACKING_RATE_LIMITER"))
     ) {
       const userAgent = request.headers.get("user-agent") ?? "";
-      const automated = isAutomatedAgent(userAgent);
       const lower = userAgent.toLowerCase();
+      // WhatsApp's embedded browser sometimes includes "WhatsApp" in an
+      // otherwise normal mobile browser UA. The shared bot detector treats
+      // that word as a preview bot, so recognize browser-shaped UA strings
+      // unless other automation markers are present. This is only a
+      // classification of the REQUEST, never proof of a human tap.
+      const embeddedBrowser = lower.includes("whatsapp") &&
+        /mozilla\/5\.0/.test(lower) &&
+        /applewebkit|chrome\/|safari\//.test(lower) &&
+        !/bot|crawler|spider|headless|preview|facebookexternalhit|lighthouse|playwright|puppeteer/.test(lower);
+      const automated = !embeddedBrowser && isAutomatedAgent(userAgent);
       const deviceType = /ipad|tablet|playbook|silk|(android(?!.*mobile))/.test(lower)
         ? "tablet"
         : /mobi|iphone|ipod|android|blackberry|windows phone/.test(lower)
