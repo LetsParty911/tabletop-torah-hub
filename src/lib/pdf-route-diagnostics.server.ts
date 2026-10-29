@@ -103,7 +103,8 @@ export async function writePdfOutcome(
     if (!c) return false;
     if (deps.isAutomated(request.headers.get("user-agent") ?? "")) return false;
     const internal = await deps.isInternal(request).catch(() => false);
-    await deps.write(buildOutcomeRow(c, publicationId, status, internal, deps.now()));
+    if (internal) return false;
+    await deps.write(buildOutcomeRow(c, publicationId, status, false, deps.now()));
     return true;
   } catch (e) {
     console.error("[pdf-route-diagnostics] write failed", e instanceof Error ? e.message : "unknown");
