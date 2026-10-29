@@ -1354,7 +1354,9 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
       throw new Error(`DB insert failed: ${insErr.message}`);
     }
     if (data.published) warmPdfEdgeCache(newId);
-    return { ok: true, id: newId };
+    // Return the stored published status so the admin UI can confirm the
+    // actual outcome instead of assuming it from the request.
+    return { ok: true, id: newId, published: data.published };
   });
 
 // ---------- Admin: store first-page thumbnail for a PDF row ----------
