@@ -21,6 +21,7 @@ import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
+import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
 
 
 export const Route = createFileRoute("/view/$id")({
@@ -167,6 +168,7 @@ export const Route = createFileRoute("/view/$id")({
 function ViewPdf() {
   const { pdf, isCurrentWeek, publicationContext, relatedParsha, originalHtml } = Route.useLoaderData();
   const publication = publicationContext.publication;
+  const displayPublicationName = tfttOriginalSeriesById(publication?.id)?.title ?? publication?.name ?? pdf.publication ?? pdf.title;
   const related = publicationContext.related;
   const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=FitH`;
   const isMobile = useIsMobile();
@@ -280,7 +282,7 @@ function ViewPdf() {
                   params={{ slug: publication.slug }}
                   className="font-medium text-accent underline hover:text-primary"
                 >
-                  {publication.name}
+                  {displayPublicationName}
                 </Link>
               </p>
             )}
