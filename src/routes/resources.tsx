@@ -8,7 +8,7 @@ export const Route = createFileRoute("/resources")({
   head: () => {
     const title = fitPageTitle("Torah For The Table Originals", " — In-House Torah Learning Resources");
     const description =
-      "Three Torah For The Table original weekly series: Parsha Questions & Answers, Stories for the Shabbos Table, and In the Margins — free for the Shabbos table.";
+      "Three Torah For The Table original weekly series: Parsha Challenge, Stories for the Shabbos Table, and In the Margins — free for the Shabbos table.";
     const url = "https://torahforthetable.com/resources";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -48,7 +48,7 @@ const SERIES: SeriesCard[] = [
     sample: TFTT_ORIGINAL_SERIES[0].expectation,
     linkTo: "/archive",
     linkSearch: { q: "Parsha Questions & Answers" },
-    cta: "Browse Parsha Questions & Answers →",
+    cta: "Browse Parsha Challenge →",
   },
   {
     title: TFTT_ORIGINAL_SERIES[1].title,
