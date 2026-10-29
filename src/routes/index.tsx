@@ -684,21 +684,22 @@ function Index() {
                   </div>
                   </div>
                   <div className="mt-auto pt-4">
-                    <a
-                      href={`/view/${encodeURIComponent(r.id)}/pdf`}
-                      aria-label={`Open ${displayTitle(r)} PDF in a new tab`}
-                      target="_blank"
-                      rel="nofollow noopener noreferrer"
+                    <DownloadAndPrintButtons
+                      href={`/view/${r.id}/pdf`}
+                      publicationId={r.id}
+                      publicationName={displayPublicationName(r)}
+                      publicationTitle={displayTitle(r)}
+                      publisher={r.publisher}
+                      publicationSeries={r.publication}
+                      parsha={r.parsha_key ?? displayedParshaKey}
+                      className="w-full"
                       onClick={() => trackFp("recommendation_click", {
                         publication_id: r.id,
                         publication_title: r.title,
                         parsha: r.parsha_key ?? displayedParshaKey,
                         metadata: { chooser: key, placement: "homepage_start_here" },
                       })}
-                      className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary px-4 py-2.5 font-serif text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground"
-                    >
-                      Open PDF
-                    </a>
+                    />
                   </div>
                 </article>
               ))}
