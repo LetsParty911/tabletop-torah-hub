@@ -25,7 +25,7 @@ describe("homepage weekly email signup", () => {
   it("renders exactly one homepage signup after the PDF collection", () => {
     const homepage = readFileSync("src/routes/index.tsx", "utf8");
     const countdown = readFileSync("src/components/UpdateCountdown.tsx", "utf8");
-    expect((homepage.match(/<WeeklyEmailSignup\\b/g) ?? []).length).toBe(1);
+    expect((homepage.match(/<WeeklyEmailSignup\b/g) ?? []).length).toBe(1);
     expect(homepage).not.toContain('sourceId="homepage-top"');
     expect(homepage).toContain('sourceId="homepage"');
     expect(homepage).toContain('heading="Receive the Weekly Shabbos Collection"');
