@@ -61,7 +61,7 @@ export function SiteFooter() {
           to="/about"
           className="hover:text-primary hover:underline transition-colors duration-150"
         >
-          Torah For The Table is a registered 501(c)(3) nonprofit organization.
+          Torah For The Table is a New Jersey nonprofit corporation.
         </Link>
       </p>
     </footer>
