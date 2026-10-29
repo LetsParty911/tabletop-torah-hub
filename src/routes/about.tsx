@@ -69,8 +69,7 @@ function AboutPage() {
               <section>
                 <h2 className="font-serif text-2xl font-bold text-primary">Nonprofit Status</h2>
                 <p className="mt-2 font-serif text-base text-foreground leading-relaxed">
-                  Torah For The Table is a nonprofit corporation recognized by the Internal Revenue
-                  Service as tax-exempt under Section 501(c)(3). The organization was established to
+                  Torah For The Table is a New Jersey nonprofit corporation. The organization was established to
                   promote Torah learning by publishing and distributing free religious and
                   educational materials through its website and other outreach programs.
                 </p>
@@ -83,8 +82,7 @@ function AboutPage() {
                   <li>Publishes free weekly Torah resources</li>
                   <li>Organizes Divrei Torah from multiple respected sources</li>
                   <li>
-                    Creates original educational materials, including Parsha Questions &amp;
-                    Answers, Stories for the Shabbos Table, Short Vorts, and family discussion
+                    Creates original educational materials, including Parsha Challenge, Stories for the Shabbos Table, Short Vorts, and family discussion
                     questions
                   </li>
                   <li>Provides content for children, families, and adults</li>
