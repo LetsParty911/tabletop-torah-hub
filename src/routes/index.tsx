@@ -702,7 +702,7 @@ function Index() {
                 onClick={() => {
                   setShowAllResources(true);
                   requestAnimationFrame(() => document.getElementById("this-weeks-collection")?.scrollIntoView({
-                    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+                    behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth",
                     block: "start",
                   }));
                 }}
