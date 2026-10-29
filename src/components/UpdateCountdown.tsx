@@ -16,6 +16,7 @@ type UpdateCountdownProps = {
   /** Loader snapshot keeps SSR and the first client render on the same second. */
   initialNow?: number;
   collectionAnchorId?: string;
+  hidePublishedAction?: boolean;
 };
 
 const NEW_YORK_TIME_ZONE = "America/New_York";
@@ -61,6 +62,7 @@ export function UpdateCountdown({
   collectionComplete = false,
   initialNow = 0,
   collectionAnchorId = "this-weeks-collection",
+  hidePublishedAction = false,
 }: UpdateCountdownProps) {
   const [now, setNow] = useState(initialNow);
 
@@ -115,13 +117,15 @@ export function UpdateCountdown({
               ? `All ${availableCount} ${availableCount === 1 ? "selection is" : "selections are"} available.`
               : "Choose. Print. Enjoy."}
         </p>
-        <a
-          href={`#${collectionAnchorId}`}
-          onClick={scrollToCollection}
-          className="mt-2 inline-flex rounded-full border border-accent bg-background px-4 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          Browse this week&apos;s selections
-        </a>
+        {!hidePublishedAction && (
+          <a
+            href={`#${collectionAnchorId}`}
+            onClick={scrollToCollection}
+            className="mt-2 inline-flex rounded-full border border-accent bg-background px-4 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            Browse this week&apos;s selections
+          </a>
+        )}
       </section>
     );
   }
