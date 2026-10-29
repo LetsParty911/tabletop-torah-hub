@@ -64,7 +64,26 @@ type Resource = {
   page_count: number | null;
   badge: string | null;
   featured_slot: string | null;
+  thumb_url?: string | null;
 };
+
+// Compact first-page preview for TFTT originals; hides itself entirely if the image fails.
+function StarterThumb({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      width={64}
+      height={83}
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(true)}
+      className="h-[83px] w-16 shrink-0 rounded-sm border border-accent/40 bg-card object-cover object-top shadow-sm"
+    />
+  );
+}
 
 type LoaderData = {
   label: string;
@@ -642,6 +661,9 @@ function Index() {
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {starterSelections.map(({ key, label, resource: r }) => (
                 <article key={r.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
+                  <div className="flex min-w-0 gap-3">
+                  {isTfttOriginal(r) && r.thumb_url && <StarterThumb src={r.thumb_url} alt={`First page of ${displayTitle(r)}`} />}
+                  <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     {!isTfttOriginal(r) && <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{label}</p>}
                     {isTfttOriginal(r) && (
@@ -659,6 +681,8 @@ function Index() {
                     {tfttOriginalSeriesById(r.publication_id)?.shortDescription ?? leadWithPublicationTitle(displayTitle(r), chooseReason(r))}
                   </p>
                   {pageCountLabel(r) && <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{pageCountLabel(r)}</p>}
+                  </div>
+                  </div>
                   <div className="mt-auto pt-4">
                     <a
                       href={`/view/${encodeURIComponent(r.id)}/pdf`}

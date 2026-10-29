@@ -14,6 +14,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin-analytics'
 import { Route as ArchiveRouteImport } from './routes/archive'
+import { Route as BriefInsightsRouteImport } from './routes/brief-insights'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DivreiTorahParshaRouteImport } from './routes/divrei-torah-parsha'
 import { Route as JRouteImport } from './routes/j'
@@ -29,7 +30,6 @@ import { Route as RRouteImport } from './routes/r'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SRouteImport } from './routes/s'
-import { Route as BriefInsightsRouteImport } from './routes/brief-insights'
 import { Route as ShortVortsRouteImport } from './routes/short-vorts'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StRouteImport } from './routes/st'
@@ -80,6 +80,11 @@ const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
 const ArchiveRoute = ArchiveRouteImport.update({
   id: '/archive',
   path: '/archive',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BriefInsightsRoute = BriefInsightsRouteImport.update({
+  id: '/brief-insights',
+  path: '/brief-insights',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -155,11 +160,6 @@ const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
 const SRoute = SRouteImport.update({
   id: '/s',
   path: '/s',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BriefInsightsRoute = BriefInsightsRouteImport.update({
-  id: '/brief-insights',
-  path: '/brief-insights',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShortVortsRoute = ShortVortsRouteImport.update({
@@ -299,6 +299,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
+  '/brief-insights': typeof BriefInsightsRoute
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
   '/j': typeof JRoute
@@ -314,7 +315,6 @@ export interface FileRoutesByFullPath {
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/s': typeof SRoute
-  '/brief-insights': typeof BriefInsightsRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st': typeof StRoute
@@ -348,6 +348,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
+  '/brief-insights': typeof BriefInsightsRoute
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
   '/j': typeof JRoute
@@ -363,7 +364,6 @@ export interface FileRoutesByTo {
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/s': typeof SRoute
-  '/brief-insights': typeof BriefInsightsRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st': typeof StRoute
@@ -398,6 +398,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
+  '/brief-insights': typeof BriefInsightsRoute
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
   '/j': typeof JRoute
@@ -413,7 +414,6 @@ export interface FileRoutesById {
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/s': typeof SRoute
-  '/brief-insights': typeof BriefInsightsRoute
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st': typeof StRoute
@@ -449,6 +449,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-analytics'
     | '/archive'
+    | '/brief-insights'
     | '/contact'
     | '/divrei-torah-parsha'
     | '/j'
@@ -464,7 +465,6 @@ export interface FileRouteTypes {
     | '/resources'
     | '/robots.txt'
     | '/s'
-    | '/brief-insights'
     | '/short-vorts'
     | '/sitemap.xml'
     | '/st'
@@ -498,6 +498,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-analytics'
     | '/archive'
+    | '/brief-insights'
     | '/contact'
     | '/divrei-torah-parsha'
     | '/j'
@@ -513,7 +514,6 @@ export interface FileRouteTypes {
     | '/resources'
     | '/robots.txt'
     | '/s'
-    | '/brief-insights'
     | '/short-vorts'
     | '/sitemap.xml'
     | '/st'
@@ -547,6 +547,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-analytics'
     | '/archive'
+    | '/brief-insights'
     | '/contact'
     | '/divrei-torah-parsha'
     | '/j'
@@ -562,7 +563,6 @@ export interface FileRouteTypes {
     | '/resources'
     | '/robots.txt'
     | '/s'
-    | '/brief-insights'
     | '/short-vorts'
     | '/sitemap.xml'
     | '/st'
@@ -597,6 +597,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   ArchiveRoute: typeof ArchiveRoute
+  BriefInsightsRoute: typeof BriefInsightsRoute
   ContactRoute: typeof ContactRoute
   DivreiTorahParshaRoute: typeof DivreiTorahParshaRoute
   JRoute: typeof JRoute
@@ -612,7 +613,6 @@ export interface RootRouteChildren {
   ResourcesRoute: typeof ResourcesRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SRoute: typeof SRoute
-  BriefInsightsRoute: typeof BriefInsightsRoute
   ShortVortsRoute: typeof ShortVortsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StRoute: typeof StRoute
@@ -673,6 +673,13 @@ declare module '@tanstack/react-router' {
       path: '/archive'
       fullPath: '/archive'
       preLoaderRoute: typeof ArchiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brief-insights': {
+      id: '/brief-insights'
+      path: '/brief-insights'
+      fullPath: '/brief-insights'
+      preLoaderRoute: typeof BriefInsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -778,13 +785,6 @@ declare module '@tanstack/react-router' {
       path: '/s'
       fullPath: '/s'
       preLoaderRoute: typeof SRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/brief-insights': {
-      id: '/brief-insights'
-      path: '/brief-insights'
-      fullPath: '/brief-insights'
-      preLoaderRoute: typeof BriefInsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/short-vorts': {
@@ -1003,6 +1003,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   ArchiveRoute: ArchiveRoute,
+  BriefInsightsRoute: BriefInsightsRoute,
   ContactRoute: ContactRoute,
   DivreiTorahParshaRoute: DivreiTorahParshaRoute,
   JRoute: JRoute,
@@ -1018,7 +1019,6 @@ const rootRouteChildren: RootRouteChildren = {
   ResourcesRoute: ResourcesRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SRoute: SRoute,
-  BriefInsightsRoute: BriefInsightsRoute,
   ShortVortsRoute: ShortVortsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StRoute: StRoute,
