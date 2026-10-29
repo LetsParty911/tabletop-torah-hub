@@ -168,6 +168,19 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.getByRole("link", { name: "Share Torah For The Table" })).toBeTruthy();
   });
 
+  it("keeps four mobile category choices without a redundant recommended-picks link", () => {
+    setHomepage(false);
+    state.loader.resources = [1, 2, 3, 4, 5, 6].map((n) => example(n, "Lech-Lecha"));
+    render(<Homepage />);
+    expect(screen.getByRole("button", { name: "Brief Insights" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Family Table" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Children" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Stories" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /Not sure\\? See our recommended picks/i })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Browse all available Divrei Torah/i })).toBeNull();
+    expect(screen.getByRole("button", { name: "See all 6 selections" })).toBeTruthy();
+  });
+
   it("reveals the complete PDF selection on explicit request", () => {
     setHomepage(true);
     render(<Homepage />);
