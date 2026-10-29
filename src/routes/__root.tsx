@@ -334,7 +334,7 @@ function SiteNav() {
               className={linkCls}
               activeProps={{ className: `${linkCls} ${activeCls}` }}
             >
-              Home
+              This Week
             </Link>
             <Link
               to="/archive"
@@ -342,13 +342,6 @@ function SiteNav() {
               activeProps={{ className: `${linkCls} ${activeCls}` }}
             >
               Archive
-            </Link>
-            <Link
-              to="/publications"
-              className={linkCls}
-              activeProps={{ className: `${linkCls} ${activeCls}` }}
-            >
-              Publications
             </Link>
             <Link
               to="/brief-insights"
@@ -363,20 +356,6 @@ function SiteNav() {
               activeProps={{ className: `${linkCls} ${activeCls}` }}
             >
               Our Originals
-            </Link>
-            <Link
-              to="/about"
-              className={linkCls}
-              activeProps={{ className: `${linkCls} ${activeCls}` }}
-            >
-              About
-            </Link>
-            <Link
-              to="/contact"
-              className={linkCls}
-              activeProps={{ className: `${linkCls} ${activeCls}` }}
-            >
-              Contact
             </Link>
             <button
               type="button"
@@ -419,7 +398,7 @@ function SiteNav() {
                 className={mobileLinkCls}
                 activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
               >
-                Home
+                This Week
               </Link>
               <Link
                 to="/archive"
@@ -427,13 +406,6 @@ function SiteNav() {
                 activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
               >
                 Archive
-              </Link>
-              <Link
-                to="/publications"
-                className={mobileLinkCls}
-                activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
-              >
-                Publications
               </Link>
               <Link
                 to="/brief-insights"
@@ -448,20 +420,6 @@ function SiteNav() {
                 activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
               >
                 Our Originals
-              </Link>
-              <Link
-                to="/about"
-                className={mobileLinkCls}
-                activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
-              >
-                About
-              </Link>
-              <Link
-                to="/contact"
-                className={mobileLinkCls}
-                activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
-              >
-                Contact
               </Link>
             </div>
           </div>
