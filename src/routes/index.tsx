@@ -6,6 +6,8 @@ import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
 import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
+import { recordPdfAction } from "@/components/DownloadToPrintButton";
+import { pdfActionHrefs } from "@/lib/collection-status";
 import { PublicationCardTracker } from "@/components/PublicationCardTracker";
 import { trackFp } from "@/lib/first-party-analytics";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
@@ -67,21 +69,37 @@ type Resource = {
   thumb_url?: string | null;
 };
 
-// Compact first-page preview for TFTT originals; hides itself entirely if the image fails.
-function StarterThumb({ src, alt }: { src: string; alt: string }) {
+// First-page preview for TFTT originals; also acts as a tracked PDF-open link.
+function StarterThumb({ src, alt, title, href, onOpen }: {
+  src: string;
+  alt: string;
+  title: string;
+  href: string;
+  onOpen: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+}) {
   const [failed, setFailed] = useState(false);
   if (failed) return null;
   return (
-    <img
-      src={src}
-      alt={alt}
-      width={64}
-      height={83}
-      loading="lazy"
-      decoding="async"
-      onError={() => setFailed(true)}
-      className="h-[83px] w-16 shrink-0 rounded-sm border border-accent/40 bg-card object-cover object-top shadow-sm"
-    />
+    <a
+      href={href}
+      target="_blank"
+      rel="nofollow noopener noreferrer"
+      aria-label={`Open PDF in a new tab: ${title}`}
+      title={`Open PDF: ${title}`}
+      onClick={onOpen}
+      className="block h-[83px] w-16 shrink-0 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+    >
+      <img
+        src={src}
+        alt={alt}
+        width={64}
+        height={83}
+        loading="lazy"
+        decoding="async"
+        onError={() => setFailed(true)}
+        className="h-[83px] w-16 rounded-sm border border-accent/40 bg-card object-cover object-top shadow-sm hover:border-accent"
+      />
+    </a>
   );
 }
 
@@ -662,7 +680,30 @@ function Index() {
               {starterSelections.map(({ key, label, resource: r }) => (
                 <article key={r.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
                   <div className="flex min-w-0 gap-3">
-                  {isTfttOriginal(r) && r.thumb_url && <StarterThumb src={r.thumb_url} alt={`First page of ${displayTitle(r)}`} />}
+                  {isTfttOriginal(r) && r.thumb_url && (
+                    <StarterThumb
+                      src={r.thumb_url}
+                      alt={`First page of ${displayTitle(r)}`}
+                      title={displayTitle(r)}
+                      href={pdfActionHrefs(r.id).open}
+                      onOpen={(event) => {
+                        recordPdfAction(event, "open_pdf", pdfActionHrefs(r.id).open, {
+                          publicationId: r.id,
+                          publicationName: displayPublicationName(r),
+                          publicationTitle: displayTitle(r),
+                          publicationSeries: r.publication,
+                          publisher: r.publisher,
+                          parsha: r.parsha_key ?? displayedParshaKey,
+                        }, "thumbnail");
+                        trackFp("recommendation_click", {
+                          publication_id: r.id,
+                          publication_title: r.title,
+                          parsha: r.parsha_key ?? displayedParshaKey,
+                          metadata: { chooser: key, placement: "homepage_start_here" },
+                        });
+                      }}
+                    />
+                  )}
                   <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     {!isTfttOriginal(r) && <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{label}</p>}
