@@ -446,16 +446,10 @@ function Index() {
   const [mobileQuickChoice, setMobileQuickChoice] = useState<ChooserKey | null>(null);
 
   const sortedResources = resources;
-  const suggestedStarters = pickStarterSelections(sortedResources);
-  // With three or fewer PDFs, display every publication regardless of its tags.
-  const starterSelections = sortedResources.length <= 3
-    ? [
-        ...suggestedStarters,
-        ...sortedResources
-          .filter((resource) => !suggestedStarters.some((pick) => pick.resource.id === resource.id))
-          .map((resource) => ({ key: "quick" as ChooserKey, label: "More to Explore", resource })),
-      ]
-    : suggestedStarters;
+  // Start-here showcase: only this week's published TFTT originals (matched by
+  // canonical publication_id). Never last week's fallback PDFs, never a
+  // third-party substitute for an absent series.
+  const starterSelections = isFallback ? [] : pickStarterSelections(sortedResources);
   const showCompleteCollection = showAllResources || starterSelections.length === 0 || isCurrentYomKippur;
   const extraPreviewSelections = sortedResources.filter((resource) => !starterSelections.some((pick) => pick.resource.id === resource.id)).slice(0, 3);
   const viewAllLabel = `View all ${resources.length} ${displayedLabel.replace(/^Parshas\s+/i, "")} selections`;

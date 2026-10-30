@@ -1,12 +1,13 @@
 // Guided homepage chooser: "What would you like for your Shabbos table?"
 //
 // Pure selection + copy helpers so the homepage stays presentational and the
-// logic stays testable. No hardcoded publication ids — everything is derived
-// from the existing resource metadata.
+// logic stays testable. Chooser categories derive from resource metadata; the
+// homepage starter row uses the canonical TFTT original publication IDs.
 
 import { normalizeAudience } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType } from "@/lib/collection-status";
+import { TFTT_ORIGINAL_SERIES } from "@/lib/tftt-originals";
 
 export type ChooserResource = {
   id: string;
@@ -155,12 +156,15 @@ export function pickRecommendations<T extends ChooserResource>(
 }
 
 /**
- * The owner's three priority series appear first whenever they are published
- * in the currently displayed weekly collection. We match canonical publication
- * titles, not file IDs, and never pull a PDF from a different week.
+ * Homepage "Start here" showcase: ONLY the three TFTT-owned weekly original
+ * series, in fixed order. Ownership is decided strictly by the canonical
+ * `publication_id` (see TFTT_ORIGINAL_SERIES), never by title, so renamed
+ * issues (e.g. "Parsha Questions & Answers") still match and look-alike
+ * third-party titles never do.
  *
- * If a series has not been uploaded for this week, complete the row with the
- * existing category-based choices (with no duplicates).
+ * Callers must pass only the current week's published PDFs. An absent series
+ * simply leaves its slot out — no third-party or older-week substitute — and
+ * reappears automatically once that week's issue is published.
  */
 export type StarterSelection<T extends ChooserResource> = {
   key: ChooserKey;
@@ -168,46 +172,21 @@ export type StarterSelection<T extends ChooserResource> = {
   resource: T;
 };
 
-const PRIORITY_STARTER_SERIES = [
-  { title: "Parsha Challenge", key: "kids", label: "Parsha Challenge" },
-  { title: "Stories for the Shabbos Table", key: "story", label: "Shabbos Stories" },
-  { title: "In the Margins", key: "deeper", label: "Deeper Learning" },
-] as const;
+const STARTER_SERIES_META: Record<string, { key: ChooserKey; label: string }> = {
+  [TFTT_ORIGINAL_SERIES[0].id]: { key: "kids", label: "Parsha Challenge" },
+  [TFTT_ORIGINAL_SERIES[1].id]: { key: "story", label: "Shabbos Stories" },
+  [TFTT_ORIGINAL_SERIES[2].id]: { key: "deeper", label: "Deeper Learning" },
+};
 
-const starterTitleKey = (value: string) =>
-  value.toLowerCase().replace(/[^a-z0-9]+/g, "");
-
-export function pickStarterSelections<T extends ChooserResource>(
+export function pickStarterSelections<T extends ChooserResource & { publication_id?: string | null }>(
   resources: readonly T[],
 ): StarterSelection<T>[] {
-  const used = new Set<string>();
   const picks: StarterSelection<T>[] = [];
-
-  // Fixed series priority, independent of category scoring and database order.
-  for (const { title, key, label } of PRIORITY_STARTER_SERIES) {
-    const wanted = starterTitleKey(title);
-    const resource = resources.find(
-      (r) => (starterTitleKey(r.title) === wanted || (title === "Parsha Challenge" && starterTitleKey(r.title) === starterTitleKey("Parsha Questions & Answers"))) && !used.has(r.id),
-    );
+  for (const series of TFTT_ORIGINAL_SERIES) {
+    const resource = resources.find((r) => r.publication_id === series.id);
     if (!resource) continue;
-    used.add(resource.id);
-    picks.push({ key, label, resource });
-  }
-
-  if (picks.length === 3) return picks;
-
-  // A weekly series can be temporarily absent: preserve three useful choices.
-  const fallbackChoices = [
-    { key: "quick", label: "A Quick Vort" },
-    { key: "kids", label: "For Children" },
-    { key: "family", label: "Family Table" },
-  ] as const;
-  for (const { key, label } of fallbackChoices) {
-    if (picks.length === 3) break;
-    const resource = pickRecommendations(resources, key).find((r) => !used.has(r.id));
-    if (!resource) continue;
-    used.add(resource.id);
-    picks.push({ key, label, resource });
+    const meta = STARTER_SERIES_META[series.id];
+    picks.push({ key: meta.key, label: meta.label, resource });
   }
   return picks;
 }
