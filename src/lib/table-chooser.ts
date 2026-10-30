@@ -1,12 +1,13 @@
 // Guided homepage chooser: "What would you like for your Shabbos table?"
 //
 // Pure selection + copy helpers so the homepage stays presentational and the
-// logic stays testable. No hardcoded publication ids — everything is derived
-// from the existing resource metadata.
+// logic stays testable. Chooser categories derive from resource metadata; the
+// homepage starter row uses the canonical TFTT original publication IDs.
 
 import { normalizeAudience } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType } from "@/lib/collection-status";
+import { TFTT_ORIGINAL_SERIES } from "@/lib/tftt-originals";
 
 export type ChooserResource = {
   id: string;
