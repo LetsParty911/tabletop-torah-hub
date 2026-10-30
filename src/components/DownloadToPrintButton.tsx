@@ -19,12 +19,48 @@ type DownloadToPrintButtonProps = {
   publicationSeries?: string | null;
 };
 
+type PdfActionContext = Pick<
+  DownloadToPrintButtonProps,
+  "publicationId" | "publicationName" | "publicationTitle" | "publicationSeries" | "publisher" | "parsha" | "jewishYear"
+>;
+
+/** Shared analytics and server-route correlation for both Open PDF entry points. */
+export function recordPdfAction(
+  event: React.MouseEvent<HTMLAnchorElement>,
+  actionType: "open_pdf" | "download",
+  openHref: string,
+  { publicationId, publicationName, publicationTitle, publicationSeries, publisher, parsha, jewishYear }: PdfActionContext,
+  entryPoint: "button" | "thumbnail" = "button",
+) {
+  // Keep navigation functional when analytics, storage or crypto is unavailable.
+  try {
+    const action = crypto.randomUUID();
+    const url = new URL(actionType === "download" && publicationId ? pdfActionHrefs(publicationId).download : openHref, window.location.origin);
+    url.searchParams.set("a", action);
+    url.searchParams.set("s", getSessionId());
+    url.searchParams.set("v", getVisitorId());
+    event.currentTarget.href = url.pathname + url.search;
+  } catch { /* The PDF must remain accessible without tracking. */ }
+
+  try {
+    trackFp(actionType === "download" ? "download" : "publication_click", {
+      publication_id: publicationId ?? null,
+      publication_title: publicationTitle ?? publicationName ?? null,
+      publication_series: publicationSeries ?? publicationName ?? null,
+      publisher: publisher ?? null,
+      parsha: parsha ?? null,
+      jewish_year: jewishYear ?? null,
+      metadata: { action: actionType, entry_point: entryPoint },
+    });
+  } catch { /* Never block the PDF link. */ }
+}
+
 /**
  * Collection cards show one public action: Open PDF. The individual PDF detail
  * page can opt in to a clearly labeled Download PDF action for saving/printing.
  * Keep the existing validated /pdf and /download routes.
  *
- * Count each deliberate button click as publication_click with
+ * Count each deliberate button or thumbnail click as publication_click with
  * metadata.action = "open_pdf", exactly as the existing admin analytics does.
  * Do not infer downloads or printing, and never count automatic PDF previews.
  * The document opens even when client-side analytics is unavailable.
@@ -48,28 +84,9 @@ export function DownloadToPrintButton({
   const title = publicationTitle || publicationName || "PDF";
 
   const recordOpen = (event: React.MouseEvent<HTMLAnchorElement>, actionType: "open_pdf" | "download") => {
-    // Correlate the intended open with its server route without interrupting
-    // navigation if browser storage or analytics is unavailable.
-    try {
-      const action = crypto.randomUUID();
-      const url = new URL(actionType === "download" && publicationId ? pdfActionHrefs(publicationId).download : openHref, window.location.origin);
-      url.searchParams.set("a", action);
-      url.searchParams.set("s", getSessionId());
-      url.searchParams.set("v", getVisitorId());
-      event.currentTarget.href = url.pathname + url.search;
-    } catch { /* The PDF must remain accessible without tracking. */ }
-
-    try {
-      trackFp(actionType === "download" ? "download" : "publication_click", {
-        publication_id: publicationId ?? null,
-        publication_title: publicationTitle ?? publicationName ?? null,
-        publication_series: publicationSeries ?? publicationName ?? null,
-        publisher: publisher ?? null,
-        parsha: parsha ?? null,
-        jewish_year: jewishYear ?? null,
-        metadata: { action: actionType },
-      });
-    } catch { /* Never block the PDF link. */ }
+    recordPdfAction(event, actionType, openHref, {
+      publicationId, publicationName, publicationTitle, publicationSeries, publisher, parsha, jewishYear,
+    });
   };
 
   return (
