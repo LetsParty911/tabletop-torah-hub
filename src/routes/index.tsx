@@ -78,7 +78,13 @@ function StarterThumb({ src, alt, title, href, onOpen }: {
   onOpen: (event: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const [failed, setFailed] = useState(false);
-  if (failed) return null;
+  if (failed) {
+    return (
+      <div role="img" aria-label={`Cover unavailable for ${title}`} className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-lg bg-accent/12 text-primary">
+        <FileText className="h-5 w-5" aria-hidden="true" />
+      </div>
+    );
+  }
   return (
     <a
       href={href}
@@ -612,6 +618,28 @@ function Index() {
       : publicationLabel(r.publication || r.title) || r.title;
 
   const isTfttOriginal = (r: Resource) => Boolean(tfttOriginalSeriesById(r.publication_id));
+  // Display the correct uploaded PDF cover on original publication cards in ALL
+  // homepage states, including when last week's collection is shown as fallback.
+  const originalCover = (r: Resource) => {
+    if (!isTfttOriginal(r) || !r.thumb_url) return null;
+    const href = pdfActionHrefs(r.id).open;
+    return (
+      <StarterThumb
+        src={r.thumb_url}
+        alt={`First page of ${displayTitle(r)} for ${r.parsha_key ?? displayedParshaKey ?? "this week"}`}
+        title={displayTitle(r)}
+        href={href}
+        onOpen={(event) => recordPdfAction(event, "open_pdf", href, {
+          publicationId: r.id,
+          publicationName: displayPublicationName(r),
+          publicationTitle: displayTitle(r),
+          publicationSeries: r.publication,
+          publisher: r.publisher,
+          parsha: r.parsha_key ?? displayedParshaKey,
+        }, "thumbnail")}
+      />
+    );
+  };
   // The starter row includes other publishers if one of our originals is not yet available.
   const starterShowsThreeOriginals = starterSelections.length === 3 &&
     starterSelections.every(({ resource }) => isTfttOriginal(resource));
@@ -900,6 +928,11 @@ function Index() {
                             <span className="self-start rounded-full bg-accent px-3 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-accent-foreground">
                               {label}
                             </span>
+                            {isTfttOriginal(r) && r.thumb_url && (
+                              <div className="mt-3">
+                                {originalCover(r)}
+                              </div>
+                            )}
                             <h3 className="mt-3 font-serif text-base sm:text-xl font-bold text-primary leading-snug">
                               <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline transition-colors duration-150">
                                 {displayTitle(r)}
@@ -1149,9 +1182,11 @@ function Index() {
                       parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey ?? null}
                     >
                       <div className="flex flex-1 items-start gap-3">
-                        <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-accent/12 text-primary shrink-0">
-                          <FileText className="h-5 w-5" />
-                        </div>
+                        {isTfttOriginal(r) && r.thumb_url ? originalCover(r) : (
+                          <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-accent/12 text-primary shrink-0">
+                            <FileText className="h-5 w-5" aria-hidden="true" />
+                          </div>
+                        )}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
                             <h3 className="font-serif text-base sm:text-xl font-bold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
