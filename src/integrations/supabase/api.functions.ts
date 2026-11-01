@@ -1,4 +1,5 @@
-import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { TFTT_ORIGINAL_SERIES, tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { groupOriginalEditions, type OriginalEditionRow } from "@/lib/original-editions";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
@@ -651,6 +652,29 @@ export function pdfThumbUrl(id: string): string | null {
   if (!base) return null;
   return `${base.replace(/\/$/, "")}/storage/v1/object/public/pdf-thumbs/${id}.png`;
 }
+
+// /originals: recent published editions of the three canonical TFTT series,
+// keyed strictly by publication_id and grouped by each row's own parsha/year.
+export const listOriginalEditions = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const admin = getSupabaseAdmin();
+    const { data, error } = await admin
+      .from("pdfs")
+      .select("id, parsha_key, jewish_year, publication_id, created_at")
+      .eq("published", true)
+      .in("publication_id", TFTT_ORIGINAL_SERIES.map((s) => s.id))
+      .order("created_at", { ascending: false })
+      .limit(300);
+    if (error) {
+      console.error("listOriginalEditions error", error.message);
+      return { groups: [] };
+    }
+    return { groups: groupOriginalEditions((data as OriginalEditionRow[]) ?? [], pdfThumbUrl) };
+  } catch (e) {
+    console.error("listOriginalEditions failed", e instanceof Error ? e.message : e);
+    return { groups: [] };
+  }
+});
 
 export const getPdfById = createServerFn({ method: "GET" })
   .inputValidator((input: { id: string }) =>
