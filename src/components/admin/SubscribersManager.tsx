@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { adminDeleteSubscribers } from "@/integrations/supabase/api.functions";
+import type { SubscribersLoadStatus } from "@/lib/admin-subscribers-load";
 
 export type Subscriber = { id: string; email: string; created_at: string };
 
@@ -7,6 +8,11 @@ type SubscribersManagerProps = {
   accessToken: string | null;
   subscribers: Subscriber[];
   onChanged: () => Promise<void> | void;
+  /** Load state of the subscriber list; defaults to "ready" for legacy callers. */
+  status?: SubscribersLoadStatus;
+  loadError?: string | null;
+  /** Re-requests the latest subscribers from the server. */
+  onRefresh?: () => Promise<void> | void;
 };
 
 function formatSignupDate(iso: string): string {
@@ -21,7 +27,16 @@ function formatSignupDate(iso: string): string {
   }
 }
 
-export default function SubscribersManager({ accessToken, subscribers, onChanged }: SubscribersManagerProps) {
+export default function SubscribersManager({
+  accessToken,
+  subscribers,
+  onChanged,
+  status = "ready",
+  loadError = null,
+  onRefresh,
+}: SubscribersManagerProps) {
+  const loading = status === "idle" || status === "loading";
+  const failed = status === "error";
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
@@ -118,12 +133,42 @@ export default function SubscribersManager({ accessToken, subscribers, onChanged
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h2 className="font-serif text-2xl font-semibold text-primary">
-          Subscribers ({subscribers.length})
+          Subscribers ({loading && subscribers.length === 0 ? "…" : subscribers.length})
         </h2>
-        <div className="text-xs text-muted-foreground">
-          {selected.size > 0 ? `${selected.size} selected` : `Showing ${filtered.length} of ${subscribers.length}`}
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span>
+            {selected.size > 0 ? `${selected.size} selected` : `Showing ${filtered.length} of ${subscribers.length}`}
+          </span>
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={() => void onRefresh()}
+              disabled={loading}
+              className="rounded border border-input px-2 py-1 text-xs text-foreground disabled:opacity-50"
+            >
+              {loading ? "Loading…" : "Refresh"}
+            </button>
+          )}
         </div>
       </div>
+
+      {failed && (
+        <div role="alert" className="mt-3 flex flex-wrap items-center gap-2 rounded border border-destructive/50 px-3 py-2 text-sm text-destructive">
+          <span>
+            Could not load subscribers{loadError ? `: ${loadError}` : "."}
+            {subscribers.length > 0 ? " Showing the last list that loaded." : ""}
+          </span>
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={() => void onRefresh()}
+              className="rounded border border-destructive px-2 py-0.5 text-xs"
+            >
+              Retry
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <input
@@ -200,7 +245,13 @@ export default function SubscribersManager({ accessToken, subscribers, onChanged
             {filtered.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-2 py-4 text-center text-muted-foreground">
-                  {subscribers.length === 0 ? "No subscribers yet." : "No matches for that search."}
+                  {subscribers.length > 0
+                    ? "No matches for that search."
+                    : loading
+                      ? "Loading subscribers…"
+                      : failed
+                        ? "Subscribers could not be loaded."
+                        : "No subscribers yet."}
                 </td>
               </tr>
             )}
