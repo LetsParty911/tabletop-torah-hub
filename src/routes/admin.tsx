@@ -1709,7 +1709,10 @@ function AdminPage() {
             <SubscribersManager
               accessToken={accessToken}
               subscribers={subscribers}
-              onChanged={refresh}
+              status={subscribersStatus}
+              loadError={subscribersError}
+              onRefresh={loadSubscribers}
+              onChanged={loadSubscribers}
             />
           </div>
         </section>
