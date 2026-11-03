@@ -15,7 +15,12 @@ import VisitorActivitySection from "@/components/admin/VisitorActivitySection";
 import BlockedVisitsSection from "@/components/admin/BlockedVisitsSection";
 import VpnTrackingSection from "@/components/admin/VpnTrackingSection";
 import MaintenanceModeControl from "@/components/admin/MaintenanceModeControl";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  fetchSubscriberList,
+  refreshAdminDashboard,
+  type SubscribersLoadStatus,
+} from "@/lib/admin-subscribers-load";
 import { useAuth } from "@/hooks/use-auth";
 import {
   adminListPdfs,
@@ -191,6 +196,9 @@ function AdminPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [pdfs, setPdfs] = useState<PdfRow[]>([]);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [subscribersStatus, setSubscribersStatus] = useState<SubscribersLoadStatus>("idle");
+  const [subscribersError, setSubscribersError] = useState<string | null>(null);
+  const subscribersReqId = useRef(0);
   const [contactMessages, setContactMessages] = useState<ContactMessageRow[]>([]);
   const [contactMessagesError, setContactMessagesError] = useState<string | null>(null);
   const [override, setOverride] = useState<string>("");
@@ -751,11 +759,33 @@ function AdminPage() {
     })();
   }, [accessToken]);
 
+  // Subscribers load independently of every other dashboard request so an
+  // unrelated failure can never leave the tab showing a false empty list.
+  const loadSubscribers = async () => {
+    if (!accessToken || !isAdmin) return;
+    const reqId = ++subscribersReqId.current;
+    setSubscribersStatus("loading");
+    setSubscribersError(null);
+    const r = await fetchSubscriberList(() => adminListSubscribers({ data: { accessToken } }));
+    if (reqId !== subscribersReqId.current) return; // a newer request superseded this one
+    if (r.ok) {
+      setSubscribers(r.subscribers as Subscriber[]);
+      setSubscribersStatus("ready");
+    } else {
+      setSubscribersError(r.error);
+      setSubscribersStatus("error");
+    }
+  };
+
   const refresh = async () => {
     if (!accessToken || !isAdmin) return;
-    const [p, s, o, cs, cm, ann, wn, wnp, tp] = await Promise.all([
+    await refreshAdminDashboard({ loadSubscribers, loadOthers: refreshOthers });
+  };
+
+  const refreshOthers = async () => {
+    if (!accessToken || !isAdmin) return;
+    const [p, o, cs, cm, ann, wn, wnp, tp] = await Promise.all([
       adminListPdfs({ data: { accessToken } }),
-      adminListSubscribers({ data: { accessToken } }),
       getParshaOverride(),
       adminListChecklistSources({ data: { accessToken } }),
       adminListContactMessages({ data: { accessToken } }).then(
@@ -768,7 +798,6 @@ function AdminPage() {
       getThursdayProgress(),
     ]);
     setPdfs(p.pdfs as PdfRow[]);
-    setSubscribers(s.subscribers as Subscriber[]);
     setOverride(editableParshaOverride(o));
     setStaleOverride(!o.isActive ? o.override : null);
     setExplicitOverride(false);
