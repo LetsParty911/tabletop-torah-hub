@@ -568,7 +568,7 @@ function Index() {
     campaign: "weekly-share",
     content: "veahavta-home",
   });
-  const shareText = `${resources.length} free, printable Divrei Torah in our ${isFallback ? "latest available" : "current"} ${displayedLabel} collection — read or print: ${shareLink}`;
+  const shareText = `Torah For The Table offers free, printable Divrei Torah for Shabbos and Yom Tov. Explore the website: ${shareLink}`;
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
   const ShareButton = ({ className }: { className?: string }) => (
@@ -588,7 +588,7 @@ function Index() {
       className={`inline-flex items-center justify-center gap-2 rounded-full border border-accent bg-transparent px-5 py-2.5 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors ${className ?? ""}`}
     >
       <Share2 className="h-4 w-4" />
-      Share Torah For The Table
+      Share This Website
     </a>
   );
 
@@ -1270,7 +1270,7 @@ function Index() {
         {resources.length > 0 && !isCurrentYomKippur && (
           <section aria-label="Share Torah For The Table" className="mx-auto max-w-2xl rounded-xl border border-accent/40 bg-card/50 px-4 py-4 text-center sm:py-5">
             <p dir="rtl" lang="he" className="font-serif text-xl font-bold text-primary">ואהבת לרעך כמוך</p>
-            <p className="mt-1 text-sm text-muted-foreground">Found something worth sharing? Pass it on to another Shabbos table.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Enjoying Torah For The Table? Share our website with family and friends.</p>
             <div className="mt-3 flex justify-center">
               <ShareButton className="min-h-11 w-full max-w-sm sm:w-auto" />
             </div>
