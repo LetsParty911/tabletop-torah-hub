@@ -682,6 +682,13 @@ function Index() {
             {heroDateLine && !isFallback && (
               <p className="mt-1 text-xs text-muted-foreground">{heroDateLine}</p>
             )}
+            <div className="mt-3 flex justify-center">
+              <p className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full border border-accent/50 bg-accent/10 px-4 py-2 text-xs text-primary sm:text-sm">
+                <span className="font-semibold uppercase tracking-[0.12em] text-accent-readable">Coming Soon</span>
+                <span aria-hidden="true" className="text-accent">·</span>
+                <span className="font-serif font-semibold">Divrei Torah in Hebrew</span>
+              </p>
+            </div>
           </div>
         </section>
         <ThursdayProgressMeter
