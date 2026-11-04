@@ -684,6 +684,16 @@ function Index() {
             )}
           </div>
         </section>
+        <ThursdayProgressMeter
+          readingDate={readingDate}
+          isFallback={isFallback}
+          currentPublishedCount={currentPublishedCount}
+          progressFillStep={progressFillStep}
+          progressEta={progressEta}
+          isYomTov={isYomTovCollection}
+          initialNow={loaderData.renderedAt}
+        />
+
 
         {starterSelections.length > 0 && !isCurrentYomKippur && !showAllResources && (
           <section id="this-weeks-collection" aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border-2 border-accent/50 bg-card/50 px-4 py-5 sm:px-6">
@@ -874,10 +884,6 @@ function Index() {
               })}
             </div>
           </section>
-        )}
-
-        {!isFallback && currentPublishedCount > 0 && progressForCurrentReading && (
-          <ThursdayProgressMeter heading={currentLabel} />
         )}
 
         {(resources.length === 0 || showCompleteCollection) && (

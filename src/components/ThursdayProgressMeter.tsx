@@ -1,52 +1,74 @@
-import { useEffect, useState } from "react";
-import { getThursdayProgress } from "@/integrations/supabase/api.functions";
-import { getProgressVisibility } from "@/integrations/supabase/progress-visibility.functions";
+import { useEffect, useState } from 'react';
+import { BookOpen } from 'lucide-react';
+import { getThursdayProgress } from '@/integrations/supabase/api.functions';
+import { getProgressVisibility } from '@/integrations/supabase/progress-visibility.functions';
+import { weeklyAdditionsPhase } from '@/lib/weekly-additions-notice';
 
-type ThursdayProgressMeterProps = {
-  heading?: string;
+type Props = {
+  readingDate: string | null;
+  isFallback: boolean;
+  currentPublishedCount: number;
+  progressFillStep: number | null;
+  progressEta: string | null;
+  isYomTov: boolean;
+  initialNow?: number;
 };
 
-/**
- * Public update notice only. Precise percentages and ETA remain available
- * to administrators via ThursdayProgressForm.
- */
-export function ThursdayProgressMeter({
-  heading = "This week's Divrei Torah",
-}: ThursdayProgressMeterProps) {
-  const [active, setActive] = useState(false);
+/** Compact public notice; private percentages and ETA remain in the admin. */
+export function ThursdayProgressMeter(props: Props) {
+  const [visible, setVisible] = useState(false);
+  const [now, setNow] = useState(props.initialNow ?? 0);
+  const [progress, setProgress] = useState({ fillStep: props.progressFillStep, eta: props.progressEta });
+
+  useEffect(() => {
+    setProgress({ fillStep: props.progressFillStep, eta: props.progressEta });
+  }, [props.progressFillStep, props.progressEta]);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        const [progress, visibility] = await Promise.all([
-          getThursdayProgress(),
-          getProgressVisibility(),
-        ]);
-        if (!cancelled) {
-          setActive(visibility.visible && progress.fillStep > 0 && progress.fillStep < 100);
-        }
-      } catch {
-        if (!cancelled) setActive(false);
+    const refresh = async () => {
+      const [visibility, currentProgress] = await Promise.allSettled([
+        getProgressVisibility(),
+        getThursdayProgress(),
+      ]);
+      if (cancelled) return;
+      if (visibility.status === 'fulfilled') setVisible(visibility.value.visible);
+      if (currentProgress.status === 'fulfilled') {
+        setProgress({ fillStep: currentProgress.value.fillStep, eta: currentProgress.value.eta });
       }
-    })();
-    return () => { cancelled = true; };
+    };
+    setNow(Date.now());
+    void refresh();
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+      if (document.visibilityState === 'visible') void refresh();
+    }, 60_000);
+    return () => { cancelled = true; window.clearInterval(timer); };
   }, []);
 
-  if (!active) return null;
+  const phase = weeklyAdditionsPhase({
+    readingDate: props.readingDate,
+    isFallback: props.isFallback,
+    currentPublishedCount: props.currentPublishedCount,
+    progressFillStep: progress.fillStep,
+    progressEta: progress.eta,
+    visible,
+    isYomTov: props.isYomTov,
+    now,
+  });
+  if (!phase) return null;
 
   return (
-    <div
-      className="mx-auto max-w-md rounded-lg border border-accent/35 bg-accent/5 px-4 py-3 text-center"
-      role="status"
-      aria-label={`${heading}: new Divrei Torah are being added`}
-    >
-      <p className="font-serif text-sm font-semibold text-primary sm:text-base">
-        Now updating
+    <aside aria-label="More weekly Divrei Torah coming" className="rounded-xl border border-accent/50 bg-card px-4 py-3 text-center shadow-sm sm:px-6 sm:py-4">
+      <div className="flex items-center justify-center gap-2 text-primary">
+        <BookOpen className="h-4 w-4 shrink-0 text-accent-readable" aria-hidden="true" />
+        <p className="font-serif text-base font-bold sm:text-lg">More Divrei Torah Are on the Way!</p>
+      </div>
+      <p className="mx-auto mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+        {phase === 'before-thursday'
+          ? "We're adding many more selections for this week's Parsha! Check back Thursday evening for even more inspiring Divrei Torah to print, enjoy, and share at your Shabbos table."
+          : "We're continuing to add selections for this week's Parsha. Check back before Shabbos for more Divrei Torah to read, print, and share."}
       </p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        More Divrei Torah are being added. Check back for new selections.
-      </p>
-    </div>
+    </aside>
   );
 }
