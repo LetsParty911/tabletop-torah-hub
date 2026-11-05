@@ -3,7 +3,7 @@ import { LENGTH_OPTIONS, type LengthFilter } from "@/lib/length-filter";
 import { Search } from "lucide-react";
 import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
+import { type ArchiveYearAll as ArchiveYear, type ArchiveParshaAll as ArchiveParsha, type ArchivePdfAll as ArchivePdf } from "@/integrations/supabase/archive-all.functions";
 import { listArchiveAll, type ArchivePageInput } from "@/integrations/supabase/archive-all.functions";
 import { trackSearch } from "@/lib/site-analytics";
 import { trackFp } from "@/lib/first-party-analytics";
@@ -624,7 +624,7 @@ function ArchivePage() {
                               parsha={p.parshaKey ?? null}
                             >
                               <div className="flex items-start gap-3">
-                                <PdfCoverThumbnail pdfId={r.id} thumbnailUrl={r.thumb_url} title={r.title} publicationName={r.publication} publisher={r.publisher} parsha={p.parshaKey} jewishYear={y.year} />
+                                <PdfCoverThumbnail pdfId={r.id} thumbnailUrl={r.thumb_url} smallThumbnailUrl={r.small_thumb_url} title={r.title} publicationName={r.publication} publisher={r.publisher} parsha={p.parshaKey} jewishYear={y.year} />
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-start justify-between gap-2">
                                     <h4 className="font-serif text-base sm:text-lg font-bold text-primary line-clamp-2 leading-snug">

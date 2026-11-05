@@ -7,6 +7,27 @@ export function thumbnailVersion(etag: string | undefined): string | null {
 export function derivativePath(id: string, version: string): string {
   return `${id}.${version}.small.webp`;
 }
+/** Build a public URL only for a confirmed, current-version derivative.
+ * No remote probes or guesses; original covers remain the fallback. */
+export function verifiedSmallThumbnailUrl(
+  originalUrl: string | null | undefined,
+  pdfId: string,
+  available: ReadonlyMap<string, string>,
+): string | null {
+  const path = available.get(pdfId);
+  if (!originalUrl || !path || !/^[a-f0-9-]{36}$/.test(pdfId)) return null;
+  if (!path.startsWith(`${pdfId}.`) || !/^[a-f0-9]{32}\.small\.webp$/.test(path.slice(pdfId.length + 1))) return null;
+  try {
+    const url = new URL(originalUrl);
+    if (url.protocol !== "https:" || url.search || url.hash ||
+      url.pathname !== `/storage/v1/object/public/pdf-thumbs/${pdfId}.png`) return null;
+    url.pathname = `/storage/v1/object/public/pdf-thumbs/${path}`;
+    return url.href;
+  } catch {
+    return null;
+  }
+}
+
 export function verifiedThumbnailPaths(objects: ThumbnailObject[]): Map<string, string> {
   const byName = new Map(objects.map(object => [object.name, object]));
   const result = new Map<string, string>();

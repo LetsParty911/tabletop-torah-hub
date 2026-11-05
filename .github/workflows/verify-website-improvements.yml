@@ -8,6 +8,8 @@ on:
       - "src/lib/publication-description*"
       - "src/lib/collection-status*"
       - "src/routes/archive.tsx"
+      - "src/integrations/supabase/archive-all.functions.ts"
+      - "src/lib/verified-thumbnails*.ts"
       - "src/routes/short-vorts.tsx"
       - "src/routes/view.$id.tsx"
       - "src/routes/index.tsx"
@@ -44,6 +46,8 @@ jobs:
             exit 1
           fi
           bun test "${tests[@]}"
+      - name: Verify immutable thumbnail inventory and URL fallbacks
+        run: bunx vitest run --config vitest.ux.config.ts src/lib/verified-thumbnails.test.ts
       - name: Run signup and countdown regression tests
         run: bun run test:signup
       - name: Verify maintenance, VPN and IP classification safeguards
