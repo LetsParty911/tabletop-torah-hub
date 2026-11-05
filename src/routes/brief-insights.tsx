@@ -219,6 +219,7 @@ function ParshaSection({
                 <p className="mt-1 text-sm text-muted-foreground">Now available — ready to print for your table.</p>
                 <div className="mt-4 flex flex-col items-center justify-center gap-2 sm:flex-row">
                   <DownloadToPrintButton
+                    label="Read Brief Insights PDF"
                     href={`/view/${publishedPdf.id}/pdf`}
                     publicationId={publishedPdf.id}
                     publicationTitle={publishedPdf.title}

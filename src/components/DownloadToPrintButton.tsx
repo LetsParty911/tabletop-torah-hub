@@ -77,6 +77,7 @@ export function DownloadToPrintButton({
   jewishYear,
   publisher,
   publicationSeries,
+  label = "Open PDF",
 }: DownloadToPrintButtonProps) {
   const openHref = publicationId
     ? pdfActionHrefs(publicationId).open
@@ -100,7 +101,7 @@ export function DownloadToPrintButton({
         className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
       >
         <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
-        <span>Open PDF</span>
+        <span>{label}</span>
       </a>
       {showDownload && publicationId && (
         <a
