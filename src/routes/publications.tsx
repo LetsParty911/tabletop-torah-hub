@@ -21,6 +21,7 @@ export const Route = createFileRoute("/publications")({
         { property: "og:title", content: "Browse Torah Publications" },
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary" },
         { property: "og:url", content: url },
         { property: "og:site_name", content: "Torah For The Table" },
       ],
@@ -39,7 +40,7 @@ function PublicationsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
         <Link
           to="/archive"
           className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary"
@@ -66,7 +67,7 @@ function PublicationsPage() {
           <section className="mt-8" aria-labelledby="original-series-heading">
             <h2 id="original-series-heading" className="font-serif text-2xl font-bold text-primary">Our Originals</h2>
             <p className="mt-1 text-sm text-muted-foreground">Three original publications prepared for the Shabbos table, free to read or print.</p>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
               {renderPublicationCards(originalPublications)}
             </div>
           </section>
@@ -78,7 +79,7 @@ function PublicationsPage() {
             {renderPublicationCards(otherPublications)}
           </div>
         </section>
-      </main>
+      </div>
       <SiteFooter />
     </div>
   );

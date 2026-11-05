@@ -28,7 +28,7 @@ function HiddenGemReader() {
   const gem = Route.useLoaderData();
   return (
     <div className="hidden-gem-page min-h-screen bg-background">
-      <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
+      <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
         <div className="gem-screen-controls mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button asChild className="min-h-11 w-full sm:w-auto">
             <Link to="/" hash="this-weeks-collection"><ArrowLeft aria-hidden="true" /> Back to This Week’s Selections</Link>
@@ -74,7 +74,7 @@ function HiddenGemReader() {
             <Link to="/hidden-gems">All Hidden Gems</Link>
           </Button>
         </nav>
-      </main>
+      </div>
       <SiteFooter />
     </div>
   );

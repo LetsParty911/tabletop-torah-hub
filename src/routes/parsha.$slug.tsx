@@ -116,7 +116,7 @@ function PermanentParshaPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="mx-auto max-w-5xl px-4 py-7 sm:px-6 sm:py-11">
+      <div className="mx-auto max-w-5xl px-4 py-7 sm:px-6 sm:py-11">
         <nav aria-label="Breadcrumb" className="text-sm text-muted-foreground">
           <ol className="flex flex-wrap items-center gap-2">
             <li>
@@ -329,7 +329,7 @@ function PermanentParshaPage() {
             Browse all Parshiyos
           </Link>
         </section>
-      </main>
+      </div>
       <SiteFooter />
     </div>
   );

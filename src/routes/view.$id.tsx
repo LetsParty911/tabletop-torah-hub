@@ -247,13 +247,14 @@ function ViewPdf() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <main className="flex-1 mx-auto w-full max-w-5xl px-4 sm:px-6 py-6 sm:py-10">
+      <div className="flex-1 mx-auto w-full max-w-5xl px-4 sm:px-6 py-6 sm:py-10">
         <Link
-          to={isCurrentWeek ? "/" : "/archive"}
-          className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-full border border-accent/45 bg-background px-4 py-2 text-sm font-semibold text-primary hover:bg-accent/10"
+          to="/"
+          hash="this-weeks-collection"
+          className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
         >
           <ArrowLeft className="h-4 w-4" />
-          {isCurrentWeek ? "Back to this week's collection" : "Back to Archive"}
+          Back to This Week’s Selections
         </Link>
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
@@ -425,7 +426,7 @@ function ViewPdf() {
                 />
               ) : (
                 <p className="mt-3 text-sm text-foreground/80">
-                  Tap Open PDF above to read in your browser, or use Download PDF to save a copy. You can print from your PDF viewer.
+                  Tap Read Now above to read in your browser. You can save or print from your PDF viewer.
                 </p>
               )}
             </div>
@@ -539,18 +540,19 @@ function ViewPdf() {
 
         <div className="mt-7 flex flex-wrap items-center gap-4">
           <Link
-            to={isCurrentWeek ? "/" : "/archive"}
+            to="/"
+          hash="this-weeks-collection"
             className="inline-flex items-center gap-2 font-serif italic text-accent hover:text-primary transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />{" "}
-            {isCurrentWeek ? "Back to this week's collection" : "Back to Archive"}
+            Back to This Week’s Selections
           </Link>
         </div>
 
         <div className="mt-10">
           <WeeklyEmailSignup sourceId="view" />
         </div>
-      </main>
+      </div>
       <SiteFooter />
     </div>
   );

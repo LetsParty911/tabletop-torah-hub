@@ -1,7 +1,8 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Menu, Search, X } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPwa } from "@/pwa-register";
@@ -268,6 +269,9 @@ function PageViewTracker() {
 
 function SiteNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const locationHref = useRouterState({ select: (s) => s.location.href });
+  const menuTrigger = useRef<HTMLButtonElement>(null);
+  const mobilePanel = useRef<HTMLDivElement>(null);
   const isAdmin =
     pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/admin-analytics";
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -276,7 +280,10 @@ function SiteNav() {
   useEffect(() => {
     setMobileOpen(false);
     setSearchOpen(false);
-  }, [pathname]);
+  }, [locationHref]);
+  useEffect(() => {
+    if (mobileOpen) mobilePanel.current?.querySelector<HTMLElement>("input, a")?.focus();
+  }, [mobileOpen]);
 
   if (isAdmin) return null;
 
@@ -306,25 +313,31 @@ function SiteNav() {
           name="q"
           type="search"
           placeholder="Search publication, description, or Torah topic"
-          className="h-10 w-full rounded-full border border-accent/35 bg-background pl-9 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-accent focus:ring-2 focus:ring-accent/20"
+          className="h-10 w-full rounded-full border border-accent/35 bg-background pl-9 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-accent focus:ring-2 focus:ring-ring"
           autoFocus={!mobile}
         />
       </div>
-      <button
+      <Button
         type="submit"
         className="inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
       >
         Search
-      </button>
+      </Button>
     </form>
   );
 
   return (
-    <nav
-      aria-label="Primary"
+    <header
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          setMobileOpen(false);
+          setSearchOpen(false);
+          menuTrigger.current?.focus();
+        }
+      }}
       className="sticky top-0 z-40 border-b border-accent/20 bg-background sm:bg-background/95 sm:backdrop-blur-sm"
     >
-      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+      <nav aria-label="Primary" className="mx-auto max-w-5xl px-4 sm:px-6">
         <div className="flex items-center justify-between gap-3 py-1.5 md:py-2.5">
           <Link to="/" aria-label="Torah For The Table — home" className="shrink-0">
             <SiteLogoHorizontal />
@@ -333,6 +346,8 @@ function SiteNav() {
           <div className="hidden items-center gap-5 md:flex">
             <Link
               to="/"
+              hash="this-weeks-collection"
+              onClick={() => setMobileOpen(false)}
               activeOptions={{ exact: true }}
               className={linkCls}
               activeProps={{ className: `${linkCls} ${activeCls}` }}
@@ -360,7 +375,8 @@ function SiteNav() {
             >
               Our Originals
             </Link>
-            <button
+            <Button
+              variant="ghost"
               type="button"
               aria-label={searchOpen ? "Close site search" : "Search Torah For The Table"}
               aria-expanded={searchOpen}
@@ -368,15 +384,17 @@ function SiteNav() {
               className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent/35 text-primary transition-colors hover:bg-accent/10"
             >
               {searchOpen ? <X className="h-4 w-4" aria-hidden="true" /> : <Search className="h-4 w-4" aria-hidden="true" />}
-            </button>
+            </Button>
           </div>
 
-          <button
+          <Button
+            ref={menuTrigger}
+            variant="ghost"
             type="button"
             aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
             aria-expanded={mobileOpen}
             aria-controls="mobile-navigation"
-            onClick={() => setMobileOpen((open) => !open)}
+            onClick={() => { setMobileOpen((open) => !open); if (mobileOpen) menuTrigger.current?.focus(); }}
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center text-primary md:hidden"
           >
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-accent/35 bg-background transition-colors hover:bg-accent/10">
@@ -386,49 +404,30 @@ function SiteNav() {
                 <Menu className="h-4 w-4" aria-hidden="true" />
               )}
             </span>
-          </button>
+          </Button>
         </div>
 
         {searchOpen && <div className="hidden border-t border-accent/15 pt-3 md:block"><SearchForm /></div>}
 
         {mobileOpen && (
-          <div id="mobile-navigation" className="border-t border-accent/20 pb-3 pt-2 md:hidden">
+          <div ref={mobilePanel} id="mobile-navigation" onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setMobileOpen(false); }} className="max-h-[calc(100dvh-5rem)] overflow-y-auto border-t border-accent/20 pb-3 pt-2 md:hidden">
             <SearchForm mobile />
             <div className="grid gap-1">
-              <Link
-                to="/"
-                activeOptions={{ exact: true }}
-                className={mobileLinkCls}
-                activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
-              >
-                This Week
-              </Link>
-              <Link
-                to="/archive"
-                className={mobileLinkCls}
-                activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
-              >
-                Archive
-              </Link>
-              <Link
-                to="/brief-insights"
-                className={mobileLinkCls}
-                activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
-              >
-                Brief Insights
-              </Link>
-              <Link
-                to="/originals"
-                className={mobileLinkCls}
-                activeProps={{ className: `${mobileLinkCls} bg-accent/10 font-semibold` }}
-              >
-                Our Originals
-              </Link>
+              <Link to="/" hash="this-weeks-collection" onClick={() => setMobileOpen(false)} className={mobileLinkCls}>This Week</Link>
+              <Link to="/archive" className={mobileLinkCls}>Archive</Link>
+              <Link to="/divrei-torah-parsha" className={mobileLinkCls}>Divrei Torah by Parsha</Link>
+              <Link to="/publications" className={mobileLinkCls}>Publications</Link>
+              <Link to="/brief-insights" className={mobileLinkCls}>Brief Insights</Link>
+              <Link to="/originals" className={mobileLinkCls}>Our Originals</Link>
+              <Link to="/hidden-gems" className={mobileLinkCls}>Hidden Gems</Link>
+              <Link to="/" hash="share-with-a-friend" className={mobileLinkCls}>Share with a Friend</Link>
+              <Link to="/about" className={mobileLinkCls}>About</Link>
+              <Link to="/contact" className={mobileLinkCls}>Contact</Link>
             </div>
           </div>
         )}
-      </div>
-    </nav>
+      </nav>
+    </header>
   );
 }
 
@@ -439,8 +438,9 @@ function RootComponent() {
       <GoogleAnalytics />
       <PageViewTracker />
       <PwaRegistrar />
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:p-3 focus:text-primary focus:outline-2 focus:outline-ring">Skip to content</a>
       <SiteNav />
-      <Outlet />
+      <main id="main-content" tabIndex={-1}><Outlet /></main>
     </>
   );
 }
