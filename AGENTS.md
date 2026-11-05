@@ -17,4 +17,4 @@
 - Keep homepage sharing presentation in HomepageShare with canonical links in a pure helper; retain WhatsApp handlers and report classification. Why: clipboard success/failure can evolve without changing historical attribution.
 - Public page content uses the root main landmark; route containers remain neutral divs. Why: skip navigation and exactly one main stay consistent, including error pages.
 - Weekly collection hash expansion scrolls after the React commit, with no timer retries or history rewriting. Why: return links reveal real choices without interfering with browser back.
-- Small thumbnail derivatives are optional public .small.webp siblings generated during existing authenticated upload/replace, with original PNG fallback. Why: free-plan transfer optimization never changes PDF records or requires paid transforms.
+- Small thumbnail derivatives are optional public .small.webp siblings generated during existing authenticated upload/replace, but storage derivative reads remain disabled until authoritative availability is provided; only bundled copies are selected automatically. Why: unconfirmed paths add 404 latency and must not be guessed.

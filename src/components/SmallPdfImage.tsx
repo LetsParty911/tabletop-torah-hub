@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { smallThumbnailUrl } from "@/lib/thumbnail-preview";
 
-/** The original is tried once when a derivative is absent; no broken-image loop. */
+/** Unconfirmed storage images use the original immediately. Bundled small
+ * covers fall back to their original once; no broken-image loop. */
 export function SmallPdfImage({ src, onUnavailable, ...props }: Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src" | "onError"> & {
   src: string;
   onUnavailable: () => void;
