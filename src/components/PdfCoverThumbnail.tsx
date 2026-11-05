@@ -30,9 +30,10 @@ export function PdfCoverThumbnail({
 
   // Preserve the same timeless cover throughout these two weekly series.
   const normalizedSeries = (publicationName ?? title).trim().toLowerCase();
+  const isMiKaamchaCover = normalizedSeries === "mi ka'amcha yisroel" || normalizedSeries === "mikaamcha";
   const permanentCover = normalizedSeries === "torah wellsprings"
     ? "/publication-covers/torah-wellsprings-plaque-v2.jpg"
-    : normalizedSeries === "mi ka'amcha yisroel" || normalizedSeries === "mikaamcha"
+    : isMiKaamchaCover
       ? "/publication-covers/mi-kaamcha-yisroel-permanent.jpg"
       : null;
   const usingPermanent = Boolean(permanentCover && !permanentFailed);
@@ -88,7 +89,7 @@ export function PdfCoverThumbnail({
           if (usingPermanent) setPermanentFailed(true);
           else setFailed(true);
         }}
-        className="h-[83px] w-16 rounded-sm border border-accent/40 bg-card object-cover object-top shadow-sm hover:border-accent"
+        className={`h-[83px] w-16 rounded-sm border border-accent/40 shadow-sm hover:border-accent ${usingPermanent && isMiKaamchaCover ? "bg-[#0b2641] object-contain" : "bg-card object-cover object-top"}`}
       />
     </a>
   );
