@@ -73,11 +73,13 @@ type Resource = {
   badge: string | null;
   featured_slot: string | null;
   thumb_url?: string | null;
+  small_thumb_url?: string | null;
 };
 
 // First-page preview for every publication; also acts as a tracked PDF-open link.
-function StarterThumb({ src, alt, title, href, onOpen }: {
+function StarterThumb({ src, smallSrc, alt, title, href, onOpen }: {
   src: string;
+  smallSrc?: string | null;
   alt: string;
   title: string;
   href: string;
@@ -104,6 +106,7 @@ function StarterThumb({ src, alt, title, href, onOpen }: {
       <SmallPdfImage
         key={src}
         src={src}
+        verifiedSmallSrc={smallSrc}
         alt={alt}
         width={64}
         height={83}
@@ -599,6 +602,7 @@ function Index() {
     const href = pdfActionHrefs(r.id).open;
     return (
       <StarterThumb
+        smallSrc={r.small_thumb_url}
         src={r.publication_id === "bd544c49-a810-478d-bf5c-38b94a81bc31" ? "/publication-covers/mi-kaamcha-yisroel-permanent.jpg" : r.thumb_url}
         alt={r.publication_id === "bd544c49-a810-478d-bf5c-38b94a81bc31" ? "Mi Ka'amcha Yisroel permanent cover" : `Cover for ${displayTitle(r)} for ${r.parsha_key ?? displayedParshaKey ?? "this week"}`}
         title={displayTitle(r)}
@@ -735,6 +739,7 @@ function Index() {
                   <div className="flex min-w-0 gap-3">
                   {r.thumb_url && (
                     <StarterThumb
+                      smallSrc={r.small_thumb_url}
                       src={r.thumb_url}
                       alt={`First page of ${displayTitle(r)}`}
                       title={displayTitle(r)}
@@ -805,7 +810,7 @@ function Index() {
                   {extraPreviewSelections.map((r) => (
                     <article key={r.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
                       <div className="flex items-start gap-3">
-                        <PdfCoverThumbnail pdfId={r.id} thumbnailUrl={r.thumb_url} title={displayTitle(r)} publicationName={displayPublicationName(r)} publisher={r.publisher} parsha={r.parsha_key ?? displayedParshaKey} />
+                        <PdfCoverThumbnail pdfId={r.id} thumbnailUrl={r.thumb_url} smallThumbnailUrl={r.small_thumb_url} title={displayTitle(r)} publicationName={displayPublicationName(r)} publisher={r.publisher} parsha={r.parsha_key ?? displayedParshaKey} />
                         <h4 className="font-serif text-base font-bold leading-snug text-primary">
                           <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline">{displayTitle(r)}</Link>
                         </h4>

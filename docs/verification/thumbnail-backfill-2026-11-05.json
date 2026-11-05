@@ -1,0 +1,126 @@
+{
+  "newObjectCount": 20,
+  "newBytes": 173140,
+  "objects": [
+    {
+      "path": "f2cd3f17-dcdc-4472-8e4a-34bd2bc270d9.69d2989f6fe640b8cf3edd752b5102dd.small.webp",
+      "bytes": 7616,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "04228477-7936-486e-b15b-9b8aaca60c7a.07b16c2f7cccf6e65733af2d63a0a308.small.webp",
+      "bytes": 8252,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "2679e0da-1191-47a6-9264-2f12eaec8ec8.b215ee6334ad3c3af05a2461ea813a92.small.webp",
+      "bytes": 6826,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "7b490dfa-a28e-4de7-a05c-def38e1bd9fa.059bfd293a37e300ffad17b061f0f373.small.webp",
+      "bytes": 7566,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "c09be8bb-50f4-45b1-8700-ffba40c547a0.2d217ba26fec92f4292b80c9fc9d1322.small.webp",
+      "bytes": 11342,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "95c2e949-86d7-45df-a126-0a126f044c91.da5f829fb7b49844c6014adeb43fa3a0.small.webp",
+      "bytes": 13892,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "c1a6ba19-ad42-498c-9db6-d3091f3dbb1f.811c6f6c2918a83d6399484e099d4dde.small.webp",
+      "bytes": 9982,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "574bf06f-75ce-4264-aa3d-1b31856bc086.a3b75cdfd3d54139187fc56050ab2970.small.webp",
+      "bytes": 8450,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "c9211fdf-d332-4ff7-8d53-380259c3c8c1.2fff08859a53fabd52248b8af459bc56.small.webp",
+      "bytes": 8984,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "2d9f053f-87f8-4520-b12c-6878c45b364e.e32b51915aefb39feef9d77d42fa0230.small.webp",
+      "bytes": 9320,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "80159d46-ed4c-4787-b545-1eaac7953c29.9989c090c7d8a3aa556ce67562d4324e.small.webp",
+      "bytes": 9894,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "de9658bc-1a37-48b5-aa11-1a3a0c9b58a4.9847780331c457ddb07c3cbcf346f4fc.small.webp",
+      "bytes": 11008,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "58c8b882-4173-406b-9428-223139db3e22.1748792b9eb646569719572bc89b4e2f.small.webp",
+      "bytes": 9128,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "afa7f93a-04e5-4a3a-9649-93d85fe0f0c4.17cefa5c19398c0c639281dc628d610c.small.webp",
+      "bytes": 9854,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "85b5f625-6054-4c63-a89d-12633a4c5762.0dd0707dd82fd40a241e1bd4dc6b2a33.small.webp",
+      "bytes": 12172,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "aeab59af-a775-4f78-8197-cfb47cf53e5b.e92955aeda56909cc823bfbdc0862e64.small.webp",
+      "bytes": 5116,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "f6fdcf58-64ed-4798-a036-ab078beb4c7b.4b72960e106ab07cc380017d0d042615.small.webp",
+      "bytes": 5314,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "e9b01b1b-27dc-4c90-af18-fc5d80dfafe8.cc3f13edff190f9eb1265cfe83149f24.small.webp",
+      "bytes": 4748,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "efe7261b-604b-4a4b-b1ec-009cdca96f99.fdf157b1f893caab161127c9686abf32.small.webp",
+      "bytes": 5590,
+      "existing": false,
+      "verified": true
+    },
+    {
+      "path": "00c53930-5cd6-4cef-aded-8f6762cd38c9.bfa1bb5f264a87a15a5216a5a79edd3e.small.webp",
+      "bytes": 8086,
+      "existing": false,
+      "verified": true
+    }
+  ]
+}

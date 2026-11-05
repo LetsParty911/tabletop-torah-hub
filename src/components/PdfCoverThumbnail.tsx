@@ -12,6 +12,7 @@ import { recordPdfAction } from "@/components/DownloadToPrintButton";
 export function PdfCoverThumbnail({
   pdfId,
   thumbnailUrl,
+  smallThumbnailUrl,
   title,
   publicationName,
   publisher,
@@ -20,6 +21,7 @@ export function PdfCoverThumbnail({
 }: {
   pdfId: string;
   thumbnailUrl?: string | null;
+  smallThumbnailUrl?: string | null;
   title: string;
   publicationName?: string | null;
   publisher?: string | null;
@@ -82,6 +84,7 @@ export function PdfCoverThumbnail({
       <SmallPdfImage
         key={imageUrl}
         src={imageUrl}
+        verifiedSmallSrc={usingPermanent ? null : smallThumbnailUrl}
         alt={usingPermanent ? `${publicationName ?? title} permanent cover` : `First page of ${title}`}
         width={64}
         height={83}

@@ -36,4 +36,21 @@ describe("small preview fallback", () => {
     expect(smallThumbnailUrl("https://example.test/cover.png")).toBeNull();
     expect(smallThumbnailUrl("http://localhost/private.png")).toBeNull();
   });
+  it("falls back from a verified version and resets for a new replacement URL", () => {
+    const small = src.replace(".png", `.${"a".repeat(32)}.small.webp`);
+    const replacement = src.replace(".png", `.${"b".repeat(32)}.small.webp`);
+    const unavailable = vi.fn();
+    const { rerender } = render(<SmallPdfImage src={src} verifiedSmallSrc={small} alt="Cover" onUnavailable={unavailable} />);
+    const image = screen.getByRole("img");
+    expect(image.getAttribute("src")).toBe(small);
+    fireEvent.error(image);
+    expect(image.getAttribute("src")).toBe(src);
+    rerender(<SmallPdfImage src={src} verifiedSmallSrc={replacement} alt="Cover" onUnavailable={unavailable} />);
+    expect(image.getAttribute("src")).toBe(replacement);
+    expect(unavailable).not.toHaveBeenCalled();
+  });
+  it("rejects another publication or origin even when provided as verified", () => {
+    expect(smallThumbnailUrl(src, src.replace("example.test", "other.test"))).toBeNull();
+    expect(smallThumbnailUrl(src, src.replace("8c7e8593", "1c7e8593").replace(".png", `.${"a".repeat(32)}.small.webp`))).toBeNull();
+  });
 });
