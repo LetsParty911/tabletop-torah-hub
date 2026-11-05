@@ -681,8 +681,11 @@ function Index() {
               id="table-thought-heading"
               className="font-sans text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-xs"
             >
-              This Week’s Table Thought
+              TABLE TALK
             </h2>
+            <p className="mt-1 font-sans text-[0.6rem] uppercase tracking-[0.1em] text-muted-foreground sm:text-[0.65rem]">
+              A THOUGHT FOR YOUR SHABBOS TABLE
+            </p>
             <blockquote className="mx-auto mt-3 max-w-2xl font-serif text-lg leading-relaxed text-primary sm:text-2xl sm:leading-relaxed">
               “{tableThought.quote}”
             </blockquote>
