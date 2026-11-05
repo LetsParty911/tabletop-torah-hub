@@ -10,6 +10,8 @@ import { formatTypeLabel } from "@/lib/format-labels";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
 import { matchesPageLength, type LengthFilter } from "@/lib/length-filter";
 import { pdfThumbUrl } from "@/integrations/supabase/api.functions";
+import { readVerifiedThumbnails } from "@/lib/verified-thumbnails.server";
+import { verifiedSmallThumbnailUrl } from "@/lib/verified-thumbnails";
 
 export type ArchivePdfAll = {
   id: string;
@@ -24,6 +26,7 @@ export type ArchivePdfAll = {
   page_count: number | null;
   badge: string | null;
   thumb_url: string | null;
+  small_thumb_url?: string | null;
 };
 
 export type ArchiveParshaAll = { parshaKey: string; pdfs: ArchivePdfAll[] };
@@ -225,6 +228,9 @@ export const listArchiveAll = createServerFn({ method: "GET" })
     const totalPages = Math.max(1, Math.ceil(totalPdfs / PAGE_SIZE));
     const safePage = Math.min(data.page, totalPages);
     const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+    // A single batched inventory; only show WebPs confirmed against the current PNG ETag.
+    // Missing/unavailable inventory retains the original cover without a speculative 404.
+    const verifiedThumbnails = pageRows.length ? await readVerifiedThumbnails(admin) : new Map<string, string>();
 
     const yearMap = new Map<number, Map<string, ArchivePdfAll[]>>();
     for (const row of pageRows) {
@@ -239,7 +245,10 @@ export const listArchiveAll = createServerFn({ method: "GET" })
         sort_order: _sort,
         ...pdf
       } = row;
-      parshaMap.get(row.parshaKey)?.push(pdf);
+      parshaMap.get(row.parshaKey)?.push({
+        ...pdf,
+        small_thumb_url: verifiedSmallThumbnailUrl(row.thumb_url, row.id, verifiedThumbnails),
+      });
     }
 
     const years: ArchiveYearAll[] = Array.from(yearMap.entries()).map(([year, parshaMap]) => ({
