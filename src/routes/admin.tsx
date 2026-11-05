@@ -702,7 +702,13 @@ function AdminPage() {
     setPublicationId(id);
     const pub = canonicalPubs.find((p) => p.id === id);
     if (!pub) return;
-    setTitle(pub.name);
+    // Rabbi Klein has two stable weekly slots, but each PDF needs its own article title.
+    // Leave the article title blank so file selection can suggest the filename, or the
+    // administrator can enter the actual title manually before publishing.
+    const isKleinArticle =
+      id === "4d5f000c-6e90-4d58-aa9f-fd73fc005115" ||
+      id === "c3fa24ef-b7a8-42d1-a237-480bc24cba57";
+    setTitle(isKleinArticle ? "" : pub.name);
     setUploadAudience(pub.default_audience ?? "");
     setUploadFormatType(pub.default_format_type ?? "");
     setUploadDescription((pub as { default_description?: string | null }).default_description ?? "");
