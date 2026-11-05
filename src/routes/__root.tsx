@@ -433,15 +433,17 @@ function SiteNav() {
 }
 
 function RootComponent() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const publicPage = !isAdminPath(pathname);
   return (
     <>
       <AuthRedirectHandler />
       <GoogleAnalytics />
       <PageViewTracker />
       <PwaRegistrar />
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:p-3 focus:text-primary focus:outline-2 focus:outline-ring">Skip to content</a>
+      {publicPage && <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:p-3 focus:text-primary focus:outline-2 focus:outline-ring">Skip to content</a>}
       <SiteNav />
-      <main id="main-content" tabIndex={-1}><Outlet /></main>
+      {publicPage ? <main id="main-content" tabIndex={-1}><Outlet /></main> : <Outlet />}
     </>
   );
 }

@@ -502,9 +502,8 @@ function Index() {
         (r) => matchesAudience(r) && matchesLength(r) && matchesContentType(r),
       );
 
-  const lengthHasChoice =
-    sortedResources.some((r) => typeof r.page_count === "number" && r.page_count < 5) &&
-    sortedResources.some((r) => typeof r.page_count === "number" && r.page_count >= 5);
+  const lengthHasChoice = LENGTH_OPTIONS.filter((option) => option.key !== "All" &&
+    sortedResources.some((r) => matchesPageLength(r.page_count, option.key))).length > 1;
   const contentTypeHasChoice = contentTypeOptions.length > 1;
 
   // Keep filter state valid when the weekly collection refreshes after hydration.
