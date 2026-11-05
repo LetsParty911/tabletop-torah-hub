@@ -68,9 +68,8 @@ export function ReadingCollectionView({
       : null,
   ].filter(Boolean) as Array<{ label: string; resource: ReadingResource }>;
 
-  const hasLengthChoice =
-    resources.some((r) => typeof r.page_count === "number" && r.page_count < 5) &&
-    resources.some((r) => typeof r.page_count === "number" && r.page_count >= 5);
+  const hasLengthChoice = LENGTH_OPTIONS.filter((option) => option.key !== "All" &&
+    resources.some((r) => matchesPageLength(r.page_count, option.key))).length > 1;
 
   const metaLine = (r: ReadingResource) =>
     [
