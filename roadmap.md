@@ -1,6 +1,6 @@
 ## Hidden Gems of the Parsha (no publish)
-- [ ] Add approved Chayei Sarah text, matching-week homepage teaser, archive and reader page
-- [ ] Verify rollover/fallback rules, desktop/mobile reading and single-page printing, targeted tests and build signal
+- [x] Add approved Chayei Sarah text, matching-week homepage teaser, archive and reader page
+- [x] Verify rollover/fallback rules, desktop/mobile reading and single-page printing, targeted tests and build signal (21 targeted tests passed; homepage smoke 6/9, same 3 failures reproduced without feature; fresh reader has no page errors)
 
 ## Country-only deny (no publish)
 - [x] Audit hosting country provenance, request coverage and upstream WAF availability (sanitization/WAF access unverified)
