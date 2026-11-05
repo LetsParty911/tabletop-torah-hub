@@ -167,7 +167,7 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(document.querySelectorAll("#this-weeks-collection")).toHaveLength(1);
     expect(screen.queryByRole("button", { name: /See all 2 selections/ })).toBeNull();
     expect(screen.queryByTestId("table-chooser")).toBeNull();
-    expect(screen.getByRole("link", { name: "Share Torah For The Table" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Share on WhatsApp" })).toBeTruthy();
   });
 
   it("shows six selections before expanding a larger collection", () => {
@@ -195,7 +195,7 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     setHomepage(true);
     render(<Homepage />);
     expect(screen.queryByTestId("table-chooser")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /View all 4 .* selections/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Browse All 4/ }));
     expect(screen.queryByTestId("table-chooser")).toBeNull();
     expect(screen.getAllByRole("link", { name: "Sample Torah Sheet 4" }).length).toBeGreaterThan(0);
     const openLinks = screen.getAllByRole("link", { name: "Open PDF" });
@@ -217,7 +217,7 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.queryByText("Release countdown")).toBeNull();
     expect(screen.queryByText(/Coming next: Parshas Lech-Lecha/)).toBeNull();
     expect(screen.getAllByRole("form", { name: /Weekly Torah signup/i })).toHaveLength(1);
-    const share = screen.getByRole("link", { name: "Share Torah For The Table" });
+    const share = screen.getByRole("link", { name: "Share on WhatsApp" });
     const message = new URL(share.getAttribute("href") ?? "").searchParams.get("text") ?? "";
     expect(message).toContain("Parshas Lech-Lecha");
     expect(message).not.toContain("Parshas Noach");

@@ -713,8 +713,8 @@ function Index() {
         />
 
 
-        {starterSelections.length > 0 && !isCurrentYomKippur && !showCompleteCollection && (
-          <section id="this-weeks-collection" tabIndex={-1} aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border-2 border-accent/50 bg-card/50 px-4 py-5 sm:px-6">
+        {starterSelections.length > 0 && !isCurrentYomKippur && (
+          <section id={showCompleteCollection ? undefined : "this-weeks-collection"} tabIndex={-1} aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border-2 border-accent/50 bg-card/50 px-4 py-5 sm:px-6">
             <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-xs">
               Home of the original Torah For The Table series
             </p>
