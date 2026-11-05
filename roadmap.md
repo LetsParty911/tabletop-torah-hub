@@ -1,7 +1,7 @@
 ## Final pre-publish thumbnail / footer correction (no publish)
 - [x] Disable unconfirmed storage derivative reads; retain original-first display, bundled covers and future derivative generation
 - [x] Restore site footer contentinfo semantics without changing root/gated layouts
-- [ ] Verify targeted tests, preview requests/landmarks and automatic compilation; document deferred storage activation
+- [x] Verify targeted tests (119 passed), preview requests/landmarks (zero speculative requests; one main/contentinfo) and automatic build OK; document deferred storage activation and unverified standalone typecheck
 
 ## November 5 focused UX correction (no publish)
 - [x] Weekly selection anchor/hero CTA, return links and complete accessible mobile navigation

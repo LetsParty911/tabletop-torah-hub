@@ -23,6 +23,13 @@
 - A real upload/replacement was not submitted, avoiding production PDF/storage changes. Its derivative path is code-verified, not authenticated end-to-end upload-verified.
 - No publication, DNS, maintenance, security-policy, analytics-ingestion, consent semantics, short-link or PDF route changes were made.
 
+## Final pre-publish correction verification (November 5, 21:22 UTC)
+- Regression reproduced before correction: original-first thumbnail test failed; preview requested 10 unconfirmed storage derivatives; homepage had one main but zero contentinfo landmarks.
+- After correction: **119 tests passed** (49 UX, 37 signup/homepage, 33 weekly); the same original-first regression passed.
+- Same preview browser check: **zero storage `.small.webp` requests**, one main and one contentinfo landmark. Footer remains in its existing position, explicitly labelled; root, admin, maintenance and Shabbos logic are unchanged.
+- Automatic compilation: **build OK at 2026-11-05 21:21:34 UTC**. No manual build or standalone typecheck was run under the project harness rules; independent typecheck remains unverified.
+- Narrow correction files: `src/lib/thumbnail-preview.ts`, `src/components/SmallPdfImage.tsx` (comment), `src/components/SmallPdfImage.test.tsx`, `src/components/SiteFooter.tsx`, `AGENTS.md`, `roadmap.md`, this report and project constraint memory. No upload code, storage objects, database records, artwork, analytics or PDF events were changed; nothing published.
+
 ## Files changed
 - Navigation/home: `src/routes/index.tsx`, `src/routes/__root.tsx`, `src/lib/weekly-navigation.ts`.
 - Filters: `src/lib/length-filter.ts`, `src/routes/archive.tsx`, `src/integrations/supabase/archive-all.functions.ts`, `src/components/ReadingCollectionView.tsx`.
