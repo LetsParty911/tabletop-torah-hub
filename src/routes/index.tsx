@@ -758,7 +758,7 @@ function Index() {
                       {displayTitle(r)}
                     </Link>
                   </h3>
-                  <p className={`mt-2 text-sm text-muted-foreground ${isTfttOriginal(r) ? "" : "line-clamp-3"}`}>
+                  <p className="mt-2 text-sm text-muted-foreground">
                     {tfttOriginalSeriesById(r.publication_id)?.shortDescription ?? leadWithPublicationTitle(displayTitle(r), chooseReason(r))}
                   </p>
                   {pageCountLabel(r) && <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{pageCountLabel(r)}</p>}
@@ -798,7 +798,7 @@ function Index() {
                         </h4>
                       </div>
                       {r.publisher && <p className="mt-1 text-xs text-muted-foreground">By {r.publisher}</p>}
-                      <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
+                      <p className="mt-2 text-sm text-muted-foreground">
                         {leadWithPublicationTitle(displayTitle(r), r.summary_quick || r.subtitle || r.description || chooseReason(r))}
                       </p>
                       {pageCountLabel(r) && <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{pageCountLabel(r)}</p>}
@@ -956,7 +956,7 @@ function Index() {
                               </Link>
                             </h3>
                             {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
-                            <p className={`text-xs sm:text-sm text-muted-foreground mt-0.5 ${isTfttOriginal(r) ? "" : "line-clamp-3"}`}>{leadWithPublicationTitle(displayTitle(r), r.subtitle || chooseReason(r))}</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{leadWithPublicationTitle(displayTitle(r), r.subtitle || chooseReason(r))}</p>
                             {pageCountLabel(r) && (
                               <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                 {pageCountLabel(r)}
@@ -1221,7 +1221,7 @@ function Index() {
                           {(() => {
                             const summary = r.summary_quick || r.subtitle || r.description;
                             return summary ? (
-                              <p className={`mt-1 text-xs sm:text-sm text-muted-foreground ${isTfttOriginal(r) ? "" : "line-clamp-3"}`}>{leadWithPublicationTitle(displayTitle(r), summary)}</p>
+                              <p className="mt-1 text-xs sm:text-sm text-muted-foreground">{leadWithPublicationTitle(displayTitle(r), summary)}</p>
                             ) : null;
                           })()}
                           {(r.audience || r.format_type || typeof r.page_count === "number") && (
