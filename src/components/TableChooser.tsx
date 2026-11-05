@@ -209,7 +209,7 @@ export function TableChooser({
 
         {selected && recommendations.length > 0 && (
           <div ref={resultsRef} className="mt-5 scroll-mt-24 border-t border-accent/25 pt-4">
-            <p className="text-center font-sans text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
+            <p className="text-center font-sans text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-accent-readable sm:text-xs">
               This week&apos;s selections
             </p>
             {selectedLabel && (
