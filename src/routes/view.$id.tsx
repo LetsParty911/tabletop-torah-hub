@@ -170,6 +170,15 @@ function ViewPdf() {
   const publication = publicationContext.publication;
   const displayPublicationName = tfttOriginalSeriesById(publication?.id)?.title ?? publication?.name ?? pdf.publication ?? pdf.title;
   const related = publicationContext.related;
+  // This detail page has its own mobile preview; do not depend on the weekly
+  // PDF's first-page thumbnail for Torah Wellsprings.
+  const isTorahWellsprings =
+    publication?.id === "0ba2f4bb-cd60-409b-b268-47ac4aae8c4f" ||
+    displayPublicationName.trim().toLowerCase() === "torah wellsprings" ||
+    pdf.title.trim().toLowerCase() === "torah wellsprings";
+  const detailThumbnailUrl = isTorahWellsprings
+    ? "/publication-covers/torah-wellsprings-plaque-v2.jpg"
+    : pdf.thumb_url;
   const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=FitH`;
   const isMobile = useIsMobile();
   const [mounted, setMounted] = useState(false);
@@ -404,10 +413,10 @@ function ViewPdf() {
                   {pdf.page_count} {pdf.page_count === 1 ? "page" : "pages"} · PDF
                 </p>
               )}
-              {pdf.thumb_url && !thumbFailed ? (
+              {detailThumbnailUrl && !thumbFailed ? (
                 <img
-                  src={pdf.thumb_url}
-                  alt={`First page preview of ${pdf.title}`}
+                  src={detailThumbnailUrl}
+                  alt={isTorahWellsprings ? "Torah Wellsprings permanent cover" : `First page preview of ${pdf.title}`}
                   loading="lazy"
                   onError={() => setThumbFailed(true)}
                   className="mx-auto mt-3 w-full max-w-sm rounded-md border border-accent/40 bg-background shadow-sm"
