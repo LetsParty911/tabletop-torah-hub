@@ -58,6 +58,10 @@ const VISITOR_STORAGE_KEY = "tftt:fp-visitor";
 const SESSION_STORAGE_KEY = "tftt:fp-session";
 const NEW_VISITOR_SESSION_KEY = "tftt:fp-new-visitor-session";
 const ATTRIBUTION_STORAGE_KEY = "tftt:fp-attribution";
+// A campaign can arrive after a Direct first touch within the same session.
+// Keep the original first touch immutable, but attribute subsequent actions to
+// the most recent explicitly tagged campaign until the session ends.
+const CAMPAIGN_ATTRIBUTION_STORAGE_KEY = "tftt:fp-campaign-attribution";
 
 const VISITOR_TTL_DAYS = 365; // 12 months
 const SESSION_IDLE_MS = 30 * 60 * 1000; // 30 minutes of inactivity
@@ -295,6 +299,7 @@ export function touchSession(): { sessionId: string; isNew: boolean } {
   // A new session means a new first-touch attribution window.
   try {
     localStorage.removeItem(ATTRIBUTION_STORAGE_KEY);
+    localStorage.removeItem(CAMPAIGN_ATTRIBUTION_STORAGE_KEY);
   } catch {
     /* ignore */
   }
@@ -390,6 +395,70 @@ export function getFirstTouch(): FpAttribution | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Event-level campaign attribution is separate from immutable first-touch
+ * attribution. A visitor can open an email link after landing Direct within
+ * the same 30-minute session. Explicit complete UTM tags must identify the
+ * resulting page views and publication actions without rewriting first touch.
+ *
+ * Keep the last explicit campaign for subsequent pages until a new session.
+ * Partial query parameters do not override attribution.
+ */
+export function captureEventAttribution(path: string): FpAttribution {
+  const firstTouch = captureFirstTouch(path);
+  if (typeof window === "undefined") return firstTouch;
+
+  const sessionId = getSessionId();
+  const raw = lsGet(CAMPAIGN_ATTRIBUTION_STORAGE_KEY);
+  let previous: StoredAttribution | null = null;
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as StoredAttribution;
+      if (parsed.session_id === sessionId) previous = parsed;
+    } catch {
+      /* ignore invalid storage */
+    }
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const source = params.get("utm_source")?.trim() || null;
+  const medium = params.get("utm_medium")?.trim() || null;
+  const campaign = params.get("utm_campaign")?.trim() || null;
+  const content = params.get("utm_content")?.trim() || null;
+
+  if (source && medium && campaign) {
+    if (
+      previous?.utm_source === source &&
+      previous.utm_medium === medium &&
+      previous.utm_campaign === campaign &&
+      previous.utm_content === content
+    ) {
+      return previous;
+    }
+
+    const next: StoredAttribution = {
+      referrer_host: firstTouch.referrer_host,
+      referrer_url: firstTouch.referrer_url,
+      utm_source: source,
+      utm_medium: medium,
+      utm_campaign: campaign,
+      utm_content: content,
+      landing_path: path,
+      source_group: normalizeSourceGroup({
+        referrer_host: firstTouch.referrer_host,
+        utm_source: source,
+        utm_medium: medium,
+        utm_campaign: campaign,
+      }),
+      session_id: sessionId,
+    };
+    lsSet(CAMPAIGN_ATTRIBUTION_STORAGE_KEY, JSON.stringify(next));
+    return next;
+  }
+
+  return previous ?? firstTouch;
 }
 
 function externalDocumentReferrer(): { referrer_host: string | null; referrer_url: string | null } {
@@ -525,7 +594,8 @@ export function trackFp(name: FpEventName, input: FpEventInput = {}): void {
     void isNew;
     if (name !== "session_start") ensureSessionStart(path, visitorId, sessionId);
 
-    const attribution = captureFirstTouch(path);
+    const attribution = captureEventAttribution(path);
+    const firstTouch = getFirstTouch();
 
     const payload: WirePayload = {
       event_id: randomId(),
@@ -552,7 +622,7 @@ export function trackFp(name: FpEventName, input: FpEventInput = {}): void {
       utm_campaign: attribution.utm_campaign,
       utm_content: attribution.utm_content,
       source_group: attribution.source_group,
-      metadata: { ...(input.metadata ?? {}), first_touch_referrer_host: attribution.referrer_host },
+      metadata: { ...(input.metadata ?? {}), first_touch_referrer_host: firstTouch?.referrer_host ?? null },
     };
 
     enqueue(payload, IMMEDIATE.has(name));
