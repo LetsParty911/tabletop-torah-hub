@@ -646,15 +646,16 @@ export type PublicPdf = {
   content_type?: string | null;
 };
 
-// Torah Wellsprings is the only canonical series with a permanent cover.
-// Use the publication foreign key rather than guessing from each weekly title.
+// Timeless publication-level covers, independent of each week's PDF title.
 // Other publishers continue displaying the uploaded PDF's actual first page.
-const TORAH_WELLSPRINGS_PUBLICATION_ID = "0ba2f4bb-cd60-409b-b268-47ac4aae8c4f";
-const TORAH_WELLSPRINGS_PERMANENT_COVER = "/publication-covers/torah-wellsprings-plaque-v2.jpg";
+const PERMANENT_COVERS_BY_PUBLICATION_ID: Record<string, string> = {
+  "0ba2f4bb-cd60-409b-b268-47ac4aae8c4f": "/publication-covers/torah-wellsprings-plaque-v2.jpg",
+  "bd544c49-a810-478d-bf5c-38b94a81bc31": "/publication-covers/mi-kaamcha-yisroel-permanent.jpg",
+};
 
 export function pdfThumbUrl(id: string, publicationId?: string | null): string | null {
-  if (publicationId === TORAH_WELLSPRINGS_PUBLICATION_ID) {
-    return TORAH_WELLSPRINGS_PERMANENT_COVER;
+  if (publicationId && PERMANENT_COVERS_BY_PUBLICATION_ID[publicationId]) {
+    return PERMANENT_COVERS_BY_PUBLICATION_ID[publicationId];
   }
   const base = process.env.EXT_SUPABASE_URL || process.env.SUPABASE_URL;
   if (!base) return null;

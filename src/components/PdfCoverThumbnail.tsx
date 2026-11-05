@@ -28,14 +28,15 @@ export function PdfCoverThumbnail({
   const [failed, setFailed] = useState(false);
   const [permanentFailed, setPermanentFailed] = useState(false);
 
-  // One permanent, Parsha-independent cover; every other publication keeps its PDF preview.
-  const isTorahWellsprings =
-    publicationName?.trim().toLowerCase() === "torah wellsprings" ||
-    title.trim().toLowerCase() === "torah wellsprings";
-  const usingPermanent = isTorahWellsprings && !permanentFailed;
-  const imageUrl = usingPermanent
+  // Preserve the same timeless cover throughout these two weekly series.
+  const normalizedSeries = (publicationName ?? title).trim().toLowerCase();
+  const permanentCover = normalizedSeries === "torah wellsprings"
     ? "/publication-covers/torah-wellsprings-plaque-v2.jpg"
-    : thumbnailUrl;
+    : normalizedSeries === "mi ka'amcha yisroel" || normalizedSeries === "mikaamcha"
+      ? "/publication-covers/mi-kaamcha-yisroel-permanent.jpg"
+      : null;
+  const usingPermanent = Boolean(permanentCover && !permanentFailed);
+  const imageUrl = usingPermanent ? permanentCover : thumbnailUrl;
 
   if (!imageUrl || failed) {
     return (
@@ -78,7 +79,7 @@ export function PdfCoverThumbnail({
     >
       <img
         src={imageUrl}
-        alt={usingPermanent ? "Torah Wellsprings cover" : `First page of ${title}`}
+        alt={usingPermanent ? `${publicationName ?? title} permanent cover` : `First page of ${title}`}
         width={64}
         height={83}
         loading="lazy"

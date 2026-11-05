@@ -626,8 +626,8 @@ function Index() {
     const href = pdfActionHrefs(r.id).open;
     return (
       <StarterThumb
-        src={displayPublicationName(r).trim().toLowerCase() === "torah wellsprings" ? "/publication-covers/torah-wellsprings-plaque-v2.jpg" : r.thumb_url}
-        alt={displayPublicationName(r).trim().toLowerCase() === "torah wellsprings" ? "Torah Wellsprings permanent cover" : `First page of ${displayTitle(r)} for ${r.parsha_key ?? displayedParshaKey ?? "this week"}`}
+        src={r.publication_id === "bd544c49-a810-478d-bf5c-38b94a81bc31" ? "/publication-covers/mi-kaamcha-yisroel-permanent.jpg" : r.thumb_url}
+        alt={r.publication_id === "bd544c49-a810-478d-bf5c-38b94a81bc31" ? "Mi Ka'amcha Yisroel permanent cover" : `Cover for ${displayTitle(r)} for ${r.parsha_key ?? displayedParshaKey ?? "this week"}`}
         title={displayTitle(r)}
         href={href}
         onOpen={(event) => recordPdfAction(event, "open_pdf", href, {
