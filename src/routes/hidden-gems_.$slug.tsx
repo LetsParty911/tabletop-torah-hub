@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { Printer, ExternalLink } from "lucide-react";
+import { ArrowLeft, Printer, ExternalLink } from "lucide-react";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
 import { GematriaMotif } from "@/components/HiddenGem";
@@ -29,9 +29,16 @@ function HiddenGemReader() {
   return (
     <div className="hidden-gem-page min-h-screen bg-background">
       <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
-        <div className="gem-screen-controls mb-6 flex flex-wrap items-center justify-between gap-3">
-          <Button asChild variant="link" className="px-0"><Link to="/hidden-gems">← All Hidden Gems</Link></Button>
-          <Button onClick={() => window.print()} className="min-h-11"><Printer aria-hidden="true" /> Print</Button>
+        <div className="gem-screen-controls mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Button asChild className="min-h-11 w-full sm:w-auto">
+            <Link to="/" hash="this-weeks-collection"><ArrowLeft aria-hidden="true" /> Back to This Week’s Selections</Link>
+          </Button>
+          <div className="flex items-center justify-between gap-3 sm:justify-end">
+            <Button asChild variant="link" className="min-h-11 px-0">
+              <Link to="/hidden-gems">All Hidden Gems</Link>
+            </Button>
+            <Button onClick={() => window.print()} className="min-h-11"><Printer aria-hidden="true" /> Print</Button>
+          </div>
         </div>
         <article className="hidden-gem-print">
           <header className="border-b border-accent/30 pb-5 text-center">
@@ -59,6 +66,14 @@ function HiddenGemReader() {
           </section>
           <p className="mt-5 text-center text-xs text-muted-foreground">torahforthetable.com/hidden-gems</p>
         </article>
+        <nav aria-label="Continue browsing" className="gem-screen-controls mt-8 flex flex-col items-stretch justify-center gap-3 border-t border-accent/30 pt-5 sm:flex-row sm:items-center">
+          <Button asChild className="min-h-11 w-full sm:w-auto">
+            <Link to="/" hash="this-weeks-collection"><ArrowLeft aria-hidden="true" /> Back to This Week’s Selections</Link>
+          </Button>
+          <Button asChild variant="outline" className="min-h-11 w-full sm:w-auto">
+            <Link to="/hidden-gems">All Hidden Gems</Link>
+          </Button>
+        </nav>
       </main>
       <SiteFooter />
     </div>
