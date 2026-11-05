@@ -3,7 +3,8 @@ import { FileText } from "lucide-react";
 import { recordPdfAction } from "@/components/DownloadToPrintButton";
 
 /**
- * Shows the uploaded PDF's actual first page wherever a publication appears.
+ * Shows a PDF's first page by default. Torah Wellsprings is the sole exception:
+ * its timeless cover is reused for every weekly edition.
  * Clicking a cover is the same tracked PDF-open action as the Open PDF button.
  * A missing or failed preview falls back to the existing document icon.
  */
@@ -25,8 +26,18 @@ export function PdfCoverThumbnail({
   jewishYear?: number | null;
 }) {
   const [failed, setFailed] = useState(false);
+  const [permanentFailed, setPermanentFailed] = useState(false);
 
-  if (!thumbnailUrl || failed) {
+  // One permanent, Parsha-independent cover; every other publication keeps its PDF preview.
+  const isTorahWellsprings =
+    publicationName?.trim().toLowerCase() === "torah wellsprings" ||
+    title.trim().toLowerCase() === "torah wellsprings";
+  const usingPermanent = isTorahWellsprings && !permanentFailed;
+  const imageUrl = usingPermanent
+    ? "/publication-covers/torah-wellsprings.jpg"
+    : thumbnailUrl;
+
+  if (!imageUrl || failed) {
     return (
       <div
         role="img"
@@ -66,13 +77,16 @@ export function PdfCoverThumbnail({
       className="block h-[83px] w-16 shrink-0 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <img
-        src={thumbnailUrl}
-        alt={`First page of ${title}`}
+        src={imageUrl}
+        alt={usingPermanent ? "Torah Wellsprings cover" : `First page of ${title}`}
         width={64}
         height={83}
         loading="lazy"
         decoding="async"
-        onError={() => setFailed(true)}
+        onError={() => {
+          if (usingPermanent) setPermanentFailed(true);
+          else setFailed(true);
+        }}
         className="h-[83px] w-16 rounded-sm border border-accent/40 bg-card object-cover object-top shadow-sm hover:border-accent"
       />
     </a>
