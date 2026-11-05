@@ -3,7 +3,8 @@
 - [x] Create 20 immutable WebPs (173,140 bytes); verify public bytes and idempotent rerun, preserve 2 permanent covers
 - [x] Batch-confirm current-original version eligibility; keep original fallback and future upload generation
 - [x] Tests (160 passed), standalone typecheck and automatic build; desktop/mobile, no speculative requests and preserved click correlation
-- [ ] Security review, publish and verify live delivery
+- [x] Basic security scan found no issues; requested production publish
+- [ ] Production page activation — fresh post-request check still serves previous deployment; awaiting hosting release completion, no repeated publish
 
 ## Final pre-publish thumbnail / footer correction (no publish)
 - [x] Disable unconfirmed storage derivative reads; retain original-first display, bundled covers and future derivative generation

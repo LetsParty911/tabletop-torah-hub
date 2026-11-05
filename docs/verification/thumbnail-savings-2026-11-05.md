@@ -27,4 +27,6 @@
 - Automatic build log: build OK after edits.
 - Desktop/mobile preview: 22 choices, decoded covers, no thumbnail 404, no original PNG requests, no runtime errors, This Week anchor focused.
 - Genuine thumbnail click preserves action/session/visitor correlation; analytics and its PDF request blocked during browser testing, so no fabricated reader events. Mocked regression confirms exactly one `open_pdf` thumbnail action and original PDF ID. No real upload/replacement performed because that would change a PDF or original artwork; pure tests cover replacement invalidation and fallback.
-- Production release verification pending security review/publish. Public derivative URLs were verified before release; production page does not select them until deployment.
+- Basic security scan found no issues but does not include deep code analysis; publish tool warned some other scan results remain stale. No security findings bypassed.
+- Production publishing requested for https://torahforthetable.com. One fresh post-request browser check at approximately 21:40 UTC returned HTTP 200 but still the previous deployment `3e97eb71-0f6d-4fda-b287-1677dcfc47e4`: 20 PNGs / 6,987,884 bytes, zero versioned WebPs. Therefore production savings are NOT yet verified; hosting release completion is the remaining blocker. No repeated publish or DNS changes.
+- Exact added file paths and byte counts are preserved in `thumbnail-backfill-2026-11-05.json`. Original checksums/sizes rechecked unchanged after writes; final idempotent dry-run reports zero new objects and bytes.
