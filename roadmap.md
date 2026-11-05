@@ -1,6 +1,6 @@
 ## Homepage sharing (no publish)
-- [ ] Move one share section before category controls, preserve WhatsApp keys, add copy success/fallback and footer anchor
-- [ ] Verify targeted tests, mobile/desktop and expanded-state visibility, compilation
+- [x] Move one share section before category controls, preserve WhatsApp keys, add copy success/fallback and footer anchor
+- [x] Verify targeted tests, mobile/desktop and expanded-state visibility, compilation (9 tests passed; live preview clipboard/fallback/footer checked; automatic build OK; separate typecheck not run)
 
 ## Hidden Gems of the Parsha (no publish)
 - [x] Add approved Chayei Sarah text, matching-week homepage teaser, archive and reader page
