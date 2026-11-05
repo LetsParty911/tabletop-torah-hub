@@ -5,6 +5,9 @@ on:
     paths:
       - "src/lib/human-sessions.ts"
       - "src/lib/human-sessions.test.ts"
+      - "src/lib/first-party-analytics.ts"
+      - "src/lib/first-party-analytics.test.ts"
+      - "src/routes/__root.tsx"
       - "src/lib/maintenance-traffic*"
       - "src/lib/visitor-alert*"
       - "src/components/admin/MaintenanceTrafficSection.tsx"
@@ -25,3 +28,5 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Run targeted tracking regressions
         run: bun test src/lib/human-sessions.test.ts src/lib/traffic-confidence.test.ts src/lib/maintenance-traffic.test.ts src/lib/visitor-alert.test.ts
+      - name: Verify UTM attribution regression
+        run: bunx vitest run src/lib/first-party-analytics.test.ts
