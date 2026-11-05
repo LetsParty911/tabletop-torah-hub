@@ -10,6 +10,7 @@ import { formatTypeLabel } from "@/lib/format-labels";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
 import { matchesPageLength, type LengthFilter } from "@/lib/length-filter";
 import { pdfThumbUrl } from "@/integrations/supabase/api.functions";
+import { pdfDisplayTitle } from "@/lib/pdf-display-title";
 import { readVerifiedThumbnails } from "@/lib/verified-thumbnails.server";
 import { verifiedSmallThumbnailUrl } from "@/lib/verified-thumbnails";
 
@@ -146,7 +147,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
 
       all.push({
         id: row.id as string,
-        title: original?.title ?? canonical?.name ?? (row.title as string),
+        title: pdfDisplayTitle(row.title as string, original?.title ?? canonical?.name, row.publication_id as string | null),
         publisher: canonical?.publisher ?? null,
         publication:
           original?.title ?? canonical?.name ??
