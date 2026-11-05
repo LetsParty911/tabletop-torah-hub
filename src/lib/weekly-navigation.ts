@@ -1,4 +1,9 @@
 export const WEEKLY_COLLECTION_ANCHOR = "this-weeks-collection";
+export const WEEKLY_COLLECTION_REQUEST = "tftt:weekly-collection";
+
+export function requestWeeklyCollection(): void {
+  document.dispatchEvent(new Event(WEEKLY_COLLECTION_REQUEST));
+}
 
 export function isWeeklyCollectionHash(hash: string): boolean {
   return hash.replace(/^#/, "") === WEEKLY_COLLECTION_ANCHOR;

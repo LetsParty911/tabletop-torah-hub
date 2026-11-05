@@ -26,7 +26,7 @@ import { publicationLabel } from "@/lib/badges";
 import { Button } from "@/components/ui/button";
 import { SmallPdfImage } from "@/components/SmallPdfImage";
 import { LENGTH_OPTIONS, matchesPageLength, type LengthFilter } from "@/lib/length-filter";
-import { isWeeklyCollectionHash, scrollToWeeklyCollection } from "@/lib/weekly-navigation";
+import { isWeeklyCollectionHash, scrollToWeeklyCollection, WEEKLY_COLLECTION_REQUEST } from "@/lib/weekly-navigation";
 import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
 
 import {
@@ -640,6 +640,10 @@ function Index() {
     setShowAllResources(true);
     setCollectionScrollRequest((n) => n + 1);
   }, [locationHref]);
+  useEffect(() => {
+    document.addEventListener(WEEKLY_COLLECTION_REQUEST, browseAllSelections);
+    return () => document.removeEventListener(WEEKLY_COLLECTION_REQUEST, browseAllSelections);
+  }, []);
   useEffect(() => {
     if (collectionScrollRequest > 0 && showCompleteCollection) scrollToWeeklyCollection();
   }, [collectionScrollRequest, showCompleteCollection]);

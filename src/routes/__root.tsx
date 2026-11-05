@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Menu, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { requestWeeklyCollection } from "@/lib/weekly-navigation";
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPwa } from "@/pwa-register";
@@ -347,7 +348,7 @@ function SiteNav() {
             <Link
               to="/"
               hash="this-weeks-collection"
-              onClick={() => setMobileOpen(false)}
+              onClick={() => { setMobileOpen(false); if (pathname === "/") requestWeeklyCollection(); }}
               activeOptions={{ exact: true }}
               className={linkCls}
               activeProps={{ className: `${linkCls} ${activeCls}` }}
@@ -413,7 +414,7 @@ function SiteNav() {
           <div ref={mobilePanel} id="mobile-navigation" onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setMobileOpen(false); }} className="max-h-[calc(100dvh-5rem)] overflow-y-auto border-t border-accent/20 pb-3 pt-2 md:hidden">
             <SearchForm mobile />
             <div className="grid gap-1">
-              <Link to="/" hash="this-weeks-collection" onClick={() => setMobileOpen(false)} className={mobileLinkCls}>This Week</Link>
+              <Link to="/" hash="this-weeks-collection" onClick={() => { setMobileOpen(false); if (pathname === "/") requestWeeklyCollection(); }} className={mobileLinkCls}>This Week</Link>
               <Link to="/archive" className={mobileLinkCls}>Archive</Link>
               <Link to="/divrei-torah-parsha" className={mobileLinkCls}>Divrei Torah by Parsha</Link>
               <Link to="/publications" className={mobileLinkCls}>Publications</Link>

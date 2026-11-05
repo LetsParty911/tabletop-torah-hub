@@ -138,9 +138,9 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.queryByRole("link", { name: /Get notification/i })).toBeNull();
     expect(screen.getAllByRole("form", { name: /Weekly Torah signup/i })).toHaveLength(1);
 
-    const share = screen.getByRole("link", { name: "Share Torah For The Table" });
+    const share = screen.getByRole("link", { name: "Share on WhatsApp" });
     const message = new URL(share.getAttribute("href") ?? "").searchParams.get("text") ?? "";
-    expect(message).toContain("Parshas Noach");
+    expect(message).toContain("torahforthetable.com/wam");
     expect(message).not.toContain("Parshas Lech-Lecha");
   });
 
@@ -219,7 +219,7 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.getAllByRole("form", { name: /Weekly Torah signup/i })).toHaveLength(1);
     const share = screen.getByRole("link", { name: "Share on WhatsApp" });
     const message = new URL(share.getAttribute("href") ?? "").searchParams.get("text") ?? "";
-    expect(message).toContain("Parshas Lech-Lecha");
+    expect(message).toContain("torahforthetable.com/wam");
     expect(message).not.toContain("Parshas Noach");
   });
 });
