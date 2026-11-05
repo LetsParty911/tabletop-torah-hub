@@ -6,11 +6,22 @@ import { smallThumbnailUrl } from "@/lib/thumbnail-preview";
 afterEach(cleanup);
 describe("small preview fallback", () => {
   const src = "https://example.test/storage/v1/object/public/pdf-thumbs/8c7e8593-cebf-4bf4-b53c-ad41691cd3c9.png";
-  it("tries the free public derivative then the same original exactly once", () => {
+  it("uses the original immediately when storage derivative availability is unconfirmed", () => {
+    expect(smallThumbnailUrl(src)).toBeNull();
     const unavailable = vi.fn();
     render(<SmallPdfImage src={src} alt="First page" onUnavailable={unavailable} />);
     const image = screen.getByRole("img");
-    expect(image.getAttribute("src")).toBe(src.replace(".png", ".small.webp"));
+    expect(image.getAttribute("src")).toBe(src);
+    fireEvent.error(image);
+    expect(unavailable).toHaveBeenCalledTimes(1);
+    expect(image.getAttribute("src")).toBe(src);
+  });
+  it("tries the bundled permanent cover then its original exactly once", () => {
+    const src = "/publication-covers/mi-kaamcha-yisroel-permanent.jpg";
+    const unavailable = vi.fn();
+    render(<SmallPdfImage src={src} alt="First page" onUnavailable={unavailable} />);
+    const image = screen.getByRole("img");
+    expect(image.getAttribute("src")).toBe("/publication-covers/mi-kaamcha-yisroel-small.webp");
     fireEvent.error(image);
     expect(image.getAttribute("src")).toBe(src);
     expect(unavailable).not.toHaveBeenCalled();
