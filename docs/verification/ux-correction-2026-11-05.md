@@ -5,8 +5,8 @@
 - Homepage collection anchor is present in starter, complete-list, fallback and empty states. Hidden Gems and PDF detail return links lead to choices; same-hash This Week requests work without rewriting browser history.
 - Mobile menu includes all ten requested destinations, retains search, closes on navigation/Escape and returns focus on Escape.
 - Visible length ranges are Under 5, 5–19, 20+; archive `length=long` retains >=5 semantics. Unspecified audience remains unspecified.
-- Public root provides skip link and one main; existing inner main containers were neutralized, with admin and maintenance layout behavior preserved. Search has a 2px ring; consent checkbox is 24px and consent copy larger.
-- Small first-page images preserve aspect ratio. Future upload/replacement derives <=160×210 WebP from the original rendered PNG, using the existing authorized thumbnail upload. Failed small images retry originals. Small uploads use zero freshness to avoid stale replacement artwork; cleanup failure is surfaced.
+- Public root provides skip link and one main; existing inner main containers were neutralized, with admin and maintenance layout behavior preserved. SiteFooter explicitly exposes `role="contentinfo"` because its route-local placement inside the root main otherwise suppresses the implicit landmark; no root/gating refactor was needed. Search has a 2px ring; consent checkbox is 24px and consent copy larger.
+- Small first-page images preserve aspect ratio. Storage derivative selection is now globally disabled: existing and newly uploaded storage images use original PNGs immediately, without speculative derivative requests or HEAD probes. Only the two bundled permanent-cover copies are eligible for small-image selection, with original fallback. Future upload/replacement generation of <=160×210 WebP remains unchanged, but those storage derivatives are not read until safe availability/backfill activation is authorized.
 - Hidden Gems remains after weekly PDF choices. Original grids use three desktop columns. Brief Insights PDF control is explicitly named. Earlier originals have a meaningful heading.
 - PDF detail description uses its actual parsha and stored Jewish year, preserving existing titles/canonical/OG/JSON-LD.
 
@@ -16,10 +16,10 @@
 - Weekly release/override tests: **33 passed**.
 - Latest automatic build log: **build OK, 2026-11-05 21:04:05 UTC**. No manual build was run; standalone typecheck was not run.
 - Real preview browser checks at 1280px and 390px: Browse All, archive/article/PDF return links, browser back, anchor focus, mobile menu/Escape, medium archive link; one main, no horizontal overflow or page errors.
-- Existing storage images eventually loaded their original thumbnails after absent-derivative fallback. Two bundled permanent-cover copies were inspected. Mi Ka'amcha copy is 5,570 bytes versus 21,511-byte original; Wellsprings source was already only 1,907 bytes, so its WebP does not improve transfer.
+- Before this final correction, storage images requested absent derivatives before originals; the reproduction observed 10 speculative `.small.webp` requests and no contentinfo landmark on the homepage. Two bundled permanent-cover copies were inspected. Mi Ka'amcha copy is 5,570 bytes versus 21,511-byte original; Wellsprings source was already only 1,907 bytes, so its WebP does not improve transfer.
 
 ## Limitations / incomplete item
-- **Existing uploaded-thumbnail derivative backfill is not complete.** No storage writes, record changes or schema changes were made. Missing derivatives still request originals, so the reported six-image ~1.4MB transfer reduction is **not claimed**. A safe authorized backfill is needed for immediate savings across existing thumbnails; future upload code alone does not complete this.
+- **Existing uploaded-thumbnail derivative backfill is not complete; storage derivative reads are disabled, including for future uploads.** No availability manifest/schema or storage changes were made. Original PNGs are requested immediately. The reported six-image ~1.4MB transfer reduction is **not claimed**. Activation requires an authorized backfill and reliable availability source; future generation alone does not establish availability.
 - A real upload/replacement was not submitted, avoiding production PDF/storage changes. Its derivative path is code-verified, not authenticated end-to-end upload-verified.
 - No publication, DNS, maintenance, security-policy, analytics-ingestion, consent semantics, short-link or PDF route changes were made.
 

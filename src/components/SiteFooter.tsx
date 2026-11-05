@@ -8,7 +8,7 @@ export function SiteFooter() {
     "hover:text-primary hover:underline transition-colors duration-150 after:content-['·'] after:mx-3 after:text-muted-foreground last:after:hidden";
 
   return (
-    <footer id="site-footer" className="space-y-1.5 px-4 pb-6 pt-2.5 sm:pb-8 md:pb-10">
+    <footer id="site-footer" role="contentinfo" className="space-y-1.5 px-4 pb-6 pt-2.5 sm:pb-8 md:pb-10">
       <Link
         to="/"
         aria-label="Torah For The Table — home"
