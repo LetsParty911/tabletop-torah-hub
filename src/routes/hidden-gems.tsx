@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
 import { GematriaMotif } from "@/components/HiddenGem";
@@ -22,6 +22,11 @@ function HiddenGemsArchive() {
   return (
     <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+        <div className="mb-6">
+          <Button asChild className="min-h-11 w-full sm:w-auto">
+            <Link to="/" hash="this-weeks-collection"><ArrowLeft aria-hidden="true" /> Back to This Week’s Selections</Link>
+          </Button>
+        </div>
         <p className="text-sm text-accent-readable">Torah For The Table</p>
         <h1 className="mt-2 font-serif text-3xl font-bold text-primary sm:text-4xl">{HIDDEN_GEMS_NAME}</h1>
         <p className="mt-3 text-base text-muted-foreground">{HIDDEN_GEMS_TAGLINE}</p>
@@ -34,6 +39,11 @@ function HiddenGemsArchive() {
             <Button asChild className="min-h-11"><Link to="/hidden-gems/$slug" params={{ slug: gem.slug }}>Read &amp; Print <ArrowRight aria-hidden="true" /></Link></Button>
           </article>
         ))}
+        <div className="mt-8 flex justify-center sm:justify-start">
+          <Button asChild variant="outline" className="min-h-11 w-full sm:w-auto">
+            <Link to="/" hash="this-weeks-collection"><ArrowLeft aria-hidden="true" /> Back to This Week’s Selections</Link>
+          </Button>
+        </div>
       </main>
       <SiteFooter />
     </div>
