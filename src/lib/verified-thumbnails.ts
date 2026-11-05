@@ -7,6 +7,37 @@ export function thumbnailVersion(etag: string | undefined): string | null {
 export function derivativePath(id: string, version: string): string {
   return `${id}.${version}.small.webp`;
 }
+/** Build a public optimized URL only when a matching versioned object was
+ * confirmed by the server inventory. Keep permanent covers and absent entries
+ * original-only; never guess that a derivative exists. */
+export function verifiedSmallThumbnailUrl(
+  originalUrl: string | null | undefined,
+  pdfId: string,
+  available: ReadonlyMap<string, string>,
+): string | null {
+  const path = available.get(pdfId);
+  if (!originalUrl || !path || !/^[a-f0-9-]{36}$/.test(pdfId)) return null;
+  if (!new RegExp(`^${pdfId}\\.[a-f0-9]{32}\\.small\\.webp/** Storage metadata is read in batches, never probed for individual images. */
+export type ThumbnailObject = { name: string; metadata?: { eTag?: string; size?: number; mimetype?: string } | null };
+export function thumbnailVersion(etag: string | undefined): string | null {
+  const value = etag?.replaceAll('"', "").toLowerCase();
+  return value && /^[a-f0-9]{32}$/.test(value) ? value : null;
+}
+export function derivativePath(id: string, version: string): string {
+  return `${id}.${version}.small.webp`;
+}
+).test(path)) return null;
+  try {
+    const url = new URL(originalUrl);
+    if (url.protocol !== "https:" || url.search || url.hash ||
+      url.pathname !== `/storage/v1/object/public/pdf-thumbs/${pdfId}.png`) return null;
+    url.pathname = `/storage/v1/object/public/pdf-thumbs/${path}`;
+    return url.href;
+  } catch {
+    return null;
+  }
+}
+
 export function verifiedThumbnailPaths(objects: ThumbnailObject[]): Map<string, string> {
   const byName = new Map(objects.map(object => [object.name, object]));
   const result = new Map<string, string>();
