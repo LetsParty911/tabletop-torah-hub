@@ -1,3 +1,10 @@
+## Current-week measured thumbnail savings
+- [x] Measure live IDs, original bytes, derivative availability, recursive storage usage and request counts
+- [x] Create 20 immutable WebPs (173,140 bytes); verify public bytes and idempotent rerun, preserve 2 permanent covers
+- [x] Batch-confirm current-original version eligibility; keep original fallback and future upload generation
+- [x] Tests (160 passed), standalone typecheck and automatic build; desktop/mobile, no speculative requests and preserved click correlation
+- [ ] Security review, publish and verify live delivery
+
 ## Final pre-publish thumbnail / footer correction (no publish)
 - [x] Disable unconfirmed storage derivative reads; retain original-first display, bundled covers and future derivative generation
 - [x] Restore site footer contentinfo semantics without changing root/gated layouts
@@ -8,7 +15,7 @@
 - [x] Mutually exclusive displayed length filters with legacy long bookmarks preserved
 - [x] Public landmarks, search focus, consent targets and modest typography/card polish
 - [x] Free-plan small WebP derivative upload/fallback support
-- [ ] Existing-thumbnail derivative backfill — requires authorized storage writes; no full transfer reduction claimed
+- [x] Current displayed collection backfill complete; older weeks intentionally remain original-only (see measured thumbnail workstream)
 - [x] Run focused regressions and desktop/mobile journeys; automatic build OK; standalone typecheck and real upload not run (see docs/verification/ux-correction-2026-11-05.md)
 
 ## Homepage sharing (no publish)
