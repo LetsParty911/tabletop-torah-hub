@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { publicationSlug } from "@/lib/publication-slug";
 import { standardizeCopy } from "@/lib/standardize-copy";
+import { pdfThumbUrl } from "@/integrations/supabase/api.functions";
 
 export type PublicationEdition = {
   id: string;
@@ -16,6 +17,7 @@ export type PublicationEdition = {
   parsha_key: string;
   jewish_year: number | null;
   created_at: string | null;
+  thumb_url: string | null;
 };
 
 export type PublicationPageSummary = {
@@ -27,6 +29,7 @@ export type PublicationPageSummary = {
   default_format_type: string | null;
   default_description: string | null;
   edition_count: number;
+  thumb_url: string | null;
 };
 
 export const listPublicationPages = createServerFn({ method: "GET" }).handler(
@@ -46,7 +49,7 @@ export const listPublicationPages = createServerFn({ method: "GET" }).handler(
 
     const { data: rows, error: rowsError } = await admin
       .from("pdfs")
-      .select("publication_id")
+      .select("id, publication_id, created_at")
       .eq("published", true)
       .not("publication_id", "is", null);
 
@@ -55,9 +58,14 @@ export const listPublicationPages = createServerFn({ method: "GET" }).handler(
     }
 
     const counts = new Map<string, number>();
+    const latest = new Map<string, { id: string; created_at: string }>();
     for (const row of rows ?? []) {
       const id = row.publication_id as string | null;
-      if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+      if (!id) continue;
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+      const date = (row.created_at as string | null) ?? "";
+      const prev = latest.get(id);
+      if (!prev || date > prev.created_at) latest.set(id, { id: row.id as string, created_at: date });
     }
 
     return {
@@ -71,6 +79,7 @@ export const listPublicationPages = createServerFn({ method: "GET" }).handler(
           default_format_type: (p.default_format_type as string | null) ?? null,
           default_description: standardizeCopy((p.default_description as string | null) ?? null),
           edition_count: counts.get(p.id as string) ?? 0,
+          thumb_url: latest.get(p.id as string) ? pdfThumbUrl(latest.get(p.id as string)!.id) : null,
         }))
         .filter((p: any) => p.edition_count > 0),
     };
@@ -137,6 +146,7 @@ export const getPublicationPage = createServerFn({ method: "GET" })
         parsha_key: r.parsha_key as string,
         jewish_year: typeof r.jewish_year === "number" ? r.jewish_year : null,
         created_at: (r.created_at as string | null) ?? null,
+        thumb_url: pdfThumbUrl(r.id as string),
       })) as PublicationEdition[],
     };
   });
