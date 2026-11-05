@@ -10,8 +10,10 @@ describe("accepted UX review: public labels use at least 11px", () => {
     "src/routes/publications.tsx",
     "src/components/TableChooser.tsx",
   ];
-  it.each(paths)("%s has no 9.6px or 10.4px public labels", (path) => {
+  it.each(paths)("%s avoids the old undersized label classes", (path) => {
     const source = readFileSync(path, "utf8");
-    expect(source).not.toMatch(/text-\\[0\\.(?:55|6|65)rem\\]/);
+    for (const size of ["0.55rem", "0.6rem", "0.65rem"]) {
+      expect(source).not.toContain("text-[" + size + "]");
+    }
   });
 });
