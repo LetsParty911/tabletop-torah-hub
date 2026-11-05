@@ -330,8 +330,8 @@ async function buildResources(
         page_count: typeof r.page_count === "number" ? r.page_count : null,
         badge: (r.badge as string | null) ?? null,
         featured_slot: (r.featured_slot as string | null) ?? null,
-        // First-page artwork only for canonical TFTT originals (this row's own upload thumb).
-        thumb_url: tfttOriginalSeriesById(r.publication_id as string | null) ? pdfThumbUrl(r.id as string) : null,
+        // Each published PDF has its own automatically uploaded first-page preview.
+        thumb_url: pdfThumbUrl(r.id as string),
       };
     }),
   );
@@ -515,6 +515,7 @@ export type ArchivePdf = {
   content_type: string | null;
   page_count: number | null;
   badge: string | null;
+  thumb_url: string | null;
 };
 export type ArchiveParsha = { parshaKey: string; pdfs: ArchivePdf[] };
 export type ArchiveYear = { year: number; parshiyos: ArchiveParsha[] };
@@ -592,6 +593,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
         content_type: (r.content_type as string | null) ?? null,
         page_count: typeof r.page_count === "number" ? r.page_count : null,
         badge: (r.badge as string | null) ?? null,
+        thumb_url: pdfThumbUrl(r.id as string),
         created_at: r.created_at,
       });
     }
