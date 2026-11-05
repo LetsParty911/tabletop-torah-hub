@@ -1,6 +1,6 @@
 // PWA service-worker registration with preview safety guards.
 // Never registers in dev, iframe previews, Lovable preview hosts, or admin pages.
-// Supports a kill switch via ?sw=off which unregisters existing workers.
+// Supports a kill switch via ?sw=off which unregisters existing workers and clears app-owned caches.
 
 declare const __BUILD_ID__: string;
 
@@ -35,6 +35,17 @@ async function unregisterMatching() {
   }
 }
 
+/** Remove only Torah for the Table's own caches; never wipe unrelated origins' caches. */
+export async function clearTfttCaches(): Promise<void> {
+  if (typeof window === "undefined" || !("caches" in window)) return;
+  try {
+    const names = await window.caches.keys();
+    await Promise.all(names.filter((name) => name.startsWith("tftt-")).map((name) => window.caches.delete(name)));
+  } catch {
+    /* Cache Storage may be unavailable or blocked by browser privacy settings. */
+  }
+}
+
 export function registerPwa() {
   if (typeof window === "undefined") return;
   if (!("serviceWorker" in navigator)) return;
@@ -48,7 +59,14 @@ export function registerPwa() {
     !import.meta.env.PROD || inIframe || isPreviewHost(host) || killSwitch || adminRoute;
 
   if (refuse) {
-    void unregisterMatching();
+    if (killSwitch) {
+      void (async () => {
+        await unregisterMatching();
+        await clearTfttCaches();
+      })();
+    } else {
+      void unregisterMatching();
+    }
     return;
   }
 
