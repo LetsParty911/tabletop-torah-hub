@@ -249,11 +249,14 @@ function PwaRegistrar() {
 
 function PageViewTracker() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Query-only navigation can carry a new campaign while pathname stays "/".
+  // React to the URL as well so the canonical stream records that arrival.
+  const locationHref = useRouterState({ select: (s) => s.location.href });
   useEffect(() => {
     captureAttribution(pathname);
     trackPageView(pathname);
     trackRouteView(pathname);
-  }, [pathname]);
+  }, [pathname, locationHref]);
 
   useEffect(() => startHeartbeat(), []);
   useEffect(() => startHumanSignalWatcher(), []);
