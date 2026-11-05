@@ -331,7 +331,7 @@ async function buildResources(
         badge: (r.badge as string | null) ?? null,
         featured_slot: (r.featured_slot as string | null) ?? null,
         // Each published PDF has its own automatically uploaded first-page preview.
-        thumb_url: pdfThumbUrl(r.id as string),
+        thumb_url: pdfThumbUrl(r.id as string, (r.publication_id as string | null) ?? null),
       };
     }),
   );
@@ -524,7 +524,7 @@ export type ArchiveResult = { years: ArchiveYear[] };
 export const listArchive = createServerFn({ method: "GET" }).handler(
   async (): Promise<ArchiveResult> => {
     const admin = getSupabaseAdmin();
-    const selectWith = "id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at, description, audience, format_type, content_type, page_count, badge, publication";
+    const selectWith = "id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at, description, audience, format_type, content_type, page_count, badge, publication, publication_id";
     const selectBase = "id, title, subtitle, summary_quick, parsha_key, jewish_year, created_at";
     let rows: any[] | null = null;
     const withMeta = await admin
@@ -593,7 +593,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
         content_type: (r.content_type as string | null) ?? null,
         page_count: typeof r.page_count === "number" ? r.page_count : null,
         badge: (r.badge as string | null) ?? null,
-        thumb_url: pdfThumbUrl(r.id as string),
+        thumb_url: pdfThumbUrl(r.id as string, (r.publication_id as string | null) ?? null),
         created_at: r.created_at,
       });
     }
@@ -646,10 +646,16 @@ export type PublicPdf = {
   content_type?: string | null;
 };
 
-// First-page preview images live in the public `pdf-thumbs` bucket, keyed by
-// the pdfs row id. No DB column is needed — the path is deterministic and the
-// UI falls back to a text panel when the object is missing.
-export function pdfThumbUrl(id: string): string | null {
+// Torah Wellsprings is the only canonical series with a permanent cover.
+// Use the publication foreign key rather than guessing from each weekly title.
+// Other publishers continue displaying the uploaded PDF's actual first page.
+const TORAH_WELLSPRINGS_PUBLICATION_ID = "0ba2f4bb-cd60-409b-b268-47ac4aae8c4f";
+const TORAH_WELLSPRINGS_PERMANENT_COVER = "/publication-covers/torah-wellsprings-permanent.jpg";
+
+export function pdfThumbUrl(id: string, publicationId?: string | null): string | null {
+  if (publicationId === TORAH_WELLSPRINGS_PUBLICATION_ID) {
+    return TORAH_WELLSPRINGS_PERMANENT_COVER;
+  }
   const base = process.env.EXT_SUPABASE_URL || process.env.SUPABASE_URL;
   if (!base) return null;
   return `${base.replace(/\/$/, "")}/storage/v1/object/public/pdf-thumbs/${id}.png`;
@@ -736,6 +742,7 @@ export const getPdfById = createServerFn({ method: "GET" })
     // Prefer the canonical publication name when the row is linked.
     let displayTitle = row.title;
     let publisher: string | null = null;
+    let publicationId: string | null = null;
     try {
       const link = await admin
         .from("pdfs")
@@ -743,6 +750,7 @@ export const getPdfById = createServerFn({ method: "GET" })
         .eq("id", data.id)
         .maybeSingle();
       const pubId = (link.data as any)?.publication_id as string | null | undefined;
+      publicationId = pubId ?? null;
       if (pubId) {
         const pub = await admin
           .from("publications")
@@ -777,7 +785,7 @@ export const getPdfById = createServerFn({ method: "GET" })
         badge: row.badge ?? null,
         publication: row.publication ?? null,
         parsha_key: row.parsha_key ?? null,
-        thumb_url: pdfThumbUrl(row.id),
+        thumb_url: pdfThumbUrl(row.id, publicationId),
         summary_quick: standardizeCopy(row.summary_quick ?? null),
         summary_full: standardizeCopy(row.summary_full ?? null),
       } as PublicPdf,

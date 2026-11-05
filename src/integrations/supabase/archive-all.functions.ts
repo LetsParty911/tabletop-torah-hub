@@ -163,7 +163,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
         content_type: (row.content_type as string | null) ?? null,
         page_count: typeof row.page_count === "number" ? row.page_count : null,
         badge: (row.badge as string | null) ?? null,
-        thumb_url: pdfThumbUrl(row.id as string),
+        thumb_url: pdfThumbUrl(row.id as string, (row.publication_id as string | null) ?? null),
         year,
         parshaKey,
         created_at: (row.created_at as string | null) ?? "",

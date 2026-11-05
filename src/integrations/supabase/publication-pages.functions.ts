@@ -79,7 +79,7 @@ export const listPublicationPages = createServerFn({ method: "GET" }).handler(
           default_format_type: (p.default_format_type as string | null) ?? null,
           default_description: standardizeCopy((p.default_description as string | null) ?? null),
           edition_count: counts.get(p.id as string) ?? 0,
-          thumb_url: latest.get(p.id as string) ? pdfThumbUrl(latest.get(p.id as string)!.id) : null,
+          thumb_url: latest.get(p.id as string) ? pdfThumbUrl(latest.get(p.id as string)!.id, p.id as string) : null,
         }))
         .filter((p: any) => p.edition_count > 0),
     };
@@ -146,7 +146,7 @@ export const getPublicationPage = createServerFn({ method: "GET" })
         parsha_key: r.parsha_key as string,
         jewish_year: typeof r.jewish_year === "number" ? r.jewish_year : null,
         created_at: (r.created_at as string | null) ?? null,
-        thumb_url: pdfThumbUrl(r.id as string),
+        thumb_url: pdfThumbUrl(r.id as string, publication.id as string),
       })) as PublicationEdition[],
     };
   });

@@ -175,7 +175,7 @@ export const getReadingCollection = createServerFn({ method: "GET" })
         publication_name: canonical?.name ?? fallbackPublication,
         publication_slug: canonical?.slug ?? null,
         publisher: canonical?.publisher ?? null,
-        thumb_url: pdfThumbUrl(r.id as string),
+        thumb_url: pdfThumbUrl(r.id as string, pubId),
       };
     });
 
