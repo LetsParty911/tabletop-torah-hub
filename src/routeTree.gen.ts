@@ -18,9 +18,12 @@ import { Route as BriefInsightsRouteImport } from './routes/brief-insights'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DivreiTorahParshaRouteImport } from './routes/divrei-torah-parsha'
 import { Route as JRouteImport } from './routes/j'
+import { Route as KRouteImport } from './routes/k'
 import { Route as LRouteImport } from './routes/l'
 import { Route as MissionRouteImport } from './routes/mission'
 import { Route as MyTableRouteImport } from './routes/my-table'
+import { Route as NewRouteImport } from './routes/new'
+import { Route as NewestRouteImport } from './routes/newest'
 import { Route as NoahideResourcesRouteImport } from './routes/noahide-resources'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as OriginalsRouteImport } from './routes/originals'
@@ -33,6 +36,7 @@ import { Route as SRouteImport } from './routes/s'
 import { Route as ShortVortsRouteImport } from './routes/short-vorts'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StRouteImport } from './routes/st'
+import { Route as UpdatedRouteImport } from './routes/updated'
 import { Route as WaRouteImport } from './routes/wa'
 import { Route as WamRouteImport } from './routes/wam'
 import { Route as WapRouteImport } from './routes/wap'
@@ -105,6 +109,11 @@ const JRoute = JRouteImport.update({
   path: '/j',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KRoute = KRouteImport.update({
+  id: '/k',
+  path: '/k',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LRoute = LRouteImport.update({
   id: '/l',
   path: '/l',
@@ -118,6 +127,16 @@ const MissionRoute = MissionRouteImport.update({
 const MyTableRoute = MyTableRouteImport.update({
   id: '/my-table',
   path: '/my-table',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewRoute = NewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewestRoute = NewestRouteImport.update({
+  id: '/newest',
+  path: '/newest',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NoahideResourcesRoute = NoahideResourcesRouteImport.update({
@@ -178,6 +197,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const StRoute = StRouteImport.update({
   id: '/st',
   path: '/st',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UpdatedRoute = UpdatedRouteImport.update({
+  id: '/updated',
+  path: '/updated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WaRoute = WaRouteImport.update({
@@ -321,9 +345,12 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
   '/j': typeof JRoute
+  '/k': typeof KRoute
   '/l': typeof LRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
+  '/new': typeof NewRoute
+  '/newest': typeof NewestRoute
   '/noahide-resources': typeof NoahideResourcesRoute
   '/offline': typeof OfflineRoute
   '/originals': typeof OriginalsRoute
@@ -336,6 +363,7 @@ export interface FileRoutesByFullPath {
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st': typeof StRoute
+  '/updated': typeof UpdatedRoute
   '/wa': typeof WaRoute
   '/wam': typeof WamRoute
   '/wap': typeof WapRoute
@@ -373,9 +401,12 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
   '/j': typeof JRoute
+  '/k': typeof KRoute
   '/l': typeof LRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
+  '/new': typeof NewRoute
+  '/newest': typeof NewestRoute
   '/noahide-resources': typeof NoahideResourcesRoute
   '/offline': typeof OfflineRoute
   '/originals': typeof OriginalsRoute
@@ -388,6 +419,7 @@ export interface FileRoutesByTo {
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st': typeof StRoute
+  '/updated': typeof UpdatedRoute
   '/wa': typeof WaRoute
   '/wam': typeof WamRoute
   '/wap': typeof WapRoute
@@ -426,9 +458,12 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
   '/j': typeof JRoute
+  '/k': typeof KRoute
   '/l': typeof LRoute
   '/mission': typeof MissionRoute
   '/my-table': typeof MyTableRoute
+  '/new': typeof NewRoute
+  '/newest': typeof NewestRoute
   '/noahide-resources': typeof NoahideResourcesRoute
   '/offline': typeof OfflineRoute
   '/originals': typeof OriginalsRoute
@@ -441,6 +476,7 @@ export interface FileRoutesById {
   '/short-vorts': typeof ShortVortsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st': typeof StRoute
+  '/updated': typeof UpdatedRoute
   '/wa': typeof WaRoute
   '/wam': typeof WamRoute
   '/wap': typeof WapRoute
@@ -480,9 +516,12 @@ export interface FileRouteTypes {
     | '/contact'
     | '/divrei-torah-parsha'
     | '/j'
+    | '/k'
     | '/l'
     | '/mission'
     | '/my-table'
+    | '/new'
+    | '/newest'
     | '/noahide-resources'
     | '/offline'
     | '/originals'
@@ -495,6 +534,7 @@ export interface FileRouteTypes {
     | '/short-vorts'
     | '/sitemap.xml'
     | '/st'
+    | '/updated'
     | '/wa'
     | '/wam'
     | '/wap'
@@ -532,9 +572,12 @@ export interface FileRouteTypes {
     | '/contact'
     | '/divrei-torah-parsha'
     | '/j'
+    | '/k'
     | '/l'
     | '/mission'
     | '/my-table'
+    | '/new'
+    | '/newest'
     | '/noahide-resources'
     | '/offline'
     | '/originals'
@@ -547,6 +590,7 @@ export interface FileRouteTypes {
     | '/short-vorts'
     | '/sitemap.xml'
     | '/st'
+    | '/updated'
     | '/wa'
     | '/wam'
     | '/wap'
@@ -584,9 +628,12 @@ export interface FileRouteTypes {
     | '/contact'
     | '/divrei-torah-parsha'
     | '/j'
+    | '/k'
     | '/l'
     | '/mission'
     | '/my-table'
+    | '/new'
+    | '/newest'
     | '/noahide-resources'
     | '/offline'
     | '/originals'
@@ -599,6 +646,7 @@ export interface FileRouteTypes {
     | '/short-vorts'
     | '/sitemap.xml'
     | '/st'
+    | '/updated'
     | '/wa'
     | '/wam'
     | '/wap'
@@ -637,9 +685,12 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   DivreiTorahParshaRoute: typeof DivreiTorahParshaRoute
   JRoute: typeof JRoute
+  KRoute: typeof KRoute
   LRoute: typeof LRoute
   MissionRoute: typeof MissionRoute
   MyTableRoute: typeof MyTableRoute
+  NewRoute: typeof NewRoute
+  NewestRoute: typeof NewestRoute
   NoahideResourcesRoute: typeof NoahideResourcesRoute
   OfflineRoute: typeof OfflineRoute
   OriginalsRoute: typeof OriginalsRoute
@@ -652,6 +703,7 @@ export interface RootRouteChildren {
   ShortVortsRoute: typeof ShortVortsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StRoute: typeof StRoute
+  UpdatedRoute: typeof UpdatedRoute
   WaRoute: typeof WaRoute
   WamRoute: typeof WamRoute
   WapRoute: typeof WapRoute
@@ -742,6 +794,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/k': {
+      id: '/k'
+      path: '/k'
+      fullPath: '/k'
+      preLoaderRoute: typeof KRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/l': {
       id: '/l'
       path: '/l'
@@ -761,6 +820,20 @@ declare module '@tanstack/react-router' {
       path: '/my-table'
       fullPath: '/my-table'
       preLoaderRoute: typeof MyTableRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/new': {
+      id: '/new'
+      path: '/new'
+      fullPath: '/new'
+      preLoaderRoute: typeof NewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/newest': {
+      id: '/newest'
+      path: '/newest'
+      fullPath: '/newest'
+      preLoaderRoute: typeof NewestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/noahide-resources': {
@@ -845,6 +918,13 @@ declare module '@tanstack/react-router' {
       path: '/st'
       fullPath: '/st'
       preLoaderRoute: typeof StRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/updated': {
+      id: '/updated'
+      path: '/updated'
+      fullPath: '/updated'
+      preLoaderRoute: typeof UpdatedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/wa': {
@@ -1067,9 +1147,12 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   DivreiTorahParshaRoute: DivreiTorahParshaRoute,
   JRoute: JRoute,
+  KRoute: KRoute,
   LRoute: LRoute,
   MissionRoute: MissionRoute,
   MyTableRoute: MyTableRoute,
+  NewRoute: NewRoute,
+  NewestRoute: NewestRoute,
   NoahideResourcesRoute: NoahideResourcesRoute,
   OfflineRoute: OfflineRoute,
   OriginalsRoute: OriginalsRoute,
@@ -1082,6 +1165,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShortVortsRoute: ShortVortsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StRoute: StRoute,
+  UpdatedRoute: UpdatedRoute,
   WaRoute: WaRoute,
   WamRoute: WamRoute,
   WapRoute: WapRoute,
