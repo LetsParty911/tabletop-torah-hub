@@ -309,6 +309,14 @@ const FEATURED_SLOTS = [
   { key: "deeper", label: "Deeper Learning" },
 ] as const;
 
+// Only show a table thought when an approved entry matches the active parsha.
+const TABLE_THOUGHTS: Record<string, { quote: string; sourceHebrew: string }> = {
+  "chayei sarah": {
+    quote: "Eliezer asked for a drink. Rivkah offered to water his camels, too. Sometimes, what we do beyond what’s asked changes everything.",
+    sourceHebrew: "על פי בראשית כ״ד, י״ז–כ׳",
+  },
+};
+
 function Index() {
   // Read loader data through a single object binding. An aliased destructure of
   // `resources` was implicated in a production ReferenceError, so the value is
@@ -337,6 +345,7 @@ function Index() {
     .replace(/^Parshas\s+/i, "")
     .trim()
     .toLowerCase();
+  const tableThought = TABLE_THOUGHTS[normalizedCollectionKey];
   const isYomTovCollection = [
     "rosh hashanah",
     "yom kippur",
@@ -692,6 +701,25 @@ function Index() {
             </div>
           </div>
         </section>
+        {!isFallback && tableThought && (
+          <section
+            aria-labelledby="table-thought-heading"
+            className="mx-auto w-full max-w-3xl rounded-2xl border border-accent/50 bg-card/70 px-5 py-5 text-center shadow-sm sm:px-8 sm:py-6"
+          >
+            <h2
+              id="table-thought-heading"
+              className="font-sans text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-xs"
+            >
+              This Week’s Table Thought
+            </h2>
+            <blockquote className="mx-auto mt-3 max-w-2xl font-serif text-lg leading-relaxed text-primary sm:text-2xl sm:leading-relaxed">
+              “{tableThought.quote}”
+            </blockquote>
+            <p lang="he" dir="rtl" className="mt-3 font-serif text-sm text-muted-foreground">
+              {tableThought.sourceHebrew}
+            </p>
+          </section>
+        )}
         <ThursdayProgressMeter
           readingDate={readingDate}
           isFallback={isFallback}
