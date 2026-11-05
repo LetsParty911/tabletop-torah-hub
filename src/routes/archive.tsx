@@ -1,4 +1,5 @@
 import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack/react-router";
+import { LENGTH_OPTIONS, type LengthFilter } from "@/lib/length-filter";
 import { Search } from "lucide-react";
 import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -26,7 +27,7 @@ type ArchiveSearch = {
   audience?: "All" | AudienceKey;
   q?: string;
   /** Facets mirroring the homepage filters. */
-  length?: "All" | "short" | "long" | "study";
+  length?: LengthFilter;
   type?: string;
   pub?: string;
   page?: number;
@@ -35,7 +36,7 @@ type ArchiveSearch = {
 type ResolvedArchiveSearch = Required<ArchiveSearch>;
 
 const AUDIENCE_VALUES = ["All", "Children", "Families", "Adults"] as const;
-const LENGTH_VALUES = ["All", "short", "long", "study"] as const;
+const LENGTH_VALUES = ["All", "short", "medium", "long", "study"] as const;
 
 const resourceType = (r: ArchivePdf) =>
   r.content_type === "Questions & Answers"
@@ -466,14 +467,10 @@ function ArchivePage() {
                   Filter by length
                 </span>
                 <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-full border border-accent/40 bg-background/70 p-1 shadow-sm">
-                  {(
-                    [
-                      { value: "All", label: "All lengths" },
-                      { value: "short", label: "Under 5 pages" },
-                      { value: "long", label: "5+ pages" },
-                      { value: "study", label: "Long Study (20+)" },
-                    ] as const
-                  ).map(({ value, label }) => {
+                  {[
+                    ...LENGTH_OPTIONS,
+                    ...(lengthFilter === "long" ? [{ key: "long" as const, label: "5+ Pages (legacy)" }] : []),
+                  ].map(({ key: value, label }) => {
                     const active = lengthFilter === value;
                     return (
                       <button

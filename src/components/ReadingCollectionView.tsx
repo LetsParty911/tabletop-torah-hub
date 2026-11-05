@@ -1,3 +1,4 @@
+import { LENGTH_OPTIONS, matchesPageLength, type LengthFilter } from "@/lib/length-filter";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
@@ -21,7 +22,7 @@ export function ReadingCollectionView({
   resources: ReadingResource[];
 }) {
   const [audience, setAudience] = useState<"All" | "Children" | "Families" | "Adults">("All");
-  const [length, setLength] = useState<"All" | "short" | "long">("All");
+  const [length, setLength] = useState<LengthFilter>("All");
   const [type, setType] = useState("All");
 
   const resourceType = (r: ReadingResource) =>
@@ -37,10 +38,7 @@ export function ReadingCollectionView({
   const filtered = resources.filter((r) => {
     const audienceMatch =
       audience === "All" || normalizeAudience(r.audience, r.title) === audience;
-    const lengthMatch =
-      length === "All" ||
-      (typeof r.page_count === "number" &&
-        (length === "short" ? r.page_count < 5 : r.page_count >= 5));
+    const lengthMatch = matchesPageLength(r.page_count, length);
     const typeMatch = type === "All" || resourceType(r) === type;
     return audienceMatch && lengthMatch && typeMatch;
   });
@@ -181,16 +179,12 @@ export function ReadingCollectionView({
               <div>
                 <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-muted-foreground">Length</p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {[
-                    ["All", "All"],
-                    ["short", "Under 5 Pages"],
-                    ["long", "5+ Pages"],
-                  ].map(([value, label]) => (
+                  {LENGTH_OPTIONS.map(({ key: value, label }) => (
                     <button
                       key={value}
                       type="button"
                       aria-pressed={length === value}
-                      onClick={() => setLength(value as "All" | "short" | "long")}
+                      onClick={() => setLength(value)}
                       className={filterClass(length === value)}
                     >
                       {label}

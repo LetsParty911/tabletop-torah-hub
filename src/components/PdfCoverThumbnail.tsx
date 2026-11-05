@@ -1,3 +1,4 @@
+import { SmallPdfImage } from "@/components/SmallPdfImage";
 import { useState } from "react";
 import { FileText } from "lucide-react";
 import { recordPdfAction } from "@/components/DownloadToPrintButton";
@@ -78,18 +79,19 @@ export function PdfCoverThumbnail({
       }
       className="block h-[83px] w-16 shrink-0 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
-      <img
+      <SmallPdfImage
+        key={imageUrl}
         src={imageUrl}
         alt={usingPermanent ? `${publicationName ?? title} permanent cover` : `First page of ${title}`}
         width={64}
         height={83}
         loading="lazy"
         decoding="async"
-        onError={() => {
+        onUnavailable={() => {
           if (usingPermanent) setPermanentFailed(true);
           else setFailed(true);
         }}
-        className={`h-[83px] w-16 rounded-sm border border-accent/40 shadow-sm hover:border-accent ${usingPermanent && isMiKaamchaCover ? "bg-[#0b2641] object-contain" : "bg-card object-cover object-top"}`}
+        className="h-[83px] w-16 rounded-sm border border-accent/40 bg-card object-contain shadow-sm hover:border-accent"
       />
     </a>
   );
