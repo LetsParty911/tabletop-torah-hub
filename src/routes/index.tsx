@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { isPostShabbosWindow } from "@/lib/post-shabbos";
-import { FileText, Share2 } from "lucide-react";
+import { FileText } from "lucide-react";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
@@ -12,7 +12,7 @@ import { PublicationCardTracker } from "@/components/PublicationCardTracker";
 import { trackFp } from "@/lib/first-party-analytics";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { SITE_URL } from "@/lib/site-url";
-import { withUtm } from "@/lib/utm";
+import { HomepageShare } from "@/components/HomepageShare";
 
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -573,36 +573,6 @@ function Index() {
     return r.page_count >= 20 ? `Long Study · ${pages}` : pages;
   };
 
-  const shareLink = withUtm(`${SITE_URL}/`, {
-    source: "whatsapp",
-    medium: "share",
-    campaign: "weekly-share",
-    content: "veahavta-home",
-  });
-  const shareText = `Torah For The Table offers free, printable Divrei Torah for Shabbos and Yom Tov. Explore the website: ${shareLink}`;
-  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-
-  const ShareButton = ({ className }: { className?: string }) => (
-    <a
-      href={whatsappHref}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={() => {
-        trackEvent("share_whatsapp", {
-          parsha: displayedParshaKey ?? displayedLabel,
-          count: resources.length,
-        });
-        trackFp("share_click", {
-          metadata: { placement: "homepage_veahavta", share_method: "whatsapp" },
-        });
-      }}
-      className={`inline-flex items-center justify-center gap-2 rounded-full border border-accent bg-transparent px-5 py-2.5 font-serif font-semibold text-primary hover:bg-accent hover:text-accent-foreground transition-colors ${className ?? ""}`}
-    >
-      <Share2 className="h-4 w-4" />
-      Share Torah For The Table
-    </a>
-  );
-
   const isHaazinuWeek = normalizedCollectionKey === "ha'azinu";
   const haazinuQaTitle = "Parsha Questions & Answers – Haazinu";
   const duplicateTitleCounts = resources.reduce((counts, resource) => {
@@ -870,6 +840,11 @@ function Index() {
             )}
           </section>
         )}
+
+        <HomepageShare onWhatsApp={() => {
+          trackEvent("share_whatsapp", { parsha: displayedParshaKey ?? displayedLabel, count: resources.length });
+          trackFp("share_click", { metadata: { placement: "homepage_veahavta", share_method: "whatsapp" } });
+        }} />
 
         {(isFallback || resources.length === 0) && (
           <UpdateCountdown
@@ -1316,16 +1291,6 @@ function Index() {
             description="One free email each week when the new collection is ready, including Parsha Challenge, Stories for the Shabbos Table, In the Margins, and other free Divrei Torah. Read or print before Shabbos."
           />
         </section>
-
-        {resources.length > 0 && !isCurrentYomKippur && (
-          <section aria-label="Share Torah For The Table" className="mx-auto max-w-2xl rounded-xl border border-accent/40 bg-card/50 px-4 py-4 text-center sm:py-5">
-            <p dir="rtl" lang="he" className="font-serif text-xl font-bold text-primary">ואהבת לרעך כמוך</p>
-            <p className="mt-1 text-sm text-muted-foreground">Enjoying Torah For The Table? Share it with family and friends.</p>
-            <div className="mt-3 flex justify-center">
-              <ShareButton className="min-h-11 w-full max-w-sm sm:w-auto" />
-            </div>
-          </section>
-        )}
 
         <section className="mx-auto max-w-2xl text-center">
           <Link
