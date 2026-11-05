@@ -16,6 +16,7 @@ import { withUtm } from "@/lib/utm";
 
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
+import { HiddenGemTeaser } from "@/components/HiddenGem";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
@@ -813,6 +814,10 @@ function Index() {
                 </article>
               ))}
             </div>
+            <HiddenGemTeaser
+              context={{ normalizedCollectionKey, activeParshaKey: currentParshaKey, isFallback, isYomTov: isYomTovCollection, readingDate }}
+              initialNow={loaderData.renderedAt ?? Date.now()}
+            />
             {extraPreviewSelections.length > 0 && (
               <div className="mt-5 border-t border-accent/25 pt-4">
                 <h3 className="font-serif text-lg font-semibold text-primary">More from this collection</h3>

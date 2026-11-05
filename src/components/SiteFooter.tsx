@@ -36,6 +36,9 @@ export function SiteFooter() {
         <Link to="/originals" className={linkClass}>
           Our Originals
         </Link>
+        <Link to="/hidden-gems" className={linkClass}>
+          Hidden Gems
+        </Link>
         <Link to="/about" className={linkClass}>
           About
         </Link>

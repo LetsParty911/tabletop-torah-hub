@@ -222,6 +222,26 @@
   }
 }
 
+.hidden-gem-print h1, .hidden-gem-print h2, .hidden-gem-print .font-serif { letter-spacing: 0; }
+.gem-hebrew { unicode-bidi: isolate; }
+@page hidden-gem-letter { size: letter; margin: 0.55in; }
+@media print {
+  body:has(.hidden-gem-page) { background: var(--background); padding: 0; }
+  body:has(.hidden-gem-page) nav,
+  .hidden-gem-page .gem-screen-controls,
+  .hidden-gem-page #site-footer { display: none !important; }
+  .hidden-gem-page main { max-width: none; padding: 0; margin: 0; }
+  .hidden-gem-print { page: hidden-gem-letter; font-size: 11pt; }
+  .hidden-gem-print header { padding-bottom: 12pt; }
+  .hidden-gem-print h1 { font-size: 27pt; }
+  .hidden-gem-print .gem-body, .hidden-gem-print .gem-explanation { font-size: 11pt; line-height: 1.5; margin-top: 12pt; }
+  .hidden-gem-print .gematria-motif { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 14pt 0; }
+  .hidden-gem-print .gematria-motif > div { padding: 10pt 6pt; border-top: 0; }
+  .hidden-gem-print .gem-reflection, .hidden-gem-print .gem-source { margin-top: 14pt; break-inside: avoid; }
+  .hidden-gem-print .gem-reflection p { font-size: 15pt; line-height: 1.4; }
+  .hidden-gem-print .gem-hebrew { font-size: 13pt; line-height: 1.5; }
+}
+
 /* Space for the mobile guided-chooser sticky bar so footer content clears it. */
 @media (max-width: 1023px) {
   body.has-chooser-bar {
