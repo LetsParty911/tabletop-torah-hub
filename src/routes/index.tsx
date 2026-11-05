@@ -478,8 +478,8 @@ function Index() {
   // canonical publication_id). Never last week's fallback PDFs, never a
   // third-party substitute for an absent series.
   const starterSelections = isFallback ? [] : pickStarterSelections(sortedResources);
-  const showCompleteCollection = isWeeklyCollectionHash(collectionHash) || showAllResources || starterSelections.length === 0 || isCurrentYomKippur;
-  const extraPreviewSelections = sortedResources.filter((resource) => !starterSelections.some((pick) => pick.resource.id === resource.id)).slice(0, 3);
+  // Show all this week's publications by default; Browse All is a shortcut, not a gate.
+  const showCompleteCollection = resources.length > 0 || isWeeklyCollectionHash(collectionHash) || showAllResources || isCurrentYomKippur;
   const viewAllLabel = `View all ${resources.length} ${displayedLabel.replace(/^Parshas\s+/i, "")} selections`;
   usePrewarmDownloads(sortedResources.map((r) => r.id));
 
@@ -803,40 +803,6 @@ function Index() {
                 </article>
               ))}
             </div>
-            {extraPreviewSelections.length > 0 && (
-              <div className="mt-5 border-t border-accent/25 pt-4">
-                <h3 className="font-serif text-lg font-semibold text-primary">More from this collection</h3>
-                <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                  {extraPreviewSelections.map((r) => (
-                    <article key={r.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
-                      <div className="flex items-start gap-3">
-                        <PdfCoverThumbnail pdfId={r.id} thumbnailUrl={r.thumb_url} smallThumbnailUrl={r.small_thumb_url} title={displayTitle(r)} publicationName={displayPublicationName(r)} publisher={r.publisher} parsha={r.parsha_key ?? displayedParshaKey} />
-                        <h4 className="font-serif text-base font-bold leading-snug text-primary">
-                          <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline">{displayTitle(r)}</Link>
-                        </h4>
-                      </div>
-                      {r.publisher && <p className="mt-1 text-xs text-muted-foreground">By {r.publisher}</p>}
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {leadWithPublicationTitle(displayTitle(r), r.summary_quick || r.subtitle || r.description || chooseReason(r))}
-                      </p>
-                      {pageCountLabel(r) && <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{pageCountLabel(r)}</p>}
-                      <div className="mt-auto pt-3">
-                        <DownloadAndPrintButtons
-                          href={`/view/${r.id}/pdf`}
-                          publicationId={r.id}
-                          publicationName={displayPublicationName(r)}
-                          publicationTitle={displayTitle(r)}
-                          publisher={r.publisher}
-                          publicationSeries={r.publication}
-                          parsha={r.parsha_key ?? displayedParshaKey}
-                          className="w-full"
-                        />
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            )}
             {resources.length > starterSelections.length && (
               <Button onClick={browseAllSelections} className="mt-4 h-auto min-h-11 whitespace-normal rounded-full px-5 py-2.5 font-serif text-sm font-semibold">
                 {viewAllLabel}
@@ -921,7 +887,7 @@ function Index() {
             </h2>
             {!isCurrentYomKippur && (
               <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-muted-foreground">
-                Our original weekly publications and selections from respected Torah publishers, together in one free collection.
+                Our weekly originals and selections from respected Torah publishers. Choose a title and tap Read Now to open its PDF — no account needed.
               </p>
             )}
             {featuredPicks.length > 0 && starterSelections.length === 0 && !activeChooser && (
@@ -1346,7 +1312,7 @@ function Index() {
 
         <SiteFooter />
       </div>
-      <BackToTop collectionId={starterSelections.length > 0 && !showAllResources && !isCurrentYomKippur ? "starter-selections-heading" : "this-weeks-collection"} />
+      <BackToTop collectionId={showCompleteCollection ? "this-weeks-collection" : "starter-selections-heading"} />
     </div>
   );
 }

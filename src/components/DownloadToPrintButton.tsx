@@ -56,7 +56,7 @@ export function recordPdfAction(
 }
 
 /**
- * Collection cards show one public action: Open PDF. The individual PDF detail
+ * Collection cards show one public action: Read Now. The individual PDF detail
  * page can opt in to a clearly labeled Download PDF action for saving/printing.
  * Keep the existing validated /pdf and /download routes.
  *
@@ -77,7 +77,7 @@ export function DownloadToPrintButton({
   jewishYear,
   publisher,
   publicationSeries,
-  label = "Open PDF",
+  label = "Read Now",
 }: DownloadToPrintButtonProps) {
   const openHref = publicationId
     ? pdfActionHrefs(publicationId).open
