@@ -16,7 +16,7 @@ export function verifiedSmallThumbnailUrl(
 ): string | null {
   const path = available.get(pdfId);
   if (!originalUrl || !path || !/^[a-f0-9-]{36}$/.test(pdfId)) return null;
-  if (!new RegExp(`^${pdfId}\\\.[a-f0-9]{32}\\\.small\\\.webp$`).test(path)) return null;
+  if (!path.startsWith(`${pdfId}.`) || !/^[a-f0-9]{32}\.small\.webp$/.test(path.slice(pdfId.length + 1))) return null;
   try {
     const url = new URL(originalUrl);
     if (url.protocol !== "https:" || url.search || url.hash ||
