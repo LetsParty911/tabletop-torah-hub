@@ -230,7 +230,7 @@
   body:has(.hidden-gem-page) nav,
   .hidden-gem-page .gem-screen-controls,
   .hidden-gem-page #site-footer { display: none !important; }
-  .hidden-gem-page main { max-width: none; padding: 0; margin: 0; }
+  .hidden-gem-content { max-width: none; padding: 0; margin: 0; }
   .hidden-gem-print { page: hidden-gem-letter; font-size: 11pt; }
   .hidden-gem-print header { padding-bottom: 12pt; }
   .hidden-gem-print h1 { font-size: 27pt; }

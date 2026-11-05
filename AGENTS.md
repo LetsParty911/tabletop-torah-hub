@@ -15,3 +15,6 @@
 - /originals editions come from the pure original-editions helper keyed by canonical TFTT publication_id and each row's own parsha/year. Why: new weeks appear automatically without borrowing another week's PDF or title-matched third-party rows.
 - Curated Hidden Gems live in a typed parsha-keyed module with a pure homepage eligibility helper and separate HTML reader/archive routes, not publication rows or PDF actions. Why: intentional editions remain discoverable without changing weekly selection, counts or tracking.
 - Keep homepage sharing presentation in HomepageShare with canonical links in a pure helper; retain WhatsApp handlers and report classification. Why: clipboard success/failure can evolve without changing historical attribution.
+- Public page content uses the root main landmark; route containers remain neutral divs. Why: skip navigation and exactly one main stay consistent, including error pages.
+- Weekly collection hash expansion scrolls after the React commit, with no timer retries or history rewriting. Why: return links reveal real choices without interfering with browser back.
+- Small thumbnail derivatives are optional public .small.webp siblings generated during existing authenticated upload/replace, with original PNG fallback. Why: free-plan transfer optimization never changes PDF records or requires paid transforms.
