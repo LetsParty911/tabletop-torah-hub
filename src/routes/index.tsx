@@ -104,7 +104,7 @@ function StarterThumb({ src, alt, title, href, onOpen }: {
         loading="lazy"
         decoding="async"
         onError={() => setFailed(true)}
-        className="h-[83px] w-16 rounded-sm border border-accent/40 bg-card object-cover object-top shadow-sm hover:border-accent"
+        className={`h-[83px] w-16 rounded-sm border border-accent/40 shadow-sm hover:border-accent ${src.includes("/publication-covers/mi-kaamcha-yisroel-permanent.jpg") ? "bg-[#0b2641] object-contain" : "bg-card object-cover object-top"}`}
       />
     </a>
   );
