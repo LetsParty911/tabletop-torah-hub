@@ -259,7 +259,7 @@ export function ReadingCollectionView({
                       </p>
                     )}
                     {description && (
-                      <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                         {leadWithPublicationTitle(resource.title, description)}
                       </p>
                     )}
