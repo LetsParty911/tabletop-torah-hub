@@ -10,6 +10,7 @@ import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { SiteFooter } from "@/components/SiteFooter";
 import { fitPageTitle } from "@/lib/page-title";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
 
 export const Route = createFileRoute("/publication/$slug")({
   loader: async ({ params }) => {
@@ -129,6 +130,9 @@ function PublicationPage() {
           prominent ? "border-accent/60 shadow-sm" : "border-accent/30"
         }`}
       >
+        <div className="float-left mr-3 mb-2">
+          <PdfCoverThumbnail pdfId={edition.id} thumbnailUrl={edition.thumb_url} title={editionTitle} publicationName={displayName} publisher={publication.publisher} parsha={edition.parsha_key} jewishYear={edition.jewish_year} />
+        </div>
         <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-accent-readable">
           {!isYomTovReading(edition.parsha_key) ? (
             <Link
