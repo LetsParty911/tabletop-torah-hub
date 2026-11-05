@@ -8,6 +8,7 @@ import { toParshaComparableKey, toParshaComparableKeys } from "@/lib/parsha-norm
 import { fetchHebcalShabbatData, resolveReadingFromHebcal } from "@/lib/hebcal";
 
 import { standardizeCopy } from "@/lib/standardize-copy";
+import { pdfDisplayTitle } from "@/lib/pdf-display-title";
 import { purgePdfEdgeCache, warmPdfEdgeCache } from "@/lib/pdf-edge-cache";
 import { checkRateLimit } from "@/lib/rate-limit.server";
 import { isOverrideCurrent, validateParshaOverride } from "@/lib/parsha-override";
@@ -299,7 +300,7 @@ async function buildResources(
   const smallPaths = await readVerifiedThumbnails(admin);
   const orderMap = await getTitleSortOrderMap(admin);
   const canonical = await getCanonicalByPdfId(admin);
-  const displayTitle = (r: any): string => canonical.get(r.id as string)?.name ?? r.title;
+  const displayTitle = (r: any): string => pdfDisplayTitle(r.title, canonical.get(r.id as string)?.name, r.publication_id);
   const orderFor = (title: string): number => {
     const v = orderMap.get(sortTitleKey(title));
     return typeof v === "number" ? v : 999999;
@@ -583,7 +584,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
       if (!pmap.has(r.parsha_key)) pmap.set(r.parsha_key, []);
       pmap.get(r.parsha_key)!.push({
         id: r.id,
-        title: canonical.get(r.id as string)?.name ?? r.title,
+        title: pdfDisplayTitle(r.title, canonical.get(r.id as string)?.name, r.publication_id),
         publisher: canonical.get(r.id as string)?.publisher ?? null,
         publication:
           canonical.get(r.id as string)?.name ??
@@ -765,7 +766,7 @@ export const getPdfById = createServerFn({ method: "GET" })
           .eq("id", pubId)
           .maybeSingle();
         const name = (pub.data as any)?.name as string | undefined;
-        if (name) displayTitle = tfttOriginalSeriesById(pubId)?.title ?? name;
+        if (name) displayTitle = pdfDisplayTitle(row.title, tfttOriginalSeriesById(pubId)?.title ?? name, pubId);
         publisher = ((pub.data as any)?.publisher as string | null) ?? null;
       }
     } catch {
