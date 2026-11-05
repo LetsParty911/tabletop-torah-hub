@@ -17,6 +17,7 @@ import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as BriefInsightsRouteImport } from './routes/brief-insights'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DivreiTorahParshaRouteImport } from './routes/divrei-torah-parsha'
+import { Route as HiddenGemsRouteImport } from './routes/hidden-gems'
 import { Route as JRouteImport } from './routes/j'
 import { Route as KRouteImport } from './routes/k'
 import { Route as LRouteImport } from './routes/l'
@@ -51,6 +52,7 @@ import { Route as ApiTrackSearchRouteImport } from './routes/api/track-search'
 import { Route as ApiTrackViewRouteImport } from './routes/api/track-view'
 import { Route as ApiTrustedVpnBrowserRouteImport } from './routes/api/trusted-vpn-browser'
 import { Route as ApiVpnDiagnosticRouteImport } from './routes/api/vpn-diagnostic'
+import { Route as HiddenGemsSlugRouteImport } from './routes/hidden-gems_.$slug'
 import { Route as ManageTableTokenRouteImport } from './routes/manage-table.$token'
 import { Route as OgImageDotpngRouteImport } from './routes/og.image[.]png'
 import { Route as ParshaSlugRouteImport } from './routes/parsha.$slug'
@@ -102,6 +104,11 @@ const ContactRoute = ContactRouteImport.update({
 const DivreiTorahParshaRoute = DivreiTorahParshaRouteImport.update({
   id: '/divrei-torah-parsha',
   path: '/divrei-torah-parsha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HiddenGemsRoute = HiddenGemsRouteImport.update({
+  id: '/hidden-gems',
+  path: '/hidden-gems',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JRoute = JRouteImport.update({
@@ -274,6 +281,11 @@ const ApiVpnDiagnosticRoute = ApiVpnDiagnosticRouteImport.update({
   path: '/api/vpn-diagnostic',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HiddenGemsSlugRoute = HiddenGemsSlugRouteImport.update({
+  id: '/hidden-gems_/$slug',
+  path: '/hidden-gems/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ManageTableTokenRoute = ManageTableTokenRouteImport.update({
   id: '/manage-table/$token',
   path: '/manage-table/$token',
@@ -344,6 +356,7 @@ export interface FileRoutesByFullPath {
   '/brief-insights': typeof BriefInsightsRoute
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
+  '/hidden-gems': typeof HiddenGemsRoute
   '/j': typeof JRoute
   '/k': typeof KRoute
   '/l': typeof LRoute
@@ -378,6 +391,7 @@ export interface FileRoutesByFullPath {
   '/api/track-view': typeof ApiTrackViewRoute
   '/api/trusted-vpn-browser': typeof ApiTrustedVpnBrowserRoute
   '/api/vpn-diagnostic': typeof ApiVpnDiagnosticRoute
+  '/hidden-gems/$slug': typeof HiddenGemsSlugRoute
   '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
   '/parsha/$slug': typeof ParshaSlugRouteWithChildren
@@ -400,6 +414,7 @@ export interface FileRoutesByTo {
   '/brief-insights': typeof BriefInsightsRoute
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
+  '/hidden-gems': typeof HiddenGemsRoute
   '/j': typeof JRoute
   '/k': typeof KRoute
   '/l': typeof LRoute
@@ -434,6 +449,7 @@ export interface FileRoutesByTo {
   '/api/track-view': typeof ApiTrackViewRoute
   '/api/trusted-vpn-browser': typeof ApiTrustedVpnBrowserRoute
   '/api/vpn-diagnostic': typeof ApiVpnDiagnosticRoute
+  '/hidden-gems/$slug': typeof HiddenGemsSlugRoute
   '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
   '/parsha/$slug': typeof ParshaSlugRouteWithChildren
@@ -457,6 +473,7 @@ export interface FileRoutesById {
   '/brief-insights': typeof BriefInsightsRoute
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
+  '/hidden-gems': typeof HiddenGemsRoute
   '/j': typeof JRoute
   '/k': typeof KRoute
   '/l': typeof LRoute
@@ -491,6 +508,7 @@ export interface FileRoutesById {
   '/api/track-view': typeof ApiTrackViewRoute
   '/api/trusted-vpn-browser': typeof ApiTrustedVpnBrowserRoute
   '/api/vpn-diagnostic': typeof ApiVpnDiagnosticRoute
+  '/hidden-gems_/$slug': typeof HiddenGemsSlugRoute
   '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
   '/parsha/$slug': typeof ParshaSlugRouteWithChildren
@@ -515,6 +533,7 @@ export interface FileRouteTypes {
     | '/brief-insights'
     | '/contact'
     | '/divrei-torah-parsha'
+    | '/hidden-gems'
     | '/j'
     | '/k'
     | '/l'
@@ -549,6 +568,7 @@ export interface FileRouteTypes {
     | '/api/track-view'
     | '/api/trusted-vpn-browser'
     | '/api/vpn-diagnostic'
+    | '/hidden-gems/$slug'
     | '/manage-table/$token'
     | '/og/image.png'
     | '/parsha/$slug'
@@ -571,6 +591,7 @@ export interface FileRouteTypes {
     | '/brief-insights'
     | '/contact'
     | '/divrei-torah-parsha'
+    | '/hidden-gems'
     | '/j'
     | '/k'
     | '/l'
@@ -605,6 +626,7 @@ export interface FileRouteTypes {
     | '/api/track-view'
     | '/api/trusted-vpn-browser'
     | '/api/vpn-diagnostic'
+    | '/hidden-gems/$slug'
     | '/manage-table/$token'
     | '/og/image.png'
     | '/parsha/$slug'
@@ -627,6 +649,7 @@ export interface FileRouteTypes {
     | '/brief-insights'
     | '/contact'
     | '/divrei-torah-parsha'
+    | '/hidden-gems'
     | '/j'
     | '/k'
     | '/l'
@@ -661,6 +684,7 @@ export interface FileRouteTypes {
     | '/api/track-view'
     | '/api/trusted-vpn-browser'
     | '/api/vpn-diagnostic'
+    | '/hidden-gems_/$slug'
     | '/manage-table/$token'
     | '/og/image.png'
     | '/parsha/$slug'
@@ -684,6 +708,7 @@ export interface RootRouteChildren {
   BriefInsightsRoute: typeof BriefInsightsRoute
   ContactRoute: typeof ContactRoute
   DivreiTorahParshaRoute: typeof DivreiTorahParshaRoute
+  HiddenGemsRoute: typeof HiddenGemsRoute
   JRoute: typeof JRoute
   KRoute: typeof KRoute
   LRoute: typeof LRoute
@@ -718,6 +743,7 @@ export interface RootRouteChildren {
   ApiTrackViewRoute: typeof ApiTrackViewRoute
   ApiTrustedVpnBrowserRoute: typeof ApiTrustedVpnBrowserRoute
   ApiVpnDiagnosticRoute: typeof ApiVpnDiagnosticRoute
+  HiddenGemsSlugRoute: typeof HiddenGemsSlugRoute
   ManageTableTokenRoute: typeof ManageTableTokenRoute
   OgImageDotpngRoute: typeof OgImageDotpngRoute
   ParshaSlugRoute: typeof ParshaSlugRouteWithChildren
@@ -785,6 +811,13 @@ declare module '@tanstack/react-router' {
       path: '/divrei-torah-parsha'
       fullPath: '/divrei-torah-parsha'
       preLoaderRoute: typeof DivreiTorahParshaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hidden-gems': {
+      id: '/hidden-gems'
+      path: '/hidden-gems'
+      fullPath: '/hidden-gems'
+      preLoaderRoute: typeof HiddenGemsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/j': {
@@ -1025,6 +1058,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiVpnDiagnosticRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hidden-gems_/$slug': {
+      id: '/hidden-gems_/$slug'
+      path: '/hidden-gems/$slug'
+      fullPath: '/hidden-gems/$slug'
+      preLoaderRoute: typeof HiddenGemsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/manage-table/$token': {
       id: '/manage-table/$token'
       path: '/manage-table/$token'
@@ -1146,6 +1186,7 @@ const rootRouteChildren: RootRouteChildren = {
   BriefInsightsRoute: BriefInsightsRoute,
   ContactRoute: ContactRoute,
   DivreiTorahParshaRoute: DivreiTorahParshaRoute,
+  HiddenGemsRoute: HiddenGemsRoute,
   JRoute: JRoute,
   KRoute: KRoute,
   LRoute: LRoute,
@@ -1180,6 +1221,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTrackViewRoute: ApiTrackViewRoute,
   ApiTrustedVpnBrowserRoute: ApiTrustedVpnBrowserRoute,
   ApiVpnDiagnosticRoute: ApiVpnDiagnosticRoute,
+  HiddenGemsSlugRoute: HiddenGemsSlugRoute,
   ManageTableTokenRoute: ManageTableTokenRoute,
   OgImageDotpngRoute: OgImageDotpngRoute,
   ParshaSlugRoute: ParshaSlugRouteWithChildren,
