@@ -187,7 +187,7 @@ export function UpdateCountdown({
               <span className="mx-auto block min-w-[2ch] font-serif text-base font-bold leading-none text-primary tabular-nums sm:text-lg">
                 {value}
               </span>
-              <span className="mt-0.5 block text-[0.55rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground sm:text-[0.6rem]">
+              <span className="mt-0.5 block text-[0.7rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground sm:text-[0.7rem]">
                 {unit}
               </span>
             </div>
