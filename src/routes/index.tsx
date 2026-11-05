@@ -626,7 +626,7 @@ function Index() {
     const href = pdfActionHrefs(r.id).open;
     return (
       <StarterThumb
-        src={displayPublicationName(r).trim().toLowerCase() === "torah wellsprings" ? "/publication-covers/torah-wellsprings-permanent.jpg" : r.thumb_url}
+        src={displayPublicationName(r).trim().toLowerCase() === "torah wellsprings" ? "/publication-covers/torah-wellsprings-plaque-v2.jpg" : r.thumb_url}
         alt={displayPublicationName(r).trim().toLowerCase() === "torah wellsprings" ? "Torah Wellsprings permanent cover" : `First page of ${displayTitle(r)} for ${r.parsha_key ?? displayedParshaKey ?? "this week"}`}
         title={displayTitle(r)}
         href={href}

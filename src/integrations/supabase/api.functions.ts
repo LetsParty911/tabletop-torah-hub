@@ -650,7 +650,7 @@ export type PublicPdf = {
 // Use the publication foreign key rather than guessing from each weekly title.
 // Other publishers continue displaying the uploaded PDF's actual first page.
 const TORAH_WELLSPRINGS_PUBLICATION_ID = "0ba2f4bb-cd60-409b-b268-47ac4aae8c4f";
-const TORAH_WELLSPRINGS_PERMANENT_COVER = "/publication-covers/torah-wellsprings-permanent.jpg";
+const TORAH_WELLSPRINGS_PERMANENT_COVER = "/publication-covers/torah-wellsprings-plaque-v2.jpg";
 
 export function pdfThumbUrl(id: string, publicationId?: string | null): string | null {
   if (publicationId === TORAH_WELLSPRINGS_PUBLICATION_ID) {
