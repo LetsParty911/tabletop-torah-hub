@@ -34,7 +34,7 @@ export function PdfCoverThumbnail({
     title.trim().toLowerCase() === "torah wellsprings";
   const usingPermanent = isTorahWellsprings && !permanentFailed;
   const imageUrl = usingPermanent
-    ? "/publication-covers/torah-wellsprings.jpg"
+    ? "/publication-covers/torah-wellsprings-permanent.jpg"
     : thumbnailUrl;
 
   if (!imageUrl || failed) {
