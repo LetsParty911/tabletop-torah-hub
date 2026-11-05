@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { FileText, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
 import type {
   ReadingCollectionSummary,
   ReadingResource,
@@ -234,9 +235,7 @@ export function ReadingCollectionView({
                 className="flex h-full flex-col rounded-xl border border-accent/35 bg-background/60 p-4 sm:p-5"
               >
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/12 text-primary">
-                    <FileText className="h-5 w-5" />
-                  </div>
+                  <PdfCoverThumbnail pdfId={resource.id} thumbnailUrl={resource.thumb_url} title={resource.title} publicationName={resource.publication_name} publisher={resource.publisher} parsha={resource.parsha_key} jewishYear={resource.jewish_year} />
                   <div className="min-w-0 flex-1">
                     <h2 className="font-serif text-lg font-bold leading-snug text-primary">
                       <Link to="/view/$id" params={{ id: resource.id }} className="hover:text-accent hover:underline">

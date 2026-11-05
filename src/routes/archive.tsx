@@ -1,5 +1,6 @@
 import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack/react-router";
-import { FileText, Search } from "lucide-react";
+import { Search } from "lucide-react";
+import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type ArchiveYear, type ArchiveParsha, type ArchivePdf } from "@/integrations/supabase/api.functions";
 import { listArchiveAll, type ArchivePageInput } from "@/integrations/supabase/archive-all.functions";
@@ -626,9 +627,7 @@ function ArchivePage() {
                               parsha={p.parshaKey ?? null}
                             >
                               <div className="flex items-start gap-3">
-                                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-accent/15 text-primary shrink-0">
-                                  <FileText className="h-5 w-5" />
-                                </div>
+                                <PdfCoverThumbnail pdfId={r.id} thumbnailUrl={r.thumb_url} title={r.title} publicationName={r.publication} publisher={r.publisher} parsha={p.parshaKey} jewishYear={y.year} />
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-start justify-between gap-2">
                                     <h4 className="font-serif text-base sm:text-lg font-bold text-primary line-clamp-2 leading-snug">

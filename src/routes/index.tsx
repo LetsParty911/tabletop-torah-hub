@@ -22,6 +22,7 @@ import { displayContentType, hasDisplayedCollectionChanged, isProgressForReading
 import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
 import { publicationLabel } from "@/lib/badges";
+import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
 
 import {
   resolveHebcalParsha,
@@ -69,7 +70,7 @@ type Resource = {
   thumb_url?: string | null;
 };
 
-// First-page preview for TFTT originals; also acts as a tracked PDF-open link.
+// First-page preview for every publication; also acts as a tracked PDF-open link.
 function StarterThumb({ src, alt, title, href, onOpen }: {
   src: string;
   alt: string;
@@ -618,10 +619,10 @@ function Index() {
       : publicationLabel(r.publication || r.title) || r.title;
 
   const isTfttOriginal = (r: Resource) => Boolean(tfttOriginalSeriesById(r.publication_id));
-  // Display the correct uploaded PDF cover on original publication cards in ALL
+  // Display the correct uploaded PDF cover on all publication cards in ALL
   // homepage states, including when last week's collection is shown as fallback.
   const originalCover = (r: Resource) => {
-    if (!isTfttOriginal(r) || !r.thumb_url) return null;
+    if (!r.thumb_url) return null;
     const href = pdfActionHrefs(r.id).open;
     return (
       <StarterThumb
@@ -719,7 +720,7 @@ function Index() {
               {starterSelections.map(({ key, label, resource: r }) => (
                 <article key={r.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
                   <div className="flex min-w-0 gap-3">
-                  {isTfttOriginal(r) && r.thumb_url && (
+                  {r.thumb_url && (
                     <StarterThumb
                       src={r.thumb_url}
                       alt={`First page of ${displayTitle(r)}`}
@@ -790,9 +791,12 @@ function Index() {
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
                   {extraPreviewSelections.map((r) => (
                     <article key={r.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
-                      <h4 className="font-serif text-base font-bold leading-snug text-primary">
-                        <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline">{displayTitle(r)}</Link>
-                      </h4>
+                      <div className="flex items-start gap-3">
+                        <PdfCoverThumbnail pdfId={r.id} thumbnailUrl={r.thumb_url} title={displayTitle(r)} publicationName={displayPublicationName(r)} publisher={r.publisher} parsha={r.parsha_key ?? displayedParshaKey} />
+                        <h4 className="font-serif text-base font-bold leading-snug text-primary">
+                          <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline">{displayTitle(r)}</Link>
+                        </h4>
+                      </div>
                       {r.publisher && <p className="mt-1 text-xs text-muted-foreground">By {r.publisher}</p>}
                       <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
                         {leadWithPublicationTitle(displayTitle(r), r.summary_quick || r.subtitle || r.description || chooseReason(r))}
@@ -941,7 +945,7 @@ function Index() {
                             <span className="self-start rounded-full bg-accent px-3 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-accent-foreground">
                               {label}
                             </span>
-                            {isTfttOriginal(r) && r.thumb_url && (
+                            {r.thumb_url && (
                               <div className="mt-3">
                                 {originalCover(r)}
                               </div>
@@ -1195,7 +1199,7 @@ function Index() {
                       parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey ?? null}
                     >
                       <div className="flex flex-1 items-start gap-3">
-                        {isTfttOriginal(r) && r.thumb_url ? originalCover(r) : (
+                        {r.thumb_url ? originalCover(r) : (
                           <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-accent/12 text-primary shrink-0">
                             <FileText className="h-5 w-5" aria-hidden="true" />
                           </div>

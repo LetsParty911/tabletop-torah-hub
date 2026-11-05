@@ -5,6 +5,7 @@ import { readingSlug, isYomTovReading } from "@/lib/reading-page";
 import { publicationSlug } from "@/lib/publication-slug";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { formatReadingLabel } from "@/lib/parshiyos";
+import { pdfThumbUrl } from "@/integrations/supabase/api.functions";
 
 export type ReadingResource = {
   id: string;
@@ -23,6 +24,7 @@ export type ReadingResource = {
   publication_name: string | null;
   publication_slug: string | null;
   publisher: string | null;
+  thumb_url: string | null;
 };
 
 export type ReadingCollectionSummary = {
@@ -173,6 +175,7 @@ export const getReadingCollection = createServerFn({ method: "GET" })
         publication_name: canonical?.name ?? fallbackPublication,
         publication_slug: canonical?.slug ?? null,
         publisher: canonical?.publisher ?? null,
+        thumb_url: pdfThumbUrl(r.id as string),
       };
     });
 
