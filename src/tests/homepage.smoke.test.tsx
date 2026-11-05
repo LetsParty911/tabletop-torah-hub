@@ -18,6 +18,7 @@ vi.mock("@tanstack/react-router", async () => {
       useLoaderData: () => state.loader,
     }),
     useRouter: () => ({ invalidate: state.invalidate }),
+    useRouterState: ({ select }: any) => select({ location: { href: "/", hash: "" } }),
     Link: ({ to, params, children, ...props }: any) =>
       createElement(
         "a",
