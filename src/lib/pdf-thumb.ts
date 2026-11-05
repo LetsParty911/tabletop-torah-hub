@@ -45,8 +45,9 @@ export async function renderSmallThumbBase64(pngBase64: string): Promise<string 
     const context = canvas.getContext("2d");
     if (!context) return null;
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    const result = canvas.toDataURL("image/webp", 0.82);
-    return result.startsWith("data:image/webp;base64,") ? result.split(",")[1] ?? null : null;
+    const result = canvas.toDataURL("image/webp", 0.86);
+    const encoded = result.startsWith("data:image/webp;base64,") ? result.split(",")[1] ?? null : null;
+    return encoded && encoded.length * 0.75 <= 24576 ? encoded : null;
   } catch {
     return null;
   }

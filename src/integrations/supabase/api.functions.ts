@@ -295,6 +295,8 @@ async function buildResources(
   admin: ReturnType<typeof getSupabaseAdmin>,
   rows: any[],
 ): Promise<PdfResource[]> {
+  const { readVerifiedThumbnails } = await import("@/lib/verified-thumbnails.server");
+  const smallPaths = await readVerifiedThumbnails(admin);
   const orderMap = await getTitleSortOrderMap(admin);
   const canonical = await getCanonicalByPdfId(admin);
   const displayTitle = (r: any): string => canonical.get(r.id as string)?.name ?? r.title;
@@ -332,6 +334,7 @@ async function buildResources(
         featured_slot: (r.featured_slot as string | null) ?? null,
         // Each published PDF has its own automatically uploaded first-page preview.
         thumb_url: pdfThumbUrl(r.id as string, (r.publication_id as string | null) ?? null),
+        small_thumb_url: smallPaths.has(r.id) ? pdfThumbUrl(r.id, r.publication_id)?.replace(`${r.id}.png`, smallPaths.get(r.id) ?? `${r.id}.png`) : null,
       };
     }),
   );
@@ -1426,16 +1429,18 @@ export const adminUploadPdfThumb = createServerFn({ method: "POST" })
       console.error("adminUploadPdfThumb error", error);
       return { ok: false, error: error.message };
     }
-    // Optional derivative must never fail a successful original upload. Remove
-    // an old derivative on replacement failure rather than showing stale artwork.
+    // Immutable version is the original's storage ETag. Old versions are kept,
+    // but inventory eligibility compares the CURRENT original, so never stale.
     let smallStored = false;
     try {
       if (data.smallWebpBase64) {
         const small = Buffer.from(data.smallWebpBase64, "base64");
-        if (small.toString("ascii", 0, 4) === "RIFF" && small.toString("ascii", 8, 12) === "WEBP") {
-          const result = await admin.storage.from("pdf-thumbs").upload(`${data.id}.small.webp`, small, {
-            // Stable IDs can be replaced; do not retain a fresh old browser copy.
-            contentType: "image/webp", upsert: true, cacheControl: "0",
+        if (small.length <= 24576 && small.toString("ascii", 0, 4) === "RIFF" && small.toString("ascii", 8, 12) === "WEBP") {
+          const { createHash } = await import("node:crypto");
+          const { derivativePath } = await import("@/lib/verified-thumbnails");
+          const version = createHash("md5").update(buf).digest("hex");
+          const result = await admin.storage.from("pdf-thumbs").upload(derivativePath(data.id, version), small, {
+            contentType: "image/webp", upsert: false, cacheControl: "31536000",
           });
           smallStored = !result.error;
         }
@@ -1443,15 +1448,7 @@ export const adminUploadPdfThumb = createServerFn({ method: "POST" })
     } catch {
       smallStored = false;
     }
-    if (!smallStored) {
-      try {
-        const removed = await admin.storage.from("pdf-thumbs").remove([`${data.id}.small.webp`]);
-        if (removed.error) return { ok: false, error: "Original preview saved, but small-preview cleanup failed." };
-      } catch {
-        return { ok: false, error: "Original preview saved, but small-preview cleanup failed." };
-      }
-    }
-    return { ok: true, error: null };
+    return { ok: true, error: null, smallStored };
   });
 
 

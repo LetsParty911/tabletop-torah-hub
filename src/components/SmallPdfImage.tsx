@@ -3,14 +3,16 @@ import { smallThumbnailUrl } from "@/lib/thumbnail-preview";
 
 /** Unconfirmed storage images use the original immediately. Bundled small
  * covers fall back to their original once; no broken-image loop. */
-export function SmallPdfImage({ src, onUnavailable, ...props }: Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src" | "onError"> & {
+export function SmallPdfImage({ src, verifiedSmallSrc, onUnavailable, ...props }: Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src" | "onError"> & {
   src: string;
+  verifiedSmallSrc?: string | null;
   onUnavailable: () => void;
 }) {
-  const [original, setOriginal] = useState(false);
-  const small = smallThumbnailUrl(src);
+  const [failedSmall, setFailedSmall] = useState<string | null>(null);
+  const small = smallThumbnailUrl(src, verifiedSmallSrc);
+  const original = Boolean(small && failedSmall === small);
   return <img {...props} src={original || !small ? src : small} onError={() => {
-    if (!original && small) setOriginal(true);
+    if (!original && small) setFailedSmall(small);
     else onUnavailable();
   }} />;
 }
