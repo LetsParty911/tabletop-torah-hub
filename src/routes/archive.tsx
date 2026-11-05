@@ -309,7 +309,7 @@ function ArchivePage() {
             </p>
             <div className="mt-6 flex items-center justify-center gap-3 sm:gap-4 text-accent">
               <span aria-hidden className="h-px w-8 sm:w-16 bg-accent/60" />
-              <span className="font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em]">
+              <span className="font-sans text-[11px] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em]">
                 {archiveTotal} {archiveTotal === 1 ? "Dvar" : "Divrei"} Torah · All years
               </span>
               <span aria-hidden className="h-px w-8 sm:w-16 bg-accent/60" />
@@ -345,7 +345,7 @@ function ArchivePage() {
           <section className="parchment-frame">
             <div className="parchment-panel">
               <div className="mb-4 flex flex-col items-center gap-2 border-b border-accent/20 pb-4">
-                <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Yamim Noraim
                 </span>
                 <div className="flex flex-wrap items-center justify-center gap-2">
@@ -373,7 +373,7 @@ function ArchivePage() {
 
               <div className="grid gap-3 sm:gap-4 sm:grid-cols-[1fr_1fr_2fr] items-end">
                 <label className="block text-left">
-                  <span className="block font-sans text-[0.65rem] uppercase tracking-[0.2em] text-accent mb-1.5">
+                  <span className="block font-sans text-[11px] uppercase tracking-[0.2em] text-accent mb-1.5">
                     Jewish Year
                   </span>
                   <select
@@ -390,7 +390,7 @@ function ArchivePage() {
                   </select>
                 </label>
                 <label className="block text-left">
-                  <span className="block font-sans text-[0.65rem] uppercase tracking-[0.2em] text-accent mb-1.5">
+                  <span className="block font-sans text-[11px] uppercase tracking-[0.2em] text-accent mb-1.5">
                     Parshas
                   </span>
                   <select
@@ -407,7 +407,7 @@ function ArchivePage() {
                   </select>
                 </label>
                 <label className="block text-left">
-                  <span className="block font-sans text-[0.65rem] uppercase tracking-[0.2em] text-accent mb-1.5">
+                  <span className="block font-sans text-[11px] uppercase tracking-[0.2em] text-accent mb-1.5">
                     Search
                   </span>
                   <div className="relative">
@@ -424,7 +424,7 @@ function ArchivePage() {
               </div>
 
               <div className="mt-4 flex flex-col items-center gap-2">
-                <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Filter by audience
                 </span>
                 <div className="inline-flex max-w-full flex-wrap items-center justify-center gap-1 rounded-full border border-accent/40 bg-background/70 p-1 shadow-sm">
@@ -448,7 +448,7 @@ function ArchivePage() {
                         >
                           {audienceLabel(audience)}
                           <span
-                            className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold leading-none tabular-nums ${
+                            className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none tabular-nums ${
                               active
                                 ? "bg-accent-foreground/20 text-accent-foreground"
                                 : "bg-accent/15 text-accent"
@@ -463,7 +463,7 @@ function ArchivePage() {
               </div>
 
               <div className="mt-4 flex flex-col items-center gap-2">
-                <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Filter by length
                 </span>
                 <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-full border border-accent/40 bg-background/70 p-1 shadow-sm">
@@ -495,7 +495,7 @@ function ArchivePage() {
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   {typeOptions.length > 0 && (
                     <label className="block text-left">
-                      <span className="mb-1 block text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         Content type
                       </span>
                       <select
@@ -514,7 +514,7 @@ function ArchivePage() {
                   )}
                   {publicationOptions.length > 0 && (
                     <label className="block text-left">
-                      <span className="mb-1 block text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         Publication
                       </span>
                       <select
@@ -638,7 +638,7 @@ function ArchivePage() {
                                     </h4>
 
                                     {r.badge && (
-                                      <span className="shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
+                                      <span className="shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
                                         {r.badge}
                                       </span>
                                     )}

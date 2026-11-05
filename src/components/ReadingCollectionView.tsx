@@ -107,7 +107,7 @@ export function ReadingCollectionView({
 
         <section className="parchment-frame mt-5">
           <div className="parchment-panel text-center">
-            <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.2em] text-accent-readable">
+            <p className="font-sans text-[11px] font-bold uppercase tracking-[0.2em] text-accent-readable">
               {collection.kind === "yom-tov" ? "Yom Tov Collection" : "Parsha Collection"}
             </p>
             <h1 className="mt-2 font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-primary">
@@ -124,7 +124,7 @@ export function ReadingCollectionView({
 
         {quickPicks.length > 0 && (
           <section className="mt-6 rounded-2xl border border-accent/30 bg-accent/5 px-4 py-5 sm:px-5">
-            <p className="text-center font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable">
+            <p className="text-center font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable">
               Tonight's Table
             </p>
             <p className="mt-1 text-center text-sm text-muted-foreground">
@@ -138,7 +138,7 @@ export function ReadingCollectionView({
                   params={{ id: resource.id }}
                   className="rounded-xl border border-accent/30 bg-background/70 p-3 text-center transition-colors hover:border-accent/70 hover:bg-background"
                 >
-                  <p className="font-sans text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-accent-readable">
+                  <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-readable">
                     {label}
                   </p>
                   <p className="mt-1 font-serif font-bold leading-snug text-primary">
@@ -153,7 +153,7 @@ export function ReadingCollectionView({
         <section className="mt-7 rounded-xl border border-accent/25 bg-card/25 p-4">
           <div className="grid gap-4 md:grid-cols-3">
             <div>
-              <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-muted-foreground">Audience</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Audience</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {(["All", "Children", "Families", "Adults"] as const).map((value) => {
                   const available =
@@ -177,7 +177,7 @@ export function ReadingCollectionView({
 
             {hasLengthChoice && (
               <div>
-                <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-muted-foreground">Length</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Length</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {LENGTH_OPTIONS.map(({ key: value, label }) => (
                     <button
@@ -196,7 +196,7 @@ export function ReadingCollectionView({
 
             {types.length > 1 && (
               <div>
-                <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-muted-foreground">Content type</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Content type</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {["All", ...types].map((value) => (
                     <button
