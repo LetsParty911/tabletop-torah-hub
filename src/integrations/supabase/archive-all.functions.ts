@@ -8,6 +8,7 @@ import { matchesParshaSearch, toParshaComparableKey } from "@/lib/parsha-normali
 import { normalizeAudience, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { pdfThumbUrl } from "@/integrations/supabase/api.functions";
 
 export type ArchivePdfAll = {
   id: string;
@@ -21,6 +22,7 @@ export type ArchivePdfAll = {
   content_type: string | null;
   page_count: number | null;
   badge: string | null;
+  thumb_url: string | null;
 };
 
 export type ArchiveParshaAll = { parshaKey: string; pdfs: ArchivePdfAll[] };
@@ -161,6 +163,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
         content_type: (row.content_type as string | null) ?? null,
         page_count: typeof row.page_count === "number" ? row.page_count : null,
         badge: (row.badge as string | null) ?? null,
+        thumb_url: pdfThumbUrl(row.id as string),
         year,
         parshaKey,
         created_at: (row.created_at as string | null) ?? "",
