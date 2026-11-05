@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { publicationSlug } from "@/lib/publication-slug";
 import { readingPagePath, readingSlug } from "@/lib/reading-page";
 import { PARSHIYOS_54 } from "@/lib/parshiyos";
+import { latestSitemapDate } from "@/lib/sitemap-lastmod";
 
 const SITE_URL = "https://torahforthetable.com";
 
@@ -50,21 +51,32 @@ export const Route = createFileRoute("/sitemap.xml")({
             .eq("active", true)
             .order("name", { ascending: true });
           if (!pubs.error) {
-            const linked = await admin
+            // Hub lastmod comes from its published editions, not sitemap generation time.
+            // Older database versions may lack updated_at; retain the original lookup
+            // as a final fallback so publication pages stay discoverable.
+            const linkedWithUpdates = await admin
               .from("pdfs")
-              .select("publication_id")
+              .select("publication_id, created_at, updated_at")
               .eq("published", true)
               .not("publication_id", "is", null);
-            const linkedIds = new Set(
-              (linked.data ?? [])
-                .map((row: any) => row.publication_id as string | null)
-                .filter((id: any): id is string => Boolean(id)),
-            );
+            const linkedWithCreation = linkedWithUpdates.error
+              ? await admin.from("pdfs").select("publication_id, created_at").eq("published", true).not("publication_id", "is", null)
+              : linkedWithUpdates;
+            const linked = linkedWithCreation.error
+              ? await admin.from("pdfs").select("publication_id").eq("published", true).not("publication_id", "is", null)
+              : linkedWithCreation;
+            const publicationDates = new Map<string, string | null>();
+            for (const row of linked.data ?? []) {
+              const id = row.publication_id as string | null;
+              if (!id) continue;
+              const date = toLastmod(row.updated_at as string | null) ?? toLastmod(row.created_at as string | null);
+              publicationDates.set(id, latestSitemapDate(publicationDates.get(id) ?? null, date));
+            }
             for (const pub of pubs.data ?? []) {
-              if (!linkedIds.has(pub.id as string)) continue;
+              if (!publicationDates.has(pub.id as string)) continue;
               urls.push({
                 loc: `${SITE_URL}/publication/${publicationSlug(pub.name as string)}`,
-                lastmod: null,
+                lastmod: publicationDates.get(pub.id as string) ?? null,
                 priority: "0.7",
               });
             }
@@ -109,8 +121,8 @@ export const Route = createFileRoute("/sitemap.xml")({
             rows = (full.data ?? []) as unknown as PdfRow[];
           }
 
-          const collectionPaths = new Set<string>();
-          const permanentParshaSlugs = new Set<string>();
+          const collectionDates = new Map<string, string | null>();
+          const permanentParshaDates = new Map<string, string | null>();
           for (const row of rows) {
             const best =
               toLastmod(row.updated_at) ??
@@ -123,20 +135,26 @@ export const Route = createFileRoute("/sitemap.xml")({
             });
 
             if (row.parsha_key && row.jewish_year) {
-              collectionPaths.add(readingPagePath(row.parsha_key, row.jewish_year));
+              // A reading date is not a modification timestamp. Only use real
+              // updated/created timestamps for the containing page's lastmod.
+              const changed = toLastmod(row.updated_at) ?? toLastmod(row.created_at);
+              const path = readingPagePath(row.parsha_key, row.jewish_year);
+              collectionDates.set(path, latestSitemapDate(collectionDates.get(path) ?? null, changed));
               const slug = readingSlug(row.parsha_key);
-              if (PARSHIYOS_54.some((name) => readingSlug(name) === slug)) permanentParshaSlugs.add(slug);
+              if (PARSHIYOS_54.some((name) => readingSlug(name) === slug)) {
+                permanentParshaDates.set(slug, latestSitemapDate(permanentParshaDates.get(slug) ?? null, changed));
+              }
             }
           }
 
-          for (const slug of permanentParshaSlugs) {
-            urls.push({ loc: `${SITE_URL}/parsha/${slug}`, lastmod: null, priority: "0.9" });
+          for (const [slug, lastmod] of permanentParshaDates) {
+            urls.push({ loc: `${SITE_URL}/parsha/${slug}`, lastmod, priority: "0.9" });
           }
 
-          for (const path of collectionPaths) {
+          for (const [path, lastmod] of collectionDates) {
             urls.push({
               loc: `${SITE_URL}${path}`,
-              lastmod: null,
+              lastmod,
               priority: "0.8",
             });
           }
