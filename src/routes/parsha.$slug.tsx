@@ -265,7 +265,7 @@ function PermanentParshaPage() {
                           </p>
                         )}
                         {description && (
-                          <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                             {leadWithPublicationTitle(resource.title, description)}
                           </p>
                         )}
