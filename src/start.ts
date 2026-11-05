@@ -132,7 +132,27 @@ const maintenanceTraffic = createMiddleware().server(async ({ next, request }) =
   return result;
 });
 
+// Short OurKehilla announcement link. Handle it at the request boundary,
+// independent of generated file-route registration, to avoid a /k 404.
+const ourKehillaShortLink = createMiddleware().server(async ({ next, request }) => {
+  const url = new URL(request.url);
+  if (request.method === "GET" && url.pathname === "/k") {
+    return {
+      response: new Response(null, {
+        status: 302,
+        headers: {
+          Location:
+            "https://torahforthetable.com/?utm_source=ourkehilla&utm_medium=email&utm_campaign=chayei_sarah_5787&utm_content=announcement",
+          "Cache-Control": "no-store",
+          "X-Robots-Tag": "noindex",
+        },
+      }),
+    } as never;
+  }
+  return next();
+});
+
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [countryGate, dotOrgRedirect, vpnGate, geoBlock, maintenanceTraffic, cacheControl],
+  requestMiddleware: [countryGate, dotOrgRedirect, ourKehillaShortLink, vpnGate, geoBlock, maintenanceTraffic, cacheControl],
 }));
