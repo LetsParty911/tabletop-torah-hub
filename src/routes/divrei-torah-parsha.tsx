@@ -51,7 +51,7 @@ function DivreiTorahParshaPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
         <header className="text-center">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent-readable">
             Weekly Torah Library
@@ -121,7 +121,7 @@ function DivreiTorahParshaPage() {
             added as the weekly library grows.
           </p>
         )}
-      </main>
+      </div>
       <SiteFooter />
     </div>
   );

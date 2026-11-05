@@ -91,7 +91,7 @@ const FEATURED_SERIES: SeriesCard[] = [
 
 function SeriesGrid({ items }: { items: SeriesCard[] }) {
   return (
-    <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
+    <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-2xl mx-auto">
       {items.map((s) => (
         <article key={s.title} className="flex flex-col rounded-xl border border-accent/30 bg-card/40 p-5">
           <h3 className="font-serif text-xl font-bold text-primary">{s.title}</h3>
@@ -144,14 +144,14 @@ function EditionCover({ edition, group }: { edition: OriginalEditionCard; group:
       <div className="aspect-[17/22] w-full overflow-hidden rounded-md border border-accent/40 bg-card shadow-sm transition-colors group-hover:border-accent">
         {showImage ? (
           <img
-            src={edition.thumbUrl!}
+            src={edition.thumbUrl ?? undefined}
             alt={`First page of ${edition.seriesTitle}, ${group.label}`}
             width={340}
             height={440}
             loading="lazy"
             decoding="async"
             onError={() => setFailed(true)}
-            className="h-full w-full object-cover object-top"
+            className="h-full w-full object-contain"
           />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-b from-card to-background px-3 text-center">
@@ -210,6 +210,7 @@ function OriginalEditions({ groups }: { groups: OriginalEditionGroup[] }) {
       {recent.map((group) => <EditionGroup key={group.key} group={group} />)}
       {earlier.length > 0 && (
         <div className="mt-6 text-center">
+          <h2 className="font-serif text-xl font-bold text-primary">Browse earlier editions</h2>
           {showEarlier && earlier.map((group) => <EditionGroup key={group.key} group={group} />)}
           <button
             type="button"

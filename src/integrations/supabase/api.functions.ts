@@ -625,6 +625,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
 
 // ---------- Public: get a single PDF (signed URL + title) by id ----------
 export type PublicPdf = {
+  jewish_year?: number | null;
   id: string;
   title: string;
   publisher: string | null;
@@ -709,6 +710,7 @@ export const getPdfById = createServerFn({ method: "GET" })
       badge?: string | null;
       publication?: string | null;
       parsha_key?: string | null;
+      jewish_year?: number | null;
       summary_quick?: string | null;
       summary_full?: string | null;
     };
@@ -716,6 +718,7 @@ export const getPdfById = createServerFn({ method: "GET" })
     // legacy column can't drop parsha_key/description from the response.
     // NOTE: updated_at does not exist on this table; keep it out of the base set.
     const selects = [
+      "id, title, subtitle, file_path, published, created_at, week_of, description, audience, format_type, page_count, badge, publication, parsha_key, jewish_year, summary_quick, summary_full",
       "id, title, subtitle, file_path, published, created_at, week_of, description, audience, format_type, page_count, badge, publication, parsha_key, summary_quick, summary_full",
       "id, title, subtitle, file_path, published, created_at, week_of, description, audience, format_type, page_count, badge, publication, parsha_key, summary_quick",
       "id, title, subtitle, file_path, published, created_at, week_of, description, audience, format_type, page_count, badge, publication, parsha_key",
@@ -787,6 +790,7 @@ export const getPdfById = createServerFn({ method: "GET" })
         publication: row.publication ?? null,
         parsha_key: row.parsha_key ?? null,
         thumb_url: pdfThumbUrl(row.id, publicationId),
+        jewish_year: row.jewish_year ?? null,
         summary_quick: standardizeCopy(row.summary_quick ?? null),
         summary_full: standardizeCopy(row.summary_full ?? null),
       } as PublicPdf,
@@ -1401,12 +1405,13 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
 // The image is rendered in the admin browser (pdf.js) and stored in the public
 // `pdf-thumbs` bucket as `<pdf id>.png`, overwriting any previous preview.
 export const adminUploadPdfThumb = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; id: string; pngBase64: string }) =>
+  .inputValidator((input: { accessToken: string; id: string; pngBase64: string; smallWebpBase64?: string | null }) =>
     z
       .object({
         accessToken: z.string().min(10),
         id: z.string().uuid(),
         pngBase64: z.string().min(10),
+        smallWebpBase64: z.string().min(10).max(200000).nullable().optional(),
       })
       .parse(input),
   )
@@ -1420,6 +1425,31 @@ export const adminUploadPdfThumb = createServerFn({ method: "POST" })
     if (error) {
       console.error("adminUploadPdfThumb error", error);
       return { ok: false, error: error.message };
+    }
+    // Optional derivative must never fail a successful original upload. Remove
+    // an old derivative on replacement failure rather than showing stale artwork.
+    let smallStored = false;
+    try {
+      if (data.smallWebpBase64) {
+        const small = Buffer.from(data.smallWebpBase64, "base64");
+        if (small.toString("ascii", 0, 4) === "RIFF" && small.toString("ascii", 8, 12) === "WEBP") {
+          const result = await admin.storage.from("pdf-thumbs").upload(`${data.id}.small.webp`, small, {
+            // Stable IDs can be replaced; do not retain a fresh old browser copy.
+            contentType: "image/webp", upsert: true, cacheControl: "0",
+          });
+          smallStored = !result.error;
+        }
+      }
+    } catch {
+      smallStored = false;
+    }
+    if (!smallStored) {
+      try {
+        const removed = await admin.storage.from("pdf-thumbs").remove([`${data.id}.small.webp`]);
+        if (removed.error) return { ok: false, error: "Original preview saved, but small-preview cleanup failed." };
+      } catch {
+        return { ok: false, error: "Original preview saved, but small-preview cleanup failed." };
+      }
     }
     return { ok: true, error: null };
   });

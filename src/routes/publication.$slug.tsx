@@ -171,7 +171,7 @@ function PublicationPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
         <Link
           to="/archive"
           className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary"
@@ -254,7 +254,7 @@ function PublicationPage() {
             </div>
           </section>
         )}
-      </main>
+      </div>
       <SiteFooter />
     </div>
   );

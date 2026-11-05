@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { isPostShabbosWindow } from "@/lib/post-shabbos";
 import { FileText } from "lucide-react";
@@ -23,6 +23,10 @@ import { displayContentType, hasDisplayedCollectionChanged, isProgressForReading
 import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
 import { publicationLabel } from "@/lib/badges";
+import { Button } from "@/components/ui/button";
+import { SmallPdfImage } from "@/components/SmallPdfImage";
+import { LENGTH_OPTIONS, matchesPageLength, type LengthFilter } from "@/lib/length-filter";
+import { isWeeklyCollectionHash, scrollToWeeklyCollection, WEEKLY_COLLECTION_REQUEST } from "@/lib/weekly-navigation";
 import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
 
 import {
@@ -97,15 +101,16 @@ function StarterThumb({ src, alt, title, href, onOpen }: {
       onClick={onOpen}
       className="block h-[83px] w-16 shrink-0 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
-      <img
+      <SmallPdfImage
+        key={src}
         src={src}
         alt={alt}
         width={64}
         height={83}
         loading="lazy"
         decoding="async"
-        onError={() => setFailed(true)}
-        className={`h-[83px] w-16 rounded-sm border border-accent/40 shadow-sm hover:border-accent ${src.includes("/publication-covers/mi-kaamcha-yisroel-permanent.jpg") ? "bg-[#0b2641] object-contain" : "bg-card object-cover object-top"}`}
+        onUnavailable={() => setFailed(true)}
+        className="h-[83px] w-16 rounded-sm border border-accent/40 bg-card object-contain shadow-sm hover:border-accent"
       />
     </a>
   );
@@ -452,10 +457,13 @@ function Index() {
   }, [isFallback, resources.length, readingDate]);
 
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
-  const [lengthFilter, setLengthFilter] = useState<"All" | "short" | "long" | "study">("All");
+  const [lengthFilter, setLengthFilter] = useState<LengthFilter>("All");
   const [contentTypeFilter, setContentTypeFilter] = useState<string>("All");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [showAllResources, setShowAllResources] = useState(false);
+  const [collectionScrollRequest, setCollectionScrollRequest] = useState(0);
+  const locationHref = useRouterState({ select: (s) => s.location.href });
+  const collectionHash = useRouterState({ select: (s) => s.location.hash });
   // When a guided-chooser category is active the page enters focused mode and
   // the full weekly collection (plus its filter controls) is hidden.
   const [activeChooser, setActiveChooser] = useState<string | null>(null);
@@ -467,7 +475,7 @@ function Index() {
   // canonical publication_id). Never last week's fallback PDFs, never a
   // third-party substitute for an absent series.
   const starterSelections = isFallback ? [] : pickStarterSelections(sortedResources);
-  const showCompleteCollection = showAllResources || starterSelections.length === 0 || isCurrentYomKippur;
+  const showCompleteCollection = isWeeklyCollectionHash(collectionHash) || showAllResources || starterSelections.length === 0 || isCurrentYomKippur;
   const extraPreviewSelections = sortedResources.filter((resource) => !starterSelections.some((pick) => pick.resource.id === resource.id)).slice(0, 3);
   const viewAllLabel = `View all ${resources.length} ${displayedLabel.replace(/^Parshas\s+/i, "")} selections`;
   usePrewarmDownloads(sortedResources.map((r) => r.id));
@@ -475,16 +483,7 @@ function Index() {
 
   const matchesAudience = (r: Resource, value = audienceFilter) =>
     value === "All" || normalizeAudience(r.audience, r.title) === value;
-  const matchesLength = (r: Resource, value = lengthFilter) =>
-    value === "All"
-      ? true
-      : typeof r.page_count === "number"
-        ? value === "short"
-          ? r.page_count < 5
-          : value === "study"
-            ? r.page_count >= 20
-            : r.page_count >= 5
-        : false;
+  const matchesLength = (r: Resource, value = lengthFilter) => matchesPageLength(r.page_count, value);
   const resourceContentType = (r: Resource) =>
     displayContentType(r.content_type, r.format_type, formatTypeLabel);
   const matchesContentType = (r: Resource, value = contentTypeFilter) =>
@@ -503,9 +502,8 @@ function Index() {
         (r) => matchesAudience(r) && matchesLength(r) && matchesContentType(r),
       );
 
-  const lengthHasChoice =
-    sortedResources.some((r) => typeof r.page_count === "number" && r.page_count < 5) &&
-    sortedResources.some((r) => typeof r.page_count === "number" && r.page_count >= 5);
+  const lengthHasChoice = LENGTH_OPTIONS.filter((option) => option.key !== "All" &&
+    sortedResources.some((r) => matchesPageLength(r.page_count, option.key))).length > 1;
   const contentTypeHasChoice = contentTypeOptions.length > 1;
 
   // Keep filter state valid when the weekly collection refreshes after hydration.
@@ -519,12 +517,7 @@ function Index() {
     }
 
     if (lengthFilter !== "All") {
-      const hasSelectedLength = sortedResources.some((r) => {
-        if (typeof r.page_count !== "number") return false;
-        if (lengthFilter === "short") return r.page_count < 5;
-        if (lengthFilter === "study") return r.page_count >= 20;
-        return r.page_count >= 5;
-      });
+      const hasSelectedLength = sortedResources.some((r) => matchesPageLength(r.page_count, lengthFilter));
       if (!hasSelectedLength) setLengthFilter("All");
     }
 
@@ -621,7 +614,7 @@ function Index() {
       />
     );
   };
-  // The starter row includes other publishers if one of our originals is not yet available.
+  // Only canonical current-week originals belong in the starter row.
   const starterShowsThreeOriginals = starterSelections.length === 3 &&
     starterSelections.every(({ resource }) => isTfttOriginal(resource));
 
@@ -633,13 +626,34 @@ function Index() {
     setContentTypeFilter("All");
   };
 
+  const browseAllSelections = () => {
+    clearFilters();
+    setActiveChooser(null);
+    setShowAllResources(true);
+    setCollectionScrollRequest((n) => n + 1);
+  };
+  useEffect(() => {
+    if (!isWeeklyCollectionHash(collectionHash)) return;
+    clearFilters();
+    setActiveChooser(null);
+    setShowAllResources(true);
+    setCollectionScrollRequest((n) => n + 1);
+  }, [locationHref]);
+  useEffect(() => {
+    document.addEventListener(WEEKLY_COLLECTION_REQUEST, browseAllSelections);
+    return () => document.removeEventListener(WEEKLY_COLLECTION_REQUEST, browseAllSelections);
+  }, []);
+  useEffect(() => {
+    if (collectionScrollRequest > 0 && showCompleteCollection) scrollToWeeklyCollection();
+  }, [collectionScrollRequest, showCompleteCollection]);
+
   return (
     <div className="min-h-screen bg-background">
       <AnnouncementBanner initialBanner={Route.useLoaderData().announcement} />
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
         <section className="parchment-frame">
           <div className="parchment-panel px-4 py-4 text-center sm:py-6">
-            <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-accent-readable sm:text-xs">
+            <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-accent-readable sm:text-xs">
               {isCurrentYomKippur ? "Yom Kippur Resources" : isFallback ? "Latest Available Collection" : "This Week's Parsha"}
             </p>
             <h1 className="mt-1 font-serif text-xl font-bold leading-tight text-primary sm:text-3xl">
@@ -663,13 +677,10 @@ function Index() {
             {heroDateLine && !isFallback && (
               <p className="mt-1 text-xs text-muted-foreground">{heroDateLine}</p>
             )}
-            <div className="mt-3 flex justify-center">
-              <p className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full border border-accent/50 bg-accent/10 px-4 py-2 text-xs text-primary sm:text-sm">
-                <span className="font-semibold uppercase tracking-[0.12em] text-accent-readable">Coming Soon</span>
-                <span aria-hidden="true" className="text-accent">·</span>
-                <span className="font-serif font-semibold">Divrei Torah in Hebrew</span>
-              </p>
-            </div>
+            <Button onClick={browseAllSelections} className="mt-4 h-auto min-h-11 max-w-full whitespace-normal rounded-full px-6 py-3 font-serif text-base font-semibold">
+              {isFallback ? `Browse All ${resources.length} Available Selections` : `Browse All ${resources.length} This Week’s Selections`}
+            </Button>
+            <p className="mt-3 text-xs text-muted-foreground">Divrei Torah in Hebrew — Coming Soon</p>
           </div>
         </section>
         {!isFallback && tableThought && (
@@ -683,7 +694,7 @@ function Index() {
             >
               TABLE TALK
             </h2>
-            <p className="mt-1 font-sans text-[0.6rem] uppercase tracking-[0.1em] text-muted-foreground sm:text-[0.65rem]">
+            <p className="mt-1 font-sans text-[11px] uppercase tracking-[0.1em] text-muted-foreground sm:text-[11px]">
               A THOUGHT FOR YOUR SHABBOS TABLE
             </p>
             <blockquote className="mx-auto mt-3 max-w-2xl font-serif text-lg leading-relaxed text-primary sm:text-2xl sm:leading-relaxed">
@@ -705,9 +716,9 @@ function Index() {
         />
 
 
-        {starterSelections.length > 0 && !isCurrentYomKippur && !showAllResources && (
-          <section id="this-weeks-collection" aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border-2 border-accent/50 bg-card/50 px-4 py-5 sm:px-6">
-            <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-xs">
+        {starterSelections.length > 0 && !isCurrentYomKippur && (
+          <section id={showCompleteCollection ? undefined : "this-weeks-collection"} tabIndex={-1} aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border-2 border-accent/50 bg-card/50 px-4 py-5 sm:px-6">
+            <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-xs">
               Home of the original Torah For The Table series
             </p>
             <h2 id="starter-selections-heading" className="mt-1 font-serif text-xl font-bold text-primary sm:text-2xl">
@@ -750,7 +761,7 @@ function Index() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     {!isTfttOriginal(r) && <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{label}</p>}
                     {isTfttOriginal(r) && (
-                      <span className="rounded-full border border-accent/60 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                      <span className="rounded-full border border-accent/60 bg-accent/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
                         TFTT Original
                       </span>
                     )}
@@ -787,10 +798,6 @@ function Index() {
                 </article>
               ))}
             </div>
-            <HiddenGemTeaser
-              context={{ normalizedCollectionKey, activeParshaKey: currentParshaKey, isFallback, isYomTov: isYomTovCollection, readingDate }}
-              initialNow={loaderData.renderedAt ?? Date.now()}
-            />
             {extraPreviewSelections.length > 0 && (
               <div className="mt-5 border-t border-accent/25 pt-4">
                 <h3 className="font-serif text-lg font-semibold text-primary">More from this collection</h3>
@@ -826,20 +833,9 @@ function Index() {
               </div>
             )}
             {resources.length > starterSelections.length && (
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAllResources(true);
-                  setMobileQuickChoice(null);
-                  requestAnimationFrame(() => document.getElementById("this-weeks-collection")?.scrollIntoView?.({
-                    behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth",
-                    block: "start",
-                  }));
-                }}
-                className="mt-4 inline-flex min-h-11 items-center rounded-full bg-primary px-5 py-2.5 font-serif text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground"
-              >
+              <Button onClick={browseAllSelections} className="mt-4 h-auto min-h-11 whitespace-normal rounded-full px-5 py-2.5 font-serif text-sm font-semibold">
                 {viewAllLabel}
-              </button>
+              </Button>
             )}
           </section>
         )}
@@ -909,7 +905,7 @@ function Index() {
         )}
 
         {(resources.length === 0 || showCompleteCollection) && (
-        <section id="this-weeks-collection" className="scroll-mt-8">
+        <section id="this-weeks-collection" tabIndex={-1} className="scroll-mt-24">
           <div className="px-1 sm:px-2">
             <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
               {isCurrentYomKippur
@@ -934,7 +930,7 @@ function Index() {
               <>
                 <section className="parchment-frame">
                   <div className="parchment-panel">
-                    <p className="text-center font-sans text-[0.65rem] font-bold uppercase tracking-[0.2em] text-accent-readable sm:text-xs">
+                    <p className="text-center font-sans text-[11px] font-bold uppercase tracking-[0.2em] text-accent-readable sm:text-xs">
                       <span aria-hidden="true">★</span> Featured
                     </p>
                     <h2 className="mt-1 font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
@@ -953,7 +949,7 @@ function Index() {
                             publisher={r.publisher ?? null}
                             parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey ?? null}
                           >
-                            <span className="self-start rounded-full bg-accent px-3 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-accent-foreground">
+                            <span className="self-start rounded-full bg-accent px-3 py-1 text-[11px] sm:text-xs font-bold uppercase tracking-wide text-accent-foreground">
                               {label}
                             </span>
                             {r.thumb_url && (
@@ -1066,7 +1062,7 @@ function Index() {
 
                     {sortedResources.length > 0 && (
                       <div>
-                        <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By audience</span>
+                        <span className="block text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By audience</span>
                         <div className="mt-1.5 flex flex-wrap justify-start gap-2">
                           {(["All", "Children", "Families", "Adults"] as const)
                             .map((audience) => {
@@ -1100,27 +1096,12 @@ function Index() {
 
                     {lengthHasChoice && (
                       <div>
-                        <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By length</span>
+                        <span className="block text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By length</span>
                         <div className="mt-1.5 flex flex-wrap justify-start gap-2">
                           {(() => {
-                            const shortCount = lengthScoped.filter(
-                              (r) => typeof r.page_count === "number" && r.page_count < 5,
-                            ).length;
-                            const longCount = lengthScoped.filter(
-                              (r) => typeof r.page_count === "number" && r.page_count >= 5,
-                            ).length;
-                            const options = [
-                              { key: "All" as const, label: "All", count: lengthScoped.length },
-                              { key: "short" as const, label: "Under 5 Pages", count: shortCount },
-                              { key: "long" as const, label: "5+ Pages", count: longCount },
-                              {
-                                key: "study" as const,
-                                label: "Long Study (20+)",
-                                count: lengthScoped.filter(
-                                  (r) => typeof r.page_count === "number" && r.page_count >= 20,
-                                ).length,
-                              },
-                            ].filter((o) => o.key === "All" || o.count > 0);
+                            const options = LENGTH_OPTIONS.map((option) => ({ ...option,
+                              count: lengthScoped.filter((r) => matchesPageLength(r.page_count, option.key)).length,
+                            })).filter((o) => o.key === "All" || o.count > 0);
                             return options.map((o) => {
                               const active = lengthFilter === o.key;
                               return (
@@ -1153,7 +1134,7 @@ function Index() {
 
                     {contentTypeHasChoice && (
                       <div>
-                        <span className="block text-left text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By content type</span>
+                        <span className="block text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By content type</span>
                         <div className="mt-1.5 flex flex-wrap justify-start gap-2">
                           {[
                             { key: "All", label: "All", count: contentTypeScoped.length },
@@ -1223,7 +1204,7 @@ function Index() {
                               </Link>
                             </h3>
                             {(isTfttOriginal(r) || r.badge) && (
-                              <span className="shrink-0 rounded-full border border-accent/60 bg-accent/10 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
+                              <span className="shrink-0 rounded-full border border-accent/60 bg-accent/10 px-2 py-0.5 text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
                                 {isTfttOriginal(r) ? "TFTT Original" : r.badge}
                               </span>
                             )}
@@ -1287,6 +1268,11 @@ function Index() {
         </section>
         )}
 
+            <HiddenGemTeaser
+              context={{ normalizedCollectionKey, activeParshaKey: currentParshaKey, isFallback, isYomTov: isYomTovCollection, readingDate }}
+              initialNow={loaderData.renderedAt ?? Date.now()}
+            />
+
         <section aria-label="Stay connected" className="mx-auto max-w-2xl">
           <WeeklyEmailSignup
             sourceId="homepage"
@@ -1326,7 +1312,7 @@ function Index() {
           >
             <div className="flex items-center justify-center gap-3 text-accent">
               <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
-              <span className="font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.3em]" dir="ltr">Dedication</span>
+              <span className="font-sans text-[11px] sm:text-xs uppercase tracking-[0.3em]" dir="ltr">Dedication</span>
               <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
             </div>
             <h2 dir="rtl" lang="he" className="mt-5 font-serif font-semibold text-primary" style={{ fontSize: "1.25rem", letterSpacing: "0.04em" }}>

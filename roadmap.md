@@ -1,3 +1,11 @@
+## November 5 focused UX correction (no publish)
+- [x] Weekly selection anchor/hero CTA, return links and complete accessible mobile navigation
+- [x] Mutually exclusive displayed length filters with legacy long bookmarks preserved
+- [x] Public landmarks, search focus, consent targets and modest typography/card polish
+- [x] Free-plan small WebP derivative upload/fallback support
+- [ ] Existing-thumbnail derivative backfill — requires authorized storage writes; no full transfer reduction claimed
+- [x] Run focused regressions and desktop/mobile journeys; automatic build OK; standalone typecheck and real upload not run (see docs/verification/ux-correction-2026-11-05.md)
+
 ## Homepage sharing (no publish)
 - [x] Move one share section before category controls, preserve WhatsApp keys, add copy success/fallback and footer anchor
 - [x] Verify targeted tests, mobile/desktop and expanded-state visibility, compilation (9 tests passed; live preview clipboard/fallback/footer checked; automatic build OK; separate typecheck not run)

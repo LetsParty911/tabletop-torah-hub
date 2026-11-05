@@ -21,7 +21,7 @@ export const Route = createFileRoute("/hidden-gems")({
 function HiddenGemsArchive() {
   return (
     <div className="min-h-screen bg-background">
-      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
         <div className="mb-6">
           <Button asChild className="min-h-11 w-full sm:w-auto">
             <Link to="/" hash="this-weeks-collection"><ArrowLeft aria-hidden="true" /> Back to This Week’s Selections</Link>
@@ -44,7 +44,7 @@ function HiddenGemsArchive() {
             <Link to="/" hash="this-weeks-collection"><ArrowLeft aria-hidden="true" /> Back to This Week’s Selections</Link>
           </Button>
         </div>
-      </main>
+      </div>
       <SiteFooter />
     </div>
   );

@@ -99,7 +99,7 @@ export function WeeklyEmailSignup({
         setConsent(e.target.checked);
         if (e.target.checked) setSignupMsg(null);
       }}
-      className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--gold-decorative,currentColor)]"
+      className="mt-0.5 h-6 w-6 shrink-0 accent-[var(--gold-decorative,currentColor)]"
     />
   );
 
@@ -141,7 +141,7 @@ export function WeeklyEmailSignup({
                   {submitting ? "Subscribing…" : "Subscribe"}
                 </Button>
               </div>
-              <label className="flex items-start gap-2 text-left text-xs text-muted-foreground">
+              <label className="flex items-start gap-2 text-left text-sm text-muted-foreground">
                 {consentInput}
                 <span>
                   I agree to receive emails from Torah For The Table. You can unsubscribe at any
@@ -168,7 +168,7 @@ export function WeeklyEmailSignup({
       <div className="parchment-panel py-4 px-4 sm:px-6 sm:py-5 text-center">
         <div className="flex items-center justify-center gap-3 text-accent mb-2">
           <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
-          <span className="font-sans text-[0.6rem] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em]">
+          <span className="font-sans text-[11px] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em]">
             Stay Updated
           </span>
           <span aria-hidden className="h-px w-8 sm:w-12 bg-accent/60" />
@@ -206,7 +206,7 @@ export function WeeklyEmailSignup({
                   className="flex-1 rounded-full border-2 border-accent/50 bg-background px-4 py-2.5 font-serif text-foreground placeholder:font-serif placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
-              <label className="flex items-start gap-2 text-left text-xs text-foreground">
+              <label className="flex items-start gap-2 text-left text-sm text-foreground">
                 {consentInput}
                 <span>
                   I agree to receive emails from Torah For The Table. You can unsubscribe at any

@@ -8,6 +8,7 @@ import { matchesParshaSearch, toParshaComparableKey } from "@/lib/parsha-normali
 import { normalizeAudience, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { matchesPageLength, type LengthFilter } from "@/lib/length-filter";
 import { pdfThumbUrl } from "@/integrations/supabase/api.functions";
 
 export type ArchivePdfAll = {
@@ -33,7 +34,7 @@ export type ArchivePageInput = {
   parsha: string;
   audience: "All" | AudienceKey;
   q: string;
-  length: "All" | "short" | "long" | "study";
+  length: LengthFilter;
   type: string;
   pub: string;
   page: number;
@@ -59,7 +60,7 @@ const inputSchema = z.object({
   parsha: z.string().max(60),
   audience: z.enum(["All", "Children", "Families", "Adults"]),
   q: z.string().max(100),
-  length: z.enum(["All", "short", "long", "study"]),
+  length: z.enum(["All", "short", "medium", "long", "study"]),
   type: z.string().max(60),
   pub: z.string().max(120),
   page: z.number().int().min(1).max(999),
@@ -71,13 +72,6 @@ function resourceType(r: ArchivePdfAll): string | null {
     : formatTypeLabel(r.format_type);
 }
 
-function matchesLength(r: ArchivePdfAll, length: ArchivePageInput["length"]) {
-  if (length === "All") return true;
-  if (typeof r.page_count !== "number") return false;
-  if (length === "short") return r.page_count < 5;
-  if (length === "study") return r.page_count >= 20;
-  return r.page_count >= 5;
-}
 
 function canonicalPub(r: ArchivePdfAll): string | null {
   const p = r.publication?.trim();
@@ -186,7 +180,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
       if (data.year !== "all" && String(r.year) !== data.year) return false;
       if (data.parsha !== "all" && toParshaComparableKey(r.parshaKey) !== toParshaComparableKey(data.parsha)) return false;
       if (q && !matchesParshaSearch(q, r)) return false;
-      if (!matchesLength(r, data.length)) return false;
+      if (!matchesPageLength(r.page_count, data.length)) return false;
       if (data.type !== "All" && resourceType(r) !== data.type) return false;
       if (data.pub !== "All" && canonicalPub(r) !== data.pub) return false;
       if (
@@ -235,7 +229,8 @@ export const listArchiveAll = createServerFn({ method: "GET" })
     const yearMap = new Map<number, Map<string, ArchivePdfAll[]>>();
     for (const row of pageRows) {
       if (!yearMap.has(row.year)) yearMap.set(row.year, new Map());
-      const parshaMap = yearMap.get(row.year)!;
+      const parshaMap = yearMap.get(row.year);
+      if (!parshaMap) continue;
       if (!parshaMap.has(row.parshaKey)) parshaMap.set(row.parshaKey, []);
       const {
         year: _year,
@@ -244,7 +239,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
         sort_order: _sort,
         ...pdf
       } = row;
-      parshaMap.get(row.parshaKey)!.push(pdf);
+      parshaMap.get(row.parshaKey)?.push(pdf);
     }
 
     const years: ArchiveYearAll[] = Array.from(yearMap.entries()).map(([year, parshaMap]) => ({

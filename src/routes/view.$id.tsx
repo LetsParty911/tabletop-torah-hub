@@ -1,5 +1,6 @@
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
+import { viewDescription } from "@/lib/view-description";
 import { fitPageTitle } from "@/lib/page-title";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
@@ -71,22 +72,9 @@ export const Route = createFileRoute("/view/$id")({
         : title;
     const pageTitle = fitPageTitle(seoTitle);
 
-    const clamp = (v: string) => {
-      if (v.length <= 160) return v;
-      const cut = v.slice(0, 159);
-      const space = cut.lastIndexOf(" ");
-      return `${(space > 100 ? cut.slice(0, space) : cut).trimEnd()}…`;
-    };
-    const description = clamp(
-      leadWithPublicationTitle(
-        title,
-        loaderData?.pdf?.description?.trim() ||
-          subtitle?.trim() ||
-          (parshaLabel
-            ? `A printable Dvar Torah for ${parshaLabel}, free from Torah For The Table.`
-            : "A printable Dvar Torah, free from Torah For The Table."),
-      ) ?? "",
-    );
+    const description = viewDescription(title,
+      loaderData?.pdf?.description?.trim() || subtitle?.trim(),
+      parshaLabel, loaderData?.pdf?.jewish_year ?? null);
 
     const url = `https://torahforthetable.com/view/${params.id}`;
     const image = "https://torahforthetable.com/og-image.png";
@@ -166,7 +154,7 @@ export const Route = createFileRoute("/view/$id")({
 });
 
 function ViewPdf() {
-  const { pdf, isCurrentWeek, publicationContext, relatedParsha, originalHtml } = Route.useLoaderData();
+  const { pdf, publicationContext, relatedParsha, originalHtml } = Route.useLoaderData();
   const publication = publicationContext.publication;
   const displayPublicationName = tfttOriginalSeriesById(publication?.id)?.title ?? publication?.name ?? pdf.publication ?? pdf.title;
   const related = publicationContext.related;
@@ -247,13 +235,14 @@ function ViewPdf() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <main className="flex-1 mx-auto w-full max-w-5xl px-4 sm:px-6 py-6 sm:py-10">
+      <div className="flex-1 mx-auto w-full max-w-5xl px-4 sm:px-6 py-6 sm:py-10">
         <Link
-          to={isCurrentWeek ? "/" : "/archive"}
-          className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-full border border-accent/45 bg-background px-4 py-2 text-sm font-semibold text-primary hover:bg-accent/10"
+          to="/"
+          hash="this-weeks-collection"
+          className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
         >
           <ArrowLeft className="h-4 w-4" />
-          {isCurrentWeek ? "Back to this week's collection" : "Back to Archive"}
+          Back to This Week’s Selections
         </Link>
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
@@ -267,7 +256,7 @@ function ViewPdf() {
                 {pdf.title}
               </h1>
               {pdf.badge && (
-                <span className="mt-1 shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
+                <span className="mt-1 shrink-0 rounded-full border border-accent bg-accent/20 px-2 py-0.5 text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
                   {pdf.badge}
                 </span>
               )}
@@ -302,7 +291,7 @@ function ViewPdf() {
 
         {pdf.parsha_key && !isYomTovReading(pdf.parsha_key) && (
           <section className="mt-5 rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
-            <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable">
+            <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable">
               More on this parsha
             </p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
@@ -321,7 +310,7 @@ function ViewPdf() {
 
         {pdf.description && (
           <section className="mt-5 rounded-xl border border-accent/30 bg-accent/5 p-4 sm:p-5">
-            <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable">
+            <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable">
               What you'll find
             </p>
             <p className="mt-2 font-serif text-base leading-relaxed text-primary/85">
@@ -334,7 +323,7 @@ function ViewPdf() {
           <section aria-labelledby="pdf-summary-heading" className="mt-5 rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
             <h2
               id="pdf-summary-heading"
-              className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable"
+              className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable"
             >
               Summary
             </h2>
@@ -346,7 +335,7 @@ function ViewPdf() {
 
         {originalHtml?.text && (
           <section aria-labelledby="original-text-heading" className="mt-5 rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
-            <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable">
+            <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable">
               Torah For The Table Original
             </p>
             <h2 id="original-text-heading" className="mt-2 font-serif text-xl font-bold text-primary">
@@ -425,7 +414,7 @@ function ViewPdf() {
                 />
               ) : (
                 <p className="mt-3 text-sm text-foreground/80">
-                  Tap Open PDF above to read in your browser, or use Download PDF to save a copy. You can print from your PDF viewer.
+                  Tap Read Now above to read in your browser. You can save or print from your PDF viewer.
                 </p>
               )}
             </div>
@@ -434,7 +423,7 @@ function ViewPdf() {
 
         {relatedParsha.length > 0 && (
           <section className="mt-9 border-t border-accent/25 pt-7">
-            <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable">
+            <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable">
               More Torah for this parsha
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -484,7 +473,7 @@ function ViewPdf() {
           <section className="mt-9 border-t border-accent/25 pt-7">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable">
+                <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable">
                   More from this publication
                 </p>
                 <h2 className="mt-1 font-serif text-2xl font-bold text-primary">{publication.name}</h2>
@@ -539,18 +528,19 @@ function ViewPdf() {
 
         <div className="mt-7 flex flex-wrap items-center gap-4">
           <Link
-            to={isCurrentWeek ? "/" : "/archive"}
+            to="/"
+          hash="this-weeks-collection"
             className="inline-flex items-center gap-2 font-serif italic text-accent hover:text-primary transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />{" "}
-            {isCurrentWeek ? "Back to this week's collection" : "Back to Archive"}
+            Back to This Week’s Selections
           </Link>
         </div>
 
         <div className="mt-10">
           <WeeklyEmailSignup sourceId="view" />
         </div>
-      </main>
+      </div>
       <SiteFooter />
     </div>
   );
