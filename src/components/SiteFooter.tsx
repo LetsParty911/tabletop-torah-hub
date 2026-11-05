@@ -39,6 +39,9 @@ export function SiteFooter() {
         <Link to="/hidden-gems" className={linkClass}>
           Hidden Gems
         </Link>
+        <Link to="/" hash="share-with-a-friend" className={linkClass}>
+          Share with a Friend
+        </Link>
         <Link to="/about" className={linkClass}>
           About
         </Link>
