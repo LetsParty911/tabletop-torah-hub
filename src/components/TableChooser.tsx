@@ -242,7 +242,7 @@ export function TableChooser({
                       {displayTitle(r)}
                     </Link>
                   </h3>
-                  <p className="mt-1 line-clamp-3 text-xs text-muted-foreground sm:text-sm">
+                  <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                     {leadWithPublicationTitle(displayTitle(r), chooseReason(r))}
                   </p>
                   {chooserMetaLine(r) && (
