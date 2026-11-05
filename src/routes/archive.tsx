@@ -112,7 +112,7 @@ export const Route = createFileRoute("/archive")({
       ? fitPageTitle(`${parshaLabel}${yearPart}`, " — Archive")
       : "Archive — Torah For The Table";
     const description = parshaLabel
-      ? `Printable Divrei Torah for ${parshaLabel}${yearPart} from the Torah For The Table archive — free PDFs for children, families, and adults.`
+      ? `Printable Divrei Torah for ${parshaLabel}${yearPart} from the Torah For The Table archive — printable PDFs for children, families, and adults.`
       : "Browse the archive of past weekly Divrei Torah collections for Shabbos and Yom Tov.";
 
     const base = "https://torahforthetable.com/archive";

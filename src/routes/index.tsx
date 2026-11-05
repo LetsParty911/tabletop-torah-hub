@@ -247,9 +247,9 @@ export const Route = createFileRoute("/")({
     </div>
   ),
   head: () => {
-    const title = "Torah For The Table | Free Printable Weekly Divrei Torah";
+    const title = "Torah For The Table | Printable Weekly Divrei Torah";
     const description =
-      "Original weekly Parsha Challenge, Stories for the Shabbos Table and In the Margins, alongside free printable Divrei Torah from respected Torah publishers.";
+      "Original weekly Parsha Challenge, Stories for the Shabbos Table and In the Margins, alongside printable Divrei Torah from respected Torah publishers.";
     const url = "https://torahforthetable.com/";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -290,7 +290,7 @@ export const Route = createFileRoute("/")({
                 },
                 image,
                 description:
-                  "A nonprofit digital platform providing free printable Divrei Torah for the weekly parsha and Yom Tov for children, families, and adults.",
+                  "A nonprofit digital platform sharing printable Divrei Torah for the weekly parsha and Yom Tov for children, families, and adults.",
                 email: "hello@torahforthetable.com",
               },
               {
@@ -667,16 +667,16 @@ function Index() {
                   ? sukkosSeasonTitle
                   : isFallback
                     ? `${displayedLabel} — Still Available`
-                    : `${displayedLabel} — Free Weekly Divrei Torah`}
+                    : `${displayedLabel} — Weekly Divrei Torah`}
             </h1>
             <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
               {isFallback
                 ? `${resources.length} selections from last week remain available to read or print while we prepare ${currentLabel}.`
                 : postShabbos
-                  ? "These Torah sheets remain free to read or print."
+                  ? "These Torah sheets remain available to read or print."
                   : resources.length > 0
-                    ? `${resources.length} free selections for the Shabbos table. New editions every Thursday.`
-                    : "New free Divrei Torah are prepared for your Shabbos table every Thursday."}
+                    ? `${resources.length} selections for the Shabbos table. New editions every Thursday.`
+                    : "New Divrei Torah are prepared for your Shabbos table every Thursday."}
             </p>
             {heroDateLine && !isFallback && (
               <p className="mt-1 text-xs text-muted-foreground">{heroDateLine}</p>
@@ -731,7 +731,7 @@ function Index() {
             <p className="mt-1 text-sm text-muted-foreground">
               {starterShowsThreeOriginals
                 ? "Our own weekly publications, ready to read or print, alongside selections from respected Torah publishers."
-                : "Open any PDF to read or print for free. No account is needed."}
+                : "Open any PDF to read or print. No account is needed."}
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {starterSelections.map(({ key, label, resource: r }) => (
@@ -1248,7 +1248,7 @@ function Index() {
           <WeeklyEmailSignup
             sourceId="homepage"
             heading="Receive the Weekly Shabbos Collection"
-            description="One free email each week when the new collection is ready, including Parsha Challenge, Stories for the Shabbos Table, In the Margins, and other free Divrei Torah. Read or print before Shabbos."
+            description="A weekly email when the new collection is ready, featuring Parsha Challenge, Stories for the Shabbos Table, In the Margins, and other Divrei Torah. Read or print before Shabbos."
           />
         </section>
 

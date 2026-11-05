@@ -7,4 +7,4 @@ export const homepageWhatsAppUrl = withUtm(`${SITE_URL}/`, {
 export const homepageCopyUrl = withUtm(`${SITE_URL}/`, {
   source: "copy-link", medium: "share", campaign: "weekly-share", content: "friend-home",
 });
-export const homepageWhatsAppHref = `https://wa.me/?text=${encodeURIComponent(`Help make another Shabbos table better! Torah For The Table offers free Divrei Torah, with fresh selections every Thursday: ${homepageWhatsAppUrl}`)}`;
+export const homepageWhatsAppHref = `https://wa.me/?text=${encodeURIComponent(`Help make another Shabbos table better! Explore Torah For The Table's fresh selections every Thursday: ${homepageWhatsAppUrl}`)}`;

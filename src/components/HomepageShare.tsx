@@ -26,7 +26,7 @@ export function HomepageShare({ onWhatsApp }: { onWhatsApp: () => void }) {
     <section id="share-with-a-friend" aria-labelledby="homepage-share-heading" className="scroll-mt-24 border-y border-accent/30 py-5 text-center">
       <h2 id="homepage-share-heading" className="font-serif text-2xl font-bold text-primary">Be a Friend. Tell a Friend.</h2>
       <p className="mt-2 text-sm font-semibold text-accent-readable">Help make another Shabbos table better!</p>
-      <p className="mx-auto mt-1 max-w-xl text-sm text-muted-foreground">Share Torah For The Table with family and friends. Free Divrei Torah, fresh selections every Thursday.</p>
+      <p className="mx-auto mt-1 max-w-xl text-sm text-muted-foreground">Share Torah For The Table with family and friends. Fresh selections every Thursday.</p>
       <div className="mx-auto mt-4 flex max-w-lg flex-col justify-center gap-3 sm:flex-row">
         <Button asChild className="min-h-11"><a href={homepageWhatsAppHref} target="_blank" rel="noopener noreferrer" onClick={onWhatsApp}><Share2 aria-hidden="true" />Share on WhatsApp</a></Button>
         <Button variant="outline" className="min-h-11" onClick={copyLink} disabled={status === "copying"}><Copy aria-hidden="true" />{status === "copying" ? "Copying…" : "Copy Website Link"}</Button>

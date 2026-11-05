@@ -15,7 +15,7 @@ export const Route = createFileRoute("/originals")({
   head: () => {
     const title = fitPageTitle("Our Originals", " — In-House Torah Learning Resources");
     const description =
-      "Three free Torah For The Table original weekly series: Parsha Challenge, Stories for the Shabbos Table, and In the Margins — free for the Shabbos table.";
+      "Three weekly Torah For The Table original series: Parsha Challenge, Stories for the Shabbos Table, and In the Margins — created for the Shabbos table.";
     const url = "https://torahforthetable.com/originals";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -205,7 +205,7 @@ function OriginalEditions({ groups }: { groups: OriginalEditionGroup[] }) {
     <div className="mt-8 max-w-2xl mx-auto">
       <h2 className="text-center font-serif text-2xl font-bold text-primary">Our Original Editions</h2>
       <p className="mt-2 text-center font-serif text-sm sm:text-base text-muted-foreground">
-        The latest issues of our three weekly series, free to read or print.
+        The latest issues of our three weekly series, ready to read or print.
       </p>
       {recent.map((group) => <EditionGroup key={group.key} group={group} />)}
       {earlier.length > 0 && (
@@ -252,8 +252,7 @@ function ResourcesPage() {
               <p>
                 Torah For The Table does more than collect and share Torah publications each
                 week. Our team creates original educational material designed specifically for
-                the Shabbos table. All materials are provided free of charge in furtherance of
-                our religious and educational mission.
+                the Shabbos table. These series are part of our religious and educational mission.
               </p>
             </div>
 

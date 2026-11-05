@@ -66,7 +66,7 @@ function PublicationsPage() {
         {originalPublications.length > 0 && (
           <section className="mt-8" aria-labelledby="original-series-heading">
             <h2 id="original-series-heading" className="font-serif text-2xl font-bold text-primary">Our Originals</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Three original publications prepared for the Shabbos table, free to read or print.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Three original publications prepared for the Shabbos table, ready to read or print.</p>
             <div className="mt-4 grid gap-4 sm:grid-cols-3">
               {renderPublicationCards(originalPublications)}
             </div>

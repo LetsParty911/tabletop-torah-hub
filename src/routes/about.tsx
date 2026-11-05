@@ -5,9 +5,9 @@ import { SiteLogoStacked } from "@/components/SiteLogo";
 export const Route = createFileRoute("/about")({
   component: AboutPage,
   head: () => {
-    const title = "About Torah For The Table | Free Weekly Divrei Torah";
+    const title = "About Torah For The Table | Weekly Divrei Torah";
     const description =
-      "Torah For The Table is a nonprofit digital platform providing free weekly Divrei Torah for Shabbos and Yom Tov, with printable resources for children, families, and adults.";
+      "Torah For The Table is a nonprofit digital platform sharing weekly Divrei Torah for Shabbos and Yom Tov, with printable resources for children, families, and adults.";
     const url = "https://torahforthetable.com/about";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -54,7 +54,7 @@ function AboutPage() {
 
             <div className="mt-8 space-y-5 font-serif text-base sm:text-lg text-foreground leading-relaxed max-w-2xl mx-auto">
               <p>
-                <span className="font-semibold text-primary">Torah For The Table</span> is a nonprofit digital platform providing free weekly Divrei Torah for Shabbos and Yom Tov. We gather them in one quiet, uncluttered place so you can come to the table with something meaningful to share.
+                <span className="font-semibold text-primary">Torah For The Table</span> is a nonprofit digital platform sharing weekly Divrei Torah for Shabbos and Yom Tov. We gather them in one quiet, uncluttered place so you can come to the table with something meaningful to share.
               </p>
               <p>
                 Each week features a curated selection of downloadable PDFs, organized by parsha and
@@ -70,7 +70,7 @@ function AboutPage() {
                 <h2 className="font-serif text-2xl font-bold text-primary">Nonprofit Status</h2>
                 <p className="mt-2 font-serif text-base text-foreground leading-relaxed">
                   Torah For The Table is a New Jersey nonprofit organization established to
-                  promote Torah learning through free religious and educational
+                  promote Torah learning through religious and educational
                   materials, shared online and through community outreach.
                 </p>
               </section>
@@ -79,7 +79,7 @@ function AboutPage() {
               <section>
                 <h2 className="font-serif text-2xl font-bold text-primary">Our Activities</h2>
                 <ul className="mt-2 list-disc pl-6 space-y-1 font-serif text-base text-foreground leading-relaxed">
-                  <li>Publishes free weekly Torah resources</li>
+                  <li>Publishes weekly Torah resources</li>
                   <li>Organizes Divrei Torah from multiple respected sources</li>
                   <li>
                     Creates original educational materials, including Parsha Challenge,
@@ -123,7 +123,6 @@ function AboutPage() {
                   <p>Website: TorahForTheTable.com</p>
                 </div>
                 <p className="mt-3 font-serif text-base text-foreground leading-relaxed">
-                  Torah For The Table does not charge visitors to access its educational materials.
                   Its activities are operated for religious, charitable, and educational purposes.
                 </p>
               </section>
@@ -133,8 +132,7 @@ function AboutPage() {
                 <p className="mt-2 font-serif text-base text-foreground leading-relaxed">
                   Torah For The Table is a nonprofit Torah-distribution project. Third-party
                   publications remain the property of their respective publishers and are displayed
-                  with permission and proper attribution. Every PDF is offered free of charge for
-                  the sake of Harbatzas HaTorah.
+                  with permission and proper attribution in support of Harbatzas HaTorah.
                 </p>
               </section>
 

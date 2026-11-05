@@ -50,7 +50,7 @@ export function SharePublicationButton({
   });
 
   const handleShare = () => {
-    const message = `${title}${parshaLabel ? ` — ${parshaLabel}` : ""}, free to download and print: ${shareUrl}`;
+    const message = `${title}${parshaLabel ? ` — ${parshaLabel}` : ""}, ready to read or print: ${shareUrl}`;
     trackEvent("share_whatsapp", {
       file_id: pdfId,
       file_title: title,
