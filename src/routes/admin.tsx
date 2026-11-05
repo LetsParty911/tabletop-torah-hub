@@ -915,10 +915,11 @@ function AdminPage() {
       // Best-effort first-page preview; a failure must not fail the upload.
       if (uploaded?.id) {
         try {
-          const { renderFirstPageThumbBase64 } = await import("@/lib/pdf-thumb");
+          const { renderFirstPageThumbBase64, renderSmallThumbBase64 } = await import("@/lib/pdf-thumb");
           const pngBase64 = await renderFirstPageThumbBase64(file);
           if (pngBase64) {
-            await adminUploadPdfThumb({ data: { accessToken, id: uploaded.id, pngBase64 } });
+            const smallWebpBase64 = await renderSmallThumbBase64(pngBase64);
+            await adminUploadPdfThumb({ data: { accessToken, id: uploaded.id, pngBase64, smallWebpBase64 } });
           }
         } catch (e) {
           console.error("thumbnail generation failed", e);
@@ -1078,10 +1079,11 @@ function AdminPage() {
       });
       // Regenerate the preview so the card never shows the previous sheet.
       try {
-        const { renderFirstPageThumbBase64 } = await import("@/lib/pdf-thumb");
+        const { renderFirstPageThumbBase64, renderSmallThumbBase64 } = await import("@/lib/pdf-thumb");
         const pngBase64 = await renderFirstPageThumbBase64(replaceFile);
         if (pngBase64) {
-          await adminUploadPdfThumb({ data: { accessToken, id, pngBase64 } });
+          const smallWebpBase64 = await renderSmallThumbBase64(pngBase64);
+          await adminUploadPdfThumb({ data: { accessToken, id, pngBase64, smallWebpBase64 } });
         }
       } catch (e) {
         console.error("thumbnail regeneration failed", e);

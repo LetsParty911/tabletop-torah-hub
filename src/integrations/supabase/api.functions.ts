@@ -1401,12 +1401,13 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
 // The image is rendered in the admin browser (pdf.js) and stored in the public
 // `pdf-thumbs` bucket as `<pdf id>.png`, overwriting any previous preview.
 export const adminUploadPdfThumb = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; id: string; pngBase64: string }) =>
+  .inputValidator((input: { accessToken: string; id: string; pngBase64: string; smallWebpBase64?: string | null }) =>
     z
       .object({
         accessToken: z.string().min(10),
         id: z.string().uuid(),
         pngBase64: z.string().min(10),
+        smallWebpBase64: z.string().min(10).max(200000).nullable().optional(),
       })
       .parse(input),
   )
@@ -1420,6 +1421,23 @@ export const adminUploadPdfThumb = createServerFn({ method: "POST" })
     if (error) {
       console.error("adminUploadPdfThumb error", error);
       return { ok: false, error: error.message };
+    }
+    // Optional derivative must never fail a successful original upload. Remove
+    // an old derivative on replacement failure rather than showing stale artwork.
+    let smallStored = false;
+    try {
+      if (data.smallWebpBase64) {
+        const small = Buffer.from(data.smallWebpBase64, "base64");
+        if (small.toString("ascii", 0, 4) === "RIFF" && small.toString("ascii", 8, 12) === "WEBP") {
+          const result = await admin.storage.from("pdf-thumbs").upload(`${data.id}.small.webp`, small, {
+            contentType: "image/webp", upsert: true, cacheControl: "3600",
+          });
+          smallStored = !result.error;
+        }
+      }
+      if (!smallStored) await admin.storage.from("pdf-thumbs").remove([`${data.id}.small.webp`]);
+    } catch {
+      // Original remains available; the display retries it if the derivative fails.
     }
     return { ok: true, error: null };
   });

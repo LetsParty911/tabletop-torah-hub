@@ -31,3 +31,23 @@ export async function renderFirstPageThumbBase64(file: File): Promise<string | n
     return null;
   }
 }
+
+// Derived from the already-rendered first page, without rendering the PDF twice.
+export async function renderSmallThumbBase64(pngBase64: string): Promise<string | null> {
+  try {
+    const image = new Image();
+    image.src = `data:image/png;base64,${pngBase64}`;
+    await image.decode();
+    const scale = Math.min(1, 160 / image.width, 210 / image.height);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.width * scale));
+    canvas.height = Math.max(1, Math.round(image.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const result = canvas.toDataURL("image/webp", 0.82);
+    return result.startsWith("data:image/webp;base64,") ? result.split(",")[1] ?? null : null;
+  } catch {
+    return null;
+  }
+}
