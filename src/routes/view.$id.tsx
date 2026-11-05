@@ -460,7 +460,7 @@ function ViewPdf() {
                     <p className="font-serif text-lg font-semibold text-primary">{item.title}</p>
                     {itemMeta && <p className="mt-2 text-xs text-muted-foreground">{itemMeta}</p>}
                     {item.description && (
-                      <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                         {leadWithPublicationTitle(item.title, item.description)}
                       </p>
                     )}
@@ -526,7 +526,7 @@ function ViewPdf() {
                     <p className="mt-1 font-serif text-lg font-semibold text-primary">{edition.title}</p>
                     {relatedMeta && <p className="mt-2 text-xs text-muted-foreground">{relatedMeta}</p>}
                     {edition.description && (
-                      <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                         {leadWithPublicationTitle(edition.title, edition.description)}
                       </p>
                     )}
