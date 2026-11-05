@@ -1434,14 +1434,22 @@ export const adminUploadPdfThumb = createServerFn({ method: "POST" })
         const small = Buffer.from(data.smallWebpBase64, "base64");
         if (small.toString("ascii", 0, 4) === "RIFF" && small.toString("ascii", 8, 12) === "WEBP") {
           const result = await admin.storage.from("pdf-thumbs").upload(`${data.id}.small.webp`, small, {
-            contentType: "image/webp", upsert: true, cacheControl: "3600",
+            // Stable IDs can be replaced; do not retain a fresh old browser copy.
+            contentType: "image/webp", upsert: true, cacheControl: "0",
           });
           smallStored = !result.error;
         }
       }
-      if (!smallStored) await admin.storage.from("pdf-thumbs").remove([`${data.id}.small.webp`]);
     } catch {
-      // Original remains available; the display retries it if the derivative fails.
+      smallStored = false;
+    }
+    if (!smallStored) {
+      try {
+        const removed = await admin.storage.from("pdf-thumbs").remove([`${data.id}.small.webp`]);
+        if (removed.error) return { ok: false, error: "Original preview saved, but small-preview cleanup failed." };
+      } catch {
+        return { ok: false, error: "Original preview saved, but small-preview cleanup failed." };
+      }
     }
     return { ok: true, error: null };
   });
