@@ -797,7 +797,6 @@ function Index() {
                           <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline">{displayTitle(r)}</Link>
                         </h4>
                       </div>
-                      </h4>
                       {r.publisher && <p className="mt-1 text-xs text-muted-foreground">By {r.publisher}</p>}
                       <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
                         {leadWithPublicationTitle(displayTitle(r), r.summary_quick || r.subtitle || r.description || chooseReason(r))}
