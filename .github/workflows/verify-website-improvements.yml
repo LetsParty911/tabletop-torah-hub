@@ -13,6 +13,8 @@ on:
       - "src/integrations/supabase/archive-all.functions.ts"
       - "src/lib/verified-thumbnails*.ts"
       - "src/pwa-register*.ts"
+      - "src/routes/sitemap[.]xml.ts"
+      - "src/lib/sitemap-lastmod*.ts"
       - "src/routes/short-vorts.tsx"
       - "src/routes/view.$id.tsx"
       - "src/routes/index.tsx"
@@ -51,6 +53,8 @@ jobs:
           bun test "${tests[@]}"
       - name: Verify immutable thumbnail inventory and URL fallbacks
         run: bunx vitest run --config vitest.ux.config.ts src/lib/verified-thumbnails.test.ts
+      - name: Verify sitemap modification dates
+        run: bunx vitest run --config vitest.ux.config.ts src/lib/sitemap-lastmod.test.ts
       - name: Verify emergency PWA cache reset
         run: bunx vitest run --config vitest.ux.config.ts src/pwa-register.test.ts
       - name: Verify individual PDF titles
