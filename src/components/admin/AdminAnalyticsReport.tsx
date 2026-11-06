@@ -8,6 +8,7 @@ import Phase2ReturningAnalytics from "@/components/Phase2ReturningAnalytics";
 import VisitorActivitySection from "@/components/admin/VisitorActivitySection";
 import AdminReports from "@/components/admin/AdminReports";
 import OwnerSummary from "@/components/admin/OwnerSummary";
+import TrafficQualityPanel from "@/components/admin/TrafficQualityPanel";
 import AnalyticsHealthPanel from "@/components/admin/AnalyticsHealthPanel";
 import CampaignLinkBuilder from "@/components/admin/CampaignLinkBuilder";
 import WhatsAppLinksPanel from "@/components/admin/WhatsAppLinksPanel";
@@ -79,10 +80,11 @@ function ReportsSection({ accessToken }: { accessToken: string }) {
 function Overview({ data, accessToken, openDetail }: { data: ReportData; accessToken: string; openDetail: (key: DetailKey, title: string, description: string) => void }) {
   const { report, comparison } = data;
   const m = report.metrics;
-  const story = m.people === 0 ? "There has not been enough reader activity to summarize this period." : `${m.people} ${m.people === 1 ? "person visited" : "people visited"}; ${m.usedTorah} ${m.usedTorah === 1 ? "used" : "used"} Torah, with ${m.countedPdfOpens} counted PDF attempted opens across ${m.countedUniquePdfs} distinct PDFs (${m.openPdfClicks} Open PDF clicks; ${m.pdfOpens} PDF viewer loads (automatic) not counted).`;
-  if (m.sessions === 0) return <div className="space-y-8"><EmptyState /><OpenPdfClicksPanel data={data} /><ReportsSection accessToken={accessToken} /></div>;
+  const story = m.people === 0 ? "There has not been enough qualified reader activity to summarize this period." : `${m.people} qualified ${m.people === 1 ? "browser ID" : "browser IDs"} visited; ${m.usedTorah} had recorded Torah-use activity, with ${m.countedPdfOpens} counted PDF attempted opens across ${m.countedUniquePdfs} distinct PDFs (${m.openPdfClicks} Open PDF clicks; ${m.pdfOpens} PDF viewer loads (automatic) not counted).`;
+  if (m.sessions === 0) return <div className="space-y-8"><TrafficQualityPanel report={report} /><EmptyState /><OpenPdfClicksPanel data={data} /><ReportsSection accessToken={accessToken} /></div>;
   return <div className="space-y-8">
-    <section><p className="font-serif text-xl leading-relaxed text-foreground">{story}</p><p className="mt-2 text-sm text-muted-foreground">Compared with the prior matching period: {comparison.people} people and {comparison.countedPdfOpens} counted PDF attempted opens.</p></section>
+    <TrafficQualityPanel report={report} />
+    <section><p className="font-serif text-xl leading-relaxed text-foreground">{story}</p><p className="mt-2 text-sm text-muted-foreground">Compared with the prior matching period: {comparison.people} qualified browser IDs and {comparison.countedPdfOpens} counted PDF attempted opens.</p></section>
 
     <section className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
       <MetricButton label="Likely human visitors" value={m.people} note="High-confidence + likely human only" onClick={() => openDetail("people", "People", "The distinct browser visitors included in this report.")} />
@@ -102,7 +104,7 @@ function Overview({ data, accessToken, openDetail }: { data: ReportData; accessT
     <OpenPdfClicksPanel data={data} />
     <section><h3 className="font-serif text-lg font-semibold text-primary">Recent activity</h3><ul className="mt-3 divide-y divide-border text-sm">{report.recentActivity.slice(0, 8).map((row, index) => <li key={`${row.at}-${index}`} className="flex flex-col gap-1 py-2 sm:flex-row sm:justify-between"><span>{pdfEventLabel(row.event)}{row.publication ? ` · ${row.publication}` : row.path ? ` · ${row.path}` : ""}</span><span className="text-xs text-muted-foreground">{dateTime(row.at)} ET</span></li>)}</ul></section>
     <ReportsSection accessToken={accessToken} />
-    <footer className="text-xs text-muted-foreground">Headline audience metrics are human-qualified: only high-confidence and likely human sessions count ({m.sessions} of {report.raw.sessions} raw sessions, {report.raw.visitors} raw visitors). Excluded but kept for diagnostics: {report.filteredUncertainSessions} uncertain · {report.filteredAutomationSessions} suspected automation · {report.filteredInternalSessions} internal/test. Any deliberate action or explicit human signal keeps a session counted.</footer>
+    <footer className="text-xs text-muted-foreground">Headline audience metrics are human-qualified: only high-confidence and likely human sessions count ({m.sessions} of {report.raw.sessions} raw sessions, {report.raw.visitors} raw visitors). Excluded but kept for diagnostics: {report.filteredUncertainSessions} uncertain · {report.filteredAutomationSessions} suspected automation · {report.filteredInternalSessions} internal/test. Scanner-like activity can be excluded despite simulated clicks; human qualification is not verified identity.</footer>
   </div>;
 }
 
