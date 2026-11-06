@@ -166,7 +166,7 @@ function ParshaSection({
               {vorts.length > 0
                 ? `${vorts.length} ${vorts.length === 1 ? "vort" : "vorts"}`
                 : publishedPdf
-                  ? "PDF"
+                  ? "PDF available"
                   : /sukk/i.test(emptyLabel ?? heading)
                     ? "Available"
                     : "Preparing"}
@@ -178,19 +178,19 @@ function ParshaSection({
           </span>
         </button>
       </h2>
+      {(vorts.length > 0 || !!publishedPdf) && !isYomTovReading(emptyLabel ?? heading) && (
+        <div className="px-4 pb-3">
+          <Link
+            to="/parsha/$slug"
+            params={{ slug: readingSlug(emptyLabel ?? heading) }}
+            className="inline-flex min-h-11 items-center rounded-md px-2 text-sm font-semibold text-primary underline decoration-accent/60 underline-offset-4 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            See all Divrei Torah for {emptyLabel ?? heading}
+          </Link>
+        </div>
+      )}
       {open && (
         <div id={`${id}-panel`} className="px-4 pb-5">
-          {(vorts.length > 0 || !!publishedPdf) && !isYomTovReading(emptyLabel ?? heading) && (
-            <div className="mb-4 text-center">
-              <Link
-                to="/parsha/$slug"
-                params={{ slug: readingSlug(emptyLabel ?? heading) }}
-                className="text-sm font-semibold text-primary underline decoration-accent/60 underline-offset-4 hover:text-accent"
-              >
-                See all Divrei Torah for {emptyLabel ?? heading}
-              </Link>
-            </div>
-          )}
           {vorts.length > 0 ? (
             <div className="grid gap-5 sm:grid-cols-2">
               {vorts.map((v) => (
