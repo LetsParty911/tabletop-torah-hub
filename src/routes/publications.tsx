@@ -51,7 +51,7 @@ function PublicationsPage() {
 
         <section className="parchment-frame mt-5">
           <div className="parchment-panel text-center">
-            <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.2em] text-accent-readable">
+            <p className="font-sans text-[0.7rem] font-bold uppercase tracking-[0.2em] text-accent-readable">
               Browse by source
             </p>
             <h1 className="mt-2 font-serif text-3xl sm:text-4xl font-bold text-primary">
