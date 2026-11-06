@@ -29,6 +29,7 @@ import { SmallPdfImage } from "@/components/SmallPdfImage";
 import { LENGTH_OPTIONS, matchesPageLength, type LengthFilter } from "@/lib/length-filter";
 import { isWeeklyCollectionHash, scrollToWeeklyCollection, WEEKLY_COLLECTION_REQUEST } from "@/lib/weekly-navigation";
 import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
+import { trackHomepageJourneyStart, useHomepageSectionImpression } from "@/hooks/use-homepage-section-impression";
 
 import {
   resolveHebcalParsha,
@@ -483,6 +484,13 @@ function Index() {
   // Show all this week's publications by default; Browse All is a shortcut, not a gate.
   const showCompleteCollection = resources.length > 0 || isWeeklyCollectionHash(collectionHash) || showAllResources || isCurrentYomKippur;
   const viewAllLabel = `View all ${resources.length} ${displayedLabel.replace(/^Parshas\s+/i, "")} selections`;
+  // Section views are passive; they do not establish human engagement.
+  const originalsRef = useHomepageSectionImpression<HTMLElement>("originals", starterSelections.length > 0 && !isCurrentYomKippur);
+  const weeklyHeadingRef = useHomepageSectionImpression<HTMLHeadingElement>("weekly_collection", resources.length > 0 && showCompleteCollection);
+  useEffect(() => {
+    if (resources.length > 0) trackHomepageJourneyStart(starterSelections.length > 0 && !isCurrentYomKippur);
+  }, [resources.length > 0, starterSelections.length > 0, isCurrentYomKippur]);
+
   usePrewarmDownloads(sortedResources.map((r) => r.id));
 
 
@@ -738,8 +746,8 @@ function Index() {
                 : "Open any PDF to read or print. No account is needed."}
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              {starterSelections.map(({ key, label, resource: r }) => (
-                <article key={r.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
+              {starterSelections.map(({ key, label, resource: r }, index) => (
+                <article key={r.id} ref={index === 0 ? originalsRef : undefined} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
                   <div className="flex min-w-0 gap-3">
                   {r.thumb_url && (
                     <StarterThumb
@@ -834,7 +842,7 @@ function Index() {
         {(resources.length === 0 || showCompleteCollection) && (
         <section id="this-weeks-collection" tabIndex={-1} className="scroll-mt-24">
           <div className="px-1 sm:px-2">
-            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
+            <h2 ref={weeklyHeadingRef} className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
               {isCurrentYomKippur
                 ? "Yom Kippur Divrei Torah and preparation"
                 : isFallback

@@ -23,6 +23,8 @@ import {
 const ALLOWED_EVENTS = new Set([
   "session_start",
   "page_view",
+  "homepage_journey_start",
+  "section_impression",
   "publication_impression",
   "publication_click",
   "filter_change",

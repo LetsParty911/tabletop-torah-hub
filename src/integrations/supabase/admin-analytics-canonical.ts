@@ -28,6 +28,7 @@ import { buildOverview } from "@/lib/overview-analytics";
 import { summarizeVisitorInsights } from "@/lib/visitor-insights";
 import { summarizeGeoInsights } from "@/lib/geo-insights";
 import { summarizeHomepageSharing } from "@/lib/homepage-sharing";
+import { buildReadingJourney } from "@/lib/reading-journey";
 import {
   classifyAutomation,
   classifyKnownIncident,
@@ -642,6 +643,7 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
     geoInsights: summarizeGeoInsights(keptRows),
     noahideResources: summarizeNoahideResources(rows, priorVisitors, classified),
     homepageSharing: summarizeHomepageSharing(keptRows, countedRows),
+    readingJourney: buildReadingJourney(rows, keptIds),
     metrics: {
       people: canonical.uniqueVisitors,
       usedTorah: usedVisitors.size,
