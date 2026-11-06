@@ -27,8 +27,8 @@ export function CategoryBadge({
     "inline-flex items-center rounded-full border font-sans font-medium uppercase tracking-wider transition-colors whitespace-nowrap";
   const sizing =
     size === "xs"
-      ? "px-2 py-0.5 text-[0.6rem]"
-      : "px-2.5 py-0.5 text-[0.65rem] sm:text-xs";
+      ? "px-2 py-0.5 text-[0.7rem]"
+      : "px-2.5 py-0.5 text-[0.7rem] sm:text-xs";
 
   const variants = {
     default: {
