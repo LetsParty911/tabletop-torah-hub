@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { ChevronDown, FileText, Sparkles } from "lucide-react";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
@@ -162,11 +162,12 @@ function ParshaSection({
         >
           <span className="font-serif text-lg font-bold text-primary sm:text-xl">{heading}</span>
           <span className="flex items-center gap-3">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {vorts.length === 0 && publishedPdf && <FileText className="h-4 w-4" aria-hidden="true" />}
               {vorts.length > 0
                 ? `${vorts.length} ${vorts.length === 1 ? "vort" : "vorts"}`
                 : publishedPdf
-                  ? "PDF"
+                  ? "PDF available"
                   : /sukk/i.test(emptyLabel ?? heading)
                     ? "Available"
                     : "Preparing"}
@@ -178,19 +179,30 @@ function ParshaSection({
           </span>
         </button>
       </h2>
+      {publishedPdf && (
+        <div className="border-t border-border/50 px-4 py-3">
+          <DownloadToPrintButton
+            label="Read PDF"
+            href={`/view/${publishedPdf.id}/pdf`}
+            publicationId={publishedPdf.id}
+            publicationTitle={publishedPdf.title}
+            className="max-w-sm"
+          />
+        </div>
+      )}
+      {(vorts.length > 0 || !!publishedPdf) && !isYomTovReading(emptyLabel ?? heading) && (
+        <div className="px-4 pb-3 text-center">
+          <Link
+            to="/parsha/$slug"
+            params={{ slug: readingSlug(emptyLabel ?? heading) }}
+            className="text-sm font-semibold text-primary underline decoration-accent/60 underline-offset-4 hover:text-accent"
+          >
+            See all Divrei Torah for {emptyLabel ?? heading}
+          </Link>
+        </div>
+      )}
       {open && (
         <div id={`${id}-panel`} className="px-4 pb-5">
-          {(vorts.length > 0 || !!publishedPdf) && !isYomTovReading(emptyLabel ?? heading) && (
-            <div className="mb-4 text-center">
-              <Link
-                to="/parsha/$slug"
-                params={{ slug: readingSlug(emptyLabel ?? heading) }}
-                className="text-sm font-semibold text-primary underline decoration-accent/60 underline-offset-4 hover:text-accent"
-              >
-                See all Divrei Torah for {emptyLabel ?? heading}
-              </Link>
-            </div>
-          )}
           {vorts.length > 0 ? (
             <div className="grid gap-5 sm:grid-cols-2">
               {vorts.map((v) => (
@@ -216,15 +228,7 @@ function ParshaSection({
             <div className="parchment-frame">
               <div className="parchment-panel text-center">
                 <p className="font-serif text-lg font-bold text-primary">{publishedPdf.title}</p>
-                <p className="mt-1 text-sm text-muted-foreground">Now available — ready to print for your table.</p>
-                <div className="mt-4 flex flex-col items-center justify-center gap-2 sm:flex-row">
-                  <DownloadToPrintButton
-                    label="Read Brief Insights PDF"
-                    href={`/view/${publishedPdf.id}/pdf`}
-                    publicationId={publishedPdf.id}
-                    publicationTitle={publishedPdf.title}
-                  />
-                </div>
+                <p className="mt-1 text-sm text-muted-foreground">This publication is ready to read or print. Use Read PDF above to open it.</p>
               </div>
             </div>
           ) : (
