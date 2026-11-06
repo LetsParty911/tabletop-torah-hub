@@ -256,3 +256,40 @@ describe("France and Washington forensic patterns (reporting only)", () => {
     expect(r.humanIds.has("dc-google")).toBe(false);
   });
 });
+
+describe("Nov 5 Shopfeed email scanner reporting regression", () => {
+  it("excludes cloud scanner clicks even when its first-touch referrer appears only on session_start", () => {
+    const network = { source_group: "Referral", device_type: "desktop", as_organization: "Microsoft Corporation" };
+    const r = classifySessions([
+      ev("scanner-click", "session_start", 0, { ...network, referrer_host: "r.email1.shopfeed.com" }),
+      ev("scanner-click", "page_view", 20, network),
+      ev("scanner-click", "human_signal", 70, network),
+      ev("scanner-click", "publication_click", 100, network),
+      ev("scanner-passive", "session_start", 1_000, { ...network, referrer_host: "r.email1.shopfeed.com" }),
+      ev("scanner-passive", "page_view", 1_020, network),
+    ]);
+    expect(r.sessions.get("scanner-click")?.events).toBe(4); // audit rows unchanged
+    expect(r.sessions.get("scanner-click")?.meaningfulIntent).toBe(true); // the click is still recorded
+    expect(r.confidence.get("scanner-click")).toBe("uncertain");
+    expect(r.confidence.get("scanner-passive")).toBe("suspected_automation");
+    expect(r.humanIds.has("scanner-click")).toBe(false);
+    expect(r.ruleFlagged.has("scanner-click")).toBe(true);
+    expect(r.humanIds.has("scanner-passive")).toBe(false);
+  });
+
+  it("keeps email/WhatsApp users on consumer networks and ordinary enterprise referrals", () => {
+    const r = classifySessions([
+      ev("shopfeed-consumer", "session_start", 0, { referrer_host: "r.email1.shopfeed.com", as_organization: "Verizon Business", source_group: "Referral" }),
+      ev("shopfeed-consumer", "publication_click", 100, { as_organization: "Verizon Business" }),
+      ev("ourkehilla", "session_start", 1_000, { source_group: "OurKehilla", as_organization: "Cablevision Systems Corp." }),
+      ev("ourkehilla", "publication_click", 1_100),
+      ev("whatsapp", "session_start", 2_000, { source_group: "WhatsApp", as_organization: "T-Mobile USA, Inc." }),
+      ev("whatsapp", "download", 2_100),
+      ev("safelinks", "session_start", 3_000, { referrer_host: "safelinks.protection.outlook.com", as_organization: "Microsoft Corporation" }),
+      ev("safelinks", "publication_click", 3_100, { as_organization: "Microsoft Corporation" }),
+    ]);
+    for (const sid of ["shopfeed-consumer", "ourkehilla", "whatsapp", "safelinks"]) {
+      expect(r.humanIds.has(sid)).toBe(true);
+    }
+  });
+});

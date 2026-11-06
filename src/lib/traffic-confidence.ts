@@ -21,6 +21,8 @@ export type ConfidenceInput = {
   flaggedAutomation: boolean;
   /** Network belongs to known cloud/security infrastructure (see INFRASTRUCTURE_ORGANIZATIONS). */
   infrastructureNetwork?: boolean;
+  /** Observed email-scanner referrer combined with a matching datacenter network. */
+  suspectedEmailScanner?: boolean;
   /** An explicit human_signal event was recorded. */
   humanSignal: boolean;
   /** A download, PDF open, click, search, chooser or My Table action. */
@@ -76,6 +78,30 @@ export function isInfrastructureOrganization(org: string | null | undefined): bo
   return INFRASTRUCTURE_ORGANIZATIONS.some((needle) => value.includes(needle));
 }
 
+/**
+ * Observed Nov 5 email-link scan: the EXACT Shopfeed tracking referrer
+ * combined with a Microsoft/Amazon cloud network. Neither attribution
+ * alone nor cloud hosting alone justifies labeling a reader automated.
+ *
+ * No blanket blocks for *.shopfeed.com, Outlook Safe Links, corporate
+ * VPNs, browsers, or geographic regions.
+ */
+export function isSuspiciousEmailScannerOrigin(
+  referrerHost: string | null | undefined,
+  organization: string | null | undefined,
+): boolean {
+  if (referrerHost?.trim().toLowerCase() !== "r.email1.shopfeed.com") return false;
+  const org = normalizeOrganization(organization);
+  return [
+    "microsoft corporation",
+    "microsoft azure",
+    "azure cloud",
+    "amazon.com",
+    "amazon technologies",
+    "amazon data services",
+  ].some((needle) => org.includes(needle));
+}
+
 /** Low-signal: at most one page, no card impressions, under 30 seconds. */
 export const INFRASTRUCTURE_MAX_DURATION_MS = 30_000;
 
@@ -93,7 +119,7 @@ export const CONFIDENCE_EXPLANATIONS: Record<TrafficConfidence, string> = {
   likely_human:
     "Evidence of human-like interaction, a deliberate site action, or navigation across distinct pages. This is not proof that a PDF was opened or read.",
   uncertain:
-    "The visit was recorded but showed no deliberate action, so it cannot be classified either way. Passive visits from cloud-hosting networks stay here even with dwell time or a generic interaction signal.",
+    "The visit was recorded without enough reliable evidence to qualify as a reader. On a suspected email-security scan, an automated click or scroll is not proof of human readership.",
   suspected_automation:
     "The session matched a specific automation pattern and showed no deliberate action. Rows are kept; they are set aside from headline counts.",
   internal_test:
@@ -103,17 +129,22 @@ export const CONFIDENCE_EXPLANATIONS: Record<TrafficConfidence, string> = {
 /**
  * Classification order matters:
  * 1. internal always wins;
- * 2. a deliberate action protects any session, including cloud networks;
- * 3. on known cloud/security infrastructure without a deliberate action, the
- *    session can never become headline traffic: automation-rule matches and
- *    short one-page sessions are suspected_automation, everything else is
- *    uncertain (uncounted) — a generic human_signal alone is not conclusive;
- * 4. other networks require an observed human_signal, deliberate action, or
- *    sustained navigation across DISTINCT paths. Homepage reloads and heartbeat
- *    volume do not prove multiple pages of reading.
+ * 2. a narrowly observed email-scanner origin cannot qualify from simulated
+ *    clicks or scrolling (passive = suspected, interactive = uncertain);
+ * 3. deliberate actions protect other sessions, including cloud networks;
+ * 4. on known cloud/security infrastructure without a deliberate action,
+ *    automation matches and short one-page sessions are suspected_automation,
+ *    everything else uncertain (uncounted);
+ * 5. other networks require humanSignal, deliberate action, or sustained
+ *    navigation across distinct paths. Reloads alone are not reading evidence.
  */
 export function classifySession(input: ConfidenceInput): TrafficConfidence {
   if (input.internal) return "internal_test";
+
+  // Headless email-link scanners can execute JS, scroll, and click publications.
+  // Preserve the events for auditing, but do not call these sessions human.
+  if (input.suspectedEmailScanner)
+    return input.meaningfulIntent || input.humanSignal ? "uncertain" : "suspected_automation";
 
   if (input.meaningfulIntent) return input.humanSignal ? "high_confidence_human" : "likely_human";
 

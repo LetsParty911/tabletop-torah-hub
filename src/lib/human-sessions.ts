@@ -7,6 +7,7 @@ import {
   classifySession,
   emptyConfidenceCounts,
   isInfrastructureOrganization,
+  isSuspiciousEmailScannerOrigin,
   type ConfidenceCounts,
   type TrafficConfidence,
 } from "./traffic-confidence";
@@ -29,6 +30,8 @@ export type SessionAgg = {
   id: string;
   visitorId: string | null;
   source: string;
+  /** Captured at first external entry; later clicks commonly lack a referrer. */
+  referrerHost: string | null;
   device: string;
   pageviews: number;
   /** Distinct routes actually viewed; reloading one URL is not navigation. */
@@ -98,6 +101,7 @@ export function buildSessions(rows: SessionEventRow[]): Map<string, SessionAgg> 
         id: sid,
         visitorId: vid,
         source: row.source_group?.trim() || "Direct",
+        referrerHost: null,
         device: row.device_type?.trim() || "unknown",
         pageviews: 0,
         pagePaths: new Set<string>(),
@@ -131,6 +135,7 @@ export function buildSessions(rows: SessionEventRow[]): Map<string, SessionAgg> 
     }
     // Lovable editor/preview traffic is internal testing, not public readership.
     const referrerHost = row.referrer_host?.trim().toLowerCase() ?? "";
+    if (!session.referrerHost && referrerHost) session.referrerHost = referrerHost;
     const userAgent = row.user_agent?.toLowerCase() ?? "";
     if (
       referrerHost === "lovable.dev" ||
@@ -229,7 +234,7 @@ export type SessionClassification = {
   counts: ConfidenceCounts;
   /** Sessions counted in headline metrics. */
   humanIds: Set<string>;
-  /** Sessions matched by an explicit automation rule (burst/incident), before intent protection. */
+  /** Sessions matching a burst, known incident, or narrow email-scanner signature. */
   ruleFlagged: Set<string>;
 };
 
@@ -243,10 +248,13 @@ export function classifySessions(rows: SessionEventRow[]): SessionClassification
   const humanIds = new Set<string>();
 
   for (const session of list) {
+    const suspectedEmailScanner = isSuspiciousEmailScannerOrigin(session.referrerHost, session.asOrganization);
+    if (suspectedEmailScanner) ruleFlagged.add(session.id);
     const label = classifySession({
       internal: session.internalTestTraffic,
       flaggedAutomation: ruleFlagged.has(session.id),
       infrastructureNetwork: isInfrastructureOrganization(session.asOrganization),
+      suspectedEmailScanner,
       humanSignal: session.humanSignal,
       meaningfulIntent: session.meaningfulIntent,
       pageviews: session.pageviews,
