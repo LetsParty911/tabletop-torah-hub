@@ -10,6 +10,7 @@ import { PDF_REPORTING } from "@/lib/pdf-reporting";
 import { formatCountRate } from "@/lib/admin-analytics-display";
 import CampaignLinkBuilder from "@/components/admin/CampaignLinkBuilder";
 import InternalDeviceControl from "@/components/admin/InternalDeviceControl";
+import TrafficQualityPanel from "@/components/admin/TrafficQualityPanel";
 
 type ReportData = Awaited<ReturnType<typeof adminAnalyticsReport>>;
 type CohortData = Awaited<ReturnType<typeof adminRetentionCohorts>>;
@@ -88,10 +89,12 @@ export default function OwnerSummary({
       <section>
         <h2 className="font-serif text-2xl font-bold text-primary">Owner summary</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {data.rangeLabel} · everything below counts readers only. Internal/test visits and
-          suspected automation are recorded but kept out of these numbers.
+          {data.rangeLabel} · raw traffic, confidence-qualified browser IDs, and publication interactions are shown separately.
+          Raw data remains available for audit.
         </p>
       </section>
+
+      <TrafficQualityPanel report={report} />
 
       <Block title="People">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
