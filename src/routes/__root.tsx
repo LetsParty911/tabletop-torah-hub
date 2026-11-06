@@ -289,7 +289,7 @@ function SiteNav() {
   if (isAdmin) return null;
 
   const linkCls =
-    "font-serif whitespace-nowrap text-base text-primary/80 hover:text-primary hover:underline transition-colors duration-150";
+    "font-serif whitespace-nowrap text-sm xl:text-base text-primary/80 hover:text-primary hover:underline transition-colors duration-150";
   const activeCls = "text-primary font-semibold";
   const mobileLinkCls =
     "block rounded-lg px-3 py-2.5 font-serif text-base text-primary/90 transition-colors hover:bg-accent/10 hover:text-primary";
@@ -314,7 +314,7 @@ function SiteNav() {
           name="q"
           type="search"
           placeholder="Search publication, description, or Torah topic"
-          className="h-11 w-full rounded-full border border-accent/35 bg-background pl-9 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-accent focus:ring-2 focus:ring-ring sm:h-10"
+          className="h-11 w-full rounded-full border border-accent/35 bg-background pl-9 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-accent focus:ring-2 focus:ring-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:h-10"
           autoFocus={!mobile}
         />
       </div>
@@ -344,7 +344,7 @@ function SiteNav() {
             <SiteLogoHorizontal />
           </Link>
 
-          <div className="hidden items-center gap-5 md:flex">
+          <div className="hidden items-center gap-3 lg:flex xl:gap-4">
             <Link
               to="/"
               hash="this-weeks-collection"
@@ -361,6 +361,12 @@ function SiteNav() {
               activeProps={{ className: `${linkCls} ${activeCls}` }}
             >
               Archive
+            </Link>
+            <Link to="/divrei-torah-parsha" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
+              Parshas
+            </Link>
+            <Link to="/publications" className={linkCls} activeProps={{ className: `${linkCls} ${activeCls}` }}>
+              Publications
             </Link>
             <Link
               to="/brief-insights"
@@ -396,7 +402,7 @@ function SiteNav() {
             aria-expanded={mobileOpen}
             aria-controls="mobile-navigation"
             onClick={() => { setMobileOpen((open) => !open); if (mobileOpen) menuTrigger.current?.focus(); }}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center text-primary md:hidden"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center text-primary lg:hidden"
           >
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-accent/35 bg-background transition-colors hover:bg-accent/10">
               {mobileOpen ? (
@@ -408,10 +414,10 @@ function SiteNav() {
           </Button>
         </div>
 
-        {searchOpen && <div className="hidden border-t border-accent/15 pt-3 md:block"><SearchForm /></div>}
+        {searchOpen && <div className="hidden border-t border-accent/15 pt-3 lg:block"><SearchForm /></div>}
 
         {mobileOpen && (
-          <div ref={mobilePanel} id="mobile-navigation" onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setMobileOpen(false); }} className="max-h-[calc(100dvh-5rem)] overflow-y-auto border-t border-accent/20 pb-3 pt-2 md:hidden">
+          <div ref={mobilePanel} id="mobile-navigation" onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setMobileOpen(false); }} className="max-h-[calc(100dvh-5rem)] overflow-y-auto border-t border-accent/20 pb-3 pt-2 lg:hidden">
             <SearchForm mobile />
             <div className="grid gap-1">
               <Link to="/" hash="this-weeks-collection" onClick={() => { setMobileOpen(false); if (pathname === "/") requestWeeklyCollection(); }} className={mobileLinkCls}>This Week</Link>
