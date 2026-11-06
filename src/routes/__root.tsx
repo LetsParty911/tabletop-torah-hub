@@ -314,7 +314,7 @@ function SiteNav() {
           name="q"
           type="search"
           placeholder="Search publication, description, or Torah topic"
-          className="h-11 w-full rounded-full border border-accent/35 bg-background pl-9 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-accent focus:ring-2 focus:ring-ring sm:h-10"
+          className="h-11 w-full rounded-full border border-accent/35 bg-background pl-9 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-accent focus:ring-2 focus:ring-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:h-10"
           autoFocus={!mobile}
         />
       </div>
