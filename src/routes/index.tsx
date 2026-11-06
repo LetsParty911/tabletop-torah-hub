@@ -1265,15 +1265,15 @@ function Index() {
         </section>
         )}
 
+        <HiddenGemTeaser
+          context={{ normalizedCollectionKey, activeParshaKey: currentParshaKey, isFallback, isYomTov: isYomTovCollection, readingDate }}
+          initialNow={loaderData.renderedAt ?? Date.now()}
+        />
+
         <HomepageShare onWhatsApp={() => {
           trackEvent("share_whatsapp", { parsha: displayedParshaKey ?? displayedLabel, count: resources.length });
           trackFp("share_click", { metadata: { placement: "homepage_veahavta", share_method: "whatsapp" } });
         }} />
-
-            <HiddenGemTeaser
-              context={{ normalizedCollectionKey, activeParshaKey: currentParshaKey, isFallback, isYomTov: isYomTovCollection, readingDate }}
-              initialNow={loaderData.renderedAt ?? Date.now()}
-            />
 
         <section aria-label="Stay connected" className="mx-auto max-w-2xl">
           <WeeklyEmailSignup
