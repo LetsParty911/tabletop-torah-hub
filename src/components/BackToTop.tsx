@@ -44,9 +44,23 @@ export function BackToTop({ collectionId }: Props) {
     return () => observer.disconnect();
   }, []);
 
-  const scrollToTop = () => {
+  const returnToReading = () => {
     if (typeof window === "undefined") return;
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const behavior = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth";
+
+    // On narrow screens, return to the actual PDF choices rather than making
+    // the reader scroll through the hero and originals again.
+    if (window.matchMedia?.("(max-width: 639px)")?.matches) {
+      const selections =
+        document.getElementById("weekly-publication-list") ?? document.getElementById(collectionId);
+      if (selections) {
+        selections.scrollIntoView?.({ behavior, block: "start" });
+        return;
+      }
+    }
+
+    // Preserve the existing desktop behavior and zero-publication fallback.
+    window.scrollTo({ top: 0, behavior });
   };
 
   const visible = collectionScrolled && !footerVisible;
@@ -54,13 +68,13 @@ export function BackToTop({ collectionId }: Props) {
   return (
     <button
       type="button"
-      onClick={scrollToTop}
-      aria-label="Back to top"
+      onClick={returnToReading}
       className={`fixed bottom-20 right-4 z-40 inline-flex items-center justify-center gap-1.5 rounded-full border border-accent/50 bg-background/90 px-3 py-2 text-xs font-semibold text-primary shadow-sm backdrop-blur-sm transition-opacity duration-200 hover:border-accent hover:bg-accent hover:text-accent-foreground ${
         visible ? "opacity-100" : "pointer-events-none opacity-0"
       }`}
     >
-      <ArrowUp className="h-3.5 w-3.5" />
+      <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
+      <span className="sm:hidden">Back to selections</span>
       <span className="hidden sm:inline">Back to top</span>
     </button>
   );
