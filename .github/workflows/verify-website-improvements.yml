@@ -15,6 +15,12 @@ on:
       - "src/pwa-register*.ts"
       - "src/routes/sitemap[.]xml.ts"
       - "src/lib/sitemap-lastmod*.ts"
+      - "src/lib/public-label-sizing.test.ts"
+      - "src/components/CategoryBadge.tsx"
+      - "src/components/WhatsNewBanner.tsx"
+      - "src/components/TableChooser.tsx"
+      - "src/routes/publication.$slug.tsx"
+      - "src/routes/publications.tsx"
       - "src/routes/short-vorts.tsx"
       - "src/routes/view.$id.tsx"
       - "src/routes/index.tsx"
@@ -53,6 +59,8 @@ jobs:
           bun test "${tests[@]}"
       - name: Verify immutable thumbnail inventory and URL fallbacks
         run: bunx vitest run --config vitest.ux.config.ts src/lib/verified-thumbnails.test.ts
+      - name: Verify accepted mobile typography improvements
+        run: bunx vitest run --config vitest.ux.config.ts src/lib/public-label-sizing.test.ts
       - name: Verify sitemap modification dates
         run: bunx vitest run --config vitest.ux.config.ts src/lib/sitemap-lastmod.test.ts
       - name: Verify emergency PWA cache reset
