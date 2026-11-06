@@ -108,7 +108,7 @@ function renderPublicationCards(publications: PublicationPageSummary[]) {
               >
                 <div className="flex items-start gap-3">
                   <div className="h-[83px] w-16 shrink-0 overflow-hidden rounded-sm border border-accent/40 bg-card">
-                    {publication.thumb_url ? <img src={publication.thumb_url} alt={`Latest cover of ${publication.name}`} width={64} height={83} loading="lazy" className="h-full w-full object-cover object-top" /> : <div className="flex h-full items-center justify-center"><BookOpen className="h-5 w-5" /></div>}
+                    {publication.thumb_url ? <img src={publication.thumb_url} alt={`Latest cover of ${publication.name}`} width={64} height={83} loading="lazy" decoding="async" className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center"><BookOpen className="h-5 w-5" /></div>}
                   </div>
                   <div className="min-w-0 flex-1">
                     <h2 className="font-serif text-lg sm:text-xl font-bold text-primary group-hover:text-accent group-hover:underline">
