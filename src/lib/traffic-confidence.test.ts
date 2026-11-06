@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifySession, describePossibleRelationship, isInfrastructureOrganization } from "./traffic-confidence";
+import { classifySession, describePossibleRelationship, isInfrastructureOrganization, isSuspiciousEmailScannerOrigin } from "./traffic-confidence";
 
 const base = {
   internal: false,
@@ -123,5 +123,31 @@ describe("infrastructure automation rule", () => {
     expect(classifySession({ ...base, internal: true, infrastructureNetwork: true, meaningfulIntent: true })).toBe(
       "internal_test",
     );
+  });
+});
+
+describe("narrow email security scanner confidence", () => {
+  it("requires the exact observed referrer AND a matching cloud network", () => {
+    expect(isSuspiciousEmailScannerOrigin("r.email1.shopfeed.com", "Microsoft Corporation")).toBe(true);
+    expect(isSuspiciousEmailScannerOrigin("R.EMAIL1.SHOPFEED.COM", "Microsoft Azure Cloud (westus2)")).toBe(true);
+    expect(isSuspiciousEmailScannerOrigin("r.email1.shopfeed.com", "Amazon.com Inc.")).toBe(true);
+    expect(isSuspiciousEmailScannerOrigin("r.email1.shopfeed.com", "Verizon Business")).toBe(false);
+    expect(isSuspiciousEmailScannerOrigin("r.email1.shopfeed.com", null)).toBe(false);
+    expect(isSuspiciousEmailScannerOrigin("sub.r.email1.shopfeed.com", "Microsoft Corporation")).toBe(false);
+    expect(isSuspiciousEmailScannerOrigin("safelinks.protection.outlook.com", "Microsoft Corporation")).toBe(false);
+    expect(isSuspiciousEmailScannerOrigin(null, "Amazon.com Inc.")).toBe(false);
+  });
+
+  it("does not promote an automated click or scroll from this signature into a reader", () => {
+    expect(classifySession({ ...base, suspectedEmailScanner: true })).toBe("suspected_automation");
+    expect(classifySession({ ...base, suspectedEmailScanner: true, humanSignal: true })).toBe("uncertain");
+    expect(classifySession({ ...base, suspectedEmailScanner: true, meaningfulIntent: true })).toBe("uncertain");
+    expect(classifySession({ ...base, suspectedEmailScanner: true, humanSignal: true, meaningfulIntent: true })).toBe("uncertain");
+    expect(classifySession({ ...base, suspectedEmailScanner: true, internal: true, meaningfulIntent: true })).toBe("internal_test");
+  });
+
+  it("preserves deliberate clicks from other networks and referral wrappers", () => {
+    expect(classifySession({ ...base, meaningfulIntent: true })).toBe("likely_human");
+    expect(classifySession({ ...base, infrastructureNetwork: true, meaningfulIntent: true })).toBe("likely_human");
   });
 });
