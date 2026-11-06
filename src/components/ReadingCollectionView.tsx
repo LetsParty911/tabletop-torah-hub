@@ -10,6 +10,7 @@ import type {
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
+import { PublicationQuickFacts } from "@/components/PublicationQuickFacts";
 import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -71,20 +72,11 @@ export function ReadingCollectionView({
   const hasLengthChoice = LENGTH_OPTIONS.filter((option) => option.key !== "All" &&
     resources.some((r) => matchesPageLength(r.page_count, option.key))).length > 1;
 
-  const metaLine = (r: ReadingResource) =>
-    [
-      audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience,
-      resourceType(r),
-      typeof r.page_count === "number"
-        ? r.page_count === 1
-          ? "1 page · Short Vort"
-          : r.page_count >= 20
-            ? `Long Study · ${r.page_count} pages`
-            : `${r.page_count} pages`
-        : null,
-    ]
-      .filter(Boolean)
-      .join(" · ");
+  const resourceLengthLabel = (r: ReadingResource) => {
+    const pages = r.page_count;
+    if (typeof pages !== "number" || !Number.isFinite(pages) || pages <= 0) return null;
+    return pages >= 20 ? `Long Study · ${pages} pages` : `${pages} ${pages === 1 ? "page" : "pages"}`;
+  };
 
   const filterClass = (active: boolean) =>
     `inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
@@ -221,7 +213,7 @@ export function ReadingCollectionView({
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
           {filtered.map((resource) => {
             const description = resource.summary_quick || resource.description || resource.subtitle;
-            const meta = metaLine(resource);
+            const lengthLabel = resourceLengthLabel(resource);
             return (
               <article
                 key={resource.id}
@@ -246,11 +238,11 @@ export function ReadingCollectionView({
                     {resource.publisher && (
                       <p className="mt-0.5 text-xs text-muted-foreground">Published by {resource.publisher}</p>
                     )}
-                    {meta && (
-                      <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        {meta}
-                      </p>
-                    )}
+                    <PublicationQuickFacts
+                      audience={audienceLabel(normalizeAudience(resource.audience, resource.title)) ?? resource.audience}
+                      format={resourceType(resource)}
+                      length={lengthLabel}
+                    />
                     {description && (
                       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                         {leadWithPublicationTitle(resource.title, description)}

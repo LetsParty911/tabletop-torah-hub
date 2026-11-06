@@ -9,6 +9,7 @@ import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { recordPdfAction } from "@/components/DownloadToPrintButton";
 import { pdfActionHrefs } from "@/lib/collection-status";
 import { PublicationCardTracker } from "@/components/PublicationCardTracker";
+import { PublicationQuickFacts } from "@/components/PublicationQuickFacts";
 import { trackFp } from "@/lib/first-party-analytics";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { SITE_URL } from "@/lib/site-url";
@@ -776,10 +777,14 @@ function Index() {
                       {displayTitle(r)}
                     </Link>
                   </h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
+                  <PublicationQuickFacts
+                    audience={audienceLabel(normalizeAudience(r.audience, displayTitle(r))) ?? r.audience}
+                    format={resourceContentType(r)}
+                    length={pageCountLabel(r)}
+                  />
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                     {tfttOriginalSeriesById(r.publication_id)?.shortDescription ?? leadWithPublicationTitle(displayTitle(r), chooseReason(r))}
                   </p>
-                  {pageCountLabel(r) && <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{pageCountLabel(r)}</p>}
                   </div>
                   </div>
                   <div className="mt-auto pt-4">
@@ -1169,7 +1174,7 @@ function Index() {
                         )}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-serif text-base sm:text-xl font-bold text-primary line-clamp-2 leading-snug min-h-[2.6em] sm:min-h-[2.5em]">
+                            <h3 className="min-w-0 flex-1 break-words font-serif text-base font-bold leading-snug text-primary sm:text-xl">
                               <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline transition-colors duration-150">
                                 {displayTitle(r)}
                               </Link>
@@ -1181,23 +1186,17 @@ function Index() {
                             )}
                           </div>
                           {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
+                          <PublicationQuickFacts
+                            audience={audienceLabel(normalizeAudience(r.audience, displayTitle(r))) ?? r.audience}
+                            format={resourceContentType(r)}
+                            length={pageCountLabel(r)}
+                          />
                           {(() => {
                             const summary = r.summary_quick || r.subtitle || r.description;
                             return summary ? (
-                              <p className="mt-1 text-xs sm:text-sm text-muted-foreground">{leadWithPublicationTitle(displayTitle(r), summary)}</p>
+                              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{leadWithPublicationTitle(displayTitle(r), summary)}</p>
                             ) : null;
                           })()}
-                          {(r.audience || r.format_type || typeof r.page_count === "number") && (
-                            <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                              {[
-                                audienceLabel(normalizeAudience(r.audience, displayTitle(r))) ?? r.audience,
-                                resourceContentType(r),
-                                pageCountLabel(r),
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </p>
-                          )}
                         </div>
                       </div>
 

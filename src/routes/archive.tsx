@@ -16,6 +16,7 @@ import { fitPageTitle } from "@/lib/page-title";
 import { normalizeAudience, audienceLabel, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
+import { PublicationQuickFacts } from "@/components/PublicationQuickFacts";
 import { publicationLabel } from "@/lib/badges";
 import { formatReadingLabel, displayReadingName } from "@/lib/parshiyos";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
@@ -627,7 +628,7 @@ function ArchivePage() {
                                 <PdfCoverThumbnail pdfId={r.id} thumbnailUrl={r.thumb_url} smallThumbnailUrl={r.small_thumb_url} title={r.title} publicationName={r.publication} publisher={r.publisher} parsha={p.parshaKey} jewishYear={y.year} />
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-start justify-between gap-2">
-                                    <h4 className="font-serif text-base sm:text-lg font-bold text-primary line-clamp-2 leading-snug">
+                                    <h4 className="min-w-0 flex-1 break-words font-serif text-base font-bold leading-snug text-primary sm:text-lg">
                                       <Link
                                         to="/view/$id"
                                         params={{ id: r.id }}
@@ -652,24 +653,18 @@ function ArchivePage() {
                                       From {publicationLabel(r.publication)}
                                     </p>
                                   ) : null}
+                                  <PublicationQuickFacts
+                                    audience={audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience}
+                                    format={resourceType(r)}
+                                    length={typeof r.page_count === "number" && r.page_count > 0
+                                      ? r.page_count >= 20
+                                        ? `Long Study · ${r.page_count} pages`
+                                        : `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`
+                                      : null}
+                                  />
                                   {(r.subtitle || r.description) && (
-                                    <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                                       {leadWithPublicationTitle(r.title, r.subtitle || r.description)}
-                                    </p>
-                                  )}
-                                  {(r.audience || r.format_type || typeof r.page_count === "number") && (
-                                    <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                      {[
-                                        audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience,
-                                        resourceType(r),
-                                        typeof r.page_count === "number"
-                                          ? r.page_count === 1
-                                            ? "1 page · Short Vort"
-                                            : r.page_count >= 20
-                                              ? `Long Study · ${r.page_count} pages`
-                                              : `${r.page_count} pages`
-                                          : null,
-                                      ].filter(Boolean).join(" · ")}
                                     </p>
                                   )}
                                 </div>
