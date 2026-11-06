@@ -472,6 +472,7 @@ function Index() {
   // the full weekly collection (plus its filter controls) is hidden.
   const [activeChooser, setActiveChooser] = useState<string | null>(null);
   const [selectedChooser, setSelectedChooser] = useState<ChooserKey | null>(null);
+  const [showRecommendationChooser, setShowRecommendationChooser] = useState(false);
   const [mobileQuickChoice, setMobileQuickChoice] = useState<ChooserKey | null>(null);
 
   const sortedResources = resources;
@@ -634,6 +635,7 @@ function Index() {
   const browseAllSelections = () => {
     clearFilters();
     setActiveChooser(null);
+    setShowRecommendationChooser(false);
     setShowAllResources(true);
     setCollectionScrollRequest((n) => n + 1);
   };
@@ -641,6 +643,7 @@ function Index() {
     if (!isWeeklyCollectionHash(collectionHash)) return;
     clearFilters();
     setActiveChooser(null);
+    setShowRecommendationChooser(false);
     setShowAllResources(true);
     setCollectionScrollRequest((n) => n + 1);
   }, [locationHref]);
@@ -816,11 +819,6 @@ function Index() {
           </section>
         )}
 
-        <HomepageShare onWhatsApp={() => {
-          trackEvent("share_whatsapp", { parsha: displayedParshaKey ?? displayedLabel, count: resources.length });
-          trackFp("share_click", { metadata: { placement: "homepage_veahavta", share_method: "whatsapp" } });
-        }} />
-
         {(isFallback || resources.length === 0) && (
           <UpdateCountdown
             compact
@@ -833,10 +831,25 @@ function Index() {
           />
         )}
 
+        {(resources.length === 0 || showCompleteCollection) && (
+        <section id="this-weeks-collection" tabIndex={-1} className="scroll-mt-24">
+          <div className="px-1 sm:px-2">
+            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
+              {isCurrentYomKippur
+                ? "Yom Kippur Divrei Torah and preparation"
+                : isFallback
+                  ? `${displayedLabel} — Browse All ${resources.length} Selections`
+                  : "All This Week's Selections"}
+            </h2>
+            {!isCurrentYomKippur && (
+              <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-muted-foreground">
+                Our weekly originals and selections from respected Torah publishers. Choose a title and tap Read Now to open its PDF — no account needed.
+              </p>
+            )}
         {resources.length >= 6 && (
           <section aria-labelledby="mobile-quick-choices" className="sm:hidden">
             <h2 id="mobile-quick-choices" className="sr-only">Choose what fits your table</h2>
-            <p className="mb-2 text-xs text-muted-foreground">Choose a category to show matching PDFs below.</p>
+            <p className="mb-2 text-xs text-muted-foreground">Choose a category, or browse every selection below.</p>
             <div className="grid grid-cols-2 gap-2">
               {quickChoices.map((choice) => {
                 const active = mobileQuickChoice === choice.key;
@@ -858,7 +871,7 @@ function Index() {
                         metadata: { filter: "mobile_quick_choice", value: active ? "All" : choice.key },
                       });
                       window.requestAnimationFrame(() => {
-                        document.getElementById("this-weeks-collection")?.scrollIntoView?.({
+                        document.getElementById("weekly-publication-list")?.scrollIntoView?.({
                           behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
                             ? "auto"
                             : "smooth",
@@ -880,21 +893,6 @@ function Index() {
           </section>
         )}
 
-        {(resources.length === 0 || showCompleteCollection) && (
-        <section id="this-weeks-collection" tabIndex={-1} className="scroll-mt-24">
-          <div className="px-1 sm:px-2">
-            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
-              {isCurrentYomKippur
-                ? "Yom Kippur Divrei Torah and preparation"
-                : isFallback
-                  ? `${displayedLabel} — Browse All ${resources.length} Selections`
-                  : "All This Week's Selections"}
-            </h2>
-            {!isCurrentYomKippur && (
-              <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-muted-foreground">
-                Our weekly originals and selections from respected Torah publishers. Choose a title and tap Read Now to open its PDF — no account needed.
-              </p>
-            )}
             {featuredPicks.length > 0 && starterSelections.length === 0 && !activeChooser && (
               <p className="mt-5 text-center font-sans text-sm text-muted-foreground">
                 Start with four curated choices, or choose what fits your table.
@@ -985,15 +983,36 @@ function Index() {
               <>
                 {sortedResources.length >= 6 && (
                   <>
-                <TableChooser
-                  resources={sortedResources}
-                  parshaKey={displayedParshaKey}
-                  displayTitle={(r) => displayTitle(r as Resource)}
-                  displayPublicationName={(r) => displayPublicationName(r as Resource)}
-                  selected={selectedChooser}
-                  onSelectedChange={setSelectedChooser}
-                  onActiveChooserChange={setActiveChooser}
-                />
+                <div className="hidden text-center sm:block">
+                  <button
+                    type="button"
+                    aria-expanded={showRecommendationChooser}
+                    aria-controls="weekly-recommendation-chooser"
+                    onClick={() => {
+                      if (showRecommendationChooser) {
+                        setSelectedChooser(null);
+                        setActiveChooser(null);
+                      }
+                      setShowRecommendationChooser((open) => !open);
+                    }}
+                    className="inline-flex min-h-11 items-center justify-center rounded-full border border-accent/45 bg-background px-5 py-2.5 font-serif text-sm font-semibold text-primary hover:border-accent hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  >
+                    {showRecommendationChooser ? "Hide guided suggestions" : "Need help choosing? See guided suggestions"}
+                  </button>
+                </div>
+                <div id="weekly-recommendation-chooser" className="hidden sm:block">
+                  {showRecommendationChooser && (
+                    <TableChooser
+                      resources={sortedResources}
+                      parshaKey={displayedParshaKey}
+                      displayTitle={(r) => displayTitle(r as Resource)}
+                      displayPublicationName={(r) => displayPublicationName(r as Resource)}
+                      selected={selectedChooser}
+                      onSelectedChange={setSelectedChooser}
+                      onActiveChooserChange={setActiveChooser}
+                    />
+                  )}
+                </div>
 
                 <MobileCollectionControlsBar
                   anchorId="filters"
@@ -1155,7 +1174,7 @@ function Index() {
                   </>
                 )}
 
-                <div className="mt-5 sm:mt-6 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
+                <div id="weekly-publication-list" className="mt-5 scroll-mt-24 grid grid-cols-1 gap-3 sm:mt-6 sm:grid-cols-2 sm:gap-4">
                   {filteredResources.map((r) => (
                     <PublicationCardTracker
                       key={r.id}
@@ -1237,6 +1256,11 @@ function Index() {
           </div>
         </section>
         )}
+
+        <HomepageShare onWhatsApp={() => {
+          trackEvent("share_whatsapp", { parsha: displayedParshaKey ?? displayedLabel, count: resources.length });
+          trackFp("share_click", { metadata: { placement: "homepage_veahavta", share_method: "whatsapp" } });
+        }} />
 
             <HiddenGemTeaser
               context={{ normalizedCollectionKey, activeParshaKey: currentParshaKey, isFallback, isYomTov: isYomTovCollection, readingDate }}
