@@ -87,7 +87,7 @@ function Overview({ data, accessToken, openDetail }: { data: ReportData; accessT
     <section><p className="font-serif text-xl leading-relaxed text-foreground">{story}</p><p className="mt-2 text-sm text-muted-foreground">Compared with the prior matching period: {comparison.people} qualified browser IDs and {comparison.countedPdfOpens} counted PDF attempted opens.</p></section>
 
     <section className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
-      <MetricButton label="Likely human visitors" value={m.people} note="High-confidence + likely human only" onClick={() => openDetail("people", "People", "The distinct browser visitors included in this report.")} />
+      <MetricButton label="Qualified visitor IDs" value={m.people} note="Distinct browser IDs in qualified sessions" onClick={() => openDetail("people", "People", "The distinct browser visitors included in this report.")} />
       <MetricButton label="Counted PDF attempted opens" value={m.countedPdfOpens} note="Open PDF clicks + historical download requests; attempted opens, uncapped" onClick={() => openDetail("countedPdfOpens", "Counted PDF attempted opens", PDF_REPORTING.attemptedDefinition)} />
       <MetricButton label="Used Torah" value={m.usedTorah} note="Visitors with Open PDF clicks, viewer loads, download requests, shares or signups" onClick={() => openDetail("usedTorah", "Used Torah", PDF_REPORTING.usedTorahDefinition)} />
       <MetricButton label="Open PDF clicks" value={m.openPdfClicks} note="Button taps, not previews or downloads" onClick={() => openDetail("openPdfClicks", "Open PDF button clicks", "Every deliberate Open PDF button click from likely-human visits, newest first.")} />
