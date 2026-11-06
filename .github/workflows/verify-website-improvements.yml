@@ -16,6 +16,8 @@ on:
       - "src/routes/sitemap[.]xml.ts"
       - "src/lib/sitemap-lastmod*.ts"
       - "src/lib/public-label-sizing.test.ts"
+      - "src/lib/publication-thumbnail-fit.test.ts"
+      - "src/routes/publications.tsx"
       - "src/components/CategoryBadge.tsx"
       - "src/components/WhatsNewBanner.tsx"
       - "src/components/TableChooser.tsx"
@@ -59,6 +61,8 @@ jobs:
           bun test "${tests[@]}"
       - name: Verify immutable thumbnail inventory and URL fallbacks
         run: bunx vitest run --config vitest.ux.config.ts src/lib/verified-thumbnails.test.ts
+      - name: Verify publication thumbnail fit
+        run: bunx vitest run --config vitest.ux.config.ts src/lib/publication-thumbnail-fit.test.ts
       - name: Verify accepted mobile typography improvements
         run: bunx vitest run --config vitest.ux.config.ts src/lib/public-label-sizing.test.ts
       - name: Verify sitemap modification dates
