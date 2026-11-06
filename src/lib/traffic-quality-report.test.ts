@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { summarizeTrafficQuality, type TrafficQualityInput } from "./traffic-quality-report";
 
 const sample: TrafficQualityInput = {
@@ -22,6 +23,14 @@ const sample: TrafficQualityInput = {
 };
 
 describe("traffic quality dashboard", () => {
+  it("is visible in both admin overview and owner summary even when qualified sessions are zero", () => {
+    const owner = readFileSync("src/components/admin/OwnerSummary.tsx", "utf8");
+    const overview = readFileSync("src/components/admin/AdminAnalyticsReport.tsx", "utf8");
+    expect(owner).toContain("<TrafficQualityPanel report={report} />");
+    expect(overview.match(/<TrafficQualityPanel report={report} \/>/g)?.length).toBe(2);
+    expect(overview).toContain('m.sessions === 0');
+  });
+
   it("does not mistake raw browser IDs or bot sessions for confirmed people", () => {
     const q = summarizeTrafficQuality(sample);
     expect(q.rawVisitorIds).toBe(1140);
