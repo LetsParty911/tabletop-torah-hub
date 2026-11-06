@@ -133,7 +133,7 @@ function PublicationPage() {
         <div className="float-left mr-3 mb-2">
           <PdfCoverThumbnail pdfId={edition.id} thumbnailUrl={edition.thumb_url} title={editionTitle} publicationName={displayName} publisher={publication.publisher} parsha={edition.parsha_key} jewishYear={edition.jewish_year} />
         </div>
-        <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-accent-readable">
+        <p className="font-sans text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-accent-readable">
           {!isYomTovReading(edition.parsha_key) ? (
             <Link
               to="/parsha/$slug"
@@ -187,7 +187,7 @@ function PublicationPage() {
                 <BookOpen className="h-6 w-6" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.2em] text-accent-readable">
+                <p className="font-sans text-[0.7rem] font-bold uppercase tracking-[0.2em] text-accent-readable">
                   Publication
                 </p>
                 <h1 className="mt-1 font-serif text-3xl sm:text-4xl font-bold text-primary leading-tight">
@@ -235,7 +235,7 @@ function PublicationPage() {
 
         {latest && (
           <section className="mt-7">
-            <p className="font-sans text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent-readable">
+            <p className="font-sans text-[0.7rem] font-bold uppercase tracking-[0.18em] text-accent-readable">
               Latest available
             </p>
             <div className="mt-2">

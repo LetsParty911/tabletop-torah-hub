@@ -38,7 +38,7 @@ export function WhatsNewBanner() {
       >
         <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
         <span className="text-xs sm:text-sm font-semibold text-primary tracking-wide">
-          <span className="uppercase text-[0.65rem] sm:text-xs mr-2 opacity-80">What&rsquo;s New</span>
+          <span className="uppercase text-[0.7rem] sm:text-xs mr-2 opacity-80">What&rsquo;s New</span>
           <span className="font-medium">{banner.text}</span>
         </span>
         {showLink && (
