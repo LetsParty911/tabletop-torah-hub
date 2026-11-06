@@ -10,6 +10,7 @@ import { PDF_REPORTING } from "@/lib/pdf-reporting";
 import { formatCountRate } from "@/lib/admin-analytics-display";
 import CampaignLinkBuilder from "@/components/admin/CampaignLinkBuilder";
 import InternalDeviceControl from "@/components/admin/InternalDeviceControl";
+import TrafficQualityPanel from "@/components/admin/TrafficQualityPanel";
 
 type ReportData = Awaited<ReturnType<typeof adminAnalyticsReport>>;
 type CohortData = Awaited<ReturnType<typeof adminRetentionCohorts>>;
@@ -88,43 +89,45 @@ export default function OwnerSummary({
       <section>
         <h2 className="font-serif text-2xl font-bold text-primary">Owner summary</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {data.rangeLabel} · everything below counts readers only. Internal/test visits and
-          suspected automation are recorded but kept out of these numbers.
+          {data.rangeLabel} · raw traffic, confidence-qualified browser IDs, and publication interactions are shown separately.
+          Raw data remains available for audit.
         </p>
       </section>
 
-      <Block title="People">
+      <TrafficQualityPanel report={report} />
+
+      <Block title="Visitor and session breakdown">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Stat
-            label="Likely human visitors"
+            label="Qualified visitor IDs"
             value={m.people}
-            note="Distinct browser visitors"
+            note="Distinct browser IDs with likely-human evidence"
             onClick={() => openDetail("people", "People", "The distinct browser visitors included in this report.")}
           />
-          <Stat label="New" value={m.newVisitors} note="No prior or returning-session evidence" />
+          <Stat label="New IDs" value={m.newVisitors} note="No prior or returning-session evidence" />
           <Stat
-            label="Returning"
+            label="Returning IDs"
             value={m.returningReaders}
             note="Prior visit or returning session in this period"
             onClick={() => openDetail("returning", "Returning Readers", "Distinct browser visitors with prior canonical history or a returning-session signal, including a return within this period. New and returning visitor counts are mutually exclusive; session flags remain unchanged.")}
           />
           <Stat
-            label="Confident humans"
+            label="Qualified sessions"
             value={confidence.counts.high_confidence_human + confidence.counts.likely_human}
             note="High-confidence plus likely"
           />
-          <Stat label="Uncertain" value={confidence.counts.uncertain} note="No deliberate action recorded" />
+          <Stat label="Uncertain sessions" value={confidence.counts.uncertain} note="Insufficient evidence to qualify" />
           <Stat
-            label="Suspected automation"
+            label="Suspected automated sessions"
             value={confidence.counts.suspected_automation}
             note="Set aside, not deleted"
           />
           <Stat
-            label="Internal / test"
+            label="Internal / test sessions"
             value={confidence.counts.internal_test}
             note={`${confidence.markedInternalSessions} from devices you marked`}
           />
-          <Stat label="Sessions" value={m.sessions} note="Visits counted in this period" />
+          <Stat label="Counted sessions" value={m.sessions} note="Qualified sessions in this period" />
         </div>
         <details className="mt-3">
           <summary className="cursor-pointer text-xs text-muted-foreground">
