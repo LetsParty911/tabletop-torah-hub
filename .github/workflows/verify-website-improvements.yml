@@ -21,6 +21,8 @@ on:
       - "src/components/CategoryBadge.tsx"
       - "src/components/WhatsNewBanner.tsx"
       - "src/components/TableChooser.tsx"
+      - "src/components/BackToTop.tsx"
+      - "src/components/BackToTop.test.tsx"
       - "src/routes/publication.$slug.tsx"
       - "src/routes/publications.tsx"
       - "src/routes/short-vorts.tsx"
@@ -69,6 +71,8 @@ jobs:
         run: bunx vitest run --config vitest.ux.config.ts src/lib/sitemap-lastmod.test.ts
       - name: Verify emergency PWA cache reset
         run: bunx vitest run --config vitest.ux.config.ts src/pwa-register.test.ts
+      - name: Verify mobile back-to-selections navigation
+        run: bunx vitest run --config vitest.ux.config.ts src/components/BackToTop.test.tsx
       - name: Verify individual PDF titles
         run: bunx vitest run --config vitest.ux.config.ts src/lib/pdf-display-title.test.ts
       - name: Run signup and countdown regression tests
