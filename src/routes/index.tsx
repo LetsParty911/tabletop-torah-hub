@@ -861,7 +861,7 @@ function Index() {
                         });
                       });
                     }}
-                    className={`min-w-0 rounded-lg border px-3 py-2.5 font-serif text-sm font-semibold transition-colors ${
+                    className={`min-h-11 min-w-0 rounded-lg border px-3 py-2.5 font-serif text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                       active
                         ? "border-accent bg-accent/15 text-primary shadow-sm"
                         : "border-accent/40 bg-background/70 text-primary hover:bg-accent/10"
@@ -1002,7 +1002,7 @@ function Index() {
                       type="button"
                       aria-expanded={filtersOpen}
                       onClick={() => setFiltersOpen((open) => !open)}
-                      className="flex-1 rounded-full border border-accent/45 bg-background px-4 py-2 text-left font-serif text-sm font-semibold text-primary shadow-sm"
+                      className="min-h-11 flex-1 rounded-full border border-accent/45 bg-background px-4 py-2 text-left font-serif text-sm font-semibold text-primary shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                     >
                       Filter {filteredResources.length} available selections{activeFilterCount > 0 ? ` · ${activeFilterCount} active` : ""}
                     </button>
@@ -1010,7 +1010,7 @@ function Index() {
                       <button
                         type="button"
                         onClick={clearFilters}
-                        className="text-xs font-serif text-accent-readable hover:text-primary hover:underline"
+                        className="inline-flex min-h-11 items-center text-xs font-serif text-accent-readable hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                       >
                         Clear
                       </button>
@@ -1051,7 +1051,7 @@ function Index() {
                                     setAudienceFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "audience", value: next } });
                                   }}
-                                  className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
+                                  className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
                                     active
                                       ? "border-accent bg-accent text-accent-foreground shadow-sm"
                                       : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
@@ -1088,7 +1088,7 @@ function Index() {
                                     setLengthFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "length", value: next } });
                                   }}
-                                  className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
+                                  className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
                                     active
                                       ? "border-accent bg-accent text-accent-foreground shadow-sm"
                                       : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
@@ -1131,7 +1131,7 @@ function Index() {
                                     setContentTypeFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "content_type", value: next } });
                                   }}
-                                  className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer ${
+                                  className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
                                     active
                                       ? "border-accent bg-accent text-accent-foreground shadow-sm"
                                       : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"

@@ -314,13 +314,13 @@ function SiteNav() {
           name="q"
           type="search"
           placeholder="Search publication, description, or Torah topic"
-          className="h-10 w-full rounded-full border border-accent/35 bg-background pl-9 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-accent focus:ring-2 focus:ring-ring"
+          className="h-11 w-full rounded-full border border-accent/35 bg-background pl-9 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-accent focus:ring-2 focus:ring-ring sm:h-10"
           autoFocus={!mobile}
         />
       </div>
       <Button
         type="submit"
-        className="inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        className="inline-flex h-11 shrink-0 items-center justify-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:h-10"
       >
         Search
       </Button>

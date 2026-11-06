@@ -379,7 +379,7 @@ function ArchivePage() {
                   <select
                     value={yearFilter}
                     onChange={(e) => setYearFilter(e.target.value)}
-                    className="w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
+                    className="min-h-11 w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
                     <option value="all">All years</option>
                     {yearOptions.map((year) => (
@@ -396,7 +396,7 @@ function ArchivePage() {
                   <select
                     value={parshaFilter}
                     onChange={(e) => setParshaFilter(e.target.value)}
-                    className="w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
+                    className="min-h-11 w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
                     <option value="all">All Parshas</option>
                     {allParshiyos.map((p) => (
@@ -417,7 +417,7 @@ function ArchivePage() {
                       value={queryDraft}
                       onChange={(e) => setQueryDraft(e.target.value)}
                       placeholder="Search publication, publisher, or description…"
-                      className="w-full rounded-lg border-2 border-accent/40 bg-background/60 pl-9 pr-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
+                      className="min-h-11 w-full rounded-lg border-2 border-accent/40 bg-background/60 pl-9 pr-3 py-2 font-serif text-sm text-foreground focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                     />
                   </div>
                 </label>
@@ -440,7 +440,7 @@ function ArchivePage() {
                           aria-pressed={active}
                           aria-label={`Filter by audience: ${audienceLabel(audience)}, ${count} ${count === 1 ? "publication" : "publications"}`}
                           onClick={() => setAudienceFilter(active ? "All" : audience)}
-                          className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
+                          className={`inline-flex min-h-11 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
                             active
                               ? "bg-accent text-accent-foreground shadow-sm"
                               : "text-primary hover:bg-accent/12"
@@ -478,7 +478,7 @@ function ArchivePage() {
                         type="button"
                         aria-pressed={active}
                         onClick={() => setLengthFilter(active ? "All" : value)}
-                        className={`rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
+                        className={`min-h-11 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
                           active
                             ? "bg-accent text-accent-foreground shadow-sm"
                             : "text-primary hover:bg-accent/12"
@@ -501,7 +501,7 @@ function ArchivePage() {
                       <select
                         value={typeFilter}
                         onChange={(e) => setTypeFilter(e.target.value)}
-                        className="w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
+                        className="min-h-11 w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                       >
                         <option value="All">All content types</option>
                         {typeOptions.map((t) => (
@@ -520,7 +520,7 @@ function ArchivePage() {
                       <select
                         value={pubFilter}
                         onChange={(e) => setPubFilter(e.target.value)}
-                        className="w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus:outline-none"
+                        className="min-h-11 w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                       >
                         <option value="All">All publications</option>
                         {publicationOptions.map((p) => (
@@ -546,7 +546,7 @@ function ArchivePage() {
                       lastPushedQuery.current = "";
                       void navigate({ search: {} as never, resetScroll: false });
                     }}
-                    className="text-accent hover:text-primary underline"
+                    className="inline-flex min-h-11 items-center text-accent hover:text-primary underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
                     Clear filters
                   </button>
