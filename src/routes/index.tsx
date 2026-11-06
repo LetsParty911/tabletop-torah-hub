@@ -1294,11 +1294,19 @@ function Index() {
             Permanent parsha pages with short vorts, printable Torah sheets, family material and archive selections.
           </p>
           {displayedParshaKey && !isYomTovCollection && !isYomTovReading(displayedParshaKey) && (
-            <p className="mt-3 text-sm">
-              <Link to="/parsha/$slug" params={{ slug: readingSlug(displayedParshaKey) }} className="text-accent underline underline-offset-4 hover:text-primary">
-                Browse previous {formatReadingLabel(displayedParshaKey)} editions
+            <div className="mt-6 border-t border-accent/25 pt-5">
+              <h2 className="font-serif text-xl font-bold text-primary">Browse Earlier Editions</h2>
+              <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                Explore the {formatReadingLabel(displayedParshaKey)} archive and revisit earlier Divrei Torah.
+              </p>
+              <Link
+                to="/parsha/$slug"
+                params={{ slug: readingSlug(displayedParshaKey) }}
+                className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full border border-accent/45 bg-background px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:border-accent hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                View {formatReadingLabel(displayedParshaKey)} Editions
               </Link>
-            </p>
+            </div>
           )}
         </section>
 
