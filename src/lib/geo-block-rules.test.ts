@@ -30,7 +30,19 @@ describe("Fulton, KY city rule", () => {
     expect(matchBlockedCity({ city: "Fulton", region: "Kentucky", country: "CA" })).toBeNull();
   });
   it("keeps the existing ten rules", () => {
-    expect(BLOCKED_CITIES.length).toBe(11);
+    expect(BLOCKED_CITIES.length).toBe(12);
+  });
+});
+
+describe("Flower Mound, TX city rule", () => {
+  it("blocks exact Flower Mound + Texas + US, including TX abbreviation", () => {
+    expect(matchBlockedCity({ city: "Flower Mound", region: "Texas", country: "US" })?.label).toBe("Flower Mound, TX");
+    expect(matchBlockedCity({ city: "flower mound", region: "TX", country: "us" })?.label).toBe("Flower Mound, TX");
+  });
+  it("does not block neighboring cities or same city in another region or country", () => {
+    expect(matchBlockedCity({ city: "Lewisville", region: "Texas", country: "US" })).toBeNull();
+    expect(matchBlockedCity({ city: "Flower Mound", region: "NJ", country: "US" })).toBeNull();
+    expect(matchBlockedCity({ city: "Flower Mound", region: "TX", country: "CA" })).toBeNull();
   });
 });
 
