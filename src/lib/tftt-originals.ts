@@ -30,3 +30,45 @@ export function tfttOriginalSeriesById(publicationId: string | null | undefined)
   if (!publicationId) return null;
   return TFTT_ORIGINAL_SERIES.find((series) => series.id === publicationId) ?? null;
 }
+
+export type TfttOriginalSeries = {
+  id: string;
+  title: string;
+  shortDescription: string;
+  expectation: string;
+};
+
+/**
+ * Canonical public.publications id for "The Parsha Detective".
+ *
+ * Deliberately null until the owner registers the real publications record
+ * (see docs/originals/parsha-detective.md). Never fill this with a guessed or
+ * placeholder UUID, and never match the series by title: while this is null
+ * the fourth series is completely inert on every page.
+ */
+export const PARSHA_DETECTIVE_PUBLICATION_ID: string | null = null;
+
+export const PARSHA_DETECTIVE_SERIES_COPY = {
+  title: "The Parsha Detective",
+  shortDescription:
+    "Illustrated six-panel Torah mysteries for children and families to solve together at the Shabbos table.",
+  expectation: "Illustrated Torah mysteries for children and families.",
+} as const;
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const NIL_UUID = "00000000-0000-0000-0000-000000000000";
+
+/**
+ * Series eligible for the /originals edition listing. Always the three
+ * existing weekly series; The Parsha Detective is appended only when a
+ * well-formed, non-duplicate canonical id is configured.
+ */
+export function buildOriginalEditionSeries(detectiveId: string | null | undefined): readonly TfttOriginalSeries[] {
+  const base: TfttOriginalSeries[] = TFTT_ORIGINAL_SERIES.map((s) => ({ ...s }));
+  const id = detectiveId?.trim().toLowerCase();
+  if (!id || !UUID_RE.test(id) || id === NIL_UUID || base.some((s) => s.id === id)) return base;
+  return [...base, { id, ...PARSHA_DETECTIVE_SERIES_COPY }];
+}
+
+/** /originals edition series (scoped: homepage starters, chooser and publication pages still use TFTT_ORIGINAL_SERIES). */
+export const TFTT_ORIGINAL_EDITION_SERIES = buildOriginalEditionSeries(PARSHA_DETECTIVE_PUBLICATION_ID);
