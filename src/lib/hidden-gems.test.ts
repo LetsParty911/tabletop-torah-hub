@@ -19,8 +19,11 @@ describe("Hidden Gems weekly eligibility", () => {
   it("hides Yom Tov", () => {
     expect(homepageHiddenGem({ ...toldos, isYomTov: true }, toldosThursday)).toBeUndefined();
   });
-  it("rejects a displayed parsha that does not match the active parsha", () => {
-    expect(homepageHiddenGem({ ...toldos, activeParshaKey: "Vayeitzei" }, toldosThursday)).toBeUndefined();
+  it("uses the displayed non-fallback collection even if the separate active-parsha signal is stale", () => {
+    expect(homepageHiddenGem({ ...toldos, activeParshaKey: "Vayeitzei" }, toldosThursday)?.slug).toBe("fire-and-straw-hidden-in-one-word");
+  });
+  it("still shows an approved current collection when the reading date is temporarily unavailable", () => {
+    expect(homepageHiddenGem({ ...toldos, readingDate: null }, toldosThursday)?.slug).toBe("fire-and-straw-hidden-in-one-word");
   });
   it("hides stale dates after the Eastern week ends", () => {
     expect(homepageHiddenGem(chayeiSarah, new Date("2026-11-08T05:00:00Z"))).toBeUndefined();
