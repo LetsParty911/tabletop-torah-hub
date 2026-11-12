@@ -1,21 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/SiteFooter";
 import { fitPageTitle } from "@/lib/page-title";
-import { TFTT_ORIGINAL_SERIES } from "@/lib/tftt-originals";
 import { useState } from "react";
 import { BookOpen } from "lucide-react";
 import { listOriginalEditions } from "@/integrations/supabase/api.functions";
 import { recordPdfAction } from "@/components/DownloadToPrintButton";
 import { pdfActionHrefs } from "@/lib/collection-status";
-import type { OriginalEditionCard, OriginalEditionGroup } from "@/lib/original-editions";
+import {
+  originalsPageDescription,
+  visibleOriginalSeries,
+  type OriginalEditionCard,
+  type OriginalEditionGroup,
+} from "@/lib/original-editions";
 
 export const Route = createFileRoute("/originals")({
   component: ResourcesPage,
   loader: () => listOriginalEditions(),
-  head: () => {
+  head: ({ loaderData }) => {
     const title = fitPageTitle("Our Originals", " — In-House Torah Learning Resources");
-    const description =
-      "Three weekly Torah For The Table original series: Parsha Challenge, Stories for the Shabbos Table, and In the Margins — created for the Shabbos table.";
+    const description = originalsPageDescription(visibleOriginalSeries(loaderData?.activeSeriesIds));
     const url = "https://torahforthetable.com/originals";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -47,35 +50,18 @@ type SeriesCard = {
   cta: string;
 };
 
-const SERIES: SeriesCard[] = [
-  {
-    title: TFTT_ORIGINAL_SERIES[0].title,
-    description:
-      TFTT_ORIGINAL_SERIES[0].shortDescription,
-    sample: TFTT_ORIGINAL_SERIES[0].expectation,
+// The three weekly series always show (unchanged). A configured additional
+// series (The Parsha Detective) appears only once it has a published edition.
+function originalSeriesCards(activeSeriesIds: readonly string[] | undefined): SeriesCard[] {
+  return visibleOriginalSeries(activeSeriesIds).map((series) => ({
+    title: series.title,
+    description: series.shortDescription,
+    sample: series.expectation,
     linkTo: "/archive",
-    linkSearch: { q: "Parsha Challenge" },
-    cta: "Browse Parsha Challenge →",
-  },
-  {
-    title: TFTT_ORIGINAL_SERIES[1].title,
-    description:
-      TFTT_ORIGINAL_SERIES[1].shortDescription,
-    sample: TFTT_ORIGINAL_SERIES[1].expectation,
-    linkTo: "/archive",
-    linkSearch: { q: "Stories for the Shabbos Table" },
-    cta: "Browse Stories for the Shabbos Table →",
-  },
-  {
-    title: TFTT_ORIGINAL_SERIES[2].title,
-    description:
-      TFTT_ORIGINAL_SERIES[2].shortDescription,
-    sample: TFTT_ORIGINAL_SERIES[2].expectation,
-    linkTo: "/archive",
-    linkSearch: { q: "In the Margins" },
-    cta: "Browse In the Margins →",
-  },
-];
+    linkSearch: { q: series.title },
+    cta: `Browse ${series.title} →`,
+  }));
+}
 
 const FEATURED_SERIES: SeriesCard[] = [
   {
@@ -91,7 +77,7 @@ const FEATURED_SERIES: SeriesCard[] = [
 
 function SeriesGrid({ items }: { items: SeriesCard[] }) {
   return (
-    <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-2xl mx-auto">
+    <div className={`mt-6 grid grid-cols-1 ${items.length === 4 ? "sm:grid-cols-2" : "sm:grid-cols-3"} gap-5 max-w-2xl mx-auto`}>
       {items.map((s) => (
         <article key={s.title} className="flex flex-col rounded-xl border border-accent/30 bg-card/40 p-5">
           <h3 className="font-serif text-xl font-bold text-primary">{s.title}</h3>
@@ -172,7 +158,7 @@ function EditionGroup({ group }: { group: OriginalEditionGroup }) {
       <h3 id={headingId} className="font-serif text-lg sm:text-xl font-bold text-primary border-b border-accent/30 pb-1">
         {group.label}
       </h3>
-      <ul className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <ul className={`mt-4 grid grid-cols-2 gap-4 ${group.editions.length >= 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
         {group.editions.map((edition) => (
           <li key={edition.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background/60 p-3">
             <EditionCover edition={edition} group={group} />
@@ -196,7 +182,7 @@ function EditionGroup({ group }: { group: OriginalEditionGroup }) {
   );
 }
 
-function OriginalEditions({ groups }: { groups: OriginalEditionGroup[] }) {
+function OriginalEditions({ groups, seriesCount }: { groups: OriginalEditionGroup[]; seriesCount: number }) {
   const [showEarlier, setShowEarlier] = useState(false);
   if (groups.length === 0) return null;
   const recent = groups.slice(0, RECENT_GROUP_COUNT);
@@ -205,7 +191,9 @@ function OriginalEditions({ groups }: { groups: OriginalEditionGroup[] }) {
     <div className="mt-8 max-w-2xl mx-auto">
       <h2 className="text-center font-serif text-2xl font-bold text-primary">Our Original Editions</h2>
       <p className="mt-2 text-center font-serif text-sm sm:text-base text-muted-foreground">
-        The latest issues of our three weekly series, ready to read or print.
+        {seriesCount > 3
+          ? "The latest issues of our original series, ready to read or print."
+          : "The latest issues of our three weekly series, ready to read or print."}
       </p>
       {recent.map((group) => <EditionGroup key={group.key} group={group} />)}
       {earlier.length > 0 && (
@@ -227,7 +215,8 @@ function OriginalEditions({ groups }: { groups: OriginalEditionGroup[] }) {
 }
 
 function ResourcesPage() {
-  const { groups } = Route.useLoaderData();
+  const { groups, activeSeriesIds } = Route.useLoaderData();
+  const seriesCards = originalSeriesCards(activeSeriesIds);
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-3xl px-3 py-5 sm:px-4 sm:py-8 md:px-8 md:py-14 space-y-6 sm:space-y-8">
@@ -256,10 +245,10 @@ function ResourcesPage() {
               </p>
             </div>
 
-            <OriginalEditions groups={groups} />
+            <OriginalEditions groups={groups} seriesCount={seriesCards.length} />
 
             <h2 className="mt-10 text-center font-serif text-2xl font-bold text-primary">Our Originals</h2>
-            <SeriesGrid items={SERIES} />
+            <SeriesGrid items={seriesCards} />
 
             <h2 className="mt-10 text-center font-serif text-2xl font-bold text-primary">Featured Independent Series</h2>
             <p className="mx-auto mt-2 max-w-2xl text-center font-serif text-sm sm:text-base text-muted-foreground">

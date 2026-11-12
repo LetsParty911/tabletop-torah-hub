@@ -1,5 +1,5 @@
-import { TFTT_ORIGINAL_SERIES, tfttOriginalSeriesById } from "@/lib/tftt-originals";
-import { groupOriginalEditions, type OriginalEditionRow } from "@/lib/original-editions";
+import { TFTT_ORIGINAL_EDITION_SERIES, tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { activeOriginalSeriesIds, groupOriginalEditions, type OriginalEditionRow } from "@/lib/original-editions";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
@@ -676,17 +676,18 @@ export const listOriginalEditions = createServerFn({ method: "GET" }).handler(as
       .from("pdfs")
       .select("id, parsha_key, jewish_year, publication_id, created_at")
       .eq("published", true)
-      .in("publication_id", TFTT_ORIGINAL_SERIES.map((s) => s.id))
+      .in("publication_id", TFTT_ORIGINAL_EDITION_SERIES.map((s) => s.id))
       .order("created_at", { ascending: false })
       .limit(300);
     if (error) {
       console.error("listOriginalEditions error", error.message);
-      return { groups: [] };
+      return { groups: [], activeSeriesIds: [] as string[] };
     }
-    return { groups: groupOriginalEditions((data as OriginalEditionRow[]) ?? [], pdfThumbUrl) };
+    const rows = (data as OriginalEditionRow[]) ?? [];
+    return { groups: groupOriginalEditions(rows, pdfThumbUrl), activeSeriesIds: activeOriginalSeriesIds(rows) };
   } catch (e) {
     console.error("listOriginalEditions failed", e instanceof Error ? e.message : e);
-    return { groups: [] };
+    return { groups: [], activeSeriesIds: [] as string[] };
   }
 });
 

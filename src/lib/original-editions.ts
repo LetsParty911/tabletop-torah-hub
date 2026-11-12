@@ -7,7 +7,11 @@
  * newer parsha. Weeks with fewer than three published originals show only the
  * real ones.
  */
-import { TFTT_ORIGINAL_SERIES, tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import {
+  TFTT_ORIGINAL_EDITION_SERIES,
+  TFTT_ORIGINAL_SERIES,
+  type TfttOriginalSeries,
+} from "@/lib/tftt-originals";
 import { formatReadingLabel, readingChronoIndex } from "@/lib/parshiyos";
 
 export type OriginalEditionRow = {
@@ -33,21 +37,31 @@ export type OriginalEditionGroup = {
   editions: OriginalEditionCard[];
 };
 
-const SERIES_ORDER: string[] = TFTT_ORIGINAL_SERIES.map((s) => s.id);
+function seriesLookup(series: readonly TfttOriginalSeries[]) {
+  return (publicationId: string | null | undefined) =>
+    (publicationId ? series.find((s) => s.id === publicationId) : undefined) ?? null;
+}
+
+function isListableRow(row: OriginalEditionRow): boolean {
+  return !!row.parsha_key?.trim() && typeof row.jewish_year === "number" && Number.isFinite(row.jewish_year);
+}
 
 export function groupOriginalEditions(
   rows: OriginalEditionRow[],
   thumbUrl: (pdfId: string) => string | null,
   maxGroups = 12,
+  series: readonly TfttOriginalSeries[] = TFTT_ORIGINAL_EDITION_SERIES,
 ): OriginalEditionGroup[] {
+  const tfttOriginalSeriesById = seriesLookup(series);
+  const SERIES_ORDER: string[] = series.map((s) => s.id);
   type Acc = { parshaKey: string; jewishYear: number; latest: string; bySeries: Map<string, OriginalEditionRow> };
   const groups = new Map<string, Acc>();
 
   for (const row of rows) {
-    const series = tfttOriginalSeriesById(row.publication_id);
-    const parshaKey = row.parsha_key?.trim();
-    const year = row.jewish_year;
-    if (!series || !parshaKey || typeof year !== "number" || !Number.isFinite(year)) continue;
+    const owner = tfttOriginalSeriesById(row.publication_id);
+    if (!owner || !isListableRow(row)) continue;
+    const parshaKey = row.parsha_key!.trim();
+    const year = row.jewish_year as number;
     const key = `${parshaKey.toLowerCase()}|${year}`;
     let g = groups.get(key);
     if (!g) {
@@ -57,8 +71,8 @@ export function groupOriginalEditions(
     const created = row.created_at ?? "";
     if (created > g.latest) g.latest = created;
     // One card per series per week: keep the most recently uploaded row.
-    const existing = g.bySeries.get(series.id);
-    if (!existing || (existing.created_at ?? "") < created) g.bySeries.set(series.id, row);
+    const existing = g.bySeries.get(owner.id);
+    if (!existing || (existing.created_at ?? "") < created) g.bySeries.set(owner.id, row);
   }
 
   return [...groups.entries()]
@@ -78,8 +92,48 @@ export function groupOriginalEditions(
       editions: [...g.bySeries.values()]
         .sort((a, b) => SERIES_ORDER.indexOf(a.publication_id!) - SERIES_ORDER.indexOf(b.publication_id!))
         .map((row) => {
-          const series = tfttOriginalSeriesById(row.publication_id)!;
-          return { id: row.id, seriesId: series.id, seriesTitle: series.title, thumbUrl: thumbUrl(row.id) };
+          const owner = tfttOriginalSeriesById(row.publication_id)!;
+          return { id: row.id, seriesId: owner.id, seriesTitle: owner.title, thumbUrl: thumbUrl(row.id) };
         }),
     }));
+}
+
+/** Series ids with at least one real, listable published edition in `rows`. */
+export function activeOriginalSeriesIds(
+  rows: OriginalEditionRow[],
+  series: readonly TfttOriginalSeries[] = TFTT_ORIGINAL_EDITION_SERIES,
+): string[] {
+  const lookup = seriesLookup(series);
+  const ids = new Set<string>();
+  for (const row of rows) {
+    const owner = lookup(row.publication_id);
+    if (owner && isListableRow(row)) ids.add(owner.id);
+  }
+  return series.map((s) => s.id).filter((id) => ids.has(id));
+}
+
+const BASE_SERIES_IDS = new Set<string>(TFTT_ORIGINAL_SERIES.map((s) => s.id));
+
+/**
+ * Series cards shown on /originals: the three existing weekly series always
+ * (unchanged), plus any additional configured series only once it has a real
+ * published edition — so no card ever links to an empty listing.
+ */
+export function visibleOriginalSeries(
+  activeIds: readonly string[] | null | undefined,
+  series: readonly TfttOriginalSeries[] = TFTT_ORIGINAL_EDITION_SERIES,
+): TfttOriginalSeries[] {
+  const active = new Set(activeIds ?? []);
+  return series.filter((s) => BASE_SERIES_IDS.has(s.id) || active.has(s.id));
+}
+
+const THREE_SERIES_DESCRIPTION =
+  "Three weekly Torah For The Table original series: Parsha Challenge, Stories for the Shabbos Table, and In the Margins — created for the Shabbos table.";
+
+/** /originals meta description; unchanged while only the three weekly series are visible. */
+export function originalsPageDescription(visible: readonly TfttOriginalSeries[]): string {
+  if (visible.length <= TFTT_ORIGINAL_SERIES.length) return THREE_SERIES_DESCRIPTION;
+  const titles = visible.map((s) => s.title);
+  const list = `${titles.slice(0, -1).join(", ")}, and ${titles[titles.length - 1]}`;
+  return `Torah For The Table original series: ${list} — created for the Shabbos table.`;
 }
