@@ -16,8 +16,8 @@ export function GematriaMotif({ gem, compact = false }: { gem: HiddenGem; compac
         </div>
       ))}
       <div className={`text-center ${compact ? "px-3 py-2" : "px-4 py-4"}`}>
-        <p className={`font-serif font-bold text-accent-readable ${compact ? "text-xl" : "text-3xl"}`}>{gem.price} <span className="text-base">shekalim</span></p>
-        <p className="mt-1 text-xs text-muted-foreground">Ephron’s price</p>
+        <p className={`font-serif font-bold text-accent-readable ${compact ? "text-xl" : "text-3xl"}`}>{gem.finalValue}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{gem.finalLabel}</p>
       </div>
     </div>
   );
