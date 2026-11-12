@@ -65,14 +65,23 @@ export type HomepageGemContext = {
 };
 // Fail closed on unknown/stale reading windows without changing site selection.
 export function homepageHiddenGem(context: HomepageGemContext, now: Date): HiddenGem | undefined {
-  if (context.isFallback || context.isYomTov || !context.activeParshaKey || !context.readingDate || !Number.isFinite(now.getTime())) return;
+  if (context.isFallback || context.isYomTov || !Number.isFinite(now.getTime())) return;
   const key = normalizeGemParsha(context.normalizedCollectionKey);
-  if (key !== normalizeGemParsha(context.activeParshaKey)) return;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(context.readingDate)) return;
-  const reading = Date.parse(`${context.readingDate}T12:00:00Z`);
-  if (!Number.isFinite(reading) || new Date(reading).toISOString().slice(0, 10) !== context.readingDate) return;
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
-  const daysUntilReading = (reading - Date.parse(`${today}T12:00:00Z`)) / 86_400_000;
-  if (daysUntilReading < 0 || daysUntilReading > 6) return;
-  return HIDDEN_GEMS_BY_PARSHA[key]?.[0];
+  const gem = HIDDEN_GEMS_BY_PARSHA[key]?.[0];
+  if (!gem) return;
+
+  // The displayed, non-fallback weekly collection is the primary source of truth.
+  // When a valid reading date is available, keep the normal six-day freshness guard.
+  // If Hebcal/date resolution is temporarily unavailable, do not hide an otherwise
+  // approved gem for the current published collection.
+  if (context.readingDate) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(context.readingDate)) return;
+    const reading = Date.parse(`${context.readingDate}T12:00:00Z`);
+    if (!Number.isFinite(reading) || new Date(reading).toISOString().slice(0, 10) !== context.readingDate) return;
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+    const daysUntilReading = (reading - Date.parse(`${today}T12:00:00Z`)) / 86_400_000;
+    if (daysUntilReading < 0 || daysUntilReading > 6) return;
+  }
+
+  return gem;
 }
