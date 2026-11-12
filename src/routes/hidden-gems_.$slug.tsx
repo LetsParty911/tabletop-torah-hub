@@ -50,10 +50,10 @@ function HiddenGemReader() {
           </header>
           <div className="gem-body mt-5 space-y-4 text-base leading-relaxed text-foreground">
             <p>{gem.opening}</p>
-            <p>Ephron’s name is normally spelled <bdi lang="he" dir="rtl">עפרון</bdi>. In Bereishis 23:16, the Torah omits the letter <bdi lang="he" dir="rtl">ו</bdi>, spelling it <bdi lang="he" dir="rtl">עפרן</bdi>.</p>
+            {gem.detailParagraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
           </div>
           <GematriaMotif gem={gem} />
-          <p className="text-center text-sm font-semibold text-accent-readable">{gem.priceLine}</p>
+          <p className="text-center text-sm font-semibold text-accent-readable">{gem.bridgeLine}</p>
           <p className="gem-explanation mt-5 text-base leading-relaxed text-foreground">{gem.explanation}</p>
           <section aria-labelledby="gem-reflection-heading" className="gem-reflection mt-6 border-l-2 border-accent/60 pl-5">
             <h2 id="gem-reflection-heading" className="text-sm font-semibold text-accent-readable">A Shabbos-table reflection from Torah For The Table</h2>
@@ -62,7 +62,7 @@ function HiddenGemReader() {
           <section aria-label="Baal HaTurim source" className="gem-source mt-6 border-t border-accent/30 pt-4">
             <p lang="he" dir="rtl" className="gem-hebrew text-right font-serif text-lg text-primary">{gem.sourceLine}</p>
             <blockquote lang="he" dir="rtl" className="gem-hebrew mt-2 text-right font-serif text-lg leading-relaxed text-foreground">{gem.sourceText}</blockquote>
-            <a href={gem.sourceUrl} target="_blank" rel="noopener noreferrer" className="gem-screen-controls mt-3 inline-flex items-center gap-1 text-sm text-accent-readable underline hover:text-primary">Baal HaTurim, Bereishis 23:16 <ExternalLink className="h-3 w-3" aria-hidden="true" /><span className="sr-only"> (opens in a new tab)</span></a>
+            <a href={gem.sourceUrl} target="_blank" rel="noopener noreferrer" className="gem-screen-controls mt-3 inline-flex items-center gap-1 text-sm text-accent-readable underline hover:text-primary">{gem.sourceLinkLabel} <ExternalLink className="h-3 w-3" aria-hidden="true" /><span className="sr-only"> (opens in a new tab)</span></a>
           </section>
           <p className="mt-5 text-center text-xs text-muted-foreground">torahforthetable.com/hidden-gems</p>
         </article>
