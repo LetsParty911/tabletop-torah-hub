@@ -1,6 +1,6 @@
-# The Parsha Detective — fourth original series (registered; edition on hold)
+# The Parsha Detective — fourth original series (editorial approved; awaiting PDF upload)
 
-Status: the canonical publication record now exists in `public.publications` with its database-generated ID `20900013-b70f-4091-8026-d5a05131ded8`. A separate release branch configures that exact ID in `src/lib/tftt-originals.ts`. The series remains hidden until it has an actual published edition. The Toldos PDF and thumbnail are staged outside the live site pending final editorial source approval; no PDF has been uploaded or published.
+Status: the canonical publication record now exists in `public.publications` with its database-generated ID `20900013-b70f-4091-8026-d5a05131ded8`. A separate release branch configures that exact ID in `src/lib/tftt-originals.ts`. The series remains hidden until it has an actual published edition. The Toldos PDF was approved by the owner on November 11, 2026, after the Case #2 attribution and Case #3 paraphrase edits; the approved 3-page release file and real-artwork thumbnail are staged outside the live site. No PDF has been uploaded or published.
 
 ## What activates, and when
 
@@ -29,11 +29,11 @@ separate, explicit decision.
 ## Administrative steps (in order)
 
 1. **Completed:** Registered the canonical `public.publications` record using the database-generated ID `20900013-b70f-4091-8026-d5a05131ded8`. Publisher: Torah For The Table; audience: Families; format: Stories; sort order: 4; active: true. At last verification, zero PDF editions exist, so no edition has been exposed.
-2. **Upload the approved PDF as a Draft** in Admin → Upload, choosing
+2. **Next: Upload the approved PDF as a Draft** in Admin → Upload, choosing
    "The Parsha Detective" as the publication, parsha Toldos, year 5787. Use
    **Save as Draft**, not Upload & Publish. Attach the approved thumbnail.
 3. **Staged in GitHub release branch:** `PARSHA_DETECTIVE_PUBLICATION_ID` uses the verified ID from step 1; guardrails still reject malformed or duplicate IDs. Run `bunx vitest run src/lib/parsha-detective.test.ts src/lib/original-editions.test.ts` during review, before merging.
-4. **Editorial hold:** Correct and independently verify Case #2's Rashi attribution before the draft PDF is approved. Then publish the PDF row when authorized.
+4. **Editorial approval complete (November 11, 2026):** Cases #2 and #3 were text-corrected without artwork redesign and the owner approved the three-page proof. Publish the PDF only after the approved PDF is uploaded and the correct thumbnail verified.
 5. **Publish the site** with explicit owner authorization, then verify on
    https://torahforthetable.com/originals: the Detective card, one Toldos
    5787 Detective edition with the real thumbnail, one working Read Now link,
@@ -44,4 +44,4 @@ hidden until a published edition exists.
 
 ## No Lovable credits / release protection
 
-This work is being staged through GitHub and Supabase directly, without a new Lovable AI build. A draft pull request is not a live deployment. Do not merge the release or publish the PDF until source review is complete. Do not silently change the locked comic illustrations. The thumbnail must come from actual original comic artwork.
+This work is being staged through GitHub and Supabase directly, without a new Lovable AI build. A draft pull request is not a live deployment. Source review is complete. Do not publish an edition until its binary PDF has been uploaded to the correct Supabase Storage bucket and verified; never create a broken PDF row just to show a listing. Do not silently change the locked comic illustrations. The thumbnail must come from actual original comic artwork.
