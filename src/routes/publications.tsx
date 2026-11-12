@@ -5,7 +5,7 @@ import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { SiteFooter } from "@/components/SiteFooter";
-import { TFTT_ORIGINAL_SERIES, tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { TFTT_ORIGINAL_EDITION_SERIES, tfttOriginalSeriesById } from "@/lib/tftt-originals";
 
 export const Route = createFileRoute("/publications")({
   loader: () => listPublicationPages(),
@@ -33,7 +33,7 @@ export const Route = createFileRoute("/publications")({
 
 function PublicationsPage() {
   const { publications } = Route.useLoaderData();
-  const originalPublications = TFTT_ORIGINAL_SERIES.flatMap((series) =>
+  const originalPublications = TFTT_ORIGINAL_EDITION_SERIES.flatMap((series) =>
     publications.filter((publication) => publication.id === series.id),
   );
   const otherPublications = publications.filter((publication) => !tfttOriginalSeriesById(publication.id));
@@ -66,8 +66,8 @@ function PublicationsPage() {
         {originalPublications.length > 0 && (
           <section className="mt-8" aria-labelledby="original-series-heading">
             <h2 id="original-series-heading" className="font-serif text-2xl font-bold text-primary">Our Originals</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Three original publications prepared for the Shabbos table, ready to read or print.</p>
-            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <p className="mt-1 text-sm text-muted-foreground">Torah For The Table original publications prepared for the Shabbos table, ready to read or print.</p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {renderPublicationCards(originalPublications)}
             </div>
           </section>
