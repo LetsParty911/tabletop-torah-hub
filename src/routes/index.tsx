@@ -53,6 +53,7 @@ import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { TableChooser } from "@/components/TableChooser";
 import { MobileCollectionControlsBar } from "@/components/MobileCollectionControlsBar";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CHOOSERS, chooseReason, pickRecommendations, pickStarterSelections, type ChooserKey } from "@/lib/table-chooser";
 
 type Resource = {
@@ -481,6 +482,7 @@ function Index() {
   const [selectedChooser, setSelectedChooser] = useState<ChooserKey | null>(null);
   const [showRecommendationChooser, setShowRecommendationChooser] = useState(false);
   const [mobileQuickChoice, setMobileQuickChoice] = useState<ChooserKey | null>(null);
+  const [detectiveLaunchOpen, setDetectiveLaunchOpen] = useState(false);
 
   const sortedResources = resources;
   // Start-here showcase: only this week's published TFTT originals (matched by
@@ -490,6 +492,18 @@ function Index() {
   const parshaDetective = !isFallback && PARSHA_DETECTIVE_PUBLICATION_ID
     ? sortedResources.find((r) => r.publication_id === PARSHA_DETECTIVE_PUBLICATION_ID) ?? null
     : null;
+
+  useEffect(() => {
+    if (!parshaDetective || !displayedParshaKey) return;
+    const key = `tftt-parsha-detective-launch-${displayedParshaKey.toLowerCase().replace(/\s+/g, "-")}`;
+    try {
+      if (window.localStorage.getItem(key)) return;
+      setDetectiveLaunchOpen(true);
+      window.localStorage.setItem(key, "shown");
+    } catch {
+      setDetectiveLaunchOpen(true);
+    }
+  }, [parshaDetective?.id, displayedParshaKey]);
   // Show all this week's publications by default; Browse All is a shortcut, not a gate.
   const showCompleteCollection = resources.length > 0 || isWeeklyCollectionHash(collectionHash) || showAllResources || isCurrentYomKippur;
   const viewAllLabel = `View all ${resources.length} ${displayedLabel.replace(/^Parshas\s+/i, "")} selections`;
@@ -682,6 +696,41 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background">
+      {parshaDetective && (
+        <Dialog open={detectiveLaunchOpen} onOpenChange={setDetectiveLaunchOpen}>
+          <DialogContent className="max-w-md border-2 border-accent/60 bg-card text-center">
+            <DialogHeader className="text-center sm:text-center">
+              <p className="font-sans text-[11px] font-bold uppercase tracking-[0.16em] text-accent-readable">New from Torah For The Table</p>
+              <DialogTitle className="font-serif text-2xl text-primary">The Parsha Detective</DialogTitle>
+              <DialogDescription className="text-sm leading-relaxed">
+                A new illustrated series of Torah mysteries for children and families to solve together at the Shabbos table.
+              </DialogDescription>
+            </DialogHeader>
+            <a
+              href={pdfActionHrefs(parshaDetective.id).open}
+              target="_blank"
+              rel="nofollow noopener noreferrer"
+              onClick={(event) => {
+                recordPdfAction(event, "open_pdf", pdfActionHrefs(parshaDetective.id).open, {
+                  publicationId: parshaDetective.id,
+                  publicationName: displayPublicationName(parshaDetective),
+                  publicationTitle: displayTitle(parshaDetective),
+                  publicationSeries: parshaDetective.publication,
+                  publisher: parshaDetective.publisher,
+                  parsha: parshaDetective.parsha_key ?? displayedParshaKey,
+                }, "popup");
+                setDetectiveLaunchOpen(false);
+              }}
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-6 py-2.5 font-serif text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              See This Week’s Case →
+            </a>
+            <button type="button" onClick={() => setDetectiveLaunchOpen(false)} className="text-sm text-muted-foreground hover:text-primary hover:underline">
+              Maybe later
+            </button>
+          </DialogContent>
+        </Dialog>
+      )}
       <AnnouncementBanner initialBanner={Route.useLoaderData().announcement} />
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
         <section className="parchment-frame">
