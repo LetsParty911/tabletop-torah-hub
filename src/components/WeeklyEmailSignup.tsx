@@ -3,6 +3,7 @@ import { subscribeEmail } from "@/integrations/supabase/api.functions";
 import { trackEvent, trackEventOnce } from "@/lib/analytics";
 import { trackFp } from "@/lib/first-party-analytics";
 import { Button } from "@/components/ui/button";
+import { z } from "zod";
 
 type WeeklyEmailSignupProps = {
   /** Distinguishes the once-per-page analytics key across routes. */
@@ -35,6 +36,7 @@ export function WeeklyEmailSignup({
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const consentRef = useRef<HTMLInputElement | null>(null);
+  const emailRef = useRef<HTMLInputElement | null>(null);
   const emailId = `${anchorId}-email`;
   const messageId = `${anchorId}-message`;
 
@@ -49,6 +51,13 @@ export function WeeklyEmailSignup({
       return;
     }
 
+    const parsedEmail = z.string().trim().email().max(254).safeParse(email);
+    if (!parsedEmail.success) {
+      setSignupMsg("Please enter a valid email address.");
+      emailRef.current?.focus();
+      return;
+    }
+
     setSubmitting(true);
     trackFp("signup_attempt", { metadata: { source_id: sourceId, form_id: "weekly_torah_notifications" } });
 
@@ -57,7 +66,7 @@ export function WeeklyEmailSignup({
     });
 
     try {
-      const r = await subscribeEmail({ data: { email, consent: true, source: sourceId } });
+      const r = await subscribeEmail({ data: { email: parsedEmail.data, consent: true, source: sourceId } });
       if (r.ok) {
         setDone(true);
         trackEventOnce(
@@ -112,7 +121,7 @@ export function WeeklyEmailSignup({
             aria-live="polite"
             className="rounded-lg border border-accent/50 bg-accent/10 px-3 py-2 text-center font-serif text-sm text-primary"
           >
-            Thank you for subscribing! Please check your inbox for a welcome email.
+            Thank you! Your address is on the weekly Torah update list.
           </p>
         ) : (
           <>
@@ -123,7 +132,9 @@ export function WeeklyEmailSignup({
               <div className="flex flex-col gap-2 sm:flex-row">
                 <label htmlFor={emailId} className="sr-only">Email address for weekly Torah reminders</label>
                 <input
+                  ref={emailRef}
                   id={emailId}
+                  maxLength={254}
                   type="email"
                   aria-label="Email address for weekly Torah reminders"
                   aria-describedby={signupMsg ? messageId : undefined}
@@ -186,7 +197,7 @@ export function WeeklyEmailSignup({
             className="mt-5 mx-auto max-w-md rounded-2xl border-2 border-accent/60 bg-accent/10 px-5 py-4"
           >
             <p className="font-serif text-base sm:text-lg font-semibold text-primary">
-              Thank you for subscribing! Please check your inbox for a welcome email.
+              Thank you! Your address is on the weekly Torah update list.
             </p>
           </div>
         ) : (
@@ -195,7 +206,9 @@ export function WeeklyEmailSignup({
               <div className="flex flex-col sm:flex-row gap-2">
                 <label htmlFor={emailId} className="sr-only">Email address for weekly Torah reminders</label>
                 <input
+                  ref={emailRef}
                   id={emailId}
+                  maxLength={254}
                   type="email"
                   aria-label="Email address for weekly Torah reminders"
                   aria-describedby={signupMsg ? messageId : undefined}

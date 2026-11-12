@@ -1,0 +1,32 @@
+name: Verify weekly signup changes
+
+on:
+  pull_request:
+    paths:
+      - "src/components/WeeklyEmailSignup.tsx"
+      - "src/components/WeeklyEmailSignup*.test.tsx"
+      - "src/components/UpdateCountdown.tsx"
+      - "vitest.signup.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/verify-weekly-signup.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Test signup and countdown
+        run: npm run test:signup
+      - name: Build application
+        run: npm run build
