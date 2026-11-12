@@ -28,7 +28,7 @@ export const TFTT_ORIGINAL_SERIES = [
 
 export function tfttOriginalSeriesById(publicationId: string | null | undefined) {
   if (!publicationId) return null;
-  return TFTT_ORIGINAL_SERIES.find((series) => series.id === publicationId) ?? null;
+  return TFTT_ORIGINAL_EDITION_SERIES.find((series) => series.id === publicationId) ?? null;
 }
 
 export type TfttOriginalSeries = {
