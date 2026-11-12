@@ -24,6 +24,7 @@ import { displayContentType, hasDisplayedCollectionChanged, isProgressForReading
 import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
 import { publicationLabel } from "@/lib/badges";
+import { publicationFilterName } from "@/lib/publication-filter";
 import { Button } from "@/components/ui/button";
 import { SmallPdfImage } from "@/components/SmallPdfImage";
 import { LENGTH_OPTIONS, matchesPageLength, type LengthFilter } from "@/lib/length-filter";
@@ -464,6 +465,7 @@ function Index() {
   const [audienceFilter, setAudienceFilter] = useState<"All" | "Children" | "Families" | "Adults">("All");
   const [lengthFilter, setLengthFilter] = useState<LengthFilter>("All");
   const [contentTypeFilter, setContentTypeFilter] = useState<string>("All");
+  const [publicationFilter, setPublicationFilter] = useState<string>("All");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [showAllResources, setShowAllResources] = useState(false);
   const [collectionScrollRequest, setCollectionScrollRequest] = useState(0);
@@ -501,6 +503,9 @@ function Index() {
     displayContentType(r.content_type, r.format_type, formatTypeLabel);
   const matchesContentType = (r: Resource, value = contentTypeFilter) =>
     value === "All" || resourceContentType(r) === value;
+  const matchesPublication = (r: Resource, value = publicationFilter) =>
+    value === "All" || publicationFilterName(r) === value;
+  const publicationOptions = Array.from(new Set(sortedResources.map(publicationFilterName).filter((v): v is string => Boolean(v)))).sort((a,b)=>a.localeCompare(b));
 
   const lengthScoped = sortedResources.filter((r) => matchesAudience(r) && matchesContentType(r));
   const contentTypeScoped = sortedResources.filter((r) => matchesAudience(r) && matchesLength(r));
@@ -512,7 +517,7 @@ function Index() {
   const filteredResources = mobileQuickChoice
     ? pickRecommendations(sortedResources, mobileQuickChoice)
     : sortedResources.filter(
-        (r) => matchesAudience(r) && matchesLength(r) && matchesContentType(r),
+        (r) => matchesAudience(r) && matchesLength(r) && matchesContentType(r) && matchesPublication(r),
       );
 
   const lengthHasChoice = LENGTH_OPTIONS.filter((option) => option.key !== "All" &&
@@ -540,6 +545,9 @@ function Index() {
     ) {
       setContentTypeFilter("All");
     }
+    if (publicationFilter !== "All" && !publicationOptions.includes(publicationFilter)) {
+      setPublicationFilter("All");
+    }
 
     // A quick selection with no matching PDFs must never leave an empty list.
     if (mobileQuickChoice && pickRecommendations(sortedResources, mobileQuickChoice).length === 0) {
@@ -551,12 +559,13 @@ function Index() {
     lengthFilter,
     contentTypeFilter,
     contentTypeOptions,
+    publicationFilter,
     mobileQuickChoice,
   ]);
 
   const activeFilterCount = mobileQuickChoice
     ? 1
-    : Number(audienceFilter !== "All") + Number(lengthFilter !== "All") + Number(contentTypeFilter !== "All");
+    : Number(audienceFilter !== "All") + Number(lengthFilter !== "All") + Number(contentTypeFilter !== "All") + Number(publicationFilter !== "All");
 
   const featuredPicks = FEATURED_SLOTS.map((slot) => ({
     ...slot,
@@ -638,6 +647,7 @@ function Index() {
     setAudienceFilter("All");
     setLengthFilter("All");
     setContentTypeFilter("All");
+    setPublicationFilter("All");
   };
 
   const browseAllSelections = () => {
@@ -872,6 +882,7 @@ function Index() {
                       setAudienceFilter("All");
                       setContentTypeFilter("All");
                       setLengthFilter("All");
+                      setPublicationFilter("All");
                       setMobileQuickChoice(active ? null : choice.key);
                       setShowAllResources(true);
                       setFiltersOpen(false);
@@ -1050,7 +1061,7 @@ function Index() {
                   </div>
 
 
-                  <div className={`${filtersOpen ? "block" : "hidden"} mt-3 space-y-3 sm:mt-0 sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:space-y-0`}>
+                  <div className={`${filtersOpen ? "block" : "hidden"} mt-3 space-y-3 sm:mt-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:items-start sm:gap-4 sm:space-y-0`}>
                     {activeFilterCount > 0 && (
                       <div className="hidden justify-end sm:col-span-3 sm:flex">
                         <button
@@ -1132,6 +1143,28 @@ function Index() {
                             });
                           })()}
                         </div>
+                      </div>
+                    )}
+
+                    {publicationOptions.length > 0 && (
+                      <div>
+                        <label htmlFor="weekly-publication-filter" className="block text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By publication / author</label>
+                        <select
+                          id="weekly-publication-filter"
+                          value={publicationFilter}
+                          onChange={(e) => {
+                            setSelectedChooser(null);
+                            setMobileQuickChoice(null);
+                            setPublicationFilter(e.target.value);
+                            trackFp("filter_change", { metadata: { filter: "publication", value: e.target.value } });
+                          }}
+                          className="mt-1.5 w-full min-h-11 rounded-lg border border-accent/45 bg-background/70 px-3 py-2 text-sm text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        >
+                          <option value="All">All publications</option>
+                          {publicationOptions.map((name) => (
+                            <option key={name} value={name}>{name}</option>
+                          ))}
+                        </select>
                       </div>
                     )}
 
