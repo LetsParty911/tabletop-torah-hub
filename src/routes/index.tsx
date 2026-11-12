@@ -327,6 +327,10 @@ const TABLE_THOUGHTS: Record<string, { quote: string; sourceHebrew: string }> = 
     quote: "Eliezer asked for a drink. Rivkah offered to water his camels, too. Sometimes, what we do beyond what’s asked changes everything.",
     sourceHebrew: "על פי בראשית כ״ד, י״ז–כ׳",
   },
+  toldos: {
+    quote: "When one well closes, keep digging. Your Rechovos may be just one more well away.",
+    sourceHebrew: "על פי בראשית כ״ו, י״ח–כ״ב",
+  },
 };
 
 function Index() {
