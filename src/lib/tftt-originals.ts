@@ -39,14 +39,12 @@ export type TfttOriginalSeries = {
 };
 
 /**
- * Canonical public.publications id for "The Parsha Detective".
- *
- * Deliberately null until the owner registers the real publications record
- * (see docs/originals/parsha-detective.md). Never fill this with a guessed or
- * placeholder UUID, and never match the series by title: while this is null
- * the fourth series is completely inert on every page.
+ * Verified canonical public.publications id for "The Parsha Detective".
+ * Registered as an active original series; no edition is public until a
+ * source-approved PDF is uploaded and explicitly published.
+ * Never infer ownership from publication titles.
  */
-export const PARSHA_DETECTIVE_PUBLICATION_ID: string | null = null;
+export const PARSHA_DETECTIVE_PUBLICATION_ID: string | null = "20900013-b70f-4091-8026-d5a05131ded8";
 
 export const PARSHA_DETECTIVE_SERIES_COPY = {
   title: "The Parsha Detective",
