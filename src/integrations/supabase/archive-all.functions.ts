@@ -11,6 +11,7 @@ import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
 import { matchesPageLength, type LengthFilter } from "@/lib/length-filter";
 import { pdfThumbUrl } from "@/integrations/supabase/api.functions";
 import { pdfDisplayTitle } from "@/lib/pdf-display-title";
+import { publicationFilterName } from "@/lib/publication-filter";
 import { readVerifiedThumbnails } from "@/lib/verified-thumbnails.server";
 import { verifiedSmallThumbnailUrl } from "@/lib/verified-thumbnails";
 
@@ -78,8 +79,7 @@ function resourceType(r: ArchivePdfAll): string | null {
 
 
 function canonicalPub(r: ArchivePdfAll): string | null {
-  const p = r.publication?.trim();
-  return p ? p : null;
+  return publicationFilterName(r);
 }
 
 export const listArchiveAll = createServerFn({ method: "GET" })
@@ -128,6 +128,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
     );
 
     type InternalPdf = ArchivePdfAll & {
+      publication_id?: string | null;
       year: number;
       parshaKey: string;
       created_at: string;
@@ -147,6 +148,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
 
       all.push({
         id: row.id as string,
+        publication_id: (row.publication_id as string | null) ?? null,
         title: pdfDisplayTitle(row.title as string, original?.title ?? canonical?.name, row.publication_id as string | null),
         publisher: canonical?.publisher ?? null,
         publication:
@@ -244,6 +246,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
         parshaKey: _parsha,
         created_at: _created,
         sort_order: _sort,
+        publication_id: _publicationId,
         ...pdf
       } = row;
       parshaMap.get(row.parshaKey)?.push({
