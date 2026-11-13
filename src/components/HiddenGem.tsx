@@ -32,13 +32,13 @@ export function HiddenGemTeaser({ context, initialNow }: { context: HomepageGemC
   const gem = homepageHiddenGem(context, new Date(now));
   if (!gem) return null;
   return (
-    <section aria-labelledby="hidden-gem-heading" className="mt-5 border-t border-accent/30 pt-4">
+    <section aria-labelledby="hidden-gem-heading" className="rounded-2xl border border-accent/40 bg-card/50 px-5 py-5 shadow-sm sm:px-6">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h3 id="hidden-gem-heading" className="font-serif text-lg font-bold text-primary">{HIDDEN_GEMS_NAME}</h3>
+        <h2 id="hidden-gem-heading" className="font-serif text-xl font-bold text-primary">{HIDDEN_GEMS_NAME}</h2>
         <p className="text-xs text-accent-readable">{gem.subseries} · {gem.parshaLabel}</p>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">{HIDDEN_GEMS_TAGLINE}</p>
-      <h4 className="mt-3 font-serif text-xl font-bold text-primary">{gem.title}</h4>
+      <h3 className="mt-3 font-serif text-xl font-bold text-primary">{gem.title}</h3>
       <GematriaMotif gem={gem} compact />
       <div className="flex justify-end"><Button asChild className="min-h-11"><Link to="/hidden-gems/$slug" params={{ slug: gem.slug }}>Read &amp; Print <ArrowRight aria-hidden="true" /></Link></Button></div>
     </section>
