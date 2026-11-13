@@ -50,8 +50,8 @@ type SeriesCard = {
   cta: string;
 };
 
-// The three weekly series always show (unchanged). A configured additional
-// series (The Parsha Detective) appears only once it has a published edition.
+// Every configured Torah For The Table original is listed here. Edition
+// cards below still appear only when a real weekly PDF has been published.
 function originalSeriesCards(activeSeriesIds: readonly string[] | undefined): SeriesCard[] {
   return visibleOriginalSeries(activeSeriesIds).map((series) => ({
     title: series.title,
