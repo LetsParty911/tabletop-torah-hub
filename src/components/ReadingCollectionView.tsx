@@ -108,7 +108,7 @@ export function ReadingCollectionView({
               {collection.jewish_year}
             </p>
             <p className="mx-auto mt-4 max-w-2xl font-serif text-base sm:text-lg leading-relaxed text-primary/85">
-              {collection.count} carefully selected {collection.count === 1 ? "Dvar Torah" : "Divrei Torah"} for children, families and adults.
+              {collection.count} carefully selected {collection.count === 1 ? "Dvar Torah" : "Divrei Torah"} for children, families, and deeper learning.
             </p>
           </div>
         </section>

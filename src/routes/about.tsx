@@ -7,7 +7,7 @@ export const Route = createFileRoute("/about")({
   head: () => {
     const title = "About Torah For The Table | Weekly Divrei Torah";
     const description =
-      "Torah For The Table is a nonprofit digital platform sharing weekly Divrei Torah for Shabbos and Yom Tov, with printable resources for children, families, and adults.";
+      "Torah For The Table is a nonprofit digital platform sharing weekly Divrei Torah for Shabbos and Yom Tov, with printable resources for children, families, and deeper Torah learning.";
     const url = "https://torahforthetable.com/about";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -61,7 +61,7 @@ function AboutPage() {
                 Yom Tov, alongside a growing archive of earlier weeks. Our mission is to help
                 individuals and families strengthen their connection to Torah by making meaningful
                 learning easier to access, print, and bring to the Shabbos table — for children,
-                families, and adults alike.
+                families, and those looking for deeper Torah insights.
               </p>
             </div>
 
@@ -85,7 +85,7 @@ function AboutPage() {
                     Creates original educational materials, including Parsha Challenge,
                     Stories for the Shabbos Table, and In the Margins
                   </li>
-                  <li>Provides content for children, families, and adults</li>
+                  <li>Provides content for children, families, and deeper Torah learning</li>
                   <li>Helps visitors easily download and print materials before Shabbos</li>
                   <li>Supports Torah learning in homes, schools, synagogues, and communities</li>
                 </ul>

@@ -2,6 +2,7 @@ import React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Download, Eye } from "lucide-react";
 import { formatTypeLabel } from "@/lib/format-labels";
+import { audienceLabel } from "@/lib/audience";
 import {
   AUDIENCE_OPTIONS,
   BADGE_OPTIONS,
@@ -427,7 +428,7 @@ export default function PdfListSection({
                             >
                               <option value="">— none —</option>
                               {AUDIENCE_OPTIONS.map((o) => (
-                                <option key={o} value={o}>{formatTypeLabel(o)}</option>
+                                <option key={o} value={o}>{audienceLabel(o)}</option>
                               ))}
                             </select>
                           </label>

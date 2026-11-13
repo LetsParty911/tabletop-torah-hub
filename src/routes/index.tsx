@@ -294,7 +294,7 @@ export const Route = createFileRoute("/")({
                 },
                 image,
                 description:
-                  "A nonprofit digital platform sharing printable Divrei Torah for the weekly parsha and Yom Tov for children, families, and adults.",
+                  "A nonprofit digital platform sharing printable Divrei Torah for the weekly parsha and Yom Tov for children, families, and those seeking deeper Torah learning.",
                 email: "hello@torahforthetable.com",
               },
               {

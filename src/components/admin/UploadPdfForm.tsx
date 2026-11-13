@@ -1,5 +1,6 @@
 import { usesIndividualPdfTitle } from "@/lib/pdf-display-title";
 import { formatTypeLabel } from "@/lib/format-labels";
+import { audienceLabel } from "@/lib/audience";
 import { PARSHIYOS } from "@/lib/parshiyos";
 import { AUDIENCE_OPTIONS, FORMAT_TYPE_OPTIONS } from "@/lib/pdf-constants";
 import WordCountHint from "@/components/admin/WordCountHint";
@@ -203,7 +204,7 @@ export default function UploadPdfForm({
             >
               <option value="">— none —</option>
               {AUDIENCE_OPTIONS.map((o) => (
-                <option key={o} value={o}>{formatTypeLabel(o)}</option>
+                <option key={o} value={o}>{audienceLabel(o)}</option>
               ))}
             </select>
           </label>

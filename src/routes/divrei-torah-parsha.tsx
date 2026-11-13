@@ -101,8 +101,8 @@ function DivreiTorahParshaPage() {
             <BookOpen className="h-5 w-5 text-accent" aria-hidden="true" />
             <h2 className="mt-3 font-serif text-xl font-bold text-primary">For the Shabbos Table</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              The library is organized to help you find something appropriate for children,
-              families or adults, whether you want a one-minute vort or a longer piece to learn.
+              The library helps you find something for children, the whole family,
+              or deeper learning — whether you want a one-minute vort or a longer piece to learn.
             </p>
           </article>
           <article className="rounded-2xl border border-accent/25 bg-card/25 p-5">

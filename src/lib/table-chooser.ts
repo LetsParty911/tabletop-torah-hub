@@ -4,7 +4,7 @@
 // logic stays testable. Chooser categories derive from resource metadata; the
 // homepage starter row uses the canonical TFTT original publication IDs.
 
-import { normalizeAudience } from "@/lib/audience";
+import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType } from "@/lib/collection-status";
 import { PARSHA_DETECTIVE_PUBLICATION_ID, TFTT_ORIGINAL_EDITION_SERIES } from "@/lib/tftt-originals";
@@ -39,7 +39,7 @@ export const CHOOSERS: ReadonlyArray<{
   { key: "kids", label: "For the Kids", blurb: "Questions, stories and Torah children can participate in.", featuredSlot: "children" },
   { key: "family", label: "Family Table", blurb: "Something everyone around the table can enjoy.", featuredSlot: "family" },
   { key: "story", label: "A Good Story", blurb: "A memorable story to share at the meal.", featuredSlot: null },
-  { key: "deeper", label: "Deeper Learning", blurb: "Something more substantial for adults.", featuredSlot: "deeper" },
+  { key: "deeper", label: "Deeper Learning", blurb: "A more substantial insight to learn and discuss.", featuredSlot: "deeper" },
 ];
 
 function haystack(r: ChooserResource): string {
@@ -223,7 +223,7 @@ export function chooseReason(r: ChooserResource): string {
 /** Compact "Children · Brief Insights · 3 pages" style meta line. */
 export function chooserMetaLine(r: ChooserResource): string | null {
   const parts = [
-    normalizeAudience(r.audience, r.title) ?? r.audience,
+    audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience,
     displayContentType(r.content_type, r.format_type, formatTypeLabel),
     typeof r.page_count === "number" ? `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}` : null,
   ].filter(Boolean);
