@@ -1,3 +1,5 @@
+import { renameLegacySeriesText } from "@/lib/tftt-originals";
+
 /** Reader-facing publication/source facet.
  *
  * R' Yehuda Zev Klein has two distinct recurring weekly upload slots (Dvar
@@ -44,5 +46,5 @@ export function publicationFilterName(r: PublicationFilterResource): string | nu
     return KLEIN_PUBLICATION_FILTER;
   }
 
-  return publication || null;
+  return renameLegacySeriesText(publication) || null;
 }
