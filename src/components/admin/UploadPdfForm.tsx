@@ -1,4 +1,5 @@
 import { usesIndividualPdfTitle } from "@/lib/pdf-display-title";
+import { renameLegacySeriesText } from "@/lib/tftt-originals";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { audienceLabel } from "@/lib/audience";
 import { PARSHIYOS } from "@/lib/parshiyos";
@@ -127,7 +128,7 @@ export default function UploadPdfForm({
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name}
+                    {renameLegacySeriesText(p.name)}
                   </option>
                 ))}
               <option value="__other__">Other (type a title)…</option>
@@ -275,7 +276,7 @@ export default function UploadPdfForm({
               : "Saved as draft — not visible to readers"}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {uploadResult.title} · Parshas {uploadResult.parsha} · {uploadResult.jewishYear}
+            {renameLegacySeriesText(uploadResult.title)} · Parshas {uploadResult.parsha} · {uploadResult.jewishYear}
           </p>
           {uploadResult.published ? (
             <a
