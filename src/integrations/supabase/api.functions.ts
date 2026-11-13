@@ -1,4 +1,4 @@
-import { TFTT_ORIGINAL_EDITION_SERIES, tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { TFTT_ORIGINAL_EDITION_SERIES, tfttOriginalSeriesById, renameLegacySeriesText } from "@/lib/tftt-originals";
 import { activeOriginalSeriesIds, groupOriginalEditions, type OriginalEditionRow } from "@/lib/original-editions";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
@@ -28,7 +28,7 @@ async function optimizePdfForStorage(buf: Buffer): Promise<Buffer> {
 // Normalize a publication/source title so small punctuation or spacing
 // differences ("R' Yehuda" vs "R'Yehuda") still match the admin-set order.
 export function sortTitleKey(title: string | null | undefined): string {
-  return (title ?? "")
+  return (renameLegacySeriesText(title) ?? "")
     .toLowerCase()
     .replace(/[\u2018\u2019\u201c\u201d]/g, "'")
     .replace(/[^a-z0-9]+/g, "");
@@ -86,7 +86,7 @@ async function getCanonicalByPdfId(
     const byId = new Map<string, CanonicalInfo>(
       (pubs.data ?? []).map((p: any) => [
         p.id as string,
-        { name: p.name as string, publisher: (p.publisher as string | null) ?? null },
+        { name: tfttOriginalSeriesById(p.id as string)?.title ?? renameLegacySeriesText(p.name as string), publisher: (p.publisher as string | null) ?? null },
       ]),
     );
     const links = await admin.from("pdfs").select("id, publication_id");
@@ -113,6 +113,14 @@ export type CanonicalPublication = {
   active: boolean;
 };
 
+function displayCanonicalPublications(rows: any[]): CanonicalPublication[] {
+  return rows.map((p: any) => ({
+    ...p,
+    name: tfttOriginalSeriesById(p.id as string)?.title ?? renameLegacySeriesText(p.name as string),
+    default_description: renameLegacySeriesText((p.default_description as string | null) ?? null),
+  })) as CanonicalPublication[];
+}
+
 // Public list of canonical publications (empty before the migration runs).
 export const listCanonicalPublications = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ publications: CanonicalPublication[] }> => {
@@ -125,14 +133,14 @@ export const listCanonicalPublications = createServerFn({ method: "GET" }).handl
         .select(`${baseCols}, default_description`)
         .order("name", { ascending: true });
       if (!withDesc.error) {
-        return { publications: (withDesc.data ?? []) as CanonicalPublication[] };
+        return { publications: displayCanonicalPublications(withDesc.data ?? []) };
       }
       const { data, error } = await admin
         .from("publications")
         .select(baseCols)
         .order("name", { ascending: true });
       if (error) return { publications: [] };
-      return { publications: (data ?? []) as CanonicalPublication[] };
+      return { publications: displayCanonicalPublications(data ?? []) };
     } catch {
       return { publications: [] };
     }
@@ -300,7 +308,7 @@ async function buildResources(
   const smallPaths = await readVerifiedThumbnails(admin);
   const orderMap = await getTitleSortOrderMap(admin);
   const canonical = await getCanonicalByPdfId(admin);
-  const displayTitle = (r: any): string => pdfDisplayTitle(r.title, canonical.get(r.id as string)?.name, r.publication_id);
+  const displayTitle = (r: any): string => pdfDisplayTitle(r.title, tfttOriginalSeriesById(r.publication_id)?.title ?? canonical.get(r.id as string)?.name, r.publication_id);
   const orderFor = (title: string): number => {
     const v = orderMap.get(sortTitleKey(title));
     return typeof v === "number" ? v : 999999;
@@ -318,15 +326,15 @@ async function buildResources(
         parsha_key: (r.parsha_key as string | null) ?? null,
         title: displayTitle(r),
         publisher: canonical.get(r.id as string)?.publisher ?? null,
-        subtitle: standardizeCopy(r.subtitle),
+        subtitle: renameLegacySeriesText(standardizeCopy(r.subtitle)),
         url: `/view/${r.id}/download`,
-        summary_quick: r.summary_quick,
+        summary_quick: renameLegacySeriesText(r.summary_quick),
         summary_audio_path: r.summary_audio_path ?? null,
         primary_category: (r.primary_category as string | null) ?? null,
-        publication: (r.publication as string | null) ?? null,
+        publication: renameLegacySeriesText((r.publication as string | null) ?? null),
         publication_id: (r.publication_id as string | null) ?? null,
         tags: Array.isArray(r.tags) ? (r.tags as string[]) : [],
-        description: standardizeCopy((r.description as string | null) ?? null),
+        description: renameLegacySeriesText(standardizeCopy((r.description as string | null) ?? null)),
         audience: (r.audience as string | null) ?? null,
         format_type: (r.format_type as string | null) ?? null,
         content_type: (r.content_type as string | null) ?? null,
@@ -475,7 +483,7 @@ export const listPublicationsMeta = createServerFn({ method: "GET" }).handler(
     };
     const map = new Map<string, PublicationMeta>();
     for (const r of (res.data ?? []) as any[]) {
-      const t = (r.title as string | null)?.trim();
+      const t = renameLegacySeriesText((r.title as string | null)?.trim());
       if (!t) continue;
       const key = t.toLowerCase();
       const existing = map.get(key);
@@ -485,7 +493,7 @@ export const listPublicationsMeta = createServerFn({ method: "GET" }).handler(
           title: t,
           primary_category: (r.primary_category as string | null) ?? null,
           tags,
-          summary: (r.summary_quick as string | null) ?? null,
+          summary: renameLegacySeriesText((r.summary_quick as string | null) ?? null),
         });
       } else {
         // Merge: prefer first non-null category/summary; union tags
@@ -584,14 +592,14 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
       if (!pmap.has(r.parsha_key)) pmap.set(r.parsha_key, []);
       pmap.get(r.parsha_key)!.push({
         id: r.id,
-        title: pdfDisplayTitle(r.title, canonical.get(r.id as string)?.name, r.publication_id),
+        title: pdfDisplayTitle(r.title, tfttOriginalSeriesById(r.publication_id)?.title ?? canonical.get(r.id as string)?.name, r.publication_id),
         publisher: canonical.get(r.id as string)?.publisher ?? null,
         publication:
-          canonical.get(r.id as string)?.name ??
-          ((r.publication as string | null) ?? null),
-        subtitle: standardizeCopy(r.subtitle),
-        summary_quick: r.summary_quick,
-        description: standardizeCopy((r.description as string | null) ?? null),
+          tfttOriginalSeriesById(r.publication_id)?.title ?? canonical.get(r.id as string)?.name ??
+          renameLegacySeriesText((r.publication as string | null) ?? null),
+        subtitle: renameLegacySeriesText(standardizeCopy(r.subtitle)),
+        summary_quick: renameLegacySeriesText(r.summary_quick),
+        description: renameLegacySeriesText(standardizeCopy((r.description as string | null) ?? null)),
         audience: (r.audience as string | null) ?? null,
         format_type: (r.format_type as string | null) ?? null,
         content_type: (r.content_type as string | null) ?? null,
@@ -749,7 +757,7 @@ export const getPdfById = createServerFn({ method: "GET" })
       return { pdf: null as null | PublicPdf };
     }
     // Prefer the canonical publication name when the row is linked.
-    let displayTitle = row.title;
+    let displayTitle = renameLegacySeriesText(row.title);
     let publisher: string | null = null;
     let publicationId: string | null = null;
     try {
@@ -781,23 +789,23 @@ export const getPdfById = createServerFn({ method: "GET" })
         id: row.id,
         title: displayTitle,
         publisher,
-        subtitle: standardizeCopy(row.subtitle),
+        subtitle: renameLegacySeriesText(standardizeCopy(row.subtitle)),
 
         url: signed?.signedUrl ?? "",
         createdAt: row.created_at ?? null,
         updatedAt: row.updated_at ?? null,
         weekOf: row.week_of ?? null,
-        description: standardizeCopy(row.description ?? null),
+        description: renameLegacySeriesText(standardizeCopy(row.description ?? null)),
         audience: row.audience ?? null,
         format_type: row.format_type ?? null,
         page_count: typeof row.page_count === "number" ? row.page_count : null,
         badge: row.badge ?? null,
-        publication: row.publication ?? null,
+        publication: renameLegacySeriesText(row.publication ?? null),
         parsha_key: row.parsha_key ?? null,
         thumb_url: pdfThumbUrl(row.id, publicationId),
         jewish_year: row.jewish_year ?? null,
-        summary_quick: standardizeCopy(row.summary_quick ?? null),
-        summary_full: standardizeCopy(row.summary_full ?? null),
+        summary_quick: renameLegacySeriesText(standardizeCopy(row.summary_quick ?? null)),
+        summary_full: renameLegacySeriesText(standardizeCopy(row.summary_full ?? null)),
       } as PublicPdf,
     };
   });
