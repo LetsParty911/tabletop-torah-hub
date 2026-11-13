@@ -22,6 +22,7 @@ export const normalizeTitleKey = (value: string | null | undefined): string =>
 // checklist slot. The checklist keeps one stable canonical source name while
 // the PDF itself may use a Yom Tov-specific title.
 const TITLE_KEY_ALIASES: Record<string, string> = {
+  parshachallenge: "parshaquestionsanswers",
   roshhashanahqa: "parshaquestionsanswers",
   roshhashanahquestionsanswers: "parshaquestionsanswers",
   storiesfortheyomtovtable: "storiesfortheshabbostable",
