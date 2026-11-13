@@ -7,7 +7,7 @@ import { readingChronoIndex } from "@/lib/parshiyos";
 import { matchesParshaSearch, toParshaComparableKey } from "@/lib/parsha-normalize";
 import { normalizeAudience, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
-import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { tfttOriginalSeriesById, renameLegacySeriesText } from "@/lib/tftt-originals";
 import { matchesPageLength, type LengthFilter } from "@/lib/length-filter";
 import { pdfThumbUrl } from "@/integrations/supabase/api.functions";
 import { pdfDisplayTitle } from "@/lib/pdf-display-title";
@@ -120,7 +120,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
       (pubs ?? []).map((p: any) => [
         p.id as string,
         {
-          name: p.name as string,
+          name: tfttOriginalSeriesById(p.id as string)?.title ?? renameLegacySeriesText(p.name as string),
           publisher: (p.publisher as string | null) ?? null,
           sort_order: typeof p.sort_order === "number" ? p.sort_order : 999999,
         },
@@ -151,13 +151,14 @@ export const listArchiveAll = createServerFn({ method: "GET" })
         publication_id: (row.publication_id as string | null) ?? null,
         title: pdfDisplayTitle(row.title as string, original?.title ?? canonical?.name, row.publication_id as string | null),
         publisher: canonical?.publisher ?? null,
-        publication:
+        publication: renameLegacySeriesText(
           original?.title ?? canonical?.name ??
           (row.publication && PUBLICATION_LABELS[row.publication as string]
             ? publicationLabel(row.publication as string)
-            : null),
-        subtitle: standardizeCopy((row.subtitle as string | null) ?? null),
-        description: standardizeCopy((row.description as string | null) ?? null),
+            : (row.publication as string | null) ?? null)
+        ),
+        subtitle: renameLegacySeriesText(standardizeCopy((row.subtitle as string | null) ?? null)),
+        description: renameLegacySeriesText(standardizeCopy((row.description as string | null) ?? null)),
         audience: (row.audience as string | null) ?? null,
         format_type: (row.format_type as string | null) ?? null,
         content_type: (row.content_type as string | null) ?? null,
