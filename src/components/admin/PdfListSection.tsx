@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Download, Eye } from "lucide-react";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { audienceLabel } from "@/lib/audience";
+import { renameLegacySeriesText } from "@/lib/tftt-originals";
 import {
   AUDIENCE_OPTIONS,
   BADGE_OPTIONS,
@@ -243,9 +244,9 @@ export default function PdfListSection({
                   {p.jewish_year ?? "—"}
                 </td>
                 <td className="py-2 pr-3">
-                  <div className="font-medium">{p.title}</div>
+                  <div className="font-medium">{renameLegacySeriesText(p.title)}</div>
                   {p.subtitle && (
-                    <div className="text-muted-foreground text-xs">{p.subtitle}</div>
+                    <div className="text-muted-foreground text-xs">{renameLegacySeriesText(p.subtitle)}</div>
                   )}
                 </td>
                 <td className="py-2 pr-3">
