@@ -1,3 +1,5 @@
+import { renameLegacySeriesText } from "./tftt-originals";
+
 /** Recurring upload slots keep stable labels, while readers see each PDF title. */
 const INDIVIDUAL_TITLED_SERIES = new Set([
   "4d5f000c-6e90-4d58-aa9f-fd73fc005115",
@@ -17,7 +19,7 @@ export function pdfDisplayTitle(
 ): string {
   const uploadedTitle = storedTitle?.trim() ?? "";
   if (usesIndividualPdfTitle(publicationId) && uploadedTitle) {
-    return uploadedTitle;
+    return renameLegacySeriesText(uploadedTitle);
   }
-  return canonicalName?.trim() || uploadedTitle;
+  return renameLegacySeriesText(canonicalName?.trim() || uploadedTitle);
 }
