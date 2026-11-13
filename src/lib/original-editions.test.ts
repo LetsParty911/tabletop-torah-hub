@@ -28,7 +28,7 @@ describe("groupOriginalEditions", () => {
       "15ef7728-7a4e-4f40-94ce-ed9796eb4aff",
       "18229ea5-3f75-4160-aca6-801749532fb4",
     ]);
-    expect(g.editions.map((e) => e.seriesTitle)).toEqual(["Parsha Challenge", "Stories for the Shabbos Table", "In the Margins"]);
+    expect(g.editions.map((e) => e.seriesTitle)).toEqual(["Parsha Questions & Answers", "Stories for the Shabbos Table", "In the Margins"]);
     expect(g.editions[0].thumbUrl).toBe(thumb("8c7e8593-cebf-4bf4-b53c-ad41691cd3c9"));
   });
 
