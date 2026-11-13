@@ -26,6 +26,12 @@ describe("individual weekly article titles", () => {
     expect(pdfDisplayTitle("Toras Avigdor - Chayei Sarah 5787", "Toras Avigdor", "99999999-9999-4999-8999-999999999999"))
       .toBe("Toras Avigdor");
   });
+  it("renames legacy recurring-series metadata without changing publication IDs", () => {
+    expect(pdfDisplayTitle("Parsha Challenge", "Parsha Challenge", "0fa3db5f-c153-4311-a007-415c3c022143"))
+      .toBe("Parsha Questions & Answers");
+    expect(pdfDisplayTitle("Parsha Challenge — Toldos", null, null))
+      .toBe("Parsha Questions & Answers — Toldos");
+  });
   it("keeps original title when canonical metadata is missing", () => {
     expect(pdfDisplayTitle("Special Edition", null, null)).toBe("Special Edition");
     expect(pdfDisplayTitle("  Uploaded article  ", "Recurring slot", "c3fa24ef-b7a8-42d1-a237-480bc24cba57"))
