@@ -17,6 +17,12 @@ rather than a misleading PDF or successful response.
 
 The existing application security gates remain independent and unchanged.
 This additional gate does not exempt internal devices or VPN capabilities.
+The private website preview serves GET/HEAD content from the fixed public
+origin after the gate, so it needs no production-only application credentials.
+Preview writes return 405, and browser cookies/authorization are not forwarded.
+Production uses `next()` into the normal application. The early `/k` static
+redirect is removed from the branch configuration: its existing Start handler
+retains the same destination after the new geographic gate has run.
 Public files hosted directly by another service remain outside this boundary;
 protecting those requires separate storage access changes. Already downloaded
 or offline-cached content cannot be recalled. IP location is approximate and

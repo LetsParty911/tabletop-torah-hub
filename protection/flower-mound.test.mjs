@@ -78,3 +78,24 @@ test('test interface rejects unknown fixtures, external paths and mutations', ()
   }
   assert.equal(previewResponse(request('/__protection/test?case=lewisville', { method: 'POST' }), 'preview').status, 405);
 });
+
+test('private preview reads only the fixed public origin after the gate', () => {
+  const original = process.env.VERCEL_ENV;
+  process.env.VERCEL_ENV = 'preview';
+  try {
+    const response = middleware(request('//example.com/path?q=1&_vercel_share=private-test', { headers: { cookie: 'session=secret', authorization: 'Bearer private-test' } }));
+    const target = new URL(response.headers.get('x-middleware-rewrite'));
+    assert.equal(target.hostname, 'torahforthetable.com');
+    assert.equal(target.searchParams.get('q'), '1');
+    assert.equal(target.searchParams.has('_vercel_share'), false);
+    assert.equal(response.headers.get('x-middleware-request-cookie'), null);
+    assert.equal(response.headers.get('x-middleware-request-authorization'), null);
+    assert.equal(middleware(request('/', { method: 'POST' })).status, 405);
+    const denied = middleware(request('/', { headers: blockedHeaders }));
+    assert.equal(denied.status, 403);
+    assert.equal(denied.headers.get('x-middleware-rewrite'), null);
+  } finally {
+    if (original === undefined) delete process.env.VERCEL_ENV;
+    else process.env.VERCEL_ENV = original;
+  }
+});
