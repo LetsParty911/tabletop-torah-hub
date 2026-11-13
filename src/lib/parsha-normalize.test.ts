@@ -3,8 +3,8 @@ import { matchesParshaSearch, toParshaComparableKey } from "./parsha-normalize";
 
 const makeRow = (parshaKey: string) => ({
   parshaKey,
-  title: "Parsha Challenge",
-  publication: "Parsha Challenge",
+  title: "Parsha Questions & Answers",
+  publication: "Parsha Questions & Answers",
   publisher: null,
   subtitle: null,
   description: "Questions and answers for the Shabbos table",
