@@ -52,13 +52,13 @@ describe("The Parsha Detective — current configured state", () => {
   it("lists all four configured original-series cards before the Detective PDF exists", () => {
     const visible = visibleOriginalSeries([PC, ST, IM]);
     expect(visible.map((s) => s.title)).toEqual([
-      "Parsha Challenge",
+      "Parsha Questions & Answers",
       "Stories for the Shabbos Table",
       "In the Margins",
       "The Parsha Detective",
     ]);
     expect(originalsPageDescription(visible)).toBe(
-      "Torah For The Table original series: Parsha Challenge, Stories for the Shabbos Table, In the Margins, and The Parsha Detective — created for the Shabbos table.",
+      "Torah For The Table original series: Parsha Questions & Answers, Stories for the Shabbos Table, In the Margins, and The Parsha Detective — created for the Shabbos table.",
     );
   });
 
@@ -77,7 +77,7 @@ describe("buildOriginalEditionSeries", () => {
   it("appends The Parsha Detective last when a real-shaped id is configured", () => {
     const series = buildOriginalEditionSeries(` ${TEST_DETECTIVE.toUpperCase()} `);
     expect(series.map((s) => s.title)).toEqual([
-      "Parsha Challenge",
+      "Parsha Questions & Answers",
       "Stories for the Shabbos Table",
       "In the Margins",
       "The Parsha Detective",
@@ -120,7 +120,7 @@ describe("The Parsha Detective — configured", () => {
   it("updates the meta description to name all four series once visible", () => {
     const visible = visibleOriginalSeries([PC, ST, IM, TEST_DETECTIVE], series);
     expect(originalsPageDescription(visible)).toBe(
-      "Torah For The Table original series: Parsha Challenge, Stories for the Shabbos Table, In the Margins, and The Parsha Detective — created for the Shabbos table.",
+      "Torah For The Table original series: Parsha Questions & Answers, Stories for the Shabbos Table, In the Margins, and The Parsha Detective — created for the Shabbos table.",
     );
   });
 });
