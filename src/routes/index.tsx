@@ -253,7 +253,7 @@ export const Route = createFileRoute("/")({
   head: () => {
     const title = "Torah For The Table | Printable Weekly Divrei Torah";
     const description =
-      "Original weekly Parsha Challenge, Stories for the Shabbos Table, In the Margins, and The Parsha Detective, alongside printable Divrei Torah from respected Torah publishers.";
+      "Original weekly Parsha Questions & Answers, Stories for the Shabbos Table, In the Margins, and The Parsha Detective, alongside printable Divrei Torah from respected Torah publishers.";
     const url = "https://torahforthetable.com/";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -625,16 +625,18 @@ function Index() {
     return r.parsha_key;
   };
   const displayTitle = (r: Resource) => {
-    const base = tfttOriginalSeriesById(r.publication_id)?.title === "Parsha Challenge"
-      ? r.title.replace(/^Parsha Questions\s*(?:&|and)\s*Answers/i, "Parsha Challenge")
+    const base = tfttOriginalSeriesById(r.publication_id)?.title === "Parsha Questions & Answers"
+      ? r.title.replace(/^Parsha Challenge/i, "Parsha Questions & Answers")
       : isHaazinuWeek && r.title === "Parsha Questions & Answers" ? haazinuQaTitle : r.title;
     const qualifier = holidayQualifier(r);
     return qualifier ? `${base} — ${qualifier}` : base;
   };
   const displayPublicationName = (r: Resource) =>
-    isHaazinuWeek && r.title === "Parsha Questions & Answers"
-      ? haazinuQaTitle
-      : publicationLabel(r.publication || r.title) || r.title;
+    tfttOriginalSeriesById(r.publication_id)?.title === "Parsha Questions & Answers"
+      ? "Parsha Questions & Answers"
+      : isHaazinuWeek && r.title === "Parsha Questions & Answers"
+        ? haazinuQaTitle
+        : publicationLabel(r.publication || r.title) || r.title;
 
   const isTfttOriginal = (r: Resource) => Boolean(tfttOriginalSeriesById(r.publication_id));
   // Display the correct uploaded PDF cover on all publication cards in ALL
@@ -1427,7 +1429,7 @@ function Index() {
           <WeeklyEmailSignup
             sourceId="homepage"
             heading="Receive the Weekly Shabbos Collection"
-            description="A weekly email when the new collection is ready, featuring Parsha Challenge, Stories for the Shabbos Table, In the Margins, The Parsha Detective, and other Divrei Torah. Read or print before Shabbos."
+            description="A weekly email when the new collection is ready, featuring Parsha Questions & Answers, Stories for the Shabbos Table, In the Margins, The Parsha Detective, and other Divrei Torah. Read or print before Shabbos."
           />
         </section>
 
