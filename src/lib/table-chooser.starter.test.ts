@@ -16,7 +16,7 @@ const otherStories = make("other-stories", "Stories for the Shabbos Table", null
 
 describe("homepage starter selections (TFTT originals only)", () => {
   it("shows all three originals in fixed order regardless of collection order", () => {
-    const rows = [weeklyDvar, make("m", "In the Margins", MARGINS), make("s", "Stories for the Shabbos Table", STORIES), make("p", "Parsha Challenge", PARSHA)];
+    const rows = [weeklyDvar, make("m", "In the Margins", MARGINS), make("s", "Stories for the Shabbos Table", STORIES), make("p", "Parsha Questions & Answers", PARSHA)];
     expect(pickStarterSelections(rows).map((p) => p.resource.id)).toEqual(["p", "s", "m"]);
   });
 
@@ -38,7 +38,7 @@ describe("homepage starter selections (TFTT originals only)", () => {
   });
 
   it("never selects non-TFTT publications, even with original-looking titles", () => {
-    const rows = [weeklyDvar, otherStories, make("x", "Parsha Challenge", "22222222-2222-2222-2222-222222222222"), make("y", "In the Margins", null)];
+    const rows = [weeklyDvar, otherStories, make("x", "Parsha Questions & Answers", "22222222-2222-2222-2222-222222222222"), make("y", "In the Margins", null)];
     expect(pickStarterSelections(rows)).toEqual([]);
   });
 
