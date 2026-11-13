@@ -26,6 +26,14 @@ export const TFTT_ORIGINAL_SERIES = [
   },
 ] as const;
 
+/** Legacy publication labels remain in older PDF and publication records. Do not
+ * mutate stable IDs or stored analytics; normalize reader-facing text only. */
+export function renameLegacySeriesText<T extends string | null | undefined>(value: T): T {
+  return (typeof value === "string"
+    ? value.replace(/\bParsha Challenge\b/gi, TFTT_ORIGINAL_SERIES[0].title)
+    : value) as T;
+}
+
 export function tfttOriginalSeriesById(publicationId: string | null | undefined) {
   if (!publicationId) return null;
   return TFTT_ORIGINAL_EDITION_SERIES.find((series) => series.id === publicationId) ?? null;
