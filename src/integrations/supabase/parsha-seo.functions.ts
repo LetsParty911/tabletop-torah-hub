@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { PARSHIYOS_54, formatReadingLabel } from "@/lib/parshiyos";
 import { readingSlug } from "@/lib/reading-page";
 import { standardizeCopy } from "@/lib/standardize-copy";
+import { renameLegacySeriesText } from "@/lib/tftt-originals";
 
 export type ParshaSeoResource = {
   id: string;
@@ -92,9 +93,9 @@ export const getParshaSeoPage = createServerFn({ method: "GET" })
 
     const resources: ParshaSeoResource[] = matches.map((row: any) => ({
       id: row.id as string,
-      title: row.title as string,
-      description: standardizeCopy((row.description as string | null) ?? null),
-      summary_quick: standardizeCopy((row.summary_quick as string | null) ?? null),
+      title: renameLegacySeriesText(row.title as string),
+      description: renameLegacySeriesText(standardizeCopy((row.description as string | null) ?? null)),
+      summary_quick: renameLegacySeriesText(standardizeCopy((row.summary_quick as string | null) ?? null)),
       audience: (row.audience as string | null) ?? null,
       format_type: (row.format_type as string | null) ?? null,
       content_type: (row.content_type as string | null) ?? null,
