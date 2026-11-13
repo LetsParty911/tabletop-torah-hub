@@ -125,7 +125,7 @@ export function visibleOriginalSeries(
 }
 
 const THREE_SERIES_DESCRIPTION =
-  "Three weekly Torah For The Table original series: Parsha Challenge, Stories for the Shabbos Table, and In the Margins — created for the Shabbos table.";
+  "Three weekly Torah For The Table original series: Parsha Questions & Answers, Stories for the Shabbos Table, and In the Margins — created for the Shabbos table.";
 
 /** /originals meta description; unchanged while only the three weekly series are visible. */
 export function originalsPageDescription(visible: readonly TfttOriginalSeries[]): string {
