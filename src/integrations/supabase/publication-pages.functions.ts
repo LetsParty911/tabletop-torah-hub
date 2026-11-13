@@ -3,7 +3,12 @@ import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { publicationSlug } from "@/lib/publication-slug";
 import { standardizeCopy } from "@/lib/standardize-copy";
+import { tfttOriginalSeriesById, renameLegacySeriesText } from "@/lib/tftt-originals";
 import { pdfThumbUrl } from "@/integrations/supabase/api.functions";
+
+function publicPublicationName(p: { id: string; name: string }): string {
+  return tfttOriginalSeriesById(p.id)?.title ?? renameLegacySeriesText(p.name);
+}
 
 export type PublicationEdition = {
   id: string;
@@ -72,12 +77,12 @@ export const listPublicationPages = createServerFn({ method: "GET" }).handler(
       publications: (pubs ?? [])
         .map((p: any) => ({
           id: p.id as string,
-          name: p.name as string,
-          slug: publicationSlug(p.name as string),
+          name: publicPublicationName(p),
+          slug: publicationSlug(publicPublicationName(p)),
           publisher: (p.publisher as string | null) ?? null,
           default_audience: (p.default_audience as string | null) ?? null,
           default_format_type: (p.default_format_type as string | null) ?? null,
-          default_description: standardizeCopy((p.default_description as string | null) ?? null),
+          default_description: renameLegacySeriesText(standardizeCopy((p.default_description as string | null) ?? null)),
           edition_count: counts.get(p.id as string) ?? 0,
           thumb_url: latest.get(p.id as string) ? pdfThumbUrl(latest.get(p.id as string)!.id, p.id as string) : null,
         }))
@@ -103,7 +108,7 @@ export const getPublicationPage = createServerFn({ method: "GET" })
     }
 
     const publication = (pubs ?? []).find(
-      (p: any) => publicationSlug(p.name as string) === data.slug,
+      (p: any) => publicationSlug(p.name as string) === data.slug || publicationSlug(publicPublicationName(p)) === data.slug,
     );
     if (!publication) {
       return { publication: null, editions: [] as PublicationEdition[] };
@@ -125,20 +130,20 @@ export const getPublicationPage = createServerFn({ method: "GET" })
     return {
       publication: {
         id: publication.id as string,
-        name: publication.name as string,
-        slug: publicationSlug(publication.name as string),
+        name: publicPublicationName(publication),
+        slug: publicationSlug(publicPublicationName(publication)),
         publisher: (publication.publisher as string | null) ?? null,
         default_audience: (publication.default_audience as string | null) ?? null,
         default_format_type: (publication.default_format_type as string | null) ?? null,
-        default_description: standardizeCopy(
+        default_description: renameLegacySeriesText(standardizeCopy(
           (publication.default_description as string | null) ?? null,
-        ),
+        )),
       },
       editions: (rows ?? []).map((r: any) => ({
         id: r.id as string,
-        title: r.title as string,
-        subtitle: standardizeCopy((r.subtitle as string | null) ?? null),
-        description: standardizeCopy((r.description as string | null) ?? null),
+        title: renameLegacySeriesText(r.title as string),
+        subtitle: renameLegacySeriesText(standardizeCopy((r.subtitle as string | null) ?? null)),
+        description: renameLegacySeriesText(standardizeCopy((r.description as string | null) ?? null)),
         audience: (r.audience as string | null) ?? null,
         format_type: (r.format_type as string | null) ?? null,
         page_count: typeof r.page_count === "number" ? r.page_count : null,
