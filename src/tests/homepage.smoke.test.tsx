@@ -79,7 +79,7 @@ vi.mock("@/components/SiteFooter", () => ({ SiteFooter: () => null }));
 vi.mock("@/components/BackToTop", () => ({ BackToTop: () => null }));
 vi.mock("@/hooks/use-prewarm-downloads", () => ({ usePrewarmDownloads: () => undefined }));
 vi.mock("@/lib/analytics", () => ({ trackEvent: vi.fn() }));
-vi.mock("@/lib/first-party-analytics", () => ({ trackFp: vi.fn() }));
+vi.mock("@/lib/first-party-analytics", () => ({ trackFp: vi.fn(), getSessionId: vi.fn(() => null) }));
 
 import { Route } from "../routes/index";
 import { TFTT_ORIGINAL_SERIES } from "@/lib/tftt-originals";
@@ -144,7 +144,7 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(message).not.toContain("Parshas Lech-Lecha");
   });
 
-  it("shows full descriptions for the three original series without a line clamp", () => {
+  it("shows concise descriptions for the three original series without a line clamp", () => {
     setHomepage(false);
     state.loader.resources = TFTT_ORIGINAL_SERIES.map((series, index) => ({
       ...example(index + 1, "Lech-Lecha"),
@@ -153,7 +153,7 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     }));
     render(<Homepage />);
     for (const series of TFTT_ORIGINAL_SERIES) {
-      const description = screen.getByText(series.shortDescription);
+      const description = screen.getByText(series.expectation);
       expect(description.className).not.toContain("line-clamp");
     }
     expect(screen.getByText("Our Originals")).toBeTruthy();

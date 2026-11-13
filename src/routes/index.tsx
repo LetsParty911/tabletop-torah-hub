@@ -92,7 +92,7 @@ function StarterThumb({ src, smallSrc, alt, title, href, onOpen }: {
   const [failed, setFailed] = useState(false);
   if (failed) {
     return (
-      <div role="img" aria-label={`Cover unavailable for ${title}`} className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-lg bg-accent/12 text-primary">
+      <div role="img" aria-label={`Cover unavailable for ${title}`} className="flex h-[145px] w-28 shrink-0 items-center justify-center rounded-lg bg-accent/12 text-primary">
         <FileText className="h-5 w-5" aria-hidden="true" />
       </div>
     );
@@ -105,19 +105,19 @@ function StarterThumb({ src, smallSrc, alt, title, href, onOpen }: {
       aria-label={`Open PDF in a new tab: ${title}`}
       title={`Open PDF: ${title}`}
       onClick={onOpen}
-      className="block h-[83px] w-16 shrink-0 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className="block h-[145px] w-28 shrink-0 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <SmallPdfImage
         key={src}
         src={src}
         verifiedSmallSrc={smallSrc}
         alt={alt}
-        width={64}
-        height={83}
+        width={112}
+        height={145}
         loading="lazy"
         decoding="async"
         onUnavailable={() => setFailed(true)}
-        className="h-[83px] w-16 rounded-sm border border-accent/40 bg-card object-contain shadow-sm hover:border-accent"
+        className="h-[145px] w-28 rounded-sm border border-accent/40 bg-card object-contain shadow-sm hover:border-accent"
       />
     </a>
   );
@@ -844,10 +844,10 @@ function Index() {
                 ? "Our own weekly publications, ready to read or print, alongside selections from respected Torah publishers."
                 : "Open any PDF to read or print. No account is needed."}
             </p>
-            <div className={`mt-4 grid gap-3 ${starterCardCount >= 4 ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
+            <div className="mt-6 grid gap-5 sm:grid-cols-2 sm:gap-6">
               {starterSelections.map(({ key, label, resource: r }, index) => (
-                <article key={r.id} ref={index === 0 ? originalsRef : undefined} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
-                  <div className="flex min-w-0 gap-3">
+                <article key={r.id} ref={index === 0 ? originalsRef : undefined} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-5 sm:p-6">
+                  <div className="flex min-w-0 flex-col items-center gap-4 text-center">
                   {r.thumb_url && (
                     <StarterThumb
                       smallSrc={r.small_thumb_url}
@@ -873,16 +873,9 @@ function Index() {
                       }}
                     />
                   )}
-                  <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    {!isTfttOriginal(r) && <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{label}</p>}
-                    {isTfttOriginal(r) && (
-                      <span className="rounded-full border border-accent/60 bg-accent/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
-                        TFTT Original
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="mt-2 font-serif text-base font-bold leading-snug text-primary">
+                  <div className="min-w-0 w-full">
+                  {!isTfttOriginal(r) && <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{label}</p>}
+                  <h3 className="font-serif text-xl font-bold leading-snug text-primary">
                     <Link to="/view/$id" params={{ id: r.id }} onClick={() => trackFp("recommendation_click", { publication_id: r.id, publication_title: r.title, parsha: r.parsha_key ?? displayedParshaKey, metadata: { chooser: key, placement: "homepage_start_here" } })} className="hover:text-accent hover:underline">
                       {displayTitle(r)}
                       {r.publication_id === PARSHA_DETECTIVE_PUBLICATION_ID && (
@@ -890,17 +883,15 @@ function Index() {
                       )}
                     </Link>
                   </h3>
-                  <PublicationQuickFacts
-                    audience={audienceLabel(normalizeAudience(r.audience, displayTitle(r))) ?? r.audience}
-                    format={resourceContentType(r)}
-                    length={pageCountLabel(r)}
-                  />
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    {tfttOriginalSeriesById(r.publication_id)?.shortDescription ?? leadWithPublicationTitle(displayTitle(r), chooseReason(r))}
+                  <p className="mt-2 text-xs font-semibold text-accent-readable">
+                    {audienceLabel(normalizeAudience(r.audience, displayTitle(r))) ?? r.audience}
+                  </p>
+                  <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                    {tfttOriginalSeriesById(r.publication_id)?.expectation ?? leadWithPublicationTitle(displayTitle(r), chooseReason(r))}
                   </p>
                   </div>
                   </div>
-                  <div className="mt-auto pt-4">
+                  <div className="mt-auto pt-5">
                     <DownloadAndPrintButtons
                       href={`/view/${r.id}/pdf`}
                       publicationId={r.id}
@@ -921,33 +912,27 @@ function Index() {
                 </article>
               ))}
               {showDetectivePlaceholder && (
-                <article className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4">
-                  <div className="flex min-w-0 gap-3">
+                <article className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-5 sm:p-6">
+                  <div className="flex min-w-0 flex-col items-center gap-4 text-center">
                     <div
                       role="img"
                       aria-label="The Parsha Detective"
-                      className="flex h-[83px] w-16 shrink-0 items-center justify-center rounded-sm border border-accent/40 bg-accent/10 text-primary shadow-sm"
+                      className="flex h-[145px] w-28 shrink-0 items-center justify-center rounded-sm border border-accent/40 bg-accent/10 text-primary shadow-sm"
                     >
                       <FileText className="h-6 w-6" aria-hidden="true" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full border border-accent/60 bg-accent/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
-                          TFTT Original
-                        </span>
-                        <span className="rounded-full bg-accent px-2 py-0.5 font-sans text-[10px] font-bold uppercase tracking-wide text-accent-foreground">
-                          New
-                        </span>
-                      </div>
-                      <h3 className="mt-2 font-serif text-base font-bold leading-snug text-primary">
+                    <div className="min-w-0 w-full">
+                      <h3 className="font-serif text-xl font-bold leading-snug text-primary">
                         {PARSHA_DETECTIVE_SERIES_COPY.title}
+                        <span className="ml-2 rounded-full bg-accent px-2 py-0.5 align-middle font-sans text-[10px] font-bold uppercase tracking-wide text-accent-foreground">New</span>
                       </h3>
-                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                        {PARSHA_DETECTIVE_SERIES_COPY.shortDescription}
+                      <p className="mt-2 text-xs font-semibold text-accent-readable">For Families</p>
+                      <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                        {PARSHA_DETECTIVE_SERIES_COPY.expectation}
                       </p>
                     </div>
                   </div>
-                  <div className="mt-auto pt-4">
+                  <div className="mt-auto pt-5">
                     <Link
                       to="/originals"
                       className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-accent/50 bg-background px-4 py-2.5 font-serif text-sm font-semibold text-primary hover:bg-accent/10"
