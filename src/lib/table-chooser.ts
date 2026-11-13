@@ -173,7 +173,7 @@ export type StarterSelection<T extends ChooserResource> = {
 };
 
 const STARTER_SERIES_META: Record<string, { key: ChooserKey; label: string }> = {
-  [TFTT_ORIGINAL_EDITION_SERIES[0].id]: { key: "kids", label: "Parsha Challenge" },
+  [TFTT_ORIGINAL_EDITION_SERIES[0].id]: { key: "kids", label: "Parsha Questions & Answers" },
   [TFTT_ORIGINAL_EDITION_SERIES[1].id]: { key: "story", label: "Shabbos Stories" },
   [TFTT_ORIGINAL_EDITION_SERIES[2].id]: { key: "deeper", label: "Deeper Learning" },
   ...(PARSHA_DETECTIVE_PUBLICATION_ID
