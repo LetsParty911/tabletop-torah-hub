@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
 import { BookOpen, ArrowLeft } from "lucide-react";
 import { getPublicationPage } from "@/integrations/supabase/publication-pages.functions";
 import { formatReadingLabel } from "@/lib/parshiyos";
@@ -16,6 +16,10 @@ export const Route = createFileRoute("/publication/$slug")({
   loader: async ({ params }) => {
     const result = await getPublicationPage({ data: { slug: params.slug } });
     if (!result.publication) throw notFound();
+    // Historical Parsha Challenge links still resolve, but the canonical URL uses the new title.
+    if (params.slug !== result.publication.slug) {
+      throw redirect({ to: "/publication/$slug", params: { slug: result.publication.slug } });
+    }
     return result;
   },
   head: ({ loaderData, params }) => {
