@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { publicationSlug } from "@/lib/publication-slug";
 import { standardizeCopy } from "@/lib/standardize-copy";
+import { tfttOriginalSeriesById, renameLegacySeriesText } from "@/lib/tftt-originals";
 
 export type ItemPublicationContext = {
   id: string;
@@ -72,16 +73,16 @@ export const getItemPublicationContext = createServerFn({ method: "GET" })
     return {
       publication: {
         id: publication.id as string,
-        name: publication.name as string,
-        slug: publicationSlug(publication.name as string),
+        name: tfttOriginalSeriesById(publication.id as string)?.title ?? renameLegacySeriesText(publication.name as string),
+        slug: publicationSlug(tfttOriginalSeriesById(publication.id as string)?.title ?? renameLegacySeriesText(publication.name as string)),
         publisher: (publication.publisher as string | null) ?? null,
       },
       related: (rows ?? []).map((row: any) => ({
         id: row.id as string,
-        title: row.title as string,
+        title: renameLegacySeriesText(row.title as string),
         parsha_key: row.parsha_key as string,
         jewish_year: typeof row.jewish_year === "number" ? row.jewish_year : null,
-        description: standardizeCopy((row.description as string | null) ?? null),
+        description: renameLegacySeriesText(standardizeCopy((row.description as string | null) ?? null)),
         audience: (row.audience as string | null) ?? null,
         format_type: (row.format_type as string | null) ?? null,
         content_type: (row.content_type as string | null) ?? null,
@@ -185,5 +186,5 @@ export const getOriginalHtmlContent = createServerFn({ method: "GET" })
     // article_text is populated out-of-band and read here as a cheap DB lookup.
     const text = typeof row.article_text === "string" ? row.article_text.trim() : "";
     if (text.length < 80) return null;
-    return { text, extracted: true };
+    return { text: renameLegacySeriesText(text), extracted: true };
   });
