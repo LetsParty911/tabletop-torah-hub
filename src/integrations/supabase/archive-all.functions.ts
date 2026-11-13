@@ -182,7 +182,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
       new Set(all.map((r) => canonicalPub(r)).filter((v): v is string => !!v)),
     ).sort((a, b) => a.localeCompare(b));
 
-    const q = data.q.trim();
+    const q = renameLegacySeriesText(data.q.trim());
     const baseMatches = (r: InternalPdf, includeAudience: boolean) => {
       if (data.year !== "all" && String(r.year) !== data.year) return false;
       if (data.parsha !== "all" && toParshaComparableKey(r.parshaKey) !== toParshaComparableKey(data.parsha)) return false;
