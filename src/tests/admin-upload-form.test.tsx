@@ -118,3 +118,18 @@ describe("UploadPdfForm success confirmation", () => {
     expect(screen.queryByText(/visible to readers/)).toBeNull();
   });
 });
+
+
+describe("individual poetry upload titles", () => {
+  it.each([
+    "6a7d9744-96ef-4728-b329-eb7a4b2dba32",
+    "3213db01-2e86-49bc-9ef1-16f977c02336",
+  ])("offers an editable title for poetry slot %s", (publicationId) => {
+    const props = renderForm({ publicationId, titleFreeText: false, title: "A New View" });
+    const title = screen.getByRole("textbox", { name: /^This week's article title/ }) as HTMLInputElement;
+    expect(title.value).toBe("A New View");
+    expect(title.required).toBe(true);
+    fireEvent.change(title, { target: { value: "The Wells" } });
+    expect(props.onTitleChange).toHaveBeenCalledWith("The Wells");
+  });
+});

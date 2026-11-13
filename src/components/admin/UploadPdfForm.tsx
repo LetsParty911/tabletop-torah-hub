@@ -1,3 +1,4 @@
+import { usesIndividualPdfTitle } from "@/lib/pdf-display-title";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { PARSHIYOS } from "@/lib/parshiyos";
 import { AUDIENCE_OPTIONS, FORMAT_TYPE_OPTIONS } from "@/lib/pdf-constants";
@@ -77,9 +78,7 @@ export default function UploadPdfForm({
   msg,
 }: UploadPdfFormProps) {
   const busy = busyAction !== null;
-  const isKleinArticle =
-    publicationId === "4d5f000c-6e90-4d58-aa9f-fd73fc005115" ||
-    publicationId === "c3fa24ef-b7a8-42d1-a237-480bc24cba57";
+  const isIndividualArticle = usesIndividualPdfTitle(publicationId);
   return (
     <form onSubmit={onSubmit} className="mt-4 grid gap-4 md:grid-cols-2">
       <label className="block">
@@ -152,14 +151,14 @@ export default function UploadPdfForm({
             </>
           )}
         </label>
-        {isKleinArticle && !titleFreeText && (
+        {isIndividualArticle && !titleFreeText && (
           <label className="mt-3 block">
             <span className="text-sm font-medium">This week's article title</span>
             <input
               required
               value={title}
               onChange={(e) => onTitleChange(e.target.value)}
-              placeholder="Enter the actual Dvar Torah title"
+              placeholder="Filled from the PDF filename; edit if needed"
               className="mt-1 w-full rounded-md border-2 border-accent/60 bg-background px-3 py-2"
             />
             <span className="mt-1 block text-xs text-muted-foreground">
