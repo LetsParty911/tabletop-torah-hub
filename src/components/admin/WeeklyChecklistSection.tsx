@@ -31,6 +31,7 @@ const normalize = (value: string | null | undefined) =>
 const TITLE_ALIASES: Record<string, string[]> = {
   parshaquestionsanswers: [
     "parshaquestionsanswers",
+    "parshachallenge",
     "roshhashanahquestionsanswers",
     "roshhashanahqa",
   ],
@@ -152,7 +153,7 @@ export default function WeeklyChecklistSection({
             </div>
             <div className="flex items-center gap-2 shrink-0 ml-8 sm:ml-0">
               {item.status === "missing" && (
-                <button type="button" onClick={() => onUseExpectedTitle(item.title)} className="text-xs underline text-primary">
+                <button type="button" onClick={() => onUseExpectedTitle(renameLegacySeriesText(item.title))} className="text-xs underline text-primary">
                   Use this title
                 </button>
               )}
