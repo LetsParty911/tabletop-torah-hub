@@ -112,19 +112,16 @@ export function activeOriginalSeriesIds(
   return series.map((s) => s.id).filter((id) => ids.has(id));
 }
 
-const BASE_SERIES_IDS = new Set<string>(TFTT_ORIGINAL_SERIES.map((s) => s.id));
-
 /**
- * Series cards shown on /originals: the three existing weekly series always
- * (unchanged), plus any additional configured series only once it has a real
- * published edition — so no card ever links to an empty listing.
+ * Series cards shown on /originals. Every configured TFTT original is visible
+ * even before its first weekly PDF is published; edition grids still contain
+ * only real published PDFs.
  */
 export function visibleOriginalSeries(
-  activeIds: readonly string[] | null | undefined,
+  _activeIds: readonly string[] | null | undefined,
   series: readonly TfttOriginalSeries[] = TFTT_ORIGINAL_EDITION_SERIES,
 ): TfttOriginalSeries[] {
-  const active = new Set(activeIds ?? []);
-  return series.filter((s) => BASE_SERIES_IDS.has(s.id) || active.has(s.id));
+  return [...series];
 }
 
 const THREE_SERIES_DESCRIPTION =

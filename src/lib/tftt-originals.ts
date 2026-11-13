@@ -68,5 +68,5 @@ export function buildOriginalEditionSeries(detectiveId: string | null | undefine
   return [...base, { id, ...PARSHA_DETECTIVE_SERIES_COPY }];
 }
 
-/** /originals edition series (scoped: homepage starters, chooser and publication pages still use TFTT_ORIGINAL_SERIES). */
+/** Canonical configured original-series list used by original-series UI surfaces. */
 export const TFTT_ORIGINAL_EDITION_SERIES = buildOriginalEditionSeries(PARSHA_DETECTIVE_PUBLICATION_ID);

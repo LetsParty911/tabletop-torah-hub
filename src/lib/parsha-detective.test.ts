@@ -17,7 +17,7 @@ import {
 const PC = "0fa3db5f-c153-4311-a007-415c3c022143";
 const ST = "88719788-42fb-4e0b-a34b-3ea1868e750d";
 const IM = "86d9b1b2-cebf-42e5-b623-dfc1b5c5b411";
-// Test-only id; production stays null until the real publications record exists.
+// Test-only alternate id used to exercise configured-series helpers.
 const TEST_DETECTIVE = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
 const thumb = (id: string) => `https://x/storage/v1/object/public/pdf-thumbs/${id}.png`;
 const row = (id: string, publication_id: string | null, parsha_key: string | null, created_at: string, jewish_year: number | null = 5787): OriginalEditionRow =>
@@ -30,10 +30,15 @@ const toldos = [
 ];
 const detectiveRow = row("t-pd", TEST_DETECTIVE, "Toldos", "2026-11-19T09:00:00Z");
 
-describe("The Parsha Detective — unconfigured (current shipped state)", () => {
-  it("has no canonical id yet and adds nothing to any series list", () => {
-    expect(PARSHA_DETECTIVE_PUBLICATION_ID).toBeNull();
-    expect(TFTT_ORIGINAL_EDITION_SERIES.map((s) => s.id)).toEqual([PC, ST, IM]);
+describe("The Parsha Detective — current configured state", () => {
+  it("has the verified canonical id and is the fourth configured original", () => {
+    expect(PARSHA_DETECTIVE_PUBLICATION_ID).toBe("20900013-b70f-4091-8026-d5a05131ded8");
+    expect(TFTT_ORIGINAL_EDITION_SERIES.map((s) => s.id)).toEqual([
+      PC,
+      ST,
+      IM,
+      "20900013-b70f-4091-8026-d5a05131ded8",
+    ]);
     expect(TFTT_ORIGINAL_SERIES).toHaveLength(3);
   });
 
@@ -44,16 +49,21 @@ describe("The Parsha Detective — unconfigured (current shipped state)", () => 
     expect(activeOriginalSeriesIds([...toldos, stray])).toEqual([PC, ST, IM]);
   });
 
-  it("keeps the three-series cards and exact existing meta description", () => {
+  it("lists all four configured original-series cards before the Detective PDF exists", () => {
     const visible = visibleOriginalSeries([PC, ST, IM]);
-    expect(visible.map((s) => s.title)).toEqual(["Parsha Challenge", "Stories for the Shabbos Table", "In the Margins"]);
+    expect(visible.map((s) => s.title)).toEqual([
+      "Parsha Challenge",
+      "Stories for the Shabbos Table",
+      "In the Margins",
+      "The Parsha Detective",
+    ]);
     expect(originalsPageDescription(visible)).toBe(
-      "Three weekly Torah For The Table original series: Parsha Challenge, Stories for the Shabbos Table, and In the Margins — created for the Shabbos table.",
+      "Torah For The Table original series: Parsha Challenge, Stories for the Shabbos Table, In the Margins, and The Parsha Detective — created for the Shabbos table.",
     );
   });
 
-  it("still shows the three weekly series cards even when the loader returns nothing", () => {
-    expect(visibleOriginalSeries(undefined)).toHaveLength(3);
+  it("still lists all configured original-series cards when the loader returns nothing", () => {
+    expect(visibleOriginalSeries(undefined)).toHaveLength(4);
   });
 });
 
@@ -98,8 +108,8 @@ describe("The Parsha Detective — configured", () => {
     expect(groups[1].editions.map((e) => e.id)).toEqual(["cs-pc"]);
   });
 
-  it("hides the Detective card until a listable published edition exists", () => {
-    expect(visibleOriginalSeries(activeOriginalSeriesIds(toldos, series), series)).toHaveLength(3);
+  it("lists the Detective series before its first edition while edition activity stays truthful", () => {
+    expect(visibleOriginalSeries(activeOriginalSeriesIds(toldos, series), series)).toHaveLength(4);
     const unlistable = row("t-pd-x", TEST_DETECTIVE, null, "2026-11-19T09:00:00Z");
     expect(activeOriginalSeriesIds([...toldos, unlistable], series)).toEqual([PC, ST, IM]);
     const active = activeOriginalSeriesIds([...toldos, detectiveRow], series);
