@@ -20,6 +20,12 @@ This additional gate does not exempt internal devices or VPN capabilities.
 The private website preview serves GET/HEAD content from the fixed public
 origin after the gate, so it needs no production-only application credentials.
 Preview writes return 405, and browser cookies/authorization are not forwarded.
+After this gate allows a PDF/viewer request, the private preview redirects the
+browser to the canonical public PDF/viewer route. This preserves the browser's
+real IP for the existing public application gates instead of identifying the
+proxy egress as the reader. A denied preview request never receives that URL.
+The public origin itself is unchanged and remains separately reachable until
+a production release is approved. In production no preview redirects apply.
 Production uses `next()` into the normal application. The early `/k` static
 redirect is removed from the branch configuration: its existing Start handler
 retains the same destination after the new geographic gate has run.

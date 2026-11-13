@@ -90,6 +90,12 @@ test('private preview reads only the fixed public origin after the gate', () => 
     assert.equal(target.searchParams.has('_vercel_share'), false);
     assert.equal(response.headers.get('x-middleware-request-cookie'), null);
     assert.equal(response.headers.get('x-middleware-request-authorization'), null);
+    const pdfPath = '/view/01b639cf-e038-4462-a868-9fed382f36f7/pdf';
+    const pdf = middleware(request(pdfPath));
+    assert.equal(pdf.status, 302);
+    assert.equal(pdf.headers.get('location'), 'https://torahforthetable.com' + pdfPath);
+    assert.equal(pdf.headers.get('x-middleware-rewrite'), null);
+    assert.equal(middleware(request(pdfPath, { headers: blockedHeaders })).status, 403);
     assert.equal(middleware(request('/', { method: 'POST' })).status, 405);
     const denied = middleware(request('/', { headers: blockedHeaders }));
     assert.equal(denied.status, 403);

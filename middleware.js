@@ -24,6 +24,15 @@ export default function middleware(request) {
     upstream.search = incoming.search;
     upstream.searchParams.delete('_vercel_share');
     upstream.searchParams.delete('x-vercel-protection-bypass');
+    // Keep the real browser IP at existing PDF/viewer gates. A server-to-server
+    // PDF proxy would instead geolocate the proxy's egress (e.g. Ashburn).
+    // The preview's own location gate above must pass before this redirect.
+    if (/^\/view\/[0-9a-f-]{36}(?:\/(?:pdf|download))?\/?$/i.test(incoming.pathname)) {
+      return new Response(null, {
+        status: 302,
+        headers: { Location: upstream.toString(), 'Cache-Control': 'private, no-store', 'X-TFTT-Protection': POLICY_ID, 'X-TFTT-Decision': 'allow', 'X-TFTT-Preview': 'canonical-pdf' },
+      });
+    }
     const headers = new Headers();
     for (const name of ['accept', 'accept-language', 'user-agent', 'range', 'if-none-match', 'if-modified-since']) {
       const value = request.headers.get(name);
