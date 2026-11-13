@@ -7,6 +7,11 @@
       "permanent": false
     },
     {
+      "source": "/sn",
+      "destination": "https://torahforthetable.com/?utm_source=sender.net&utm_medium=email&utm_campaign=toldos_5787",
+      "permanent": false
+    },
+    {
       "source": "/:path*",
       "has": [
         {
