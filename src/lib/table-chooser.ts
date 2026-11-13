@@ -7,7 +7,7 @@
 import { normalizeAudience } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType } from "@/lib/collection-status";
-import { TFTT_ORIGINAL_SERIES } from "@/lib/tftt-originals";
+import { PARSHA_DETECTIVE_PUBLICATION_ID, TFTT_ORIGINAL_EDITION_SERIES } from "@/lib/tftt-originals";
 
 export type ChooserResource = {
   id: string;
@@ -156,9 +156,9 @@ export function pickRecommendations<T extends ChooserResource>(
 }
 
 /**
- * Homepage "Start here" showcase: ONLY the three TFTT-owned weekly original
+ * Homepage "Start here" showcase: the configured TFTT-owned weekly original
  * series, in fixed order. Ownership is decided strictly by the canonical
- * `publication_id` (see TFTT_ORIGINAL_SERIES), never by title, so renamed
+ * `publication_id` (see TFTT_ORIGINAL_EDITION_SERIES), never by title, so renamed
  * issues (e.g. "Parsha Questions & Answers") still match and look-alike
  * third-party titles never do.
  *
@@ -173,19 +173,23 @@ export type StarterSelection<T extends ChooserResource> = {
 };
 
 const STARTER_SERIES_META: Record<string, { key: ChooserKey; label: string }> = {
-  [TFTT_ORIGINAL_SERIES[0].id]: { key: "kids", label: "Parsha Challenge" },
-  [TFTT_ORIGINAL_SERIES[1].id]: { key: "story", label: "Shabbos Stories" },
-  [TFTT_ORIGINAL_SERIES[2].id]: { key: "deeper", label: "Deeper Learning" },
+  [TFTT_ORIGINAL_EDITION_SERIES[0].id]: { key: "kids", label: "Parsha Challenge" },
+  [TFTT_ORIGINAL_EDITION_SERIES[1].id]: { key: "story", label: "Shabbos Stories" },
+  [TFTT_ORIGINAL_EDITION_SERIES[2].id]: { key: "deeper", label: "Deeper Learning" },
+  ...(PARSHA_DETECTIVE_PUBLICATION_ID
+    ? { [PARSHA_DETECTIVE_PUBLICATION_ID]: { key: "kids" as ChooserKey, label: "Parsha Detective" } }
+    : {}),
 };
 
 export function pickStarterSelections<T extends ChooserResource & { publication_id?: string | null }>(
   resources: readonly T[],
 ): StarterSelection<T>[] {
   const picks: StarterSelection<T>[] = [];
-  for (const series of TFTT_ORIGINAL_SERIES) {
+  for (const series of TFTT_ORIGINAL_EDITION_SERIES) {
     const resource = resources.find((r) => r.publication_id === series.id);
     if (!resource) continue;
     const meta = STARTER_SERIES_META[series.id];
+    if (!meta) continue;
     picks.push({ key: meta.key, label: meta.label, resource });
   }
   return picks;
