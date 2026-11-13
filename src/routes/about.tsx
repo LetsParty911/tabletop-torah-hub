@@ -82,7 +82,7 @@ function AboutPage() {
                   <li>Publishes weekly Torah resources</li>
                   <li>Organizes Divrei Torah from multiple respected sources</li>
                   <li>
-                    Creates original educational materials, including Parsha Challenge,
+                    Creates original educational materials, including Parsha Questions & Answers,
                     Stories for the Shabbos Table, and In the Margins
                   </li>
                   <li>Provides content for children, families, and deeper Torah learning</li>
