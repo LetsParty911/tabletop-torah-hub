@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Circle, MinusCircle } from "lucide-react";
 import PublishProgress, { type PublishResult } from "@/components/admin/PublishProgress";
 import { getWeeklyChecklistPublishedTitles } from "@/integrations/supabase/weekly-checklist-verification";
+import { renameLegacySeriesText } from "@/lib/tftt-originals";
 
 export type ChecklistStatus = "uploaded" | "skipped" | "missing";
 export type ChecklistItem = { title: string; status: ChecklistStatus };
@@ -144,7 +145,7 @@ export default function WeeklyChecklistSection({
               {item.status === "uploaded" && <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />}
               {item.status === "missing" && <Circle className="h-5 w-5 text-muted-foreground shrink-0" />}
               {item.status === "skipped" && <MinusCircle className="h-5 w-5 text-muted-foreground shrink-0" />}
-              <span className="font-medium break-words min-w-0 flex-1">{item.title}</span>
+              <span className="font-medium break-words min-w-0 flex-1">{renameLegacySeriesText(item.title)}</span>
               <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${item.status === "uploaded" ? "bg-primary/10 text-primary" : item.status === "skipped" ? "bg-muted text-muted-foreground" : "bg-accent/20 text-foreground"}`}>
                 {item.status === "uploaded" ? "Uploaded" : item.status === "skipped" ? "Skipped" : "Missing"}
               </span>
