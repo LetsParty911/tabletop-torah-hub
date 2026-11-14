@@ -51,18 +51,21 @@ export async function getVpnBlockMode(): Promise<VpnBlockMode> {
     if (error) throw error;
     const mode = data?.mode;
     if (mode !== "off" && mode !== "monitor" && mode !== "block") throw Error("Invalid VPN mode");
-    modeMemo = { mode, expires: Date.now() + 60_000 };
+    modeMemo = { mode, expires: Date.now() + 10_000 };
     return mode;
   } catch (error) {
+    // Preserve the previously known policy when possible. Failing to load
+    // settings must never silently disable an already-cached block rule.
+    const fallbackMode = modeMemo?.mode ?? "monitor";
     if (isSupabaseQuotaRestricted(error)) {
       quotaRestrictedUntil = Date.now() + QUOTA_COOLDOWN_MS;
-      modeMemo = { mode: "monitor", expires: quotaRestrictedUntil };
+      modeMemo = { mode: fallbackMode, expires: quotaRestrictedUntil };
     } else {
       // A temporary lookup failure must not trigger a DB request on every hit.
-      modeMemo = { mode: "monitor", expires: Date.now() + 15_000 };
+      modeMemo = { mode: fallbackMode, expires: Date.now() + 15_000 };
     }
-    console.error("[vpn-block] failed to read mode; defaulting to monitoring", error);
-    return "monitor";
+    console.error("[vpn-block] failed to read mode; using last known policy", error);
+    return fallbackMode;
   }
 }
 export function clearVpnModeCache() { modeMemo = null; }
