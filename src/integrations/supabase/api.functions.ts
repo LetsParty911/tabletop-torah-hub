@@ -11,6 +11,7 @@ import { standardizeCopy } from "@/lib/standardize-copy";
 import { pdfDisplayTitle } from "@/lib/pdf-display-title";
 import { purgePdfEdgeCache, warmPdfEdgeCache } from "@/lib/pdf-edge-cache";
 import { checkRateLimit } from "@/lib/rate-limit.server";
+import { isSupabaseQuotaRestricted } from "@/lib/supabase-quota";
 import { isOverrideCurrent, validateParshaOverride } from "@/lib/parsha-override";
 import { currentYearRows } from "@/lib/collection-status";
 
@@ -283,27 +284,54 @@ async function selectAllPublished(admin: ReturnType<typeof getSupabaseAdmin>, co
   return { data: out, error: null };
 }
 
-async function fetchAllPublishedRows(admin: ReturnType<typeof getSupabaseAdmin>) {
-  const withSlot = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, description, audience, format_type, page_count, badge, featured_slot, publication_id");
-  if (!withSlot.error) return withSlot.data ?? [];
-  const withMeta = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, description, audience, format_type, page_count, badge, publication_id");
-  if (!withMeta.error) return withMeta.data ?? [];
-  const withPub = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, publication_id");
-  if (!withPub.error) return withPub.data ?? [];
-  const withCats = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication_id");
-  if (!withCats.error) return withCats.data ?? [];
-  const fb = await selectAllPublished(admin, "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, publication_id");
-  if (fb.error) {
-    console.error("fetchAllPublishedRows error", fb.error);
+// Public published metadata is identical for all readers. Share a short-lived
+// response per Worker isolate without ever caching admin/private queries.
+let publishedRowsCache: { rows: any[]; until: number } | null = null;
+let publishedRowsPending: Promise<any[]> | null = null;
+
+async function fetchAllPublishedRows(admin: ReturnType<typeof getSupabaseAdmin>): Promise<any[]> {
+  if (publishedRowsCache && publishedRowsCache.until > Date.now()) return publishedRowsCache.rows;
+  if (publishedRowsPending) return publishedRowsPending;
+
+  const request = (async (): Promise<any[]> => {
+    // Historical schema fallbacks are useful for missing columns, but a 402
+    // restriction will fail identically for every column combination.
+    const selections = [
+      "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, description, audience, format_type, page_count, badge, featured_slot, publication_id",
+      "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, description, audience, format_type, page_count, badge, publication_id",
+      "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication, publication_id",
+      "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, primary_category, tags, publication_id",
+      "id, title, subtitle, file_path, parsha_key, jewish_year, created_at, summary_quick, content_type, summary_audio_path, publication_id",
+    ];
+    for (const columns of selections) {
+      const { data, error } = await selectAllPublished(admin, columns);
+      if (!error) {
+        const rows = data ?? [];
+        publishedRowsCache = { rows, until: Date.now() + 45_000 };
+        return rows;
+      }
+      if (isSupabaseQuotaRestricted(error)) {
+        publishedRowsCache = { rows: [], until: Date.now() + 15_000 };
+        return [];
+      }
+    }
+    // Do not hammer the API repeatedly while it is unavailable.
+    publishedRowsCache = { rows: [], until: Date.now() + 10_000 };
     return [];
+  })();
+  publishedRowsPending = request;
+  try {
+    return await request;
+  } finally {
+    if (publishedRowsPending === request) publishedRowsPending = null;
   }
-  return fb.data ?? [];
 }
 
 async function buildResources(
   admin: ReturnType<typeof getSupabaseAdmin>,
   rows: any[],
 ): Promise<PdfResource[]> {
+  if (rows.length === 0) return [];
   const { readVerifiedThumbnails } = await import("@/lib/verified-thumbnails.server");
   const smallPaths = await readVerifiedThumbnails(admin);
   const orderMap = await getTitleSortOrderMap(admin);
