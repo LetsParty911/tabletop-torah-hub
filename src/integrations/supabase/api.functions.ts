@@ -1439,6 +1439,7 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
       throw new Error(`DB insert failed: ${insErr.message}`);
     }
     if (data.published) warmPdfEdgeCache(newId);
+    publishedRowsCache = null;
     // Return the stored published status so the admin UI can confirm the
     // actual outcome instead of assuming it from the request.
     return { ok: true, id: newId, published: data.published };
@@ -1488,6 +1489,8 @@ export const adminUploadPdfThumb = createServerFn({ method: "POST" })
     } catch {
       smallStored = false;
     }
+    const { clearVerifiedThumbnailCache } = await import("@/lib/verified-thumbnails.server");
+    clearVerifiedThumbnailCache();
     return { ok: true, error: null, smallStored };
   });
 
@@ -1571,6 +1574,7 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
       ({ error } = await admin.from("pdfs").update(current).eq("id", data.id));
     }
     if (error) throw new Error(error.message);
+    publishedRowsCache = null;
     return { ok: true };
   });
 
@@ -1623,6 +1627,7 @@ export const adminReplacePdfFile = createServerFn({ method: "POST" })
     }
     await purgePdfEdgeCache(data.id);
     if (row.published) warmPdfEdgeCache(data.id);
+    publishedRowsCache = null;
     return { ok: true, file_path: path };
   });
 
@@ -1696,6 +1701,7 @@ export const adminRecompressExistingPdf = createServerFn({ method: "POST" })
     await admin.storage.from("pdfs").remove([row.file_path]);
     await purgePdfEdgeCache(data.id);
     if (row.published) warmPdfEdgeCache(data.id);
+    publishedRowsCache = null;
     return {
       ok: true as const,
       changed: true as const,
@@ -1730,6 +1736,7 @@ export const adminTogglePublished = createServerFn({ method: "POST" })
       // cold lookup+storage-read cost themselves.
       warmPdfEdgeCache(data.id);
     }
+    publishedRowsCache = null;
     return { ok: true };
   });
 
@@ -1752,6 +1759,7 @@ export const adminBulkPublish = createServerFn({ method: "POST" })
       .in("id", data.ids);
     if (error) throw new Error(error.message);
     for (const id of data.ids) warmPdfEdgeCache(id);
+    publishedRowsCache = null;
     return { ok: true, count: data.ids.length };
   });
 
@@ -1770,6 +1778,7 @@ export const adminDeletePdf = createServerFn({ method: "POST" })
     const { error } = await admin.from("pdfs").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     await purgePdfEdgeCache(data.id);
+    publishedRowsCache = null;
     return { ok: true };
   });
 
