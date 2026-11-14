@@ -6,6 +6,7 @@ import { getRequestTelemetry, isAutomatedAgent } from "./request-telemetry.serve
 import { shouldCheck } from "./geo-block.server";
 import { isInternalRequest } from "./internal-marker.server";
 import { isTrustedVpnBrowser } from "./trusted-vpn-browser.server";
+import { isSupabaseQuotaRestricted } from "./supabase-quota";
 
 export type VpnBlockMode = "off" | "monitor" | "block";
 export type PrivacySignal = "VPN" | "Proxy" | "Tor";
@@ -37,6 +38,10 @@ export function isTemporaryBrooklynVpnException(
 
 // Fail safely to monitoring if the runtime configuration lookup is unavailable.
 let modeMemo: { mode: VpnBlockMode; expires: number } | null = null;
+// A restricted service cannot accept audit writes. Avoid one failed write (and
+// retry) per visitor while waiting for the billing quota to recover.
+let quotaRestrictedUntil = 0;
+const QUOTA_COOLDOWN_MS = 60_000;
 export async function getVpnBlockMode(): Promise<VpnBlockMode> {
   if (modeMemo && modeMemo.expires > Date.now()) return modeMemo.mode;
   try {
@@ -46,9 +51,16 @@ export async function getVpnBlockMode(): Promise<VpnBlockMode> {
     if (error) throw error;
     const mode = data?.mode;
     if (mode !== "off" && mode !== "monitor" && mode !== "block") throw Error("Invalid VPN mode");
-    modeMemo = { mode, expires: Date.now() + 10_000 };
+    modeMemo = { mode, expires: Date.now() + 60_000 };
     return mode;
   } catch (error) {
+    if (isSupabaseQuotaRestricted(error)) {
+      quotaRestrictedUntil = Date.now() + QUOTA_COOLDOWN_MS;
+      modeMemo = { mode: "monitor", expires: quotaRestrictedUntil };
+    } else {
+      // A temporary lookup failure must not trigger a DB request on every hit.
+      modeMemo = { mode: "monitor", expires: Date.now() + 15_000 };
+    }
     console.error("[vpn-block] failed to read mode; defaulting to monitoring", error);
     return "monitor";
   }
@@ -341,14 +353,23 @@ export async function auditPrivacy(
     detected_by: attribution?.detectedBy ?? [],
     provider_results: attribution?.providerResults ?? {},
   };
+  if (Date.now() < quotaRestrictedUntil) return { id: null, row };
   let lastErr = "unknown";
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const { getSupabaseAdmin } = await import("@/integrations/supabase/ext.server");
       const { data, error } = await getSupabaseAdmin().from("vpn_connection_checks").insert(row).select("id").single();
       if (!error) return { id: (data?.id as string) ?? null, row };
+      if (isSupabaseQuotaRestricted(error)) {
+        quotaRestrictedUntil = Date.now() + QUOTA_COOLDOWN_MS;
+        return { id: null, row };
+      }
       lastErr = `${error.code ?? "db_error"}: ${error.message ?? ""}`;
     } catch (e) {
+      if (isSupabaseQuotaRestricted(e)) {
+        quotaRestrictedUntil = Date.now() + QUOTA_COOLDOWN_MS;
+        return { id: null, row };
+      }
       lastErr = e instanceof Error ? `${e.name}: ${e.message}` : "unknown";
     }
     if (attempt === 0) await new Promise(r => setTimeout(r, 250));
