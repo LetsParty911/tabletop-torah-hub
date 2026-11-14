@@ -780,6 +780,8 @@ export const getPdfById = createServerFn({ method: "GET" })
         resolved = true;
         break;
       }
+      // A quota restriction is not a missing-column error: all fallbacks fail.
+      if (isSupabaseQuotaRestricted(res.error)) break;
     }
     if (!resolved || !row || !row.published) {
       return { pdf: null as null | PublicPdf };
