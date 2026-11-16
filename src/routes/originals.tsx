@@ -191,7 +191,7 @@ function OriginalEditions({ groups }: { groups: OriginalEditionGroup[] }) {
     <div className="mt-8 max-w-2xl mx-auto">
       <h2 className="text-center font-serif text-2xl font-bold text-primary">Our Original Editions</h2>
       <p className="mt-2 text-center font-serif text-sm sm:text-base text-muted-foreground">
-        "The latest published editions of our four weekly series, ready to read or print."
+        The latest published editions of our four weekly series, ready to read or print.
       </p>
       {recent.map((group) => <EditionGroup key={group.key} group={group} />)}
       {earlier.length > 0 && (
