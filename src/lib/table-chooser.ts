@@ -7,7 +7,7 @@
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType } from "@/lib/collection-status";
-import { PARSHA_DETECTIVE_PUBLICATION_ID, TFTT_ORIGINAL_EDITION_SERIES } from "@/lib/tftt-originals";
+import { TFTT_ORIGINAL_EDITION_SERIES } from "@/lib/tftt-originals";
 
 export type ChooserResource = {
   id: string;
@@ -175,10 +175,8 @@ export type StarterSelection<T extends ChooserResource> = {
 const STARTER_SERIES_META: Record<string, { key: ChooserKey; label: string }> = {
   [TFTT_ORIGINAL_EDITION_SERIES[0].id]: { key: "kids", label: "Parsha Questions & Answers" },
   [TFTT_ORIGINAL_EDITION_SERIES[1].id]: { key: "story", label: "Shabbos Stories" },
-  [TFTT_ORIGINAL_EDITION_SERIES[2].id]: { key: "deeper", label: "Deeper Learning" },
-  ...(PARSHA_DETECTIVE_PUBLICATION_ID
-    ? { [PARSHA_DETECTIVE_PUBLICATION_ID]: { key: "kids" as ChooserKey, label: "Parsha Detective" } }
-    : {}),
+  [TFTT_ORIGINAL_EDITION_SERIES[2].id]: { key: "deeper", label: "In the Margins" },
+  [TFTT_ORIGINAL_EDITION_SERIES[3].id]: { key: "deeper", label: "Parsha Pearls" },
 };
 
 export function pickStarterSelections<T extends ChooserResource & { publication_id?: string | null }>(

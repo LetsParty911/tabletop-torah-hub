@@ -182,7 +182,7 @@ function EditionGroup({ group }: { group: OriginalEditionGroup }) {
   );
 }
 
-function OriginalEditions({ groups, seriesCount }: { groups: OriginalEditionGroup[]; seriesCount: number }) {
+function OriginalEditions({ groups }: { groups: OriginalEditionGroup[] }) {
   const [showEarlier, setShowEarlier] = useState(false);
   if (groups.length === 0) return null;
   const recent = groups.slice(0, RECENT_GROUP_COUNT);
@@ -191,9 +191,7 @@ function OriginalEditions({ groups, seriesCount }: { groups: OriginalEditionGrou
     <div className="mt-8 max-w-2xl mx-auto">
       <h2 className="text-center font-serif text-2xl font-bold text-primary">Our Original Editions</h2>
       <p className="mt-2 text-center font-serif text-sm sm:text-base text-muted-foreground">
-        {seriesCount > 3
-          ? "The latest issues of our original series, ready to read or print."
-          : "The latest issues of our three weekly series, ready to read or print."}
+        The latest published editions of our four weekly series, ready to read or print.
       </p>
       {recent.map((group) => <EditionGroup key={group.key} group={group} />)}
       {earlier.length > 0 && (
@@ -245,10 +243,10 @@ function ResourcesPage() {
               </p>
             </div>
 
-            <OriginalEditions groups={groups} seriesCount={seriesCards.length} />
-
-            <h2 className="mt-10 text-center font-serif text-2xl font-bold text-primary">Our Originals</h2>
+            <h2 className="mt-10 text-center font-serif text-2xl font-bold text-primary">Our Four Original Weekly Series</h2>
+            <p className="mt-2 text-center text-sm text-muted-foreground">New editions every Thursday. Explore the series, or open a published issue below.</p>
             <SeriesGrid items={seriesCards} />
+            <OriginalEditions groups={groups} />
 
             <h2 className="mt-10 text-center font-serif text-2xl font-bold text-primary">Featured Independent Series</h2>
             <p className="mx-auto mt-2 max-w-2xl text-center font-serif text-sm sm:text-base text-muted-foreground">

@@ -1,44 +1,8 @@
 /**
- * Canonical TFTT-owned weekly series.
- *
- * IDs are taken from public.publications. Do not infer ownership from a
- * matching title or publisher display string: third-party and historical
- * records may have similar names.
+ * Canonical CURRENT Torah For The Table weekly series.
+ * IDs are real public.publications primary keys. Never identify ownership
+ * by publication title alone: stored titles and historic editions can differ.
  */
-export const TFTT_ORIGINAL_SERIES = [
-  {
-    id: "0fa3db5f-c153-4311-a007-415c3c022143",
-    title: "Parsha Questions & Answers",
-    shortDescription: "Questions based on Rashi to get everyone involved at the Shabbos table.",
-    expectation: "Questions and answers based on Rashi.",
-  },
-  {
-    id: "88719788-42fb-4e0b-a34b-3ea1868e750d",
-    title: "Stories for the Shabbos Table",
-    shortDescription: "Source-based stories from Chazal and Tanach, with questions to discuss at the Shabbos table.",
-    expectation: "A Torah-source story and a question for the table.",
-  },
-  {
-    id: "86d9b1b2-cebf-42e5-b623-dfc1b5c5b411",
-    title: "In the Margins",
-    shortDescription: "A short, thoughtful parsha insight to read, consider, and share at your Shabbos table.",
-    expectation: "One concise insight on the parsha.",
-  },
-] as const;
-
-/** Legacy publication labels remain in older PDF and publication records. Do not
- * mutate stable IDs or stored analytics; normalize reader-facing text only. */
-export function renameLegacySeriesText<T extends string | null | undefined>(value: T): T {
-  return (typeof value === "string"
-    ? value.replace(/\bParsha Challenge\b/gi, TFTT_ORIGINAL_SERIES[0].title)
-    : value) as T;
-}
-
-export function tfttOriginalSeriesById(publicationId: string | null | undefined) {
-  if (!publicationId) return null;
-  return TFTT_ORIGINAL_EDITION_SERIES.find((series) => series.id === publicationId) ?? null;
-}
-
 export type TfttOriginalSeries = {
   id: string;
   title: string;
@@ -46,35 +10,61 @@ export type TfttOriginalSeries = {
   expectation: string;
 };
 
-/**
- * Verified canonical public.publications id for "The Parsha Detective".
- * Registered as an active original series; no edition is public until a
- * source-approved PDF is uploaded and explicitly published.
- * Never infer ownership from publication titles.
- */
-export const PARSHA_DETECTIVE_PUBLICATION_ID: string | null = "20900013-b70f-4091-8026-d5a05131ded8";
+export const TFTT_ORIGINAL_SERIES = [
+  {
+    id: "0fa3db5f-c153-4311-a007-415c3c022143",
+    title: "Parsha Questions & Answers",
+    shortDescription: "Twenty parsha questions with answers sourced from Rashi, for participation around the Shabbos table.",
+    expectation: "Twenty Rashi-based questions and answers for the whole table.",
+  },
+  {
+    id: "88719788-42fb-4e0b-a34b-3ea1868e750d",
+    title: "Stories for the Shabbos Table",
+    shortDescription: "Three source-based stories from Chazal and Tanach, each with a question for the Shabbos table.",
+    expectation: "Three Torah-source stories, each ending with a question to discuss.",
+  },
+  {
+    id: "86d9b1b2-cebf-42e5-b623-dfc1b5c5b411",
+    title: "In the Margins",
+    shortDescription: "Three classic commentaries on the parsha, with a thought and question for the table.",
+    expectation: "Three insights from classical mefarshim and a question for the table.",
+  },
+  {
+    id: "81b9fadd-3f96-43a2-b21d-6619567e8b1b",
+    title: "Parsha Pearls",
+    shortDescription: "One Ramban fully unpacked, with one meaningful question for the Shabbos table.",
+    expectation: "One Ramban, fully unpacked, and one question for the table.",
+  },
+] as const satisfies readonly TfttOriginalSeries[];
 
+/** The active four series used for all homepage and /originals edition grids. */
+export const TFTT_ORIGINAL_EDITION_SERIES: readonly TfttOriginalSeries[] = TFTT_ORIGINAL_SERIES;
+
+/**
+ * Legacy detective editions remain in the archive and may appear in a
+ * last-week fallback collection. They are no longer part of the active four.
+ * Never delete/rewrite historic publication IDs or analytics.
+ */
+export const PARSHA_DETECTIVE_PUBLICATION_ID = "20900013-b70f-4091-8026-d5a05131ded8";
 export const PARSHA_DETECTIVE_SERIES_COPY = {
   title: "The Parsha Detective",
-  shortDescription:
-    "Illustrated six-panel Torah mysteries for children and families to solve together at the Shabbos table.",
+  shortDescription: "Illustrated Torah mysteries from earlier editions.",
   expectation: "Illustrated Torah mysteries for children and families.",
 } as const;
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const NIL_UUID = "00000000-0000-0000-0000-000000000000";
-
-/**
- * Series eligible for the /originals edition listing. Always the three
- * existing weekly series; The Parsha Detective is appended only when a
- * well-formed, non-duplicate canonical id is configured.
- */
-export function buildOriginalEditionSeries(detectiveId: string | null | undefined): readonly TfttOriginalSeries[] {
-  const base: TfttOriginalSeries[] = TFTT_ORIGINAL_SERIES.map((s) => ({ ...s }));
-  const id = detectiveId?.trim().toLowerCase();
-  if (!id || !UUID_RE.test(id) || id === NIL_UUID || base.some((s) => s.id === id)) return base;
-  return [...base, { id, ...PARSHA_DETECTIVE_SERIES_COPY }];
+/** Reader-facing legacy title normalization; PDFs and analytics stay untouched. */
+export function renameLegacySeriesText<T extends string | null | undefined>(value: T): T {
+  return (typeof value === "string"
+    ? value.replace(/\bParsha Challenge\b/gi, TFTT_ORIGINAL_SERIES[0].title)
+    : value) as T;
 }
 
-/** Canonical configured original-series list used by original-series UI surfaces. */
-export const TFTT_ORIGINAL_EDITION_SERIES = buildOriginalEditionSeries(PARSHA_DETECTIVE_PUBLICATION_ID);
+/** Ownership label lookup includes archived Detective only for historical attribution. */
+export function tfttOriginalSeriesById(publicationId: string | null | undefined): TfttOriginalSeries | null {
+  if (!publicationId) return null;
+  const current = TFTT_ORIGINAL_SERIES.find((series) => series.id === publicationId);
+  if (current) return current;
+  return publicationId === PARSHA_DETECTIVE_PUBLICATION_ID
+    ? { id: PARSHA_DETECTIVE_PUBLICATION_ID, ...PARSHA_DETECTIVE_SERIES_COPY }
+    : null;
+}

@@ -4,12 +4,11 @@
  * Input rows must already be published pdfs rows. Ownership comes only from
  * the canonical publication_id (never a title match), and each row stays under
  * its own parsha_key + jewish_year, so last week's PDF is never shown under a
- * newer parsha. Weeks with fewer than three published originals show only the
+ * newer parsha. Weeks with fewer than four published originals show only the
  * real ones.
  */
 import {
   TFTT_ORIGINAL_EDITION_SERIES,
-  TFTT_ORIGINAL_SERIES,
   type TfttOriginalSeries,
 } from "@/lib/tftt-originals";
 import { formatReadingLabel, readingChronoIndex } from "@/lib/parshiyos";
@@ -124,13 +123,10 @@ export function visibleOriginalSeries(
   return [...series];
 }
 
-const THREE_SERIES_DESCRIPTION =
-  "Three weekly Torah For The Table original series: Parsha Questions & Answers, Stories for the Shabbos Table, and In the Margins — created for the Shabbos table.";
-
-/** /originals meta description; unchanged while only the three weekly series are visible. */
+/** /originals meta description mirrors the active canonical series. */
 export function originalsPageDescription(visible: readonly TfttOriginalSeries[]): string {
-  if (visible.length <= TFTT_ORIGINAL_SERIES.length) return THREE_SERIES_DESCRIPTION;
   const titles = visible.map((s) => s.title);
-  const list = `${titles.slice(0, -1).join(", ")}, and ${titles[titles.length - 1]}`;
-  return `Torah For The Table original series: ${list} — created for the Shabbos table.`;
+  if (titles.length === 0) return "Torah For The Table original weekly Divrei Torah for the Shabbos table.";
+  const list = titles.length === 1 ? titles[0] : `${titles.slice(0, -1).join(", ")}, and ${titles[titles.length - 1]}`;
+  return `Torah For The Table original weekly series: ${list} — created for the Shabbos table.`;
 }
