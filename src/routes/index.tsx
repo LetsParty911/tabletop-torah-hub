@@ -22,7 +22,7 @@ import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
-import { PARSHA_DETECTIVE_PUBLICATION_ID, PARSHA_DETECTIVE_SERIES_COPY, TFTT_ORIGINAL_EDITION_SERIES, tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { TFTT_ORIGINAL_EDITION_SERIES, tfttOriginalSeriesById } from "@/lib/tftt-originals";
 import { publicationLabel } from "@/lib/badges";
 import { publicationFilterName } from "@/lib/publication-filter";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,6 @@ import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { TableChooser } from "@/components/TableChooser";
 import { MobileCollectionControlsBar } from "@/components/MobileCollectionControlsBar";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CHOOSERS, chooseReason, pickRecommendations, pickStarterSelections, type ChooserKey } from "@/lib/table-chooser";
 
 type Resource = {
@@ -253,7 +252,7 @@ export const Route = createFileRoute("/")({
   head: () => {
     const title = "Torah For The Table | Printable Weekly Divrei Torah";
     const description =
-      "Original weekly Parsha Questions & Answers, Stories for the Shabbos Table, In the Margins, and The Parsha Detective, alongside printable Divrei Torah from respected Torah publishers.";
+      "Original weekly Parsha Questions & Answers, Stories for the Shabbos Table, In the Margins, and Parsha Pearls, alongside printable Divrei Torah from respected Torah publishers.";
     const url = "https://torahforthetable.com/";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -482,35 +481,18 @@ function Index() {
   const [selectedChooser, setSelectedChooser] = useState<ChooserKey | null>(null);
   const [showRecommendationChooser, setShowRecommendationChooser] = useState(false);
   const [mobileQuickChoice, setMobileQuickChoice] = useState<ChooserKey | null>(null);
-  const [detectiveLaunchOpen, setDetectiveLaunchOpen] = useState(false);
 
   const sortedResources = resources;
   // Start-here showcase: only this week's published TFTT originals (matched by
   // canonical publication_id). Never last week's fallback PDFs, never a
   // third-party substitute for an absent series.
   const starterSelections = isFallback ? [] : pickStarterSelections(sortedResources);
-  const parshaDetective = !isFallback && PARSHA_DETECTIVE_PUBLICATION_ID
-    ? sortedResources.find((r) => r.publication_id === PARSHA_DETECTIVE_PUBLICATION_ID) ?? null
-    : null;
-  const showDetectivePlaceholder = !isFallback && Boolean(PARSHA_DETECTIVE_PUBLICATION_ID) && !parshaDetective;
-  const starterCardCount = starterSelections.length + (showDetectivePlaceholder ? 1 : 0);
-
-  useEffect(() => {
-    if (!parshaDetective || !displayedParshaKey) return;
-    const key = `tftt-parsha-detective-launch-${displayedParshaKey.toLowerCase().replace(/\s+/g, "-")}`;
-    try {
-      if (window.localStorage.getItem(key)) return;
-      setDetectiveLaunchOpen(true);
-      window.localStorage.setItem(key, "shown");
-    } catch {
-      setDetectiveLaunchOpen(true);
-    }
-  }, [parshaDetective?.id, displayedParshaKey]);
+  const starterCardCount = starterSelections.length;
   // Show all this week's publications by default; Browse All is a shortcut, not a gate.
   const showCompleteCollection = resources.length > 0 || isWeeklyCollectionHash(collectionHash) || showAllResources || isCurrentYomKippur;
   const viewAllLabel = `View all ${resources.length} ${displayedLabel.replace(/^Parshas\s+/i, "")} selections`;
   // Section views are passive; they do not establish human engagement.
-  const originalsRef = useHomepageSectionImpression<HTMLElement>("originals", starterCardCount > 0 && !isCurrentYomKippur);
+  const originalsRef = useHomepageSectionImpression<HTMLElement>("originals", !isCurrentYomKippur);
   const weeklyHeadingRef = useHomepageSectionImpression<HTMLHeadingElement>("weekly_collection", resources.length > 0 && showCompleteCollection);
   useEffect(() => {
     if (resources.length > 0) trackHomepageJourneyStart(starterCardCount > 0 && !isCurrentYomKippur);
@@ -663,9 +645,6 @@ function Index() {
     );
   };
   // Only canonical current-week originals belong in the starter row.
-  const starterShowsAllOriginals =
-    starterCardCount === TFTT_ORIGINAL_EDITION_SERIES.length &&
-    starterSelections.every(({ resource }) => isTfttOriginal(resource));
 
   const clearFilters = () => {
     setSelectedChooser(null);
@@ -701,41 +680,6 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      {parshaDetective && (
-        <Dialog open={detectiveLaunchOpen} onOpenChange={setDetectiveLaunchOpen}>
-          <DialogContent className="max-w-md border-2 border-accent/60 bg-card text-center">
-            <DialogHeader className="text-center sm:text-center">
-              <p className="font-sans text-[11px] font-bold uppercase tracking-[0.16em] text-accent-readable">New from Torah For The Table</p>
-              <DialogTitle className="font-serif text-2xl text-primary">The Parsha Detective</DialogTitle>
-              <DialogDescription className="text-sm leading-relaxed">
-                A new illustrated series of Torah mysteries for children and families to solve together at the Shabbos table.
-              </DialogDescription>
-            </DialogHeader>
-            <a
-              href={pdfActionHrefs(parshaDetective.id).open}
-              target="_blank"
-              rel="nofollow noopener noreferrer"
-              onClick={(event) => {
-                recordPdfAction(event, "open_pdf", pdfActionHrefs(parshaDetective.id).open, {
-                  publicationId: parshaDetective.id,
-                  publicationName: displayPublicationName(parshaDetective),
-                  publicationTitle: displayTitle(parshaDetective),
-                  publicationSeries: parshaDetective.publication,
-                  publisher: parshaDetective.publisher,
-                  parsha: parshaDetective.parsha_key ?? displayedParshaKey,
-                }, "popup");
-                setDetectiveLaunchOpen(false);
-              }}
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-6 py-2.5 font-serif text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-            >
-              See This Week’s Case →
-            </a>
-            <button type="button" onClick={() => setDetectiveLaunchOpen(false)} className="text-sm text-muted-foreground hover:text-primary hover:underline">
-              Maybe later
-            </button>
-          </DialogContent>
-        </Dialog>
-      )}
       <AnnouncementBanner initialBanner={Route.useLoaderData().announcement} />
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
         <section className="parchment-frame">
@@ -792,36 +736,6 @@ function Index() {
             </p>
           </section>
         )}
-        {!isFallback && !isCurrentYomKippur && (
-          <section aria-labelledby="parsha-detective-launch-heading" className="rounded-2xl border-2 border-accent/60 bg-card/70 px-4 py-5 text-center shadow-sm sm:px-7 sm:py-6">
-            <p className="font-sans text-[11px] font-bold uppercase tracking-[0.16em] text-accent-readable">New Torah For The Table Series</p>
-            <h2 id="parsha-detective-launch-heading" className="mt-1 font-serif text-2xl font-bold text-primary sm:text-3xl">The Parsha Detective</h2>
-            <p className="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Investigate the clues, explore the mefarshim, and solve Torah mysteries from this week’s parsha together at the Shabbos table.
-            </p>
-            {parshaDetective ? (
-              <a
-                href={pdfActionHrefs(parshaDetective.id).open}
-                target="_blank"
-                rel="nofollow noopener noreferrer"
-                onClick={(event) => recordPdfAction(event, "open_pdf", pdfActionHrefs(parshaDetective.id).open, {
-                  publicationId: parshaDetective.id,
-                  publicationName: displayPublicationName(parshaDetective),
-                  publicationTitle: displayTitle(parshaDetective),
-                  publicationSeries: parshaDetective.publication,
-                  publisher: parshaDetective.publisher,
-                  parsha: parshaDetective.parsha_key ?? displayedParshaKey,
-                }, "banner")}
-                className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-6 py-2.5 font-serif text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-              >
-                See This Week’s Case →
-              </a>
-            ) : (
-              <p className="mt-4 text-sm font-semibold text-primary">This week’s case is being added to the collection.</p>
-            )}
-          </section>
-        )}
-
         <ThursdayProgressMeter
           readingDate={readingDate}
           isFallback={isFallback}
@@ -833,20 +747,18 @@ function Index() {
         />
 
 
-        {starterCardCount > 0 && !isCurrentYomKippur && (
+        {!isCurrentYomKippur && (
           <section id={showCompleteCollection ? undefined : "this-weeks-collection"} tabIndex={-1} aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border-2 border-accent/50 bg-card/50 px-4 py-5 sm:px-6">
             <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-xs">
               Home of the original Torah For The Table series
             </p>
             <h2 id="starter-selections-heading" className="mt-1 font-serif text-xl font-bold text-primary sm:text-2xl">
-              {starterShowsAllOriginals ? "Our Originals" : "Start here — ready to read or print"}
+              Our Four Original Weekly Series
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {starterShowsAllOriginals
-                ? "Our own weekly publications, ready to read or print, alongside selections from respected Torah publishers."
-                : "Open any PDF to read or print. No account is needed."}
+              Created by Torah For The Table. New editions every Thursday. Read, print, or explore an earlier edition.
             </p>
-            <div className="mt-6 grid gap-5 sm:grid-cols-2 sm:gap-6">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
               {starterSelections.map(({ key, label, resource: r }, index) => (
                 <article key={r.id} ref={index === 0 ? originalsRef : undefined} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-5 sm:p-6">
                   <div className="flex min-w-0 flex-col items-center gap-4 text-center">
@@ -880,7 +792,7 @@ function Index() {
                   <h3 className="font-serif text-xl font-bold leading-snug text-primary">
                     <Link to="/view/$id" params={{ id: r.id }} onClick={() => trackFp("recommendation_click", { publication_id: r.id, publication_title: r.title, parsha: r.parsha_key ?? displayedParshaKey, metadata: { chooser: key, placement: "homepage_start_here" } })} className="hover:text-accent hover:underline">
                       {displayTitle(r)}
-                      {r.publication_id === PARSHA_DETECTIVE_PUBLICATION_ID && (
+                      {r.publication_id === TFTT_ORIGINAL_EDITION_SERIES[3].id && (
                         <span className="ml-2 rounded-full bg-accent px-2 py-0.5 align-middle font-sans text-[10px] font-bold uppercase tracking-wide text-accent-foreground">New</span>
                       )}
                     </Link>
@@ -913,38 +825,24 @@ function Index() {
                   </div>
                 </article>
               ))}
-              {showDetectivePlaceholder && (
-                <article className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-5 sm:p-6">
-                  <div className="flex min-w-0 flex-col items-center gap-4 text-center">
-                    <div
-                      role="img"
-                      aria-label="The Parsha Detective"
-                      className="flex h-[145px] w-28 shrink-0 items-center justify-center rounded-sm border border-accent/40 bg-accent/10 text-primary shadow-sm"
-                    >
+              {TFTT_ORIGINAL_EDITION_SERIES.filter((series) => !starterSelections.some(({ resource }) => resource.publication_id === series.id)).map((series, index) => (
+                <article key={series.id} ref={starterSelections.length === 0 && index === 0 ? originalsRef : undefined} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
+                  <div className="flex flex-1 flex-col items-center gap-3 text-center">
+                    <div role="img" aria-label={series.title} className="flex h-[145px] w-28 items-center justify-center rounded-sm border border-accent/40 bg-accent/10 text-primary shadow-sm">
                       <FileText className="h-6 w-6" aria-hidden="true" />
                     </div>
-                    <div className="min-w-0 w-full">
-                      <h3 className="font-serif text-xl font-bold leading-snug text-primary">
-                        {PARSHA_DETECTIVE_SERIES_COPY.title}
-                        <span className="ml-2 rounded-full bg-accent px-2 py-0.5 align-middle font-sans text-[10px] font-bold uppercase tracking-wide text-accent-foreground">New</span>
-                      </h3>
-                      <p className="mt-2 text-xs font-semibold text-accent-readable">For Families</p>
-                      <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
-                        {PARSHA_DETECTIVE_SERIES_COPY.expectation}
-                      </p>
-                    </div>
+                    <h3 className="font-serif text-lg font-bold leading-snug text-primary">
+                      {series.title}
+                      {series.id === TFTT_ORIGINAL_EDITION_SERIES[3].id && <span className="ml-2 rounded-full bg-accent px-2 py-0.5 align-middle font-sans text-[10px] font-bold uppercase tracking-wide text-accent-foreground">New</span>}
+                    </h3>
+                    <p className="text-sm leading-relaxed text-muted-foreground">{series.expectation}</p>
                   </div>
                   <div className="mt-auto pt-5">
-                    <Link
-                      to="/originals"
-                      className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-accent/50 bg-background px-4 py-2.5 font-serif text-sm font-semibold text-primary hover:bg-accent/10"
-                    >
-                      About The Parsha Detective →
-                    </Link>
-                    <p className="mt-2 text-center text-xs text-muted-foreground">This week’s case is being added.</p>
+                    <Link to="/originals" className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-accent/50 bg-background px-3 py-2 font-serif text-sm font-semibold text-primary hover:bg-accent/10">Browse Earlier Editions</Link>
+                    <p className="mt-2 text-center text-xs text-muted-foreground">This week's edition is being prepared.</p>
                   </div>
                 </article>
-              )}
+              ))}
             </div>
             {resources.length > starterSelections.length && (
               <Button onClick={browseAllSelections} className="mt-4 h-auto min-h-11 whitespace-normal rounded-full px-5 py-2.5 font-serif text-sm font-semibold">
@@ -1429,7 +1327,7 @@ function Index() {
           <WeeklyEmailSignup
             sourceId="homepage"
             heading="Receive the Weekly Shabbos Collection"
-            description="A weekly email when the new collection is ready, featuring Parsha Questions & Answers, Stories for the Shabbos Table, In the Margins, The Parsha Detective, and other Divrei Torah. Read or print before Shabbos."
+            description="A weekly email when the new collection is ready, featuring Parsha Questions & Answers, Stories for the Shabbos Table, In the Margins, Parsha Pearls, and other Divrei Torah. Read or print before Shabbos."
           />
         </section>
 
