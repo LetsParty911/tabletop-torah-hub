@@ -748,7 +748,7 @@ function Index() {
 
 
         {!isCurrentYomKippur && (
-          <section id={showCompleteCollection ? undefined : "this-weeks-collection"} tabIndex={-1} aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border-2 border-accent/50 bg-card/50 px-4 py-5 sm:px-6">
+          <section id="our-originals" tabIndex={-1} aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border-2 border-accent/50 bg-card/50 px-4 py-5 sm:px-6">
             <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-xs">
               Home of the original Torah For The Table series
             </p>
@@ -760,7 +760,7 @@ function Index() {
             </p>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
               {starterSelections.map(({ key, label, resource: r }, index) => (
-                <article key={r.id} ref={index === 0 ? originalsRef : undefined} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-5 sm:p-6">
+                <article key={r.id} ref={index === 0 ? originalsRef : undefined} style={{ order: TFTT_ORIGINAL_EDITION_SERIES.findIndex((s) => s.id === r.publication_id) }} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
                   <div className="flex min-w-0 flex-col items-center gap-4 text-center">
                   {r.thumb_url && (
                     <StarterThumb
@@ -826,7 +826,7 @@ function Index() {
                 </article>
               ))}
               {TFTT_ORIGINAL_EDITION_SERIES.filter((series) => !starterSelections.some(({ resource }) => resource.publication_id === series.id)).map((series, index) => (
-                <article key={series.id} ref={starterSelections.length === 0 && index === 0 ? originalsRef : undefined} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
+                <article key={series.id} ref={starterSelections.length === 0 && index === 0 ? originalsRef : undefined} style={{ order: TFTT_ORIGINAL_EDITION_SERIES.findIndex((s) => s.id === series.id) }} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
                   <div className="flex flex-1 flex-col items-center gap-3 text-center">
                     <div role="img" aria-label={series.title} className="flex h-[145px] w-28 items-center justify-center rounded-sm border border-accent/40 bg-accent/10 text-primary shadow-sm">
                       <FileText className="h-6 w-6" aria-hidden="true" />
@@ -838,7 +838,7 @@ function Index() {
                     <p className="text-sm leading-relaxed text-muted-foreground">{series.expectation}</p>
                   </div>
                   <div className="mt-auto pt-5">
-                    <Link to="/originals" className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-accent/50 bg-background px-3 py-2 font-serif text-sm font-semibold text-primary hover:bg-accent/10">Browse Earlier Editions</Link>
+                    <Link to="/originals" className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-accent/50 bg-background px-3 py-2 font-serif text-sm font-semibold text-primary hover:bg-accent/10">About This Series</Link>
                     <p className="mt-2 text-center text-xs text-muted-foreground">This week's edition is being prepared.</p>
                   </div>
                 </article>
