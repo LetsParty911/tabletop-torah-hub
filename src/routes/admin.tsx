@@ -11,6 +11,7 @@ import WeeklyChecklistSection from "@/components/admin/WeeklyChecklistSection";
 import ManageChecklistSourcesSection from "@/components/admin/ManageChecklistSourcesSection";
 import PdfListSection from "@/components/admin/PdfListSection";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ParshaSongAdmin } from "@/components/admin/ParshaSongAdmin";
 import { NotificationsSection } from "@/components/admin/NotificationsSection";
 import VisitorActivitySection from "@/components/admin/VisitorActivitySection";
 import BlockedVisitsSection from "@/components/admin/BlockedVisitsSection";
@@ -1426,6 +1427,7 @@ function AdminPage() {
           <TabsList aria-label="Admin sections" className="grid h-auto w-full grid-cols-2 gap-1 rounded-md bg-muted/60 p-2 sm:flex sm:flex-wrap sm:justify-start">
             <TabsTrigger value="this-week">This Week</TabsTrigger>
             <TabsTrigger value="pdf-library">PDF Library</TabsTrigger>
+            <TabsTrigger value="parsha-in-song">Parsha in Song</TabsTrigger>
             <TabsTrigger value="site-content">Banners</TabsTrigger>
             <TabsTrigger value="subscribers-analytics">Subscribers</TabsTrigger>
             <TabsTrigger value="visitor-activity">Visitors</TabsTrigger>
@@ -1552,6 +1554,9 @@ function AdminPage() {
             </div>
           </div>
         </section>
+          </TabsContent>
+          <TabsContent value="parsha-in-song" className="space-y-6 mt-8">
+            <ParshaSongAdmin accessToken={accessToken} defaultParsha={resolvedCurrentParsha} defaultYear={jewishYear} />
           </TabsContent>
           <TabsContent value="pdf-library" className="space-y-6 mt-8">
             <div>
