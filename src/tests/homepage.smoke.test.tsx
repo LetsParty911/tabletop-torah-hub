@@ -135,6 +135,10 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     render(<Homepage />);
     expect(state.countdown).toHaveBeenLastCalledWith(expect.objectContaining({ contentLive: false, availableCount: 0, liveParshaLabel: "Parshas Lech-Lecha", readingDate: "2026-10-24", collectionComplete: false }));
     expect(screen.getByText("Release countdown")).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 1, name: "Parshas Lech-Lecha — This Week's Parsha" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Previous Collection — Parshas Noach" })).toBeTruthy();
+    expect(screen.getByText(/These 4 selections are from Parshas Noach, not Parshas Lech-Lecha/)).toBeTruthy();
+    expect(screen.getByText(/This week's Divrei Torah are being prepared/)).toBeTruthy();
     expect(screen.queryByRole("link", { name: /Get notification/i })).toBeNull();
     expect(screen.getAllByRole("form", { name: /Weekly Torah signup/i })).toHaveLength(1);
 
@@ -156,7 +160,7 @@ describe("homepage publication and discovery smoke test with isolated data", () 
       const description = screen.getByText(series.expectation);
       expect(description.className).not.toContain("line-clamp");
     }
-    expect(screen.getByText("Our Originals")).toBeTruthy();
+    expect(screen.getByText("Our Four Original Weekly Series")).toBeTruthy();
   });
 
   it("shows every PDF and one stable collection anchor for small weekly releases", () => {
@@ -195,7 +199,7 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     setHomepage(true);
     render(<Homepage />);
     expect(screen.queryByTestId("table-chooser")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /Browse All 4/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Browse Earlier Collection: Parshas Noach \(4\)/ }));
     expect(screen.queryByTestId("table-chooser")).toBeNull();
     expect(screen.getAllByRole("link", { name: "Sample Torah Sheet 4" }).length).toBeGreaterThan(0);
     const openLinks = screen.getAllByRole("link", { name: "Open PDF" });

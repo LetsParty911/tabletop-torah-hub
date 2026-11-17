@@ -354,10 +354,13 @@ function Index() {
           weekday: "long",
           month: "long",
           day: "numeric",
+          year: "numeric",
         })
         .replace(/^Saturday,/, "Shabbos,")
     : null;
-  const normalizedCollectionKey = (displayedParshaKey ?? displayedLabel)
+  // The current reading controls the homepage context even when the PDF list
+  // contains an earlier, clearly labeled published collection.
+  const normalizedCollectionKey = (currentParshaKey ?? currentLabel)
     .replace(/^Parshas\s+/i, "")
     .trim()
     .toLowerCase();
@@ -685,7 +688,7 @@ function Index() {
         <section className="parchment-frame">
           <div className="parchment-panel px-4 py-4 text-center sm:py-6">
             <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-accent-readable sm:text-xs">
-              {isCurrentYomKippur ? "Yom Kippur Resources" : isFallback ? "Latest Available Collection" : "This Week's Parsha"}
+              {isCurrentYomKippur ? "Yom Kippur Resources" : "This Week's Parsha"}
             </p>
             <h1 className="mt-1 font-serif text-xl font-bold leading-tight text-primary sm:text-3xl">
               {isCurrentYomKippur
@@ -693,24 +696,28 @@ function Index() {
                 : isSukkosSeason
                   ? sukkosSeasonTitle
                   : isFallback
-                    ? `${displayedLabel} — Still Available`
-                    : `${displayedLabel} — Weekly Divrei Torah`}
+                    ? `${currentLabel} — This Week's Parsha`
+                    : `${currentLabel} — Weekly Divrei Torah`}
             </h1>
             <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
               {isFallback
-                ? `${resources.length} selections from last week remain available to read or print while we prepare ${currentLabel}.`
+                ? "This week's Divrei Torah are being prepared. New selections every Thursday."
                 : postShabbos
                   ? "These Torah sheets remain available to read or print."
                   : resources.length > 0
                     ? `${resources.length} selections for the Shabbos table. New editions every Thursday.`
                     : "New Divrei Torah are prepared for your Shabbos table every Thursday."}
             </p>
-            {heroDateLine && !isFallback && (
+            {heroDateLine && (
               <p className="mt-1 text-xs text-muted-foreground">{heroDateLine}</p>
             )}
-            <Button onClick={browseAllSelections} className="mt-4 h-auto min-h-11 max-w-full whitespace-normal rounded-full px-6 py-3 font-serif text-base font-semibold">
-              {isFallback ? `Browse All ${resources.length} Available Selections` : `Browse All ${resources.length} This Week’s Selections`}
-            </Button>
+            {resources.length > 0 && (
+              <Button onClick={browseAllSelections} className="mt-4 h-auto min-h-11 max-w-full whitespace-normal rounded-full px-6 py-3 font-serif text-base font-semibold">
+                {isFallback
+                  ? `Browse Earlier Collection: ${displayedLabel} (${resources.length})`
+                  : `Browse All ${resources.length} This Week’s Selections`}
+              </Button>
+            )}
             <p className="mt-3 text-xs text-muted-foreground">Divrei Torah in Hebrew — Coming Soon</p>
           </div>
         </section>
@@ -868,15 +875,17 @@ function Index() {
         <section id="this-weeks-collection" tabIndex={-1} className="scroll-mt-24">
           <div className="px-1 sm:px-2">
             <h2 ref={weeklyHeadingRef} className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
-              {isCurrentYomKippur
-                ? "Yom Kippur Divrei Torah and preparation"
-                : isFallback
-                  ? `${displayedLabel} — Browse All ${resources.length} Selections`
+              {isFallback
+                ? `Previous Collection — ${displayedLabel}`
+                : isCurrentYomKippur
+                  ? "Yom Kippur Divrei Torah and preparation"
                   : "All This Week's Selections"}
             </h2>
-            {!isCurrentYomKippur && (
+            {(isFallback || !isCurrentYomKippur) && (
               <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-muted-foreground">
-                Our weekly originals and selections from respected Torah publishers. Choose a title and tap Read Now to open its PDF — no account needed.
+                {isFallback
+                  ? `These ${resources.length} selections are from ${displayedLabel}, not ${currentLabel}. This week's PDFs will appear once published. Choose a title to read or print an earlier edition.`
+                  : "Our weekly originals and selections from respected Torah publishers. Choose a title and tap Read Now to open its PDF — no account needed."}
               </p>
             )}
         {resources.length >= 6 && (
@@ -942,7 +951,7 @@ function Index() {
                       <span aria-hidden="true">★</span> Featured
                     </p>
                     <h2 className="mt-1 font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
-                      {isFallback ? `${displayedLabel} Recommended Picks` : "This Week's Recommended Picks"}
+                      {isFallback ? `Recommended from ${displayedLabel}` : "This Week's Recommended Picks"}
                     </h2>
                     <div className="mt-5 grid gap-4 grid-cols-1 sm:grid-cols-2">
                       {featuredPicks.map(({ key, label, resource }) => {
