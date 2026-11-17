@@ -14,9 +14,6 @@ import { trackFp } from "@/lib/first-party-analytics";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { SITE_URL } from "@/lib/site-url";
 import { HomepageShare } from "@/components/HomepageShare";
-import { ParshaSongPlayer } from "@/components/ParshaSongPlayer";
-import { getCurrentParshaSong } from "@/integrations/supabase/parsha-songs.functions";
-import type { ParshaSong } from "@/lib/parsha-song";
 
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -136,7 +133,6 @@ type LoaderData = {
   readingDate: string | null;
   upcomingAfterYomTovKey: string | null;
   announcement: AnnouncementBannerData;
-  currentSong: ParshaSong | null;
   progressFillStep?: number | null;
   progressEta?: string | null;
   renderedAt?: number;
@@ -203,7 +199,6 @@ async function loadCurrentWeek(): Promise<LoaderData> {
   }
 
   const announcement = await announcementPromise;
-  const currentSong = await getCurrentParshaSong({ data: { parshaKey } }).catch(() => null);
   let progressFillStep: number | null = null;
   let progressEta: string | null = null;
   try {
@@ -225,7 +220,6 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     readingDate,
     upcomingAfterYomTovKey,
     announcement,
-    currentSong,
     progressFillStep,
     progressEta,
     renderedAt: Date.now(),
@@ -749,7 +743,6 @@ function Index() {
             </p>
           </section>
         )}
-        {loaderData.currentSong && <ParshaSongPlayer song={loaderData.currentSong} />}
         <ThursdayProgressMeter
           readingDate={readingDate}
           isFallback={isFallback}
