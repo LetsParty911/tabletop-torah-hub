@@ -2,7 +2,7 @@
 // can fall on Shabbos and effectively replace the parsha reading.
 export const PARSHIYOS: string[] = [
   "Bereishis", "Noach", "Lech Lecha", "Vayeira", "Chayei Sarah", "Toldos",
-  "Vayeitzei", "Vayishlach", "Vayeishev", "Mikeitz", "Vayigash", "Vayechi",
+  "Vayetzei", "Vayishlach", "Vayeishev", "Mikeitz", "Vayigash", "Vayechi",
   "Shemos", "Va'eira", "Bo", "Beshalach", "Yisro", "Mishpatim", "Terumah",
   "Tetzaveh", "Ki Sisa", "Vayakhel", "Pekudei", "Vayakhel-Pekudei",
   "Vayikra", "Tzav", "Shemini", "Tazria", "Metzora", "Tazria-Metzora",
@@ -19,7 +19,7 @@ export const PARSHIYOS: string[] = [
 /** The 54 weekly parshiyos in reading order (no combined readings). */
 export const PARSHIYOS_54: string[] = [
   "Bereishis", "Noach", "Lech Lecha", "Vayeira", "Chayei Sarah", "Toldos",
-  "Vayeitzei", "Vayishlach", "Vayeishev", "Mikeitz", "Vayigash", "Vayechi",
+  "Vayetzei", "Vayishlach", "Vayeishev", "Mikeitz", "Vayigash", "Vayechi",
   "Shemos", "Va'eira", "Bo", "Beshalach", "Yisro", "Mishpatim", "Terumah",
   "Tetzaveh", "Ki Sisa", "Vayakhel", "Pekudei", "Vayikra", "Tzav", "Shemini",
   "Tazria", "Metzora", "Acharei Mos", "Kedoshim", "Emor", "Behar",
@@ -67,7 +67,8 @@ export function hebcalToParshaKey(hebcalTitle: string): string {
     "Shlach": "Shelach",
     "Sh'lach": "Shelach",
     "Toldot": "Toldos",
-    "Vayetzei": "Vayeitzei",
+    // Older site content may use Vayeitzei; new names use Vayetzei.
+    "Vayeitzei": "Vayetzei",
     "Vayeshev": "Vayeishev",
     "Mikketz": "Mikeitz",
     "Shemot": "Shemos",
