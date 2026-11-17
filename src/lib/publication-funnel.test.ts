@@ -8,7 +8,7 @@ function row(partial: Partial<PublicationEventRow> & { event_name: string }): Pu
     session_id: "session-1",
     visitor_id: "visitor-1",
     publication_id: PUB_ID,
-    publication_title: "Parshas Vayeitzei Booklet",
+    publication_title: "Parshas Vayetzei Booklet",
     metadata: { action_id: "action-1" },
     ...partial,
   };
@@ -27,7 +27,7 @@ describe("aggregatePublications", () => {
     const result = aggregatePublications(rows);
 
     expect(result).toHaveLength(1);
-    expect(result[0].title).toBe("Parshas Vayeitzei Booklet");
+    expect(result[0].title).toBe("Parshas Vayetzei Booklet");
     expect(result[0].id).toBe(PUB_ID);
     expect(result[0].downloadActions).toBe(1);
     expect(result[0].downloadsServed).toBe(1);
@@ -50,7 +50,7 @@ describe("aggregatePublications", () => {
       row({ event_name: "download" }),
     ]);
     expect(result).toHaveLength(1);
-    expect(result[0].title).toBe("Parshas Vayeitzei Booklet");
+    expect(result[0].title).toBe("Parshas Vayetzei Booklet");
   });
 
   it("keeps different publication ids apart even with the same title", () => {
@@ -68,6 +68,6 @@ describe("aggregatePublications", () => {
     ]);
     expect(result).toHaveLength(1);
     expect(result[0].id).toBeNull();
-    expect(result[0].title).toBe("Parshas Vayeitzei Booklet");
+    expect(result[0].title).toBe("Parshas Vayetzei Booklet");
   });
 });
