@@ -14,6 +14,8 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin-analytics'
 import { Route as ArchiveRouteImport } from './routes/archive'
+import { Route as ParshaInSongRouteImport } from './routes/parsha-in-song'
+import { Route as ParshaSongIdDownloadRouteImport } from './routes/parsha-song.$id.download'
 import { Route as BriefInsightsRouteImport } from './routes/brief-insights'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DivreiTorahParshaRouteImport } from './routes/divrei-torah-parsha'
@@ -89,6 +91,16 @@ const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
 const ArchiveRoute = ArchiveRouteImport.update({
   id: '/archive',
   path: '/archive',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParshaInSongRoute = ParshaInSongRouteImport.update({
+  id: '/parsha-in-song',
+  path: '/parsha-in-song',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParshaSongIdDownloadRoute = ParshaSongIdDownloadRouteImport.update({
+  id: '/parsha-song/$id/download',
+  path: '/parsha-song/$id/download',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BriefInsightsRoute = BriefInsightsRouteImport.update({
@@ -353,6 +365,8 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
+  '/parsha-in-song': typeof ParshaInSongRoute
+  '/parsha-song/$id/download': typeof ParshaSongIdDownloadRoute
   '/brief-insights': typeof BriefInsightsRoute
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
@@ -411,6 +425,8 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
+  '/parsha-in-song': typeof ParshaInSongRoute
+  '/parsha-song/$id/download': typeof ParshaSongIdDownloadRoute
   '/brief-insights': typeof BriefInsightsRoute
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
@@ -470,6 +486,8 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
+  '/parsha-in-song': typeof ParshaInSongRoute
+  '/parsha-song/$id/download': typeof ParshaSongIdDownloadRoute
   '/brief-insights': typeof BriefInsightsRoute
   '/contact': typeof ContactRoute
   '/divrei-torah-parsha': typeof DivreiTorahParshaRoute
@@ -530,6 +548,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-analytics'
     | '/archive'
+    | '/parsha-in-song'
+    | '/parsha-song/$id/download'
     | '/brief-insights'
     | '/contact'
     | '/divrei-torah-parsha'
@@ -588,6 +608,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-analytics'
     | '/archive'
+    | '/parsha-in-song'
+    | '/parsha-song/$id/download'
     | '/brief-insights'
     | '/contact'
     | '/divrei-torah-parsha'
@@ -646,6 +668,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-analytics'
     | '/archive'
+    | '/parsha-in-song'
+    | '/parsha-song/$id/download'
     | '/brief-insights'
     | '/contact'
     | '/divrei-torah-parsha'
@@ -705,6 +729,8 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   ArchiveRoute: typeof ArchiveRoute
+  ParshaInSongRoute: typeof ParshaInSongRoute
+  ParshaSongIdDownloadRoute: typeof ParshaSongIdDownloadRoute
   BriefInsightsRoute: typeof BriefInsightsRoute
   ContactRoute: typeof ContactRoute
   DivreiTorahParshaRoute: typeof DivreiTorahParshaRoute
@@ -790,6 +816,20 @@ declare module '@tanstack/react-router' {
       path: '/archive'
       fullPath: '/archive'
       preLoaderRoute: typeof ArchiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parsha-in-song': {
+      id: '/parsha-in-song'
+      path: '/parsha-in-song'
+      fullPath: '/parsha-in-song'
+      preLoaderRoute: typeof ParshaInSongRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parsha-song/$id/download': {
+      id: '/parsha-song/$id/download'
+      path: '/parsha-song/$id/download'
+      fullPath: '/parsha-song/$id/download'
+      preLoaderRoute: typeof ParshaSongIdDownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/brief-insights': {
@@ -1183,6 +1223,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   ArchiveRoute: ArchiveRoute,
+  ParshaInSongRoute: ParshaInSongRoute,
+  ParshaSongIdDownloadRoute: ParshaSongIdDownloadRoute,
   BriefInsightsRoute: BriefInsightsRoute,
   ContactRoute: ContactRoute,
   DivreiTorahParshaRoute: DivreiTorahParshaRoute,
