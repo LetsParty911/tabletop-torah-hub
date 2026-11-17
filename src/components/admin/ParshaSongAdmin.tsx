@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { PARSHIYOS } from "@/lib/parshiyos";
-import { canonicalSongParsha, type AdminSong, MAX_SONG_COVER_BYTES, MAX_SONG_MP3_BYTES, SONG_MEDIA_BUCKET } from "@/lib/parsha-song";
-import { adminListParshaSongs, adminSaveParshaSong, adminSignParshaSongUpload } from "@/integrations/supabase/parsha-songs.functions";
+import { canonicalSongParsha, type AdminSong, MAX_SONG_COVER_BYTES, MAX_SONG_MP3_BYTES } from "@/lib/parsha-song";
+import { adminListParshaSongs, adminSaveParshaSong } from "@/integrations/supabase/parsha-songs.functions";
 
 type Props = { accessToken: string; defaultParsha: string | null; defaultYear: number | null };
 const INITIAL_TITLE = "Wherever You Go";
@@ -17,33 +16,28 @@ function extensionFor(file: File, kind: "audio" | "cover"): "mp3" | "jpg" | "png
 async function uploadSigned(file: File, kind: "audio" | "cover", token: string, parshaKey: string, jewishYear: number) {
   const max = kind === "audio" ? MAX_SONG_MP3_BYTES : MAX_SONG_COVER_BYTES;
   if (file.size === 0 || file.size > max) throw new Error(kind === "audio" ? "MP3 must be below 20 MB" : "Image must be below 5 MB");
-  const extension = extensionFor(file, kind);
-  const intent = await adminSignParshaSongUpload({ data: {
-    accessToken: token, parshaKey, jewishYear, kind, extension, size: file.size,
-  } });
-  // The external project uses publishable credentials, never the service-role key.
-  // Publishable/opaque Supabase keys must go in the apikey header, not be
-  // misinterpreted as JWT bearer tokens by older storage client paths.
-  const client = createClient(intent.storageUrl, intent.publishableKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: {
-      fetch: (input, init) => {
-        const headers = new Headers(init?.headers);
-        if (headers.get("Authorization") === "Bearer " + intent.publishableKey &&
-          intent.publishableKey.startsWith("sb_publishable_")) {
-          headers.delete("Authorization");
-        }
-        headers.set("apikey", intent.publishableKey);
-        return fetch(input, { ...init, headers });
-      },
-    },
-  });
-  const mime = extension === "mp3" ? "audio/mpeg" : extension === "png" ? "image/png" : "image/jpeg";
-  const { error } = await client.storage.from(SONG_MEDIA_BUCKET).uploadToSignedUrl(
-    intent.path, intent.token, file, { contentType: mime },
-  );
-  if (error) throw new Error(kind === "audio" ? "MP3 upload failed: " + error.message : "Cover upload failed: " + error.message);
-  return intent.path;
+  extensionFor(file, kind);
+  const form = new FormData();
+  form.set("file", file, file.name);
+  form.set("kind", kind);
+  form.set("parshaKey", parshaKey);
+  form.set("jewishYear", String(jewishYear));
+  let response: Response;
+  try {
+    response = await fetch("/api/parsha-song-upload", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token },
+      body: form,
+      credentials: "same-origin",
+    });
+  } catch {
+    throw new Error("Unable to connect to the upload service. Check your internet connection and retry.");
+  }
+  const result = await response.json().catch(() => ({})) as { path?: string; error?: string };
+  if (!response.ok || !result.path) {
+    throw new Error(result.error || "Upload failed (HTTP " + response.status + ").");
+  }
+  return result.path;
 }
 
 export function ParshaSongAdmin({ accessToken, defaultParsha, defaultYear }: Props) {
