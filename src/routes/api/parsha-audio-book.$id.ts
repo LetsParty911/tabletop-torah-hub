@@ -19,7 +19,7 @@ export const Route = createFileRoute("/api/parsha-audio-book/$id")({
      const book=data as AudioBook;
      if (!validAudioBookPath(book.audio_path,book.jewish_year,book.parsha_key)) return json({error:"Not found"},404);
      const {data:signed,error:signError}=await client.storage.from(AUDIO_BOOK_BUCKET)
-       .createSignedUrl(book.audio_path!,60,kind==="download"?{download:audioBookDownloadName(book)}:undefined);
+       .createSignedUrl(book.audio_path!,3600,kind==="download"?{download:audioBookDownloadName(book)}:undefined);
      if (signError || !signed?.signedUrl) return json({error:"Audio temporarily unavailable"},503);
      // Counts represent a requested play or download, not a completed listen or verified saved file.
      const {error:eventError}=await client.from("parsha_audio_book_events")
