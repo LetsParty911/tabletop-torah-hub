@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import AdminMiniDashboard from "@/components/AdminMiniDashboard";
 import SubscribersManager, { type Subscriber } from "@/components/admin/SubscribersManager";
 import UploadPdfForm from "@/components/admin/UploadPdfForm";
+import { ParshaAudioBookAdmin } from "@/components/admin/ParshaAudioBookAdmin";
 import SimpleBannerForm from "@/components/admin/SimpleBannerForm";
 import WhatsNewPopupForm from "@/components/admin/WhatsNewPopupForm";
 import ParshaOverrideForm from "@/components/admin/ParshaOverrideForm";
@@ -1426,6 +1427,7 @@ function AdminPage() {
           <TabsList aria-label="Admin sections" className="grid h-auto w-full grid-cols-2 gap-1 rounded-md bg-muted/60 p-2 sm:flex sm:flex-wrap sm:justify-start">
             <TabsTrigger value="this-week">This Week</TabsTrigger>
             <TabsTrigger value="pdf-library">PDF Library</TabsTrigger>
+            <TabsTrigger value="audio-books">Audio Books</TabsTrigger>
             <TabsTrigger value="site-content">Banners</TabsTrigger>
             <TabsTrigger value="subscribers-analytics">Subscribers</TabsTrigger>
             <TabsTrigger value="visitor-activity">Visitors</TabsTrigger>
@@ -1552,6 +1554,9 @@ function AdminPage() {
             </div>
           </div>
         </section>
+          </TabsContent>
+          <TabsContent value="audio-books" className="space-y-6 mt-8">
+            <ParshaAudioBookAdmin accessToken={accessToken} />
           </TabsContent>
           <TabsContent value="pdf-library" className="space-y-6 mt-8">
             <div>
