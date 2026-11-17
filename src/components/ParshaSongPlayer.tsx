@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { Download, Music2, Pause, Play } from "lucide-react";
 import type { ParshaSong } from "@/lib/parsha-song";
-import { songDownloadFilename } from "@/lib/parsha-song";
 
 type Props = { song: ParshaSong; compact?: boolean };
 
@@ -43,7 +42,7 @@ export function ParshaSongPlayer({ song, compact = false }: Props) {
               {playing ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
               {playing ? "Pause" : "Listen Online"}
             </button>
-            <a href={song.audioUrl} download={songDownloadFilename(song.title, song.parshaKey, song.jewishYear)}
+            <a href={"/parsha-song/" + song.id + "/download"}
               className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-primary px-5 py-2 text-sm font-semibold text-primary hover:bg-accent/10">
               <Download size={16} aria-hidden="true" /> Download MP3
             </a>
