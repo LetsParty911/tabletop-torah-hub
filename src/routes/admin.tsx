@@ -1556,7 +1556,7 @@ function AdminPage() {
         </section>
           </TabsContent>
           <TabsContent value="parsha-in-song" className="space-y-6 mt-8">
-            <ParshaSongAdmin accessToken={accessToken} defaultParsha={resolvedCurrentParsha} defaultYear={jewishYear} />
+            <ParshaSongAdmin accessToken={accessToken ?? ""} defaultParsha={resolvedCurrentParsha} defaultYear={jewishYear} />
           </TabsContent>
           <TabsContent value="pdf-library" className="space-y-6 mt-8">
             <div>
