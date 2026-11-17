@@ -1,0 +1,92 @@
+import { useEffect, useState } from "react";
+import { adminListAudioBooks, adminSaveAudioBook } from "@/integrations/supabase/parsha-audio-books.functions";
+import { MAX_AUDIO_BOOK_BYTES, canonicalAudioParsha, type AudioBook } from "@/lib/parsha-audio-book";
+import { PARSHIYOS } from "@/lib/parshiyos";
+
+export function ParshaAudioBookAdmin({accessToken}:{accessToken:string}) {
+ const [parsha,setParsha]=useState("Vayetzei"),[year,setYear]=useState(5787);
+ const [title,setTitle]=useState("Parsha Audio Book — Parshas Vayetzei");
+ const [description,setDescription]=useState("A captivating narrated retelling of Parshas Vayetzei, based on the Chumash with explanations from Rashi.");
+ const [file,setFile]=useState<File|null>(null),[path,setPath]=useState<string|null>(null);
+ const [books,setBooks]=useState<AudioBook[]>([]);
+ const [counts,setCounts]=useState<Record<string,{plays:number;downloads:number}>>({});
+ const [busy,setBusy]=useState(false),[notice,setNotice]=useState(""),[error,setError]=useState("");
+ const [published,setPublished]=useState(false);
+ async function refresh() {
+   const data=await adminListAudioBooks({data:{accessToken}});
+   setBooks(data.books);setCounts(data.counts);
+ }
+ useEffect(()=>{void refresh().catch(e=>setError(e instanceof Error?e.message:"Could not load audio books"));},[accessToken]);
+ function pick(book:AudioBook) {
+   setParsha(book.parsha_key);setYear(book.jewish_year);setTitle(book.title);
+   setDescription(book.description||"");setPath(book.audio_path);
+   setFile(null);setPublished(book.published);setError("");setNotice("");
+ }
+ async function submit(publish:boolean) {
+   setBusy(true);setError("");setNotice("");
+   try {
+     let next=path;
+     if(file) {
+       if(file.size>MAX_AUDIO_BOOK_BYTES || !file.name.toLowerCase().endsWith(".mp3")) throw new Error("Choose an MP3 no larger than 20 MB");
+       setNotice("Uploading the audiobook…");
+       const form=new FormData();form.set("file",file,file.name);
+       form.set("parshaKey",canonicalAudioParsha(parsha));form.set("jewishYear",String(year));
+       const response=await fetch("/api/parsha-audio-book-upload",{
+         method:"POST",headers:{Authorization:"Bearer "+accessToken},body:form,credentials:"same-origin",
+       });
+       const body=await response.json() as {path?:string;error?:string};
+       if(!response.ok || !body.path) throw new Error(body.error||"Upload failed");
+       next=body.path;setPath(next);
+     }
+     const saved=await adminSaveAudioBook({data:{
+       accessToken,parshaKey:parsha,jewishYear:year,title,description,audioPath:next,published:publish,
+     }});
+     setPublished(saved.published);setFile(null);
+     await refresh();setNotice(publish?"Published successfully. Check the public Audio Book page.":"Saved as a private draft.");
+   } catch(e) {setError(e instanceof Error?e.message:"Unable to save audio book");setNotice("");}
+   finally {setBusy(false);}
+ }
+ const existing=books.find(b=>b.parsha_key===canonicalAudioParsha(parsha)&&b.jewish_year===year);
+ return <section className="parchment-frame"><div className="parchment-panel space-y-5">
+   <h2 className="font-serif text-2xl font-semibold text-primary">Parsha Audio Book</h2>
+   <p className="text-sm text-muted-foreground">An independent audio-only series. Publish one MP3 per parsha/year. No video or song listing is involved.</p>
+   {books.length>0&&<label className="block text-sm">Edit an existing recording
+    <select className="mt-1 w-full rounded-md border bg-background p-3" value="" onChange={e=>{const book=books.find(b=>b.id===e.target.value);if(book)pick(book);}}>
+      <option value="">Choose a recording</option>
+      {books.map(b=><option key={b.id} value={b.id}>{b.title} · {b.jewish_year}{b.published?" (published)":""}</option>)}
+    </select>
+   </label>}
+   <div className="grid gap-4 sm:grid-cols-2">
+    <label className="text-sm">Parsha
+      <select className="mt-1 w-full rounded-md border bg-background p-3" value={parsha}
+        onChange={e=>{setParsha(e.target.value);setPath(null);setFile(null);setPublished(false);}}>
+        {PARSHIYOS.map(p=><option key={p} value={p}>{p}</option>)}
+      </select>
+    </label>
+    <label className="text-sm">Jewish Year
+      <input type="number" min={5000} max={7000} value={year} className="mt-1 w-full rounded-md border bg-background p-3"
+        onChange={e=>{setYear(Number(e.target.value));setPath(null);setFile(null);setPublished(false);}}/>
+    </label>
+   </div>
+   <label className="block text-sm">Title
+      <input value={title} maxLength={180} className="mt-1 w-full rounded-md border bg-background p-3" onChange={e=>setTitle(e.target.value)}/>
+   </label>
+   <label className="block text-sm">Description
+      <textarea value={description} maxLength={1000} rows={3} className="mt-1 w-full rounded-md border bg-background p-3" onChange={e=>setDescription(e.target.value)}/>
+   </label>
+   <label className="block text-sm">MP3 recording (20 MB maximum)
+     <input type="file" accept=".mp3,audio/mpeg" className="mt-2 block w-full" onChange={e=>setFile(e.target.files?.[0]||null)}/>
+     {path&&<span className="text-muted-foreground">An MP3 is already stored; choose a new file only to replace it.</span>}
+   </label>
+   {existing&&<p className="text-sm">Current recording: {existing.published?"Published":"Draft"} · Plays requested: {counts[existing.id]?.plays||0} · Downloads requested: {counts[existing.id]?.downloads||0}</p>}
+   {published&&<p className="text-sm">Published. Save as Draft to hide it from visitors.</p>}
+   {notice&&<p role="status" className="text-sm text-primary">{notice}</p>}
+   {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
+   <div className="flex flex-wrap gap-3">
+    <button type="button" disabled={busy||!title.trim()} onClick={()=>void submit(false)}
+      className="min-h-11 rounded-full border-2 border-primary px-5 py-2 font-semibold text-primary disabled:opacity-50">Save as Draft</button>
+    <button type="button" disabled={busy||!title.trim()||!(file||path)} onClick={()=>void submit(true)}
+      className="min-h-11 rounded-full bg-primary px-5 py-2 font-semibold text-primary-foreground disabled:opacity-50">{busy?"Working…":"Upload & Publish"}</button>
+   </div>
+ </div></section>;
+}

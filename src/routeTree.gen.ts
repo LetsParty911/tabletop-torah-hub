@@ -14,6 +14,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin-analytics'
 import { Route as ArchiveRouteImport } from './routes/archive'
+import { Route as ParshaAudioBookRouteImport } from './routes/parsha-audio-book'
 import { Route as ParshaInSongRouteImport } from './routes/parsha-in-song'
 import { Route as ParshaSongIdDownloadRouteImport } from './routes/parsha-song.$id.download'
 import { Route as BriefInsightsRouteImport } from './routes/brief-insights'
@@ -46,6 +47,8 @@ import { Route as WapRouteImport } from './routes/wap'
 import { Route as WazRouteImport } from './routes/waz'
 import { Route as ApiEnhancedFingerprintRouteImport } from './routes/api/enhanced-fingerprint'
 import { Route as ApiEventsRouteImport } from './routes/api/events'
+import { Route as ApiParshaAudioBookUploadRouteImport } from './routes/api/parsha-audio-book-upload'
+import { Route as ApiParshaAudioBookIdRouteImport } from './routes/api/parsha-audio-book.$id'
 import { Route as ApiParshaSongUploadRouteImport } from './routes/api/parsha-song-upload'
 import { Route as ApiInternalDeviceRouteImport } from './routes/api/internal-device'
 import { Route as ApiPrivacyRegionRouteImport } from './routes/api/privacy-region'
@@ -92,6 +95,11 @@ const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
 const ArchiveRoute = ArchiveRouteImport.update({
   id: '/archive',
   path: '/archive',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParshaAudioBookRoute = ParshaAudioBookRouteImport.update({
+  id: '/parsha-audio-book',
+  path: '/parsha-audio-book',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ParshaInSongRoute = ParshaInSongRouteImport.update({
@@ -254,6 +262,16 @@ const ApiEventsRoute = ApiEventsRouteImport.update({
   path: '/api/events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiParshaAudioBookUploadRoute = ApiParshaAudioBookUploadRouteImport.update({
+  id: '/api/parsha-audio-book-upload',
+  path: '/api/parsha-audio-book-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiParshaAudioBookIdRoute = ApiParshaAudioBookIdRouteImport.update({
+  id: '/api/parsha-audio-book/$id',
+  path: '/api/parsha-audio-book/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiParshaSongUploadRoute = ApiParshaSongUploadRouteImport.update({
   id: '/api/parsha-song-upload',
   path: '/api/parsha-song-upload',
@@ -371,6 +389,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
+  '/parsha-audio-book': typeof ParshaAudioBookRoute
   '/parsha-in-song': typeof ParshaInSongRoute
   '/parsha-song/$id/download': typeof ParshaSongIdDownloadRoute
   '/brief-insights': typeof BriefInsightsRoute
@@ -403,6 +422,8 @@ export interface FileRoutesByFullPath {
   '/waz': typeof WazRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/parsha-audio-book-upload': typeof ApiParshaAudioBookUploadRoute
+  '/api/parsha-audio-book/$id': typeof ApiParshaAudioBookIdRoute
   '/api/parsha-song-upload': typeof ApiParshaSongUploadRoute
   '/api/internal-device': typeof ApiInternalDeviceRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
@@ -432,6 +453,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
+  '/parsha-audio-book': typeof ParshaAudioBookRoute
   '/parsha-in-song': typeof ParshaInSongRoute
   '/parsha-song/$id/download': typeof ParshaSongIdDownloadRoute
   '/brief-insights': typeof BriefInsightsRoute
@@ -464,6 +486,8 @@ export interface FileRoutesByTo {
   '/waz': typeof WazRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/parsha-audio-book-upload': typeof ApiParshaAudioBookUploadRoute
+  '/api/parsha-audio-book/$id': typeof ApiParshaAudioBookIdRoute
   '/api/parsha-song-upload': typeof ApiParshaSongUploadRoute
   '/api/internal-device': typeof ApiInternalDeviceRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
@@ -494,6 +518,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
+  '/parsha-audio-book': typeof ParshaAudioBookRoute
   '/parsha-in-song': typeof ParshaInSongRoute
   '/parsha-song/$id/download': typeof ParshaSongIdDownloadRoute
   '/brief-insights': typeof BriefInsightsRoute
@@ -526,6 +551,8 @@ export interface FileRoutesById {
   '/waz': typeof WazRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/parsha-audio-book-upload': typeof ApiParshaAudioBookUploadRoute
+  '/api/parsha-audio-book/$id': typeof ApiParshaAudioBookIdRoute
   '/api/parsha-song-upload': typeof ApiParshaSongUploadRoute
   '/api/internal-device': typeof ApiInternalDeviceRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
@@ -557,6 +584,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-analytics'
     | '/archive'
+    | '/parsha-audio-book'
     | '/parsha-in-song'
     | '/parsha-song/$id/download'
     | '/brief-insights'
@@ -589,6 +617,8 @@ export interface FileRouteTypes {
     | '/waz'
     | '/api/enhanced-fingerprint'
     | '/api/events'
+    | '/api/parsha-audio-book-upload'
+    | '/api/parsha-audio-book/$id'
     | '/api/parsha-song-upload'
     | '/api/internal-device'
     | '/api/privacy-region'
@@ -618,6 +648,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-analytics'
     | '/archive'
+    | '/parsha-audio-book'
     | '/parsha-in-song'
     | '/parsha-song/$id/download'
     | '/brief-insights'
@@ -650,6 +681,8 @@ export interface FileRouteTypes {
     | '/waz'
     | '/api/enhanced-fingerprint'
     | '/api/events'
+    | '/api/parsha-audio-book-upload'
+    | '/api/parsha-audio-book/$id'
     | '/api/parsha-song-upload'
     | '/api/internal-device'
     | '/api/privacy-region'
@@ -679,6 +712,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-analytics'
     | '/archive'
+    | '/parsha-audio-book'
     | '/parsha-in-song'
     | '/parsha-song/$id/download'
     | '/brief-insights'
@@ -711,6 +745,8 @@ export interface FileRouteTypes {
     | '/waz'
     | '/api/enhanced-fingerprint'
     | '/api/events'
+    | '/api/parsha-audio-book-upload'
+    | '/api/parsha-audio-book/$id'
     | '/api/parsha-song-upload'
     | '/api/internal-device'
     | '/api/privacy-region'
@@ -741,6 +777,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   ArchiveRoute: typeof ArchiveRoute
+  ParshaAudioBookRoute: typeof ParshaAudioBookRoute
   ParshaInSongRoute: typeof ParshaInSongRoute
   ParshaSongIdDownloadRoute: typeof ParshaSongIdDownloadRoute
   BriefInsightsRoute: typeof BriefInsightsRoute
@@ -773,6 +810,8 @@ export interface RootRouteChildren {
   WazRoute: typeof WazRoute
   ApiEnhancedFingerprintRoute: typeof ApiEnhancedFingerprintRoute
   ApiEventsRoute: typeof ApiEventsRoute
+  ApiParshaAudioBookUploadRoute: typeof ApiParshaAudioBookUploadRoute
+  ApiParshaAudioBookIdRoute: typeof ApiParshaAudioBookIdRoute
   ApiParshaSongUploadRoute: typeof ApiParshaSongUploadRoute
   ApiInternalDeviceRoute: typeof ApiInternalDeviceRoute
   ApiPrivacyRegionRoute: typeof ApiPrivacyRegionRoute
@@ -829,6 +868,13 @@ declare module '@tanstack/react-router' {
       path: '/archive'
       fullPath: '/archive'
       preLoaderRoute: typeof ArchiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parsha-audio-book': {
+      id: '/parsha-audio-book'
+      path: '/parsha-audio-book'
+      fullPath: '/parsha-audio-book'
+      preLoaderRoute: typeof ParshaAudioBookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/parsha-in-song': {
@@ -1055,6 +1101,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/parsha-audio-book-upload': {
+      id: '/api/parsha-audio-book-upload'
+      path: '/api/parsha-audio-book-upload'
+      fullPath: '/api/parsha-audio-book-upload'
+      preLoaderRoute: typeof ApiParshaAudioBookUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/parsha-audio-book/$id': {
+      id: '/api/parsha-audio-book/$id'
+      path: '/api/parsha-audio-book/$id'
+      fullPath: '/api/parsha-audio-book/$id'
+      preLoaderRoute: typeof ApiParshaAudioBookIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/parsha-song-upload': {
       id: '/api/parsha-song-upload'
       path: '/api/parsha-song-upload'
@@ -1243,6 +1303,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   ArchiveRoute: ArchiveRoute,
+  ParshaAudioBookRoute: ParshaAudioBookRoute,
   ParshaInSongRoute: ParshaInSongRoute,
   ParshaSongIdDownloadRoute: ParshaSongIdDownloadRoute,
   BriefInsightsRoute: BriefInsightsRoute,
@@ -1275,6 +1336,8 @@ const rootRouteChildren: RootRouteChildren = {
   WazRoute: WazRoute,
   ApiEnhancedFingerprintRoute: ApiEnhancedFingerprintRoute,
   ApiEventsRoute: ApiEventsRoute,
+  ApiParshaAudioBookUploadRoute: ApiParshaAudioBookUploadRoute,
+  ApiParshaAudioBookIdRoute: ApiParshaAudioBookIdRoute,
   ApiParshaSongUploadRoute: ApiParshaSongUploadRoute,
   ApiInternalDeviceRoute: ApiInternalDeviceRoute,
   ApiPrivacyRegionRoute: ApiPrivacyRegionRoute,

@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { isPostShabbosWindow } from "@/lib/post-shabbos";
-import { FileText } from "lucide-react";
+import { BookOpen, FileText } from "lucide-react";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
@@ -720,6 +720,13 @@ function Index() {
             )}
             <p className="mt-3 text-xs text-muted-foreground">Divrei Torah in Hebrew — Coming Soon</p>
           </div>
+        </section>
+        <section aria-label="Parsha Audio Book" className="rounded-2xl border border-accent/50 bg-card/70 p-4 text-center shadow-sm sm:p-5">
+          <div className="flex items-center justify-center gap-2 text-primary"><BookOpen size={22} aria-hidden="true"/>
+            <h2 className="font-serif text-xl font-bold">Parsha Audio Book</h2>
+          </div>
+          <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">Experience the Parsha as a professionally narrated story, with explanations from Rashi.</p>
+          <Link to="/parsha-audio-book" className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full border-2 border-primary px-5 py-2 font-semibold text-primary hover:bg-accent/10">Listen to Parsha Audio Books</Link>
         </section>
         {!isFallback && tableThought && (
           <section
