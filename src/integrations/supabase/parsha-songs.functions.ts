@@ -145,3 +145,45 @@ export const adminSaveParshaSong = createServerFn({ method: "POST" })
     if (error) throw new Error("Could not save song: " + error.message);
     return saved as AdminSong;
   });
+
+/** Admin-only metrics for every song, including published and draft titles. */
+export const adminParshaSongAnalytics = createServerFn({ method: "POST" })
+  .inputValidator((input: { accessToken: string }) =>
+    z.object({ accessToken: z.string().min(10) }).parse(input))
+  .handler(async ({ data }) => {
+    await verifyAdminAccessToken(data.accessToken);
+    const admin = getSupabaseAdmin();
+    const [songs, metrics] = await Promise.all([
+      admin.from("parsha_songs").select("id,title,parsha_key,jewish_year,published")
+        .order("jewish_year", { ascending: false }),
+      admin.from("parsha_song_event_totals")
+        .select("song_id,plays_total,downloads_total,plays_7d,downloads_7d"),
+    ]);
+    if (songs.error || metrics.error) {
+      throw new Error("Unable to load music analytics. Check that the analytics migration was applied.");
+    }
+    const totals = new Map<string, {
+      plays_total: number; downloads_total: number; plays_7d: number; downloads_7d: number;
+    }>();
+    for (const row of metrics.data ?? []) {
+      totals.set(row.song_id, {
+        plays_total: Number(row.plays_total ?? 0),
+        downloads_total: Number(row.downloads_total ?? 0),
+        plays_7d: Number(row.plays_7d ?? 0),
+        downloads_7d: Number(row.downloads_7d ?? 0),
+      });
+    }
+    return (songs.data ?? []).map((song: {
+      id: string; title: string; parsha_key: string; jewish_year: number; published: boolean;
+    }) => ({
+      songId: song.id,
+      title: song.title,
+      parshaKey: song.parsha_key,
+      jewishYear: song.jewish_year,
+      published: song.published,
+      playsTotal: totals.get(song.id)?.plays_total ?? 0,
+      downloadsTotal: totals.get(song.id)?.downloads_total ?? 0,
+      plays7d: totals.get(song.id)?.plays_7d ?? 0,
+      downloads7d: totals.get(song.id)?.downloads_7d ?? 0,
+    }));
+  });
