@@ -33,7 +33,7 @@ export function ParshaAudioBookPlayer({book}: {book: AudioBook}) {
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wider text-accent-readable">Torah For The Table · Parsha Audio Book</p>
           <h2 className="mt-1 font-serif text-xl font-bold text-primary">{book.title}</h2>
-          <p className="text-sm text-muted-foreground">Parshas Vayetzei · 5787 · Approximately 14 minutes</p>
+          <p className="text-sm text-muted-foreground">Parshas {book.parsha_key === "vayetzei" ? "Vayetzei" : book.parsha_key} · {book.jewish_year}{book.parsha_key === "vayetzei" && book.jewish_year === 5787 ? " · Approximately 14 minutes" : ""}</p>
           {book.description && <p className="mt-2 text-sm leading-relaxed">{book.description}</p>}
         </div>
       </div>
