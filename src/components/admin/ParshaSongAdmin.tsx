@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ParshaSongAnalytics } from "@/components/admin/ParshaSongAnalytics";
 import { PARSHIYOS } from "@/lib/parshiyos";
 import { canonicalSongParsha, type AdminSong, MAX_SONG_COVER_BYTES, MAX_SONG_MP3_BYTES } from "@/lib/parsha-song";
 import { adminListParshaSongs, adminSaveParshaSong } from "@/integrations/supabase/parsha-songs.functions";
@@ -186,6 +187,7 @@ export function ParshaSongAdmin({ accessToken, defaultParsha, defaultYear }: Pro
             </div>
           </>
         )}
+        <ParshaSongAnalytics accessToken={accessToken} />
       </div>
     </section>
   );
