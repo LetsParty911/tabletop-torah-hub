@@ -67,6 +67,7 @@ export function hebcalToParshaKey(hebcalTitle: string): string {
     "Shlach": "Shelach",
     "Sh'lach": "Shelach",
     "Toldot": "Toldos",
+    "Vayetzei": "Vayeitzei",
     "Vayeshev": "Vayeishev",
     "Mikketz": "Mikeitz",
     "Shemot": "Shemos",

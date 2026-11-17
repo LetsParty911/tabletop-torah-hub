@@ -6,6 +6,7 @@ const PARSHA_PREFIX_RE = /^(parshas|parashat|parsha)\s+/i;
 
 const PARSHA_VARIANT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bvayera\b/g, "vayeira"],
+  [/\bvayetzei\b/g, "vayeitzei"],
   [/\bachrei\b/g, "acharei"],
   [/\bmot\b/g, "mos"],
   [/\bshmini\b/g, "shemini"],
@@ -49,7 +50,7 @@ export function toParshaComparableKey(value: string): string {
  * only; publication titles and the preferred visible spelling are untouched.
  */
 function normalizeSearchSpelling(text: string): string {
-  return text.toLowerCase().replace(/\bvayera\b/g, "vayeira");
+  return text.toLowerCase().replace(/\bvayera\b/g, "vayeira").replace(/\bvayetzei\b/g, "vayeitzei");
 }
 
 export function matchesParshaSearch(
