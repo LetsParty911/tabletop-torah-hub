@@ -10,6 +10,16 @@ const makeRow = (parshaKey: string) => ({
   description: "Questions and answers for the Shabbos table",
 });
 
+describe("Vayeitzei / Vayetzei naming consistency", () => {
+  it("accepts the Hebcal spelling as canonical Vayeitzei, including public and admin collection keys", async () => {
+    const { hebcalToParshaKey } = await import("./parshiyos");
+    expect(hebcalToParshaKey("Parashat Vayetzei")).toBe("Vayeitzei");
+    expect(toParshaComparableKey("Vayetzei")).toBe(toParshaComparableKey("Vayeitzei"));
+    expect(toParshaComparableKey("Parshas Vayetzei")).toBe(toParshaComparableKey("Vayeitzei"));
+    expect(matchesParshaSearch("Vayetzei", makeRow("Vayeitzei"))).toBe(true);
+  });
+});
+
 describe("Vayeira spelling aliases", () => {
   it("matches Vayera and Vayeira as the same parsha key, including prefixes", () => {
     expect(toParshaComparableKey("Vayera")).toBe(toParshaComparableKey("Vayeira"));
