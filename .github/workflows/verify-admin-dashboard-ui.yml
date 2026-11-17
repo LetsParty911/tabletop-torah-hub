@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - "src/routes/admin.tsx"
+      - "src/routes/api/parsha-song-upload.ts"
+      - "src/components/admin/ParshaSongAdmin.tsx"
+      - "src/routeTree.gen.ts"
       - "src/components/admin/AdminAnalyticsReport.tsx"
       - "src/components/admin/AnalyticsControlCenter.tsx"
       - "src/components/admin/VisitorInsights.tsx"
