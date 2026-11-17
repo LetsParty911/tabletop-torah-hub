@@ -46,6 +46,7 @@ import { Route as WapRouteImport } from './routes/wap'
 import { Route as WazRouteImport } from './routes/waz'
 import { Route as ApiEnhancedFingerprintRouteImport } from './routes/api/enhanced-fingerprint'
 import { Route as ApiEventsRouteImport } from './routes/api/events'
+import { Route as ApiParshaSongEventRouteImport } from './routes/api/parsha-song-event'
 import { Route as ApiParshaSongUploadRouteImport } from './routes/api/parsha-song-upload'
 import { Route as ApiInternalDeviceRouteImport } from './routes/api/internal-device'
 import { Route as ApiPrivacyRegionRouteImport } from './routes/api/privacy-region'
@@ -254,6 +255,11 @@ const ApiEventsRoute = ApiEventsRouteImport.update({
   path: '/api/events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiParshaSongEventRoute = ApiParshaSongEventRouteImport.update({
+  id: '/api/parsha-song-event',
+  path: '/api/parsha-song-event',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiParshaSongUploadRoute = ApiParshaSongUploadRouteImport.update({
   id: '/api/parsha-song-upload',
   path: '/api/parsha-song-upload',
@@ -403,6 +409,7 @@ export interface FileRoutesByFullPath {
   '/waz': typeof WazRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/parsha-song-event': typeof ApiParshaSongEventRoute
   '/api/parsha-song-upload': typeof ApiParshaSongUploadRoute
   '/api/internal-device': typeof ApiInternalDeviceRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
@@ -464,6 +471,7 @@ export interface FileRoutesByTo {
   '/waz': typeof WazRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/parsha-song-event': typeof ApiParshaSongEventRoute
   '/api/parsha-song-upload': typeof ApiParshaSongUploadRoute
   '/api/internal-device': typeof ApiInternalDeviceRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
@@ -526,6 +534,7 @@ export interface FileRoutesById {
   '/waz': typeof WazRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/parsha-song-event': typeof ApiParshaSongEventRoute
   '/api/parsha-song-upload': typeof ApiParshaSongUploadRoute
   '/api/internal-device': typeof ApiInternalDeviceRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
@@ -589,6 +598,7 @@ export interface FileRouteTypes {
     | '/waz'
     | '/api/enhanced-fingerprint'
     | '/api/events'
+    | '/api/parsha-song-event'
     | '/api/parsha-song-upload'
     | '/api/internal-device'
     | '/api/privacy-region'
@@ -650,6 +660,7 @@ export interface FileRouteTypes {
     | '/waz'
     | '/api/enhanced-fingerprint'
     | '/api/events'
+    | '/api/parsha-song-event'
     | '/api/parsha-song-upload'
     | '/api/internal-device'
     | '/api/privacy-region'
@@ -711,6 +722,7 @@ export interface FileRouteTypes {
     | '/waz'
     | '/api/enhanced-fingerprint'
     | '/api/events'
+    | '/api/parsha-song-event'
     | '/api/parsha-song-upload'
     | '/api/internal-device'
     | '/api/privacy-region'
@@ -773,6 +785,7 @@ export interface RootRouteChildren {
   WazRoute: typeof WazRoute
   ApiEnhancedFingerprintRoute: typeof ApiEnhancedFingerprintRoute
   ApiEventsRoute: typeof ApiEventsRoute
+  ApiParshaSongEventRoute: typeof ApiParshaSongEventRoute
   ApiParshaSongUploadRoute: typeof ApiParshaSongUploadRoute
   ApiInternalDeviceRoute: typeof ApiInternalDeviceRoute
   ApiPrivacyRegionRoute: typeof ApiPrivacyRegionRoute
@@ -1055,6 +1068,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/parsha-song-event': {
+      id: '/api/parsha-song-event'
+      path: '/api/parsha-song-event'
+      fullPath: '/api/parsha-song-event'
+      preLoaderRoute: typeof ApiParshaSongEventRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/parsha-song-upload': {
       id: '/api/parsha-song-upload'
       path: '/api/parsha-song-upload'
@@ -1275,6 +1295,7 @@ const rootRouteChildren: RootRouteChildren = {
   WazRoute: WazRoute,
   ApiEnhancedFingerprintRoute: ApiEnhancedFingerprintRoute,
   ApiEventsRoute: ApiEventsRoute,
+  ApiParshaSongEventRoute: ApiParshaSongEventRoute,
   ApiParshaSongUploadRoute: ApiParshaSongUploadRoute,
   ApiInternalDeviceRoute: ApiInternalDeviceRoute,
   ApiPrivacyRegionRoute: ApiPrivacyRegionRoute,

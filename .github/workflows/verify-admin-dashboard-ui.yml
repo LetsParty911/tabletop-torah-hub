@@ -5,6 +5,12 @@ on:
     paths:
       - "src/routes/admin.tsx"
       - "src/routes/api/parsha-song-upload.ts"
+      - "src/routes/api/parsha-song-event.ts"
+      - "src/routes/parsha-song.$id.download.tsx"
+      - "src/components/ParshaSongPlayer.tsx"
+      - "src/components/admin/ParshaSongAnalytics.tsx"
+      - "src/integrations/supabase/parsha-songs.functions.ts"
+      - "src/lib/song-engagement*"
       - "src/components/admin/ParshaSongAdmin.tsx"
       - "src/routeTree.gen.ts"
       - "src/components/admin/AdminAnalyticsReport.tsx"
@@ -32,6 +38,6 @@ jobs:
       - name: Relevant analytics tests
         run: bun test src/lib/visitor-insights.test.ts src/lib/admin-analytics-display.test.ts src/lib/admin-mini-summary.test.ts src/lib/pdf-reporting.test.ts src/lib/publication-pdf-activity.test.ts
       - name: Parsha in Song tests
-        run: bun test src/lib/parsha-song.test.ts
+        run: bun test src/lib/parsha-song.test.ts src/lib/song-engagement.test.ts
       - name: Build
         run: bun run build

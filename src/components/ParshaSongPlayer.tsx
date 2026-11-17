@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
+import { listenedSecondsAfterUpdate, SONG_QUALIFIED_PLAY_SECONDS } from "@/lib/song-engagement";
 import { Download, Music2, Pause, Play } from "lucide-react";
 import type { ParshaSong } from "@/lib/parsha-song";
 
@@ -9,6 +10,32 @@ export function ParshaSongPlayer({ song, compact = false }: Props) {
   const player = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
+  const listened = useRef(0);
+  const previousTime = useRef<number | null>(null);
+  const reported = useRef(false);
+
+  function onPlaybackProgress() {
+    const audio = player.current;
+    if (!audio || audio.paused || audio.seeking || reported.current) return;
+    listened.current = listenedSecondsAfterUpdate(
+      listened.current, previousTime.current, audio.currentTime,
+    );
+    previousTime.current = audio.currentTime;
+    if (listened.current < SONG_QUALIFIED_PLAY_SECONDS) return;
+    reported.current = true;
+    void fetch("/api/parsha-song-event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      keepalive: true,
+      body: JSON.stringify({
+        songId: song.id,
+        eventId: crypto.randomUUID(),
+        eventKind: "play",
+      }),
+    }).catch(() => undefined);
+  }
+
 
   async function togglePlay() {
     const audio = player.current;
@@ -34,7 +61,16 @@ export function ParshaSongPlayer({ song, compact = false }: Props) {
           <p className="text-sm text-muted-foreground">Parshas {song.parshaKey === "vayetzei" ? "Vayetzei" : song.parshaKey} {song.jewishYear}</p>
           {song.description && <p className="text-sm leading-relaxed text-foreground">{song.description}</p>}
           <audio ref={player} controls preload="none" src={song.audioUrl} aria-label={"Listen to " + song.title}
-            onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}
+            onPlay={() => { setPlaying(true); previousTime.current = player.current?.currentTime ?? null; }}
+            onTimeUpdate={onPlaybackProgress}
+            onSeeked={() => { previousTime.current = player.current?.currentTime ?? null; }}
+            onPause={() => { setPlaying(false); previousTime.current = null; }}
+            onEnded={() => {
+              setPlaying(false);
+              previousTime.current = null;
+              listened.current = 0;
+              reported.current = false;
+            }}
             className="w-full max-w-xl" />
           <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
             <button type="button" onClick={() => void togglePlay()}
