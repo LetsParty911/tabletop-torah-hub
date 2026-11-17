@@ -1556,7 +1556,7 @@ function AdminPage() {
         </section>
           </TabsContent>
           <TabsContent value="audio-books" className="space-y-6 mt-8">
-            <ParshaAudioBookAdmin accessToken={accessToken} />
+            {accessToken && <ParshaAudioBookAdmin accessToken={accessToken} />}
           </TabsContent>
           <TabsContent value="pdf-library" className="space-y-6 mt-8">
             <div>
