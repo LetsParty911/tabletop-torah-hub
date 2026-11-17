@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { safeSongMediaPath, songDownloadFilename, SONG_MEDIA_BUCKET } from "@/lib/parsha-song";
+import { isAutomatedAgent } from "@/lib/request-telemetry.server";
+import { isInternalRequest } from "@/lib/internal-marker.server";
+import { checkRateLimit } from "@/lib/rate-limit.server";
 
 export const Route = createFileRoute("/parsha-song/$id/download")({
   server: {
@@ -21,6 +24,30 @@ export const Route = createFileRoute("/parsha-song/$id/download")({
           if (error || !song?.published || !song.audio_path ||
               !safeSongMediaPath(song.audio_path, song.jewish_year, song.parsha_key, "audio")) {
             return new Response("Not found", { status: 404, headers: { "X-Robots-Tag": "noindex" } });
+          }
+          // Count a user-initiated MP3 request, not a confirmed transfer.
+          // Bot previews, intentional prefetches and owner test devices are
+          // excluded. Tracking failure must never prevent the download.
+          try {
+            const ua = request.headers.get("user-agent") ?? "";
+            const purpose = (
+              request.headers.get("purpose") ??
+              request.headers.get("sec-purpose") ?? ""
+            ).toLowerCase();
+            const referer = request.headers.get("referer") || "";
+            const sameOrigin = !referer || new URL(referer).origin === new URL(request.url).origin;
+            if (sameOrigin && !/prefetch|prerender/.test(purpose) &&
+                !isAutomatedAgent(ua) && !(await isInternalRequest(request)) &&
+                await checkRateLimit(request, "song-download", "TRACKING_RATE_LIMITER")) {
+              const { error: eventError } = await admin.from("parsha_song_events").insert({
+                event_id: crypto.randomUUID(),
+                song_id: id,
+                event_kind: "download",
+              });
+              if (eventError) console.error("[song-download] tracking failed", eventError.message);
+            }
+          } catch (trackingError) {
+            console.error("[song-download] tracking unavailable", trackingError);
           }
           const publicUrl = admin.storage.from(SONG_MEDIA_BUCKET).getPublicUrl(song.audio_path).data.publicUrl;
           const downloadUrl = new URL(publicUrl);
