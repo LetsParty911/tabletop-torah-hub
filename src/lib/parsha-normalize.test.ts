@@ -10,13 +10,18 @@ const makeRow = (parshaKey: string) => ({
   description: "Questions and answers for the Shabbos table",
 });
 
-describe("Vayeitzei / Vayetzei naming consistency", () => {
-  it("accepts the Hebcal spelling as canonical Vayeitzei, including public and admin collection keys", async () => {
-    const { hebcalToParshaKey } = await import("./parshiyos");
-    expect(hebcalToParshaKey("Parashat Vayetzei")).toBe("Vayeitzei");
-    expect(toParshaComparableKey("Vayetzei")).toBe(toParshaComparableKey("Vayeitzei"));
-    expect(toParshaComparableKey("Parshas Vayetzei")).toBe(toParshaComparableKey("Vayeitzei"));
+describe("Vayetzei is the preferred spelling; Vayeitzei remains a compatibility alias", () => {
+  it("Hebcal reading, dropdown and search all use canonical Vayetzei", async () => {
+    const { hebcalToParshaKey, PARSHIYOS, PARSHIYOS_54 } = await import("./parshiyos");
+    expect(hebcalToParshaKey("Parashat Vayetzei")).toBe("Vayetzei");
+    expect(hebcalToParshaKey("Parashat Vayeitzei")).toBe("Vayetzei");
+    expect(PARSHIYOS).toContain("Vayetzei");
+    expect(PARSHIYOS).not.toContain("Vayeitzei");
+    expect(PARSHIYOS_54).toContain("Vayetzei");
+    expect(toParshaComparableKey("Vayeitzei")).toBe(toParshaComparableKey("Vayetzei"));
+    expect(toParshaComparableKey("Parshas Vayeitzei")).toBe(toParshaComparableKey("Vayetzei"));
     expect(matchesParshaSearch("Vayetzei", makeRow("Vayeitzei"))).toBe(true);
+    expect(matchesParshaSearch("Vayeitzei", makeRow("Vayetzei"))).toBe(true);
   });
 });
 
