@@ -6,7 +6,7 @@ const PC = "0fa3db5f-c153-4311-a007-415c3c022143";
 const ST = "88719788-42fb-4e0b-a34b-3ea1868e750d";
 const IM = "86d9b1b2-cebf-42e5-b623-dfc1b5c5b411";
 const PP = "81b9fadd-3f96-43a2-b21d-6619567e8b1b";
-const row = (id: string, publication_id: string, parsha_key = "Vayeitzei"): OriginalEditionRow => ({
+const row = (id: string, publication_id: string, parsha_key = "Vayetzei"): OriginalEditionRow => ({
   id, publication_id, parsha_key, jewish_year: 5787, created_at: "2026-11-16T12:00:00Z",
 });
 
