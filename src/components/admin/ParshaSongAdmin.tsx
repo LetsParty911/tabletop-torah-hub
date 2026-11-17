@@ -22,8 +22,21 @@ async function uploadSigned(file: File, kind: "audio" | "cover", token: string, 
     accessToken: token, parshaKey, jewishYear, kind, extension, size: file.size,
   } });
   // The external project uses publishable credentials, never the service-role key.
+  // Publishable/opaque Supabase keys must go in the apikey header, not be
+  // misinterpreted as JWT bearer tokens by older storage client paths.
   const client = createClient(intent.storageUrl, intent.publishableKey, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: {
+      fetch: (input, init) => {
+        const headers = new Headers(init?.headers);
+        if (headers.get("Authorization") === "Bearer " + intent.publishableKey &&
+          intent.publishableKey.startsWith("sb_publishable_")) {
+          headers.delete("Authorization");
+        }
+        headers.set("apikey", intent.publishableKey);
+        return fetch(input, { ...init, headers });
+      },
+    },
   });
   const mime = extension === "mp3" ? "audio/mpeg" : extension === "png" ? "image/png" : "image/jpeg";
   const { error } = await client.storage.from(SONG_MEDIA_BUCKET).uploadToSignedUrl(
