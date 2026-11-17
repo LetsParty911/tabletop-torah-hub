@@ -22,14 +22,12 @@ export const adminListAudioBooks = createServerFn({ method: "POST" })
    const { data: books, error } = await admin.from("parsha_audio_books").select(columns)
      .order("jewish_year", { ascending: false }).order("created_at", { ascending: false });
    if (error) throw new Error("Unable to load audio books");
-   const { data: events, error: countError } = await admin.from("parsha_audio_book_events")
-     .select("book_id,event_type").limit(100000);
+   const { data: totals, error: countError } = await admin.from("parsha_audio_book_counts")
+     .select("book_id,plays,downloads");
    if (countError) throw new Error("Unable to load audio engagement totals");
    const counts: Record<string, { plays: number; downloads: number }> = {};
-   for (const event of events || []) {
-     const current = counts[event.book_id] ||= { plays: 0, downloads: 0 };
-     if (event.event_type === "play") current.plays++;
-     if (event.event_type === "download") current.downloads++;
+   for (const row of totals || []) {
+     counts[row.book_id] = { plays: Number(row.plays), downloads: Number(row.downloads) };
    }
    return { books: (books || []) as AudioBook[], counts };
  });
