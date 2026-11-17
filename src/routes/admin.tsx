@@ -118,7 +118,7 @@ type ContactMessageRow = {
 const PARSHA_PREFIX_RE = /^(parshas|parashat|parsha)\s+/i;
 const PARSHA_VARIANT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bvayera\b/g, "vayeira"],
-  [/\bvayetzei\b/g, "vayeitzei"],
+  [/\bvayeitzei\b/g, "vayetzei"],
   [/\bachrei\b/g, "acharei"],
   [/\bmot\b/g, "mos"],
   [/\bshmini\b/g, "shemini"],
