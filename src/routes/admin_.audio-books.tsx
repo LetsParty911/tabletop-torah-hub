@@ -7,7 +7,7 @@ import { ParshaAudioBookAdmin } from "@/components/admin/ParshaAudioBookAdmin";
 // Independent admin route: this page does not depend on the larger Admin
 // Dashboard or its tab state. The "admin_" file segment deliberately opts
 // out of nesting under /admin, while preserving the URL /admin/audio-books.
-export const Route = createFileRoute("/admin/audio-books")({
+export const Route = createFileRoute("/admin_/audio-books")({
   component: AudioBookUploadPage,
   head: () => ({
     meta: [
