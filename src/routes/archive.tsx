@@ -1,6 +1,6 @@
 import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack/react-router";
 import { LENGTH_OPTIONS, type LengthFilter } from "@/lib/length-filter";
-import { Search } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type ArchiveYearAll as ArchiveYear, type ArchiveParshaAll as ArchiveParsha, type ArchivePdfAll as ArchivePdf } from "@/integrations/supabase/archive-all.functions";
@@ -248,6 +248,7 @@ function ArchivePage() {
   const setTypeFilter = (type: string) => setSearch({ type });
   const setPubFilter = (pub: string) => setSearch({ pub });
 
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [queryDraft, setQueryDraft] = useState(query);
   const lastPushedQuery = useRef(query);
   useEffect(() => {
@@ -345,6 +346,37 @@ function ArchivePage() {
         {years.length > 0 && (
           <section className="parchment-frame">
             <div className="parchment-panel">
+              <div className="sm:hidden">
+                <label htmlFor="archive-mobile-search" className="mb-1.5 block text-xs font-semibold text-primary">Search Divrei Torah</label>
+                <div className="relative">
+                  <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-accent/70" />
+                  <input id="archive-mobile-search" type="search" value={queryDraft}
+                    onChange={(event) => setQueryDraft(event.target.value)}
+                    placeholder="Search publication, publisher, or topic"
+                    className="min-h-11 w-full rounded-lg border-2 border-accent/40 bg-background/60 py-2 pl-9 pr-3 text-sm text-foreground focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" />
+                </div>
+                <button type="button" aria-expanded={mobileFiltersOpen} aria-controls="archive-mobile-filter-options"
+                  onClick={() => setMobileFiltersOpen((open) => !open)}
+                  className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-accent/50 bg-background px-3 py-2 text-sm font-semibold text-primary hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                  <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
+                  {mobileFiltersOpen ? "Hide Filters" : "Show Filters"}
+                  {hasActiveFilters && <span className="rounded-full bg-accent/15 px-2 py-0.5 text-xs">Active</span>}
+                  <ChevronDown aria-hidden="true" className={`ml-auto h-4 w-4 transition-transform ${mobileFiltersOpen ? "rotate-180" : ""}`} />
+                </button>
+                <p className="mt-2 text-sm text-muted-foreground" aria-live="polite">
+                  {totalPdfs} {totalPdfs === 1 ? "result" : "results"} available
+                </p>
+                {hasActiveFilters && (
+                  <button type="button" onClick={() => {
+                    setQueryDraft("");
+                    lastPushedQuery.current = "";
+                    void navigate({ search: {} as never, resetScroll: false });
+                  }} className="mt-1 min-h-11 text-sm font-semibold text-primary underline underline-offset-4">
+                    Clear all filters
+                  </button>
+                )}
+              </div>
+              <div id="archive-mobile-filter-options" className={`${mobileFiltersOpen ? "block" : "hidden"} sm:block`}>
               <div className="mb-4 flex flex-col items-center gap-2 border-b border-accent/20 pb-4">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Yamim Noraim
@@ -407,7 +439,7 @@ function ArchivePage() {
                     ))}
                   </select>
                 </label>
-                <label className="block text-left">
+                <label className="hidden text-left sm:block">
                   <span className="block font-sans text-[11px] uppercase tracking-[0.2em] text-accent mb-1.5">
                     Search
                   </span>
@@ -553,6 +585,7 @@ function ArchivePage() {
                   </button>
                 </div>
               )}
+              </div>
             </div>
           </section>
         )}
@@ -624,11 +657,11 @@ function ArchivePage() {
                               publisher={r.publisher ?? null}
                               parsha={p.parshaKey ?? null}
                             >
-                              <div className="flex items-start gap-3">
+                              <div className="flex items-start gap-2.5 sm:gap-3">
                                 <PdfCoverThumbnail pdfId={r.id} thumbnailUrl={r.thumb_url} smallThumbnailUrl={r.small_thumb_url} title={r.title} publicationName={r.publication} publisher={r.publisher} parsha={p.parshaKey} jewishYear={y.year} />
                                 <div className="min-w-0 flex-1">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <h4 className="min-w-0 flex-1 break-words font-serif text-base font-bold leading-snug text-primary sm:text-lg">
+                                  <div className="flex min-w-0 flex-col items-start gap-1.5 sm:flex-row sm:justify-between sm:gap-2">
+                                    <h4 className="min-w-0 w-full flex-1 break-words font-serif text-base font-bold leading-snug text-primary sm:text-lg">
                                       <Link
                                         to="/view/$id"
                                         params={{ id: r.id }}
