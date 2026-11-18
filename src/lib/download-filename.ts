@@ -1,4 +1,5 @@
 import { publicationLabel } from "@/lib/badges";
+import { renameLegacySeriesText } from "@/lib/tftt-originals";
 
 // Shared download filename builder.
 // Format: Parshas-{Parsha}_{PublicationName}.pdf
@@ -27,11 +28,13 @@ export function buildDownloadFilename(
   parshaKey: string | null | undefined,
   publicationName: string | null | undefined,
 ): string {
+  // Public spellings only (e.g. Vayetzei, Parsha Questions & Answers); the
+  // stored PDF and its storage path are never renamed.
   const parsha = sanitizeSegment(
-    (parshaKey || "").replace(/^(parshas|parashat|parsha)\s+/i, ""),
+    renameLegacySeriesText((parshaKey || "").replace(/^(parshas|parashat|parsha)\s+/i, "")),
   );
   // `publication` may be an internal slug; map it to the human-readable name.
-  const display = publicationLabel(publicationName) || publicationName;
+  const display = renameLegacySeriesText(publicationLabel(publicationName) || publicationName);
   const pub = sanitizeSegment(display || "Publication") || "Publication";
   const parts: string[] = [];
   if (parsha) parts.push(`Parshas-${parsha}`);

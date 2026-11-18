@@ -57,6 +57,7 @@ import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { TableChooser } from "@/components/TableChooser";
 import { MobileCollectionControlsBar } from "@/components/MobileCollectionControlsBar";
+import { excludeShownOriginals } from "@/lib/homepage-dedupe";
 import { CHOOSERS, chooseReason, pickRecommendations, pickStarterSelections, type ChooserKey } from "@/lib/table-chooser";
 
 type Resource = {
@@ -84,6 +85,15 @@ type Resource = {
 };
 
 // First-page preview for every publication; also acts as a tracked PDF-open link.
+/** Visible "New" pill whose accessible text reads "(New series)" after the title. */
+function NewSeriesBadge() {
+  return (
+    <span className="inline-flex shrink-0 items-center rounded-full bg-accent px-2 py-0.5 font-sans text-[11px] font-bold uppercase leading-none tracking-wide text-accent-foreground">
+      <span className="sr-only">(</span>New<span className="sr-only"> series)</span>
+    </span>
+  );
+}
+
 function StarterThumb({ src, smallSrc, alt, title, href, onOpen, compactOnMobile = false }: {
   src: string;
   smallSrc?: string | null;
@@ -96,7 +106,7 @@ function StarterThumb({ src, smallSrc, alt, title, href, onOpen, compactOnMobile
   const [failed, setFailed] = useState(false);
   if (failed) {
     return (
-      <div role="img" aria-label={`Cover unavailable for ${title}`} className={`flex shrink-0 items-center justify-center rounded-lg bg-accent/12 text-primary ${compactOnMobile ? "h-[83px] w-16 sm:h-[145px] sm:w-28" : "h-[145px] w-28"}`}>
+      <div role="img" aria-label={`Cover unavailable for ${title}`} className={`flex shrink-0 items-center justify-center rounded-lg bg-accent/12 text-primary ${compactOnMobile ? "h-[104px] w-20 sm:h-[145px] sm:w-28" : "h-[145px] w-28"}`}>
         <FileText className="h-5 w-5" aria-hidden="true" />
       </div>
     );
@@ -109,7 +119,7 @@ function StarterThumb({ src, smallSrc, alt, title, href, onOpen, compactOnMobile
       aria-label={`Open PDF in a new tab: ${title}`}
       title={`Open PDF: ${title}`}
       onClick={onOpen}
-      className={`block shrink-0 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${compactOnMobile ? "h-[83px] w-16 sm:h-[145px] sm:w-28" : "h-[145px] w-28"}`}
+      className={`block shrink-0 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${compactOnMobile ? "h-[104px] w-20 sm:h-[145px] sm:w-28" : "h-[145px] w-28"}`}
     >
       <SmallPdfImage
         key={src}
@@ -121,7 +131,7 @@ function StarterThumb({ src, smallSrc, alt, title, href, onOpen, compactOnMobile
         loading="lazy"
         decoding="async"
         onUnavailable={() => setFailed(true)}
-        className={`rounded-sm border border-accent/40 bg-card object-contain shadow-sm hover:border-accent ${compactOnMobile ? "h-[83px] w-16 sm:h-[145px] sm:w-28" : "h-[145px] w-28"}`}
+        className={`rounded-sm border border-accent/40 bg-card object-contain shadow-sm hover:border-accent ${compactOnMobile ? "h-[104px] w-20 sm:h-[145px] sm:w-28" : "h-[145px] w-28"}`}
       />
     </a>
   );
@@ -505,6 +515,9 @@ function Index() {
   // third-party substitute for an absent series.
   const starterSelections = isFallback ? [] : pickStarterSelections(sortedResources);
   const starterCardCount = starterSelections.length;
+  // The mobile quick list skips originals already shown as cards below, so the
+  // same four titles are not repeated back to back on small screens.
+  const mobilePreviewResources = excludeShownOriginals(sortedResources, starterSelections.map(({ resource }) => resource.id));
   // Show all this week's publications by default; Browse All is a shortcut, not a gate.
   const showCompleteCollection = resources.length > 0 || isWeeklyCollectionHash(collectionHash) || showAllResources || isCurrentYomKippur;
   const viewAllLabel = `View all ${resources.length} ${displayedLabel.replace(/^Parshas\s+/i, "")} selections`;
@@ -745,6 +758,10 @@ function Index() {
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   Please check back for updates. Thank you for visiting Torah For The Table!
                 </p>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  Earlier weeks' Divrei Torah are always available in the{" "}
+                  <Link to="/archive" className="font-semibold text-primary underline decoration-accent/60 underline-offset-4 hover:text-accent">Archive</Link>.
+                </p>
               </aside>
             )}
             {resources.length > 0 && (
@@ -757,19 +774,19 @@ function Index() {
             <p className="mt-3 text-xs text-muted-foreground">Divrei Torah in Hebrew — Coming Soon</p>
           </div>
         </section>
-        {!isFallback && sortedResources.length > 0 && (
+        {!isFallback && mobilePreviewResources.length > 0 && (
           <section
             aria-labelledby="mobile-weekly-preview-heading"
             className="rounded-xl border border-accent/45 bg-card/70 px-3 py-4 shadow-sm sm:hidden"
           >
             <h2 id="mobile-weekly-preview-heading" className="font-serif text-xl font-bold text-primary">
-              Available This Week
+              {starterSelections.length > 0 ? "Also Available This Week" : "Available This Week"}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Start reading now. More selections are added as they are published.
             </p>
             <ul className="mt-3 space-y-2">
-              {sortedResources.slice(0, 4).map((r) => (
+              {mobilePreviewResources.slice(0, 4).map((r) => (
                 <li key={r.id}>
                   <Link
                     to="/view/$id"
@@ -842,7 +859,7 @@ function Index() {
               Our Four Original Weekly Series
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Created by Torah For The Table. New editions every Thursday. Read, print, or explore an earlier edition.
+              Created by Torah For The Table, with new editions each week. Divrei Torah from respected outside publishers join them throughout the week. Read, print, or explore an earlier edition.
             </p>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
               {starterSelections.map(({ key, label, resource: r }, index) => (
@@ -875,13 +892,11 @@ function Index() {
                   )}
                   <div className="min-w-0 w-full">
                   {!isTfttOriginal(r) && <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{label}</p>}
-                  <h3 className="font-serif text-xl font-bold leading-snug text-primary">
+                  <h3 className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 font-serif text-xl font-bold leading-snug text-primary">
                     <Link to="/view/$id" params={{ id: r.id }} onClick={() => trackFp("recommendation_click", { publication_id: r.id, publication_title: r.title, parsha: r.parsha_key ?? displayedParshaKey, metadata: { chooser: key, placement: "homepage_start_here" } })} className="hover:text-accent hover:underline">
                       {displayTitle(r)}
-                      {r.publication_id === TFTT_ORIGINAL_EDITION_SERIES[3].id && (
-                        <span className="ml-2 rounded-full bg-accent px-2 py-0.5 align-middle font-sans text-[10px] font-bold uppercase tracking-wide text-accent-foreground">New</span>
-                      )}
                     </Link>
+                    {r.publication_id === TFTT_ORIGINAL_EDITION_SERIES[3].id && <>{" "}<NewSeriesBadge /></>}
                   </h3>
                   <p className="mt-2 text-xs font-semibold text-accent-readable">
                     {audienceLabel(normalizeAudience(r.audience, displayTitle(r))) ?? r.audience}
@@ -917,9 +932,9 @@ function Index() {
                     <div role="img" aria-label={series.title} className="flex h-[145px] w-28 items-center justify-center rounded-sm border border-accent/40 bg-accent/10 text-primary shadow-sm">
                       <FileText className="h-6 w-6" aria-hidden="true" />
                     </div>
-                    <h3 className="font-serif text-lg font-bold leading-snug text-primary">
-                      {series.title}
-                      {series.id === TFTT_ORIGINAL_EDITION_SERIES[3].id && <span className="ml-2 rounded-full bg-accent px-2 py-0.5 align-middle font-sans text-[10px] font-bold uppercase tracking-wide text-accent-foreground">New</span>}
+                    <h3 className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 font-serif text-lg font-bold leading-snug text-primary">
+                      <span>{series.title}</span>
+                      {series.id === TFTT_ORIGINAL_EDITION_SERIES[3].id && <>{" "}<NewSeriesBadge /></>}
                     </h3>
                     <p className="text-sm leading-relaxed text-muted-foreground">{series.expectation}</p>
                   </div>
@@ -1058,7 +1073,7 @@ function Index() {
                                 {displayTitle(r)}
                               </Link>
                             </h3>
-                            {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
+                            {r.publisher && !isTfttOriginal(r) && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
                             <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{leadWithPublicationTitle(displayTitle(r), r.subtitle || chooseReason(r))}</p>
                             {pageCountLabel(r) && (
                               <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -1433,15 +1448,23 @@ function Index() {
             <div className="mt-6 border-t border-accent/25 pt-5">
               <h2 className="font-serif text-xl font-bold text-primary">Browse Earlier Editions</h2>
               <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                Explore the {formatReadingLabel(displayedParshaKey)} archive and revisit earlier Divrei Torah.
+                The archive of past weeks' Divrei Torah, from every available year, is open anytime. Thursday at 8:00 PM ET is only the update deadline for this week's new selections.
               </p>
-              <Link
-                to="/parsha/$slug"
-                params={{ slug: readingSlug(displayedParshaKey) }}
-                className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full border border-accent/45 bg-background px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:border-accent hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-              >
-                View {formatReadingLabel(displayedParshaKey)} Editions
-              </Link>
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  to="/archive"
+                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-accent/45 bg-background px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:border-accent hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  Open the Archive
+                </Link>
+                <Link
+                  to="/parsha/$slug"
+                  params={{ slug: readingSlug(displayedParshaKey) }}
+                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-accent/45 bg-background px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:border-accent hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  All {formatReadingLabel(displayedParshaKey)} Divrei Torah
+                </Link>
+              </div>
             </div>
           )}
         </section>

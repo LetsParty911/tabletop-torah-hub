@@ -1,9 +1,20 @@
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { createRouter, useRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { claimHardReload, isStaleBuildError } from "./lib/navigation-recovery";
 import { routeTree } from "./routeTree.gen";
 
 function DefaultErrorComponent({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
+
+  // A tab opened before a new release can request route files that no longer
+  // exist. Load the requested URL fresh once instead of showing an error.
+  useEffect(() => {
+    if (!isStaleBuildError(error)) return;
+    let storage: Storage | null = null;
+    try { storage = window.sessionStorage; } catch { storage = null; }
+    if (claimHardReload(window.location.href, storage)) window.location.reload();
+  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">

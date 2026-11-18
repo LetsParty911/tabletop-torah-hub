@@ -52,10 +52,18 @@ export const PARSHA_DETECTIVE_SERIES_COPY = {
   expectation: "Illustrated Torah mysteries for children and families.",
 } as const;
 
-/** Reader-facing legacy title normalization; PDFs and analytics stay untouched. */
+/**
+ * Reader-facing legacy text normalization: the former series name becomes
+ * "Parsha Questions & Answers" and the older "Vayeitzei" spelling becomes the
+ * site's "Vayetzei". Display only — stored PDFs, file paths, IDs and analytics
+ * stay untouched.
+ */
 export function renameLegacySeriesText<T extends string | null | undefined>(value: T): T {
   return (typeof value === "string"
-    ? value.replace(/\bParsha Challenge\b/gi, TFTT_ORIGINAL_SERIES[0].title)
+    ? value
+        .replace(/\bParsha Challenge\b/gi, TFTT_ORIGINAL_SERIES[0].title)
+        .replace(/\bVayeitzei\b/g, "Vayetzei")
+        .replace(/\bVAYEITZEI\b/g, "VAYETZEI")
     : value) as T;
 }
 

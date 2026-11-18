@@ -1,6 +1,14 @@
-import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack/react-router";
-import { LENGTH_OPTIONS, type LengthFilter } from "@/lib/length-filter";
-import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { createFileRoute, Link, stripSearchParams, useNavigate, useRouter, useRouterState, type ErrorComponentProps } from "@tanstack/react-router";
+import { LENGTH_OPTIONS } from "@/lib/length-filter";
+import { Search, SlidersHorizontal, ChevronDown, Loader2 } from "lucide-react";
+import {
+  nextArchiveSearch,
+  parseArchiveSearch,
+  selectionCountLabel,
+  stripArchiveDefaults,
+  type ArchiveSearch,
+} from "@/lib/archive-search";
+import { claimHardReload, isStaleBuildError, withNavigationTimeout } from "@/lib/navigation-recovery";
 import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type ArchiveYearAll as ArchiveYear, type ArchiveParshaAll as ArchiveParsha, type ArchivePdfAll as ArchivePdf } from "@/integrations/supabase/archive-all.functions";
@@ -13,7 +21,7 @@ import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
 import { fitPageTitle } from "@/lib/page-title";
-import { normalizeAudience, audienceLabel, type AudienceKey } from "@/lib/audience";
+import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { PublicationQuickFacts } from "@/components/PublicationQuickFacts";
@@ -22,66 +30,62 @@ import { formatReadingLabel, displayReadingName } from "@/lib/parshiyos";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { isYomTovReading, readingSlug } from "@/lib/reading-page";
 
-type ArchiveSearch = {
-  year?: string;
-  parsha?: string;
-  audience?: "All" | AudienceKey;
-  q?: string;
-  /** Facets mirroring the homepage filters. */
-  length?: LengthFilter;
-  type?: string;
-  pub?: string;
-  page?: number;
-};
-
-type ResolvedArchiveSearch = Required<ArchiveSearch>;
-
-const AUDIENCE_VALUES = ["All", "Children", "Families", "Adults"] as const;
-const LENGTH_VALUES = ["All", "short", "medium", "long", "study"] as const;
-
 const resourceType = (r: ArchivePdf) =>
   r.content_type === "Questions & Answers"
     ? "Questions & Answers"
     : formatTypeLabel(r.format_type);
 
-/** Lenient parsing: any unexpected value falls back to the default. */
-function parseArchiveSearch(input: Record<string, unknown>): ResolvedArchiveSearch {
-  const str = (v: unknown) =>
-    typeof v === "string" || typeof v === "number" ? String(v).trim() : "";
-  const audience = str(input['audience']) as NonNullable<ArchiveSearch["audience"]>;
-  const length = str(input['length']) as NonNullable<ArchiveSearch["length"]>;
-  return {
-    year: str(input['year']).slice(0, 10) || "all",
-    parsha: str(input['parsha']).slice(0, 60) || "all",
-    audience: (AUDIENCE_VALUES as readonly string[]).includes(audience) ? audience : "All",
-    q: str(input['q']).slice(0, 100),
-    length: (LENGTH_VALUES as readonly string[]).includes(length) ? length : "All",
-    type: str(input['type']).slice(0, 60) || "All",
-    pub: str(input['pub']).slice(0, 120) || "All",
-    page: Math.max(1, Math.min(999, Number.parseInt(str(input['page']), 10) || 1)),
-  };
-}
+/** Archive data must arrive or fail visibly; never leave the previous results on screen indefinitely. */
+const ARCHIVE_LOAD_TIMEOUT_MS = 20_000;
 
-/** Keep default-valued params out of the URL so a clean /archive stays clean. */
-function stripDefaults(s: ResolvedArchiveSearch) {
-  const out: ArchiveSearch = {};
-  if (s.year !== "all") out.year = s.year;
-  if (s.parsha !== "all") out.parsha = s.parsha;
-  if (s.audience !== "All") out.audience = s.audience;
-  if (s.q) out.q = s.q;
-  if (s.length !== "All") out.length = s.length;
-  if (s.type !== "All") out.type = s.type;
-  if (s.pub !== "All") out.pub = s.pub;
-  if (s.page > 1) out.page = s.page;
-  return out;
+function ArchiveError({ error, reset }: ErrorComponentProps) {
+  const router = useRouter();
+  useEffect(() => {
+    console.error("Archive load error", error);
+    if (!isStaleBuildError(error)) return;
+    let storage: Storage | null = null;
+    try { storage = window.sessionStorage; } catch { storage = null; }
+    if (claimHardReload(window.location.href, storage)) window.location.reload();
+  }, [error]);
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <div className="parchment-frame max-w-md w-full">
+        <div role="alert" className="parchment-panel text-center">
+          <h1 className="font-serif text-2xl text-primary">Archive unavailable</h1>
+          <p className="mt-3 text-sm text-muted-foreground">We couldn't load these archive results. Please try again.</p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => { void router.invalidate(); reset(); }}
+              className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Try again
+            </button>
+            <Link
+              to="/"
+              className="inline-flex min-h-11 items-center rounded-full border border-accent/50 px-5 py-2 text-sm font-medium text-primary hover:bg-accent/10 transition-colors"
+            >
+              Back home
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export const Route = createFileRoute("/archive")({
   component: ArchivePage,
-  loaderDeps: ({ search }) => parseArchiveSearch(search as Record<string, unknown>),
-  loader: ({ deps }) => listArchiveAll({ data: deps as ArchivePageInput }),
   validateSearch: (search: Record<string, unknown>): ArchiveSearch =>
-    parseArchiveSearch(search),
+    stripArchiveDefaults(parseArchiveSearch(search)),
+  loaderDeps: ({ search }) => parseArchiveSearch(search as Record<string, unknown>),
+  // A superseded filter change aborts its request; a stalled one becomes a retryable error.
+  loader: ({ deps, abortController }) =>
+    withNavigationTimeout(
+      listArchiveAll({ data: deps as ArchivePageInput, signal: abortController.signal }),
+      ARCHIVE_LOAD_TIMEOUT_MS,
+      "The archive",
+    ),
   search: {
     middlewares: [
       stripSearchParams({
@@ -178,25 +182,7 @@ export const Route = createFileRoute("/archive")({
       ],
     };
   },
-  errorComponent: ({ error }) => {
-    console.error("Archive load error", error);
-    return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <div className="parchment-frame max-w-md w-full">
-        <div className="parchment-panel text-center">
-          <h1 className="font-serif text-2xl text-primary">Archive unavailable</h1>
-          <p className="mt-3 text-sm text-muted-foreground">Could not load archive right now. Please try again later.</p>
-          <Link
-            to="/"
-            className="mt-6 inline-flex rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            Back home
-          </Link>
-        </div>
-      </div>
-    </div>
-    );
-  },
+  errorComponent: ArchiveError,
   notFoundComponent: () => (
     <div className="min-h-screen flex items-center justify-center">
       <Link to="/" className="text-primary underline">Go home</Link>
@@ -217,8 +203,14 @@ function ArchivePage() {
     safePage,
     archiveTotal,
   } = Route.useLoaderData();
-  const rawSearch = Route.useSearch();
-  const search = parseArchiveSearch(rawSearch as Record<string, unknown>);
+  const committedSearch = Route.useSearch();
+  // While new results load, the router still serves the previous match's
+  // search. Controls follow the requested URL so a reader's choice stays
+  // visible (and is not reverted) during "Updating results…".
+  const requestedSearch = useRouterState({
+    select: (s) => (s.location.pathname === "/archive" ? s.location.search : null),
+  });
+  const search = parseArchiveSearch((requestedSearch ?? committedSearch) as Record<string, unknown>);
   const navigate = useNavigate({ from: Route.fullPath });
 
   const yearFilter = search.year;
@@ -231,11 +223,13 @@ function ArchivePage() {
   const page = search.page;
   const PAGE_SIZE = 48;
 
+  const isUpdating = useRouterState({
+    select: (s) => s.status === "pending" && s.location.pathname === "/archive",
+  });
+
   const setSearch = (patch: ArchiveSearch, replace = false) => {
-    if (!Object.prototype.hasOwnProperty.call(patch, "page")) patch.page = 1;
     void navigate({
-      search: (prev: Record<string, unknown>) =>
-        stripDefaults(parseArchiveSearch({ ...prev, ...patch })) as never,
+      search: (prev: Record<string, unknown>) => nextArchiveSearch(prev, patch) as never,
       replace,
       resetScroll: false,
     });
@@ -279,15 +273,18 @@ function ArchivePage() {
     ),
   );
 
+  // Search analytics use the committed (loaded) query so result_count always
+  // belongs to that query, never to the previous results still on screen.
+  const committedQuery = parseArchiveSearch(committedSearch as Record<string, unknown>).q;
   const loggedQuery = useRef<string | null>(null);
   useEffect(() => {
-    const q = query.trim();
+    const q = committedQuery.trim();
     if (!q) return;
     if (loggedQuery.current === q) return;
     loggedQuery.current = q;
     trackSearch(q, totalPdfs);
     trackFp("search", { metadata: { query: q.slice(0, 200), result_count: totalPdfs } });
-  }, [query, totalPdfs]);
+  }, [committedQuery, totalPdfs]);
 
   const hasActiveFilters =
     yearFilter !== "all" ||
@@ -363,7 +360,7 @@ function ArchivePage() {
                   {hasActiveFilters && <span className="rounded-full bg-accent/15 px-2 py-0.5 text-xs">Active</span>}
                   <ChevronDown aria-hidden="true" className={`ml-auto h-4 w-4 transition-transform ${mobileFiltersOpen ? "rotate-180" : ""}`} />
                 </button>
-                <p className="mt-2 text-sm text-muted-foreground" aria-live="polite">
+                <p className="mt-2 text-sm text-muted-foreground">
                   {totalPdfs} {totalPdfs === 1 ? "result" : "results"} available
                 </p>
                 {hasActiveFilters && (
@@ -471,7 +468,7 @@ function ArchivePage() {
                           key={audience}
                           type="button"
                           aria-pressed={active}
-                          aria-label={`Filter by audience: ${audienceLabel(audience)}, ${count} ${count === 1 ? "publication" : "publications"}`}
+                          aria-label={`Filter by audience: ${audienceLabel(audience)}, ${selectionCountLabel(count)}`}
                           onClick={() => setAudienceFilter(active ? "All" : audience)}
                           className={`inline-flex min-h-11 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
                             active
@@ -590,6 +587,18 @@ function ArchivePage() {
           </section>
         )}
 
+        <div role="status" aria-live="polite" className={isUpdating ? "flex items-center justify-center" : "sr-only"}>
+          {isUpdating ? (
+            <span className="inline-flex items-center gap-2 rounded-full border border-accent/50 bg-background px-3 py-1 text-sm font-semibold text-primary shadow-sm">
+              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin motion-reduce:animate-none" />
+              Updating results…
+            </span>
+          ) : (
+            <span>{`${totalPdfs} ${totalPdfs === 1 ? "result" : "results"} shown`}</span>
+          )}
+        </div>
+
+        <div aria-busy={isUpdating} className={`transition-opacity duration-150 ${isUpdating ? "opacity-50" : ""}`}>
         {archiveTotal === 0 ? (
           <section className="parchment-frame">
             <div className="parchment-panel text-center">
@@ -733,6 +742,8 @@ function ArchivePage() {
             ))}
           </div>
         )}
+
+        </div>
 
         {filteredYears.length > 0 && totalPages > 1 && (
           <nav aria-label="Archive pages" className="flex items-center justify-center gap-3">

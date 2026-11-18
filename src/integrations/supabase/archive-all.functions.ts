@@ -87,6 +87,12 @@ export const listArchiveAll = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const admin = getSupabaseAdmin();
 
+    // Independent reads run together (previously three sequential round trips).
+    // The thumbnail inventory is one shared, briefly cached batch per isolate.
+    // Query builders are lazy thenables: Promise.resolve starts the request now.
+    const pubsPromise = Promise.resolve(admin.from("publications").select("id, name, publisher, sort_order"));
+    const thumbsPromise = readVerifiedThumbnails(admin).catch(() => new Map<string, string>());
+
     const { data: rows, error } = await admin
       .from("pdfs")
       .select(
@@ -112,9 +118,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
       } satisfies ArchivePageResult;
     }
 
-    const { data: pubs } = await admin
-      .from("publications")
-      .select("id, name, publisher, sort_order");
+    const { data: pubs } = await pubsPromise;
 
     const pubMap = new Map<string, { name: string; publisher: string | null; sort_order: number }>(
       (pubs ?? []).map((p: any) => [
@@ -234,7 +238,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
     const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
     // A single batched inventory; only show WebPs confirmed against the current PNG ETag.
     // Missing/unavailable inventory retains the original cover without a speculative 404.
-    const verifiedThumbnails = pageRows.length ? await readVerifiedThumbnails(admin) : new Map<string, string>();
+    const verifiedThumbnails = pageRows.length ? await thumbsPromise : new Map<string, string>();
 
     const yearMap = new Map<number, Map<string, ArchivePdfAll[]>>();
     for (const row of pageRows) {

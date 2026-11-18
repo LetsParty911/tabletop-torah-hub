@@ -1,7 +1,7 @@
 /* Torah for the Table — service worker
  * Strategy:
  *  - App shell (navigations): network-first, fallback to cache, then /offline
- *  - Supabase API + dynamic data: network-first with cache fallback
+ *  - Supabase API + /api data: network-first with cache fallback; /_serverFn bypassed
  *  - Fonts and images: cache-first; JS/CSS: network-first, cache fallback
  *  - PDFs and audio: bypass (do NOT cache)
  */
@@ -41,6 +41,10 @@ function isBypassed(url) {
   // them here would buffer the whole PDF through the worker (and cache it as
   // an app-shell "navigation"), delaying the browser's download by seconds.
   if (/\/view\/[^/]+\/(download|pdf)$/.test(p)) return true;
+  // App data requests (filters, search, page changes) go straight to the
+  // network so the router alone owns their loading/cancellation and every
+  // filter combination is not copied into Cache Storage.
+  if (url.pathname.startsWith("/_serverFn/")) return true;
   // Supabase storage PDFs/audio
   if (url.hostname.includes("supabase.co") && p.includes("/storage/")) return true;
   return false;
@@ -49,7 +53,6 @@ function isBypassed(url) {
 function isDataRequest(url) {
   if (url.hostname.includes("supabase.co")) return true;
   if (url.pathname.startsWith("/api/")) return true;
-  if (url.pathname.startsWith("/_serverFn/")) return true;
   return false;
 }
 

@@ -444,7 +444,7 @@ function ViewPdf() {
                     key={item.id}
                     to="/view/$id"
                     params={{ id: item.id }}
-                    className="rounded-xl border border-accent/30 bg-background/65 p-4 transition-colors hover:border-accent/60 hover:bg-accent/5"
+                    className="rounded-xl border border-accent/30 bg-background/65 p-4 transition-colors hover:border-accent/60 hover:bg-accent/5 sm:[&:last-child:nth-child(odd)]:col-span-2"
                   >
                     <p className="font-serif text-lg font-semibold text-primary">{item.title}</p>
                     {itemMeta && <p className="mt-2 text-xs text-muted-foreground">{itemMeta}</p>}
@@ -509,7 +509,7 @@ function ViewPdf() {
                     key={edition.id}
                     to="/view/$id"
                     params={{ id: edition.id }}
-                    className="rounded-xl border border-accent/30 bg-background/65 p-4 transition-colors hover:border-accent/60 hover:bg-accent/5"
+                    className="rounded-xl border border-accent/30 bg-background/65 p-4 transition-colors hover:border-accent/60 hover:bg-accent/5 sm:[&:last-child:nth-child(odd)]:col-span-2"
                   >
                     <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{label}</p>
                     <p className="mt-1 font-serif text-lg font-semibold text-primary">{edition.title}</p>

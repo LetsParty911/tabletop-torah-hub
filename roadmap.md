@@ -1,3 +1,10 @@
+## 2026-11-18 external review fixes (no publish)
+- [x] Archive client navigation: pending/error/retry, abort+timeout, parallel reads, SW bypass, stale-release recovery; e2e 22/22 (original "stuck" symptom not reproduced)
+- [x] Homepage copy: hero notice kept, originals intro mentions outside publishers, archive-anytime vs Thursday deadline, NEW badge semantics
+- [x] Labels: audience chips "selections", public Vayetzei/Q&A spelling in titles and download names; embedded PDF filename limits documented
+- [x] Layout: scroll padding under sticky header, larger mobile covers, odd related-card gap, no repeated mobile quick list, harmonized captions, round menu button
+- [x] Typecheck clean, UX 135/136 + weekly 33/33 + signup 35/37 (failures pre-existing), build OK; publish awaits owner
+
 ## Current-week measured thumbnail savings
 - [x] Measure live IDs, original bytes, derivative availability, recursive storage usage and request counts
 - [x] Create 20 immutable WebPs (173,140 bytes); verify public bytes and idempotent rerun, preserve 2 permanent covers

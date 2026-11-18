@@ -19,6 +19,7 @@ import {
 } from "@/lib/first-party-analytics";
 
 import { SiteLogoHorizontal } from "@/components/SiteLogo";
+import { NavigationStatus } from "@/components/NavigationStatus";
 import { MaintenancePage } from "@/components/MaintenancePage";
 import { isAdminPath } from "@/lib/maintenance";
 import { getMaintenanceStatus } from "@/lib/maintenance.functions";
@@ -397,9 +398,9 @@ function SiteNav() {
             aria-expanded={mobileOpen}
             aria-controls="mobile-navigation"
             onClick={() => { setMobileOpen((open) => !open); if (mobileOpen) menuTrigger.current?.focus(); }}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center text-primary md:hidden"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center p-0 text-primary md:hidden"
           >
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-accent/35 bg-background transition-colors hover:bg-accent/10">
+            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent/35 bg-background transition-colors hover:bg-accent/10">
               {mobileOpen ? (
                 <X className="h-4 w-4" aria-hidden="true" />
               ) : (
@@ -452,6 +453,7 @@ function RootComponent() {
       <PageViewTracker />
       <PwaRegistrar />
       {publicPage && <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:p-3 focus:text-primary focus:outline-2 focus:outline-ring">Skip to content</a>}
+      {publicPage && <NavigationStatus />}
       <SiteNav />
       {publicPage ? <main id="main-content" tabIndex={-1}><Outlet /></main> : <Outlet />}
     </>
