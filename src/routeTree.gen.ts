@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AdminAudioBooksRouteImport } from './routes/admin_.audio-books'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin-analytics'
 import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as ParshaAudioBookRouteImport } from './routes/parsha-audio-book'
@@ -85,6 +86,11 @@ const AboutRoute = AboutRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAudioBooksRoute = AdminAudioBooksRouteImport.update({
+  id: '/admin_/audio-books',
+  path: '/admin/audio-books',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
@@ -387,6 +393,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
+  '/admin/audio-books': typeof AdminAudioBooksRoute
   '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
   '/parsha-audio-book': typeof ParshaAudioBookRoute
@@ -451,6 +458,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
+  '/admin/audio-books': typeof AdminAudioBooksRoute
   '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
   '/parsha-audio-book': typeof ParshaAudioBookRoute
@@ -516,6 +524,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
+  '/admin_/audio-books': typeof AdminAudioBooksRoute
   '/admin-analytics': typeof AdminAnalyticsRoute
   '/archive': typeof ArchiveRoute
   '/parsha-audio-book': typeof ParshaAudioBookRoute
@@ -582,6 +591,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/admin/audio-books'
     | '/admin-analytics'
     | '/archive'
     | '/parsha-audio-book'
@@ -646,6 +656,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/admin/audio-books'
     | '/admin-analytics'
     | '/archive'
     | '/parsha-audio-book'
@@ -710,6 +721,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/admin_/audio-books'
     | '/admin-analytics'
     | '/archive'
     | '/parsha-audio-book'
@@ -775,6 +787,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRoute
+  AdminAudioBooksRoute: typeof AdminAudioBooksRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   ArchiveRoute: typeof ArchiveRoute
   ParshaAudioBookRoute: typeof ParshaAudioBookRoute
@@ -854,6 +867,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin_/audio-books': {
+      id: '/admin_/audio-books'
+      path: '/admin/audio-books'
+      fullPath: '/admin/audio-books'
+      preLoaderRoute: typeof AdminAudioBooksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin-analytics': {
@@ -1301,6 +1321,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRoute,
+  AdminAudioBooksRoute: AdminAudioBooksRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   ArchiveRoute: ArchiveRoute,
   ParshaAudioBookRoute: ParshaAudioBookRoute,
