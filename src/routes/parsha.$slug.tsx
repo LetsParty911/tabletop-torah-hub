@@ -8,6 +8,9 @@ import { readingSlug } from "@/lib/reading-page";
 import { PARSHIYOS_54, formatReadingLabel } from "@/lib/parshiyos";
 import { fitPageTitle } from "@/lib/page-title";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
+import { audienceLabel, normalizeAudience } from "@/lib/audience";
+import { formatTypeLabel } from "@/lib/format-labels";
+import { mergeLabelCounts } from "@/lib/label-counts";
 
 function seferForParsha(parshaKey: string): string {
   const index = PARSHIYOS_54.indexOf(parshaKey);
@@ -167,12 +170,12 @@ function PermanentParshaPage() {
             </p>
             {(Object.keys(page.audience_counts).length > 0 || Object.keys(page.type_counts).length > 0) && (
               <div className="mt-4 flex flex-wrap gap-2">
-                {Object.entries(page.audience_counts).map(([label, count]) => (
+                {Object.entries(mergeLabelCounts(page.audience_counts, (label) => audienceLabel(normalizeAudience(label)) ?? label)).map(([label, count]) => (
                   <span key={`audience-${label}`} className="rounded-full border border-accent/30 bg-background px-3 py-1.5 text-xs font-medium text-primary">
                     {label}: {count}
                   </span>
                 ))}
-                {Object.entries(page.type_counts).map(([label, count]) => (
+                {Object.entries(mergeLabelCounts(page.type_counts, (label) => formatTypeLabel(label) ?? label)).map(([label, count]) => (
                   <span key={`type-${label}`} className="rounded-full border border-accent/30 bg-background px-3 py-1.5 text-xs font-medium text-primary">
                     {label}: {count}
                   </span>
@@ -234,10 +237,12 @@ function PermanentParshaPage() {
               {page.resources.map((resource) => {
                 const description = resource.summary_quick || resource.description;
                 const meta = [
-                  resource.audience,
+                  resource.audience
+                    ? audienceLabel(normalizeAudience(resource.audience, resource.title)) ?? resource.audience
+                    : null,
                   resource.content_type === "Questions & Answers"
                     ? resource.content_type
-                    : resource.format_type || resource.content_type,
+                    : formatTypeLabel(resource.format_type || resource.content_type),
                   resource.page_count
                     ? `${resource.page_count} ${resource.page_count === 1 ? "page" : "pages"}`
                     : null,
@@ -276,6 +281,7 @@ function PermanentParshaPage() {
                         href={`/view/${resource.id}/pdf`}
                         publicationId={resource.id}
                         publicationTitle={resource.title}
+                        labelYear={resource.jewish_year}
                         className="w-full"
                       />
                     </div>

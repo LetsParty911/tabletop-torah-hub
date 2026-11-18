@@ -166,6 +166,7 @@ function PublicationPage() {
             publisher={publication.publisher}
             publicationSeries={displayName}
             parsha={edition.parsha_key}
+            labelYear={edition.jewish_year}
             className="w-full px-4 py-2.5"
           />
         </div>

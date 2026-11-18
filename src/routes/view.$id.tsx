@@ -23,6 +23,15 @@ import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { hebrewYearOf, readerBackLink, type ReaderBackLink } from "@/lib/reader-back-link";
+
+/** Contextual "Back" link: this week's homepage list, the PDF's own year collection, or the Archive. */
+function ReaderBack({ link, className, children }: { link: ReaderBackLink; className: string; children: React.ReactNode }) {
+  if (link.kind === "current") return <Link to="/" hash="this-weeks-collection" className={className}>{children}</Link>;
+  if (link.kind === "parsha") return <Link to="/parsha/$slug/$year" params={{ slug: link.slug, year: link.year }} className={className}>{children}</Link>;
+  if (link.kind === "yom-tov") return <Link to="/yom-tov/$slug/$year" params={{ slug: link.slug, year: link.year }} className={className}>{children}</Link>;
+  return <Link to="/archive" className={className}>{children}</Link>;
+}
 
 
 export const Route = createFileRoute("/view/$id")({
@@ -36,14 +45,18 @@ export const Route = createFileRoute("/view/$id")({
     if (!r.pdf) throw notFound();
 
     let isCurrentWeek = false;
+    let currentJewishYear: number | null = null;
     try {
       let liveKey: string | null = null;
+      let liveReadingDate: string | null = null;
       const o = await getParshaOverride();
       if (o.override && o.isActive) liveKey = o.override;
       if (!liveKey) {
         const resolved = await resolveHebcalParsha();
         liveKey = resolved.parshaKey;
+        liveReadingDate = resolved.readingDate;
       }
+      currentJewishYear = hebrewYearOf(liveReadingDate ?? new Date());
       const pdfKey = (r.pdf.parsha_key ?? "").trim();
       if (liveKey && pdfKey) {
         isCurrentWeek = toParshaComparableKey(liveKey) === toParshaComparableKey(pdfKey);
@@ -52,7 +65,7 @@ export const Route = createFileRoute("/view/$id")({
       // ignore — default to archived-style link, which is always accurate
     }
 
-    return { pdf: r.pdf, isCurrentWeek, publicationContext, relatedParsha, originalHtml };
+    return { pdf: r.pdf, isCurrentWeek, currentJewishYear, publicationContext, relatedParsha, originalHtml };
   },
   head: ({ loaderData, params }) => {
     const title = loaderData?.pdf?.title ?? "View PDF";
@@ -154,7 +167,8 @@ export const Route = createFileRoute("/view/$id")({
 });
 
 function ViewPdf() {
-  const { pdf, publicationContext, relatedParsha, originalHtml } = Route.useLoaderData();
+  const { pdf, isCurrentWeek, currentJewishYear, publicationContext, relatedParsha, originalHtml } = Route.useLoaderData();
+  const backLink = readerBackLink({ isCurrentWeek, parshaKey: pdf.parsha_key, jewishYear: pdf.jewish_year, currentJewishYear });
   const publication = publicationContext.publication;
   const displayPublicationName = tfttOriginalSeriesById(publication?.id)?.title ?? publication?.name ?? pdf.publication ?? pdf.title;
   const related = publicationContext.related;
@@ -237,14 +251,13 @@ function ViewPdf() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <div className="flex-1 mx-auto w-full max-w-5xl px-4 sm:px-6 py-6 sm:py-10">
-        <Link
-          to="/"
-          hash="this-weeks-collection"
+        <ReaderBack
+          link={backLink}
           className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back to This Week’s Selections
-        </Link>
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          {backLink.label}
+        </ReaderBack>
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
             {(pdf.parsha_key || shabbosDate) && (
@@ -358,6 +371,7 @@ function ViewPdf() {
             parsha={pdf.parsha_key}
             publisher={publication?.publisher ?? pdf.publisher}
             publicationSeries={publication?.name ?? pdf.publication}
+            labelYear={pdf.jewish_year}
             className="min-w-[180px] px-5 py-2.5"
           />
           <SharePublicationButton
@@ -531,14 +545,13 @@ function ViewPdf() {
         )}
 
         <div className="mt-7 flex flex-wrap items-center gap-4">
-          <Link
-            to="/"
-          hash="this-weeks-collection"
-            className="inline-flex items-center gap-2 font-serif italic text-accent hover:text-primary transition-colors"
+          <ReaderBack
+            link={backLink}
+            className="inline-flex min-h-11 items-center gap-2 font-serif italic text-accent hover:text-primary transition-colors"
           >
-            <ArrowLeft className="h-4 w-4" />{" "}
-            Back to This Week’s Selections
-          </Link>
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />{" "}
+            {backLink.label}
+          </ReaderBack>
         </div>
 
         <div className="mt-10">

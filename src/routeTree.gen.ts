@@ -70,7 +70,7 @@ import { Route as ViewIdRouteImport } from './routes/view.$id'
 import { Route as ApiParshaAudioBookIdRouteImport } from './routes/api/parsha-audio-book.$id'
 import { Route as ApiUnsubscribeTokenRouteImport } from './routes/api/unsubscribe.$token'
 import { Route as ParshaSongIdDownloadRouteImport } from './routes/parsha-song.$id.download'
-import { Route as ParshaSlugYearRouteImport } from './routes/parsha.$slug.$year'
+import { Route as ParshaSlugYearRouteImport } from './routes/parsha.$slug_.$year'
 import { Route as ViewIdDownloadRouteImport } from './routes/view.$id.download'
 import { Route as ViewIdPdfRouteImport } from './routes/view.$id.pdf'
 import { Route as YomTovSlugYearRouteImport } from './routes/yom-tov.$slug.$year'
@@ -383,9 +383,9 @@ const ParshaSongIdDownloadRoute = ParshaSongIdDownloadRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ParshaSlugYearRoute = ParshaSlugYearRouteImport.update({
-  id: '/$year',
-  path: '/$year',
-  getParentRoute: () => ParshaSlugRoute,
+  id: '/parsha/$slug_/$year',
+  path: '/parsha/$slug/$year',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ViewIdDownloadRoute = ViewIdDownloadRouteImport.update({
   id: '/download',
@@ -457,7 +457,7 @@ export interface FileRoutesByFullPath {
   '/hidden-gems/$slug': typeof HiddenGemsSlugRoute
   '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
-  '/parsha/$slug': typeof ParshaSlugRouteWithChildren
+  '/parsha/$slug': typeof ParshaSlugRoute
   '/publication/$slug': typeof PublicationSlugRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
@@ -524,7 +524,7 @@ export interface FileRoutesByTo {
   '/hidden-gems/$slug': typeof HiddenGemsSlugRoute
   '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
-  '/parsha/$slug': typeof ParshaSlugRouteWithChildren
+  '/parsha/$slug': typeof ParshaSlugRoute
   '/publication/$slug': typeof PublicationSlugRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
@@ -592,7 +592,7 @@ export interface FileRoutesById {
   '/hidden-gems_/$slug': typeof HiddenGemsSlugRoute
   '/manage-table/$token': typeof ManageTableTokenRoute
   '/og/image.png': typeof OgImageDotpngRoute
-  '/parsha/$slug': typeof ParshaSlugRouteWithChildren
+  '/parsha/$slug': typeof ParshaSlugRoute
   '/publication/$slug': typeof PublicationSlugRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
@@ -600,7 +600,7 @@ export interface FileRoutesById {
   '/api/parsha-audio-book/$id': typeof ApiParshaAudioBookIdRoute
   '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
   '/parsha-song/$id/download': typeof ParshaSongIdDownloadRoute
-  '/parsha/$slug/$year': typeof ParshaSlugYearRoute
+  '/parsha/$slug_/$year': typeof ParshaSlugYearRoute
   '/view/$id/download': typeof ViewIdDownloadRoute
   '/view/$id/pdf': typeof ViewIdPdfRoute
   '/yom-tov/$slug/$year': typeof YomTovSlugYearRoute
@@ -803,7 +803,7 @@ export interface FileRouteTypes {
     | '/api/parsha-audio-book/$id'
     | '/api/unsubscribe/$token'
     | '/parsha-song/$id/download'
-    | '/parsha/$slug/$year'
+    | '/parsha/$slug_/$year'
     | '/view/$id/download'
     | '/view/$id/pdf'
     | '/yom-tov/$slug/$year'
@@ -863,7 +863,7 @@ export interface RootRouteChildren {
   HiddenGemsSlugRoute: typeof HiddenGemsSlugRoute
   ManageTableTokenRoute: typeof ManageTableTokenRoute
   OgImageDotpngRoute: typeof OgImageDotpngRoute
-  ParshaSlugRoute: typeof ParshaSlugRouteWithChildren
+  ParshaSlugRoute: typeof ParshaSlugRoute
   PublicationSlugRoute: typeof PublicationSlugRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ViewIdRoute: typeof ViewIdRouteWithChildren
@@ -871,6 +871,7 @@ export interface RootRouteChildren {
   ApiParshaAudioBookIdRoute: typeof ApiParshaAudioBookIdRoute
   ApiUnsubscribeTokenRoute: typeof ApiUnsubscribeTokenRoute
   ParshaSongIdDownloadRoute: typeof ParshaSongIdDownloadRoute
+  ParshaSlugYearRoute: typeof ParshaSlugYearRoute
   YomTovSlugYearRoute: typeof YomTovSlugYearRoute
 }
 
@@ -1303,12 +1304,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ParshaSongIdDownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/parsha/$slug/$year': {
-      id: '/parsha/$slug/$year'
-      path: '/$year'
+    '/parsha/$slug_/$year': {
+      id: '/parsha/$slug_/$year'
+      path: '/parsha/$slug/$year'
       fullPath: '/parsha/$slug/$year'
       preLoaderRoute: typeof ParshaSlugYearRouteImport
-      parentRoute: typeof ParshaSlugRoute
+      parentRoute: typeof rootRouteImport
     }
     '/view/$id/download': {
       id: '/view/$id/download'
@@ -1333,18 +1334,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface ParshaSlugRouteChildren {
-  ParshaSlugYearRoute: typeof ParshaSlugYearRoute
-}
-
-const ParshaSlugRouteChildren: ParshaSlugRouteChildren = {
-  ParshaSlugYearRoute: ParshaSlugYearRoute,
-}
-
-const ParshaSlugRouteWithChildren = ParshaSlugRoute._addFileChildren(
-  ParshaSlugRouteChildren,
-)
 
 interface ViewIdRouteChildren {
   ViewIdDownloadRoute: typeof ViewIdDownloadRoute
@@ -1413,7 +1402,7 @@ const rootRouteChildren: RootRouteChildren = {
   HiddenGemsSlugRoute: HiddenGemsSlugRoute,
   ManageTableTokenRoute: ManageTableTokenRoute,
   OgImageDotpngRoute: OgImageDotpngRoute,
-  ParshaSlugRoute: ParshaSlugRouteWithChildren,
+  ParshaSlugRoute: ParshaSlugRoute,
   PublicationSlugRoute: PublicationSlugRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ViewIdRoute: ViewIdRouteWithChildren,
@@ -1421,6 +1410,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiParshaAudioBookIdRoute: ApiParshaAudioBookIdRoute,
   ApiUnsubscribeTokenRoute: ApiUnsubscribeTokenRoute,
   ParshaSongIdDownloadRoute: ParshaSongIdDownloadRoute,
+  ParshaSlugYearRoute: ParshaSlugYearRoute,
   YomTovSlugYearRoute: YomTovSlugYearRoute,
 }
 export const routeTree = rootRouteImport

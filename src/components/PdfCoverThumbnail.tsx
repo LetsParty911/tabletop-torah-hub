@@ -2,6 +2,7 @@ import { SmallPdfImage } from "@/components/SmallPdfImage";
 import { useState } from "react";
 import { FileText } from "lucide-react";
 import { recordPdfAction } from "@/components/DownloadToPrintButton";
+import { pdfActionLabel } from "@/lib/pdf-action-label";
 
 /**
  * Shows a PDF's first page by default. Torah Wellsprings is the sole exception:
@@ -61,7 +62,7 @@ export function PdfCoverThumbnail({
       target="_blank"
       rel="nofollow noopener noreferrer"
       title={`Open PDF: ${title}`}
-      aria-label={`Open PDF in a new tab: ${title}`}
+      aria-label={pdfActionLabel("open", title, parsha, jewishYear)}
       onClick={(event) =>
         recordPdfAction(
           event,

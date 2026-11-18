@@ -1,4 +1,5 @@
 import { BookOpen, Download } from "lucide-react";
+import { pdfActionLabel } from "@/lib/pdf-action-label";
 import { getSessionId, getVisitorId, trackFp } from "@/lib/first-party-analytics";
 import { pdfActionHrefs } from "@/lib/collection-status";
 
@@ -17,6 +18,8 @@ type DownloadToPrintButtonProps = {
   jewishYear?: number | null;
   publisher?: string | null;
   publicationSeries?: string | null;
+  /** Year shown in the accessible name only; never sent to analytics. */
+  labelYear?: number | null;
 };
 
 type PdfActionContext = Pick<
@@ -78,6 +81,7 @@ export function DownloadToPrintButton({
   publisher,
   publicationSeries,
   label = "Read Now",
+  labelYear,
 }: DownloadToPrintButtonProps) {
   const openHref = publicationId
     ? pdfActionHrefs(publicationId).open
@@ -97,7 +101,7 @@ export function DownloadToPrintButton({
         target="_blank"
         onClick={(event) => { recordOpen(event, "open_pdf"); onClick?.(); }}
         rel="nofollow noopener noreferrer"
-        aria-label={"Open PDF in a new tab: " + title}
+        aria-label={pdfActionLabel("open", title, parsha, jewishYear ?? labelYear)}
         className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
       >
         <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -107,7 +111,7 @@ export function DownloadToPrintButton({
         <a
           href={pdfActionHrefs(publicationId).download}
           onClick={(event) => recordOpen(event, "download")}
-          aria-label={"Download PDF: " + title}
+          aria-label={pdfActionLabel("download", title, parsha, jewishYear ?? labelYear)}
           title="Download PDF to save or print"
           className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-accent/50 bg-background px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-accent/10"
         >

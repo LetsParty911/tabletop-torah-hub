@@ -111,3 +111,11 @@
 
 ## 2026-11-18 homepage simplification (owner-approved)
 - [x] One weekly PDF list right after the hero; audiobook below; compact originals intro + /originals link; mobile quick list, large originals cards and featured picks removed; compact mobile cards; tests updated
+
+## 2026-11-18 public UX/content fixes
+- [x] Reader back link: this week → homepage list; older → its parsha/Yom Tov year page; else Archive
+- [x] Parsha year pages un-nested (were showing the all-years page with two canonicals; combined parshiyos 404'd)
+- [x] "Corrected" file-name leftover removed from descriptions; parsha pages show Deeper Learning / Brief Insights labels
+- [x] PDF buttons named with title + parsha/year
+- [ ] Combined-parsha hubs (/parsha/nitzavim-vayeilech etc.) still 404 — links on archive/publication/year pages; awaiting owner decision (touches sitemap/SEO hub list)
+- [ ] "Shabbos Table Torah Stories" vs "Stories for the Shabbos Table": two publication IDs, both have a Nitzavim-Vayeilech 5786 PDF — not merged; owner to confirm

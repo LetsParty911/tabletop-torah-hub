@@ -34,3 +34,20 @@ describe("title-first publication descriptions", () => {
     expect(leadWithPublicationTitle("Toras Avigdor", "   ")).toBeNull();
   });
 });
+
+describe("file-name leftovers in descriptions", () => {
+  it("drops a stray 'Corrected' after the title but keeps the author's wording", () => {
+    const title = "From Leitzanei HaDor to Modern Cynics Trolls Bloggers R Yehuda Zev Klein";
+    expect(leadWithPublicationTitle(title, `${title} Corrected explores the destructive nature of cynicism.`))
+      .toBe(`${title} explores the destructive nature of cynicism.`);
+    expect(leadWithPublicationTitle("Surround Yourself", "Corrected explores the impact of friends."))
+      .toBe("Surround Yourself explores the impact of friends.");
+  });
+
+  it("leaves real uses of the word alone", () => {
+    expect(leadWithPublicationTitle("Torah Tavlin", "Corrected Vision: a parsha essay."))
+      .toBe("Torah Tavlin — Corrected Vision: a parsha essay.");
+    expect(leadWithPublicationTitle("Torah Tavlin", "Torah Tavlin on how Yaakov corrected the record."))
+      .toBe("Torah Tavlin on how Yaakov corrected the record.");
+  });
+});

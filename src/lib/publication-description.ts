@@ -1,6 +1,18 @@
 import { standardizeCopy } from "@/lib/standardize-copy";
 
 /**
+ * Upload file-name leftover that sometimes follows the title in generated
+ * descriptions, e.g. "… R Yehuda Zev Klein Corrected explores …". Removed only
+ * as the first word and when directly followed by a lowercase word, so real
+ * wording is never touched.
+ */
+const FILE_ARTIFACT_LEAD = /^\s+(?:Corrected|CORRECTED)(?=\s+[a-z])/;
+
+function stripFileArtifact(rest: string): string {
+  return rest.replace(FILE_ARTIFACT_LEAD, "");
+}
+
+/**
  * Begin public-facing descriptions and summaries with the displayed title.
  *
  * This changes presentation only, leaving editorial database fields,
@@ -19,7 +31,10 @@ export function leadWithPublicationTitle(
   const alreadyNamed =
     body.slice(0, name.length).toLocaleLowerCase() === name.toLocaleLowerCase() &&
     (body.length === name.length || /^[\s,.:;!?—–-]/.test(body.slice(name.length)));
-  if (alreadyNamed) return name + body.slice(name.length);
+  if (alreadyNamed) return name + stripFileArtifact(body.slice(name.length));
+
+  // A description that opens with the leftover file-name word ("Corrected explores…").
+  if (FILE_ARTIFACT_LEAD.test(" " + body)) return name + stripFileArtifact(" " + body);
 
   // Replace the impersonal subject and retain the existing descriptive verb.
   const genericSubject = body.match(

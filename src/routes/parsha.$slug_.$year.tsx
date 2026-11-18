@@ -4,7 +4,7 @@ import { fitPageTitle } from "@/lib/page-title";
 import { getReadingCollection } from "@/integrations/supabase/reading-pages.functions";
 import { ReadingCollectionView } from "@/components/ReadingCollectionView";
 
-export const Route = createFileRoute("/parsha/$slug/$year")({
+export const Route = createFileRoute("/parsha/$slug_/$year")({
   loader: async ({ params }) => {
     const year = Number(params.year);
     if (!Number.isInteger(year)) throw notFound();

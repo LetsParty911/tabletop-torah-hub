@@ -721,6 +721,7 @@ function ArchivePage() {
                                   publisher={r.publisher}
                                   publicationSeries={r.publication}
                                   parsha={p.parshaKey}
+                                  labelYear={y.year}
                                   className="w-full"
                                 />
                                 <div className="mt-2 flex justify-center">
