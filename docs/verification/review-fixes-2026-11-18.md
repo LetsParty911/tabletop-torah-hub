@@ -6,6 +6,10 @@
 - Fixes: visible "Updating results…" status + aria-busy results; global top progress bar and a "Reload page" option after 10 s; loader abort signal + 20 s timeout → "Archive unavailable" with Try again; parallel server reads; controls follow requested URL; search analytics use committed results; SW bypasses `/_serverFn/`; one-time automatic reload for missing route files; numeric year in URL.
 - Browser check: `python3 tools/e2e/archive_navigation.py` (local preview, data slowed 1.2 s): 22/22 PASS — parsha, audience, clear, kept selection during loading, year, search, next page, Back, Forward, open result, Back, SSR reload, no page errors, no mobile overflow. Error path (aborted data → Try again) and slow path (12 s → Reload page) checked manually.
 
+## Site-status check fallback (added)
+The root site-status (maintenance) check re-runs on retries/invalidation. It is now time-boxed to 8 s on client navigation; a stall triggers one full page load of the requested URL (server render re-checks maintenance), errors and repeat stalls still fail closed. Browser check: archive error → Try again with the status check hung → one full document load of /archive?parsha=Toldos, 26 results, no maintenance screen.
+Live-site comparison (same script against production, current live code): content did update, but 4 checks failed — no loading status, filter dropdown reverted to the old value while loading, "publications" chip label, quoted year URL.
+
 ## Same-problem sweep (other pages)
 Rule: after a click, filter or Back, the page shows the new content or a visible loading/error state.
 - All public pages: global loading bar + 10 s "Reload page"; router default error screen has Try again and one-time reload after a new release.

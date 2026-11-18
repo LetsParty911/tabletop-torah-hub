@@ -23,6 +23,17 @@ import { NavigationStatus } from "@/components/NavigationStatus";
 import { MaintenancePage } from "@/components/MaintenancePage";
 import { isAdminPath } from "@/lib/maintenance";
 import { getMaintenanceStatus } from "@/lib/maintenance.functions";
+import { NavigationTimeoutError, claimHardReload, withNavigationTimeout } from "@/lib/navigation-recovery";
+
+const MAINTENANCE_CLIENT_TIMEOUT_MS = 8_000;
+
+function safeSessionStorage(): Storage | null {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
 import { getSafePostLoginRedirect, POST_LOGIN_REDIRECT_KEY } from "@/lib/auth-redirect";
 
 // GTM is now the sole analytics path. GA4 is loaded via GTM (container GTM-WMVV6CJ7).
@@ -180,10 +191,26 @@ function NotFoundComponent() {
 
 export const Route = createRootRoute({
   // Persistent maintenance state, read server-side (fails closed on error).
-  loader: async () => {
+  loader: async ({ location }) => {
+    // Server render: wait for the authoritative answer (fails closed on error).
+    if (typeof window === "undefined") {
+      try {
+        return await getMaintenanceStatus();
+      } catch {
+        return { enabled: true };
+      }
+    }
+    // Client navigation: this check re-runs on every page/filter change. If it
+    // stalls, the router would keep the old page while the URL already changed,
+    // so fall back once to a full page load of the requested URL — the server
+    // render re-checks maintenance. Errors and repeat stalls still fail closed.
     try {
-      return await getMaintenanceStatus();
-    } catch {
+      return await withNavigationTimeout(getMaintenanceStatus(), MAINTENANCE_CLIENT_TIMEOUT_MS, "Site status check");
+    } catch (error) {
+      if (error instanceof NavigationTimeoutError && claimHardReload(location.href, safeSessionStorage())) {
+        window.location.assign(location.href);
+        return new Promise<{ enabled: boolean }>(() => {});
+      }
       return { enabled: true };
     }
   },
