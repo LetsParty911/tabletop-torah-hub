@@ -1,4 +1,4 @@
-import { createFileRoute, Link, stripSearchParams, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, stripSearchParams } from "@tanstack/react-router";
 import { LENGTH_OPTIONS, type LengthFilter } from "@/lib/length-filter";
 import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
@@ -78,6 +78,13 @@ function stripDefaults(s: ResolvedArchiveSearch) {
 
 export const Route = createFileRoute("/archive")({
   component: ArchivePage,
+  pendingMs: 200,
+  pendingMinMs: 250,
+  pendingComponent: () => (
+    <div role="status" aria-live="polite" className="mx-auto min-h-[40vh] max-w-4xl px-4 py-16 text-center text-primary">
+      Loading archive selections…
+    </div>
+  ),
   loaderDeps: ({ search }) => parseArchiveSearch(search as Record<string, unknown>),
   loader: ({ deps }) => listArchiveAll({ data: deps as ArchivePageInput }),
   validateSearch: (search: Record<string, unknown>): ArchiveSearch =>
@@ -219,7 +226,6 @@ function ArchivePage() {
   } = Route.useLoaderData();
   const rawSearch = Route.useSearch();
   const search = parseArchiveSearch(rawSearch as Record<string, unknown>);
-  const navigate = useNavigate({ from: Route.fullPath });
 
   const yearFilter = search.year;
   const parshaFilter = search.parsha;
@@ -231,14 +237,23 @@ function ArchivePage() {
   const page = search.page;
   const PAGE_SIZE = 48;
 
+  // A full document navigation is a deliberate reliability fallback. On the
+  // deployed Start app, client-side route transitions could change the URL
+  // without settling the new loader, leaving the previous results on screen.
+  // Direct document loads were independently observed to return correct results.
   const setSearch = (patch: ArchiveSearch, replace = false) => {
-    if (!Object.prototype.hasOwnProperty.call(patch, "page")) patch.page = 1;
-    void navigate({
-      search: (prev: Record<string, unknown>) =>
-        stripDefaults(parseArchiveSearch({ ...prev, ...patch })) as never,
-      replace,
-      resetScroll: false,
+    const next = { ...patch };
+    if (!Object.prototype.hasOwnProperty.call(next, "page")) next.page = 1;
+    const values = stripDefaults(parseArchiveSearch({ ...search, ...next }));
+    const url = new URL(window.location.href);
+    const params = new URLSearchParams();
+    Object.entries(values).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) params.set(key, String(value));
     });
+    url.search = params.toString();
+    if (url.href === window.location.href) return;
+    if (replace) window.location.replace(url.href);
+    else window.location.assign(url.href);
   };
 
   const setYearFilter = (year: string) => setSearch({ year });
@@ -262,7 +277,7 @@ function ArchivePage() {
     const t = setTimeout(() => {
       lastPushedQuery.current = queryDraft;
       setSearch({ q: queryDraft }, true);
-    }, 300);
+    }, 800);
     return () => clearTimeout(t);
   }, [queryDraft, query]);
 
@@ -370,7 +385,7 @@ function ArchivePage() {
                   <button type="button" onClick={() => {
                     setQueryDraft("");
                     lastPushedQuery.current = "";
-                    void navigate({ search: {} as never, resetScroll: false });
+                    window.location.assign("/archive");
                   }} className="mt-1 min-h-11 text-sm font-semibold text-primary underline underline-offset-4">
                     Clear all filters
                   </button>
@@ -471,7 +486,7 @@ function ArchivePage() {
                           key={audience}
                           type="button"
                           aria-pressed={active}
-                          aria-label={`Filter by audience: ${audienceLabel(audience)}, ${count} ${count === 1 ? "publication" : "publications"}`}
+                          aria-label={`Filter by audience: ${audienceLabel(audience)}, ${count} ${count === 1 ? "selection" : "selections"}`}
                           onClick={() => setAudienceFilter(active ? "All" : audience)}
                           className={`inline-flex min-h-11 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
                             active
@@ -577,7 +592,7 @@ function ArchivePage() {
                     onClick={() => {
                       setQueryDraft("");
                       lastPushedQuery.current = "";
-                      void navigate({ search: {} as never, resetScroll: false });
+                      window.location.assign("/archive");
                     }}
                     className="inline-flex min-h-11 items-center text-accent hover:text-primary underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
@@ -637,13 +652,12 @@ function ArchivePage() {
                           {isYomTovReading(p.parshaKey) ? (
                             formatReadingLabel(p.parshaKey)
                           ) : (
-                            <Link
-                              to="/parsha/$slug"
-                              params={{ slug: readingSlug(p.parshaKey) }}
+                            <a
+                              href={`/parsha/${readingSlug(p.parshaKey)}`}
                               className="hover:text-accent hover:underline decoration-accent/60 underline-offset-4"
                             >
                               {formatReadingLabel(p.parshaKey)}
-                            </Link>
+                            </a>
                           )}
                         </h3>
                         <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
@@ -662,13 +676,12 @@ function ArchivePage() {
                                 <div className="min-w-0 flex-1">
                                   <div className="flex min-w-0 flex-col items-start gap-1.5 sm:flex-row sm:justify-between sm:gap-2">
                                     <h4 className="min-w-0 w-full flex-1 break-words font-serif text-base font-bold leading-snug text-primary sm:text-lg">
-                                      <Link
-                                        to="/view/$id"
-                                        params={{ id: r.id }}
+                                      <a
+                                        href={`/view/${r.id}`}
                                         className="hover:text-accent hover:underline transition-colors duration-150"
                                       >
                                         {r.title}
-                                      </Link>
+                                      </a>
                                     </h4>
 
                                     {r.badge && (
