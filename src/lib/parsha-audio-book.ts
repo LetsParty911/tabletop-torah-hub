@@ -34,6 +34,13 @@ export function validAudioBookCoverPath(path: string | null | undefined, year: n
   return path.startsWith(prefix) && /^cover-[0-9a-f-]{36}\.(jpg|png)$/.test(path.slice(prefix.length));
 }
 
-export function audioBookDownloadName(book: Pick<AudioBook, "title" | "jewish_year">) {
-  return book.title.replace(/[\\/:*?"<>|\r\n]/g," ").trim() + " " + book.jewish_year + ".mp3";
+/**
+ * Use an ASCII-only download filename. Non-ASCII punctuation in the title,
+ * especially the em dash, was exposed as %E2%80%94 in Android downloads.
+ * This changes only the downloaded name; published title and MP3 bytes stay intact.
+ */
+export function audioBookDownloadName(book: Pick<AudioBook, "parsha_key" | "jewish_year">) {
+  const normalized = book.parsha_key.replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "");
+  const parsha = normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
+  return parsha + "_Audiobook_" + book.jewish_year + ".mp3";
 }
