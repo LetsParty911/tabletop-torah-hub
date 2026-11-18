@@ -70,5 +70,5 @@ export const Route = createFileRoute("/yom-tov/$slug/$year")({
 
 function YomTovCollectionPage() {
   const { collection, resources } = Route.useLoaderData();
-  return <ReadingCollectionView collection={collection} resources={resources} />;
+  return <ReadingCollectionView key={`${collection.kind}:${collection.slug}:${collection.jewish_year}`} collection={collection} resources={resources} />;
 }

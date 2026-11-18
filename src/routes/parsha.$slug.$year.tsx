@@ -109,7 +109,8 @@ function ParshaCollectionPage() {
           ← All {collection.label} Divrei Torah
         </Link>
       </nav>
-      <ReadingCollectionView collection={collection} resources={resources} />
+      {/* Keyed by collection so filters chosen on one parsha/year never carry over and hide another's selections. */}
+      <ReadingCollectionView key={`${collection.kind}:${collection.slug}:${collection.jewish_year}`} collection={collection} resources={resources} />
     </>
   );
 }

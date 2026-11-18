@@ -179,7 +179,8 @@ function ViewPdf() {
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [iframeLoaded, setIframeLoaded] = useState(false);
-  useEffect(() => setIframeLoaded(false), [pdf.id]);
+  // Related links reuse this page; reset per-PDF state so the next PDF's preview is shown.
+  useEffect(() => { setIframeLoaded(false); setThumbFailed(false); }, [pdf.id]);
   const canEmbed = mounted && !isMobile;
 
   usePrewarmDownloads([pdf.id]);
@@ -373,7 +374,10 @@ function ViewPdf() {
               <h2 className="font-serif text-lg sm:text-xl font-semibold text-primary mb-3">
                 Preview
               </h2>
+              {/* Keyed per PDF: changing an existing iframe's src adds a hidden history
+                  entry, so browser Back would only rewind the iframe and leave this page. */}
               <iframe
+                key={pdf.id}
                 src={viewerSrc}
                 title={`Embedded PDF viewer: ${pdf.title}`}
                 className="w-full border-0 bg-muted h-[80vh] rounded-lg"

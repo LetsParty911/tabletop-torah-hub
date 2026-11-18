@@ -34,7 +34,7 @@ async def main():
         page = await ctx.new_page()
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
-        await page.route(lambda u: "googletagmanager" in u or "google-analytics" in u or "/api/" in u, lambda r: r.abort())
+        await page.route(lambda u: "googletagmanager" in u or "google-analytics" in u or "/api/" in u or u.split("#")[0].endswith("/pdf"), lambda r: r.abort())
 
         async def slow(route):
             await asyncio.sleep(SLOW_MS / 1000)
@@ -101,6 +101,22 @@ async def main():
         await page.goto(BASE + "/archive?parsha=Toldos&audience=Children", wait_until="networkidle")
         s = await page.evaluate(SIG)
         check(s["groups"] == ["Parshas Toldos"], f"SSR reload of filtered URL: {s['groups']}")
+
+        # Reader page: a related Dvar Torah opens, and one Back returns to the first.
+        await page.goto(BASE + "/archive", wait_until="networkidle")
+        await page.locator("#archive-results h4 a").first.click()
+        await page.wait_for_url("**/view/**")
+        await page.wait_for_timeout(SLOW_MS + 3000)
+        first_title = (await page.locator("h1").first.text_content()).strip()
+        related = page.locator("section", has_text="More Torah for this parsha").locator("a[href^='/view/']")
+        if await related.count():
+            target = (await related.first.locator("p").first.text_content()).strip()
+            await related.first.click()
+            await page.wait_for_timeout(SLOW_MS + 3000)
+            check((await page.locator("h1").first.text_content()).strip() == target, f"related link opens {target}")
+            await page.go_back(wait_until="commit", timeout=10000)
+            await page.wait_for_timeout(SLOW_MS + 3000)
+            check((await page.locator("h1").first.text_content()).strip() == first_title, "one Back returns to the previous reader page")
 
         check(not errors, f"no page errors ({errors[:2]})")
 
