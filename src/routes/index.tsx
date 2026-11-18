@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { isPostShabbosWindow } from "@/lib/post-shabbos";
-import { BookOpen, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
@@ -14,6 +14,9 @@ import { trackFp } from "@/lib/first-party-analytics";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { SITE_URL } from "@/lib/site-url";
 import { HomepageShare } from "@/components/HomepageShare";
+import { FeaturedAudioBookCard } from "@/components/FeaturedAudioBookCard";
+import { listPublishedAudioBooks } from "@/integrations/supabase/parsha-audio-books.functions";
+import type { AudioBook } from "@/lib/parsha-audio-book";
 
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -133,6 +136,7 @@ type LoaderData = {
   readingDate: string | null;
   upcomingAfterYomTovKey: string | null;
   announcement: AnnouncementBannerData;
+  featuredAudioBook: AudioBook | null;
   progressFillStep?: number | null;
   progressEta?: string | null;
   renderedAt?: number;
@@ -140,6 +144,13 @@ type LoaderData = {
 
 async function loadCurrentWeek(): Promise<LoaderData> {
   const announcementPromise = getAnnouncementBanner().catch(() => ({ enabled: false, text: null, linkUrl: null, linkLabel: null }));
+  // Only advertise an actually published audiobook; failures must not block the PDF homepage.
+  const featuredAudioBookPromise = listPublishedAudioBooks()
+    .then((books) => books.find((book) => book.parsha_key === "vayetzei" && book.jewish_year === 5787 && book.cover_path) ?? null)
+    .catch((error) => {
+      console.error("Unable to load featured Parsha Audio Book", error);
+      return null;
+    });
   const subscriberCountPromise = getActiveSubscriberCount().catch((e) => {
     console.error("Failed to load subscriber count", e);
     return { count: 0 };
@@ -220,6 +231,7 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     readingDate,
     upcomingAfterYomTovKey,
     announcement,
+    featuredAudioBook: await featuredAudioBookPromise,
     progressFillStep,
     progressEta,
     renderedAt: Date.now(),
@@ -721,13 +733,9 @@ function Index() {
             <p className="mt-3 text-xs text-muted-foreground">Divrei Torah in Hebrew — Coming Soon</p>
           </div>
         </section>
-        <section aria-label="Parsha Audio Book" className="rounded-2xl border border-accent/50 bg-card/70 p-4 text-center shadow-sm sm:p-5">
-          <div className="flex items-center justify-center gap-2 text-primary"><BookOpen size={22} aria-hidden="true"/>
-            <h2 className="font-serif text-xl font-bold">Parsha Audio Book</h2>
-          </div>
-          <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">Experience the Parsha as a professionally narrated story, with explanations from Rashi.</p>
-          <Link to="/parsha-audio-book" className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full border-2 border-primary px-5 py-2 font-semibold text-primary hover:bg-accent/10">Listen to Parsha Audio Books</Link>
-        </section>
+        {loaderData.featuredAudioBook && (
+          <FeaturedAudioBookCard book={loaderData.featuredAudioBook} />
+        )}
         {!isFallback && tableThought && (
           <section
             aria-labelledby="table-thought-heading"
