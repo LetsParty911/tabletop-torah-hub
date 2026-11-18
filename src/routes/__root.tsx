@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Menu, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { requestWeeklyCollection } from "@/lib/weekly-navigation";
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
@@ -410,8 +411,17 @@ function SiteNav() {
 
         {searchOpen && <div className="hidden border-t border-accent/15 pt-3 md:block"><SearchForm /></div>}
 
-        {mobileOpen && (
-          <div ref={mobilePanel} id="mobile-navigation" onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setMobileOpen(false); }} className="max-h-[calc(100dvh-5rem)] overflow-y-auto border-t border-accent/20 pb-3 pt-2 md:hidden">
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetContent
+            side="right"
+            ref={mobilePanel}
+            id="mobile-navigation"
+            aria-label="Navigation menu"
+            onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setMobileOpen(false); }}
+            className="flex h-[100dvh] w-[min(22rem,90vw)] flex-col overflow-y-auto border-l border-accent/30 bg-background px-3 pb-6 pt-12 shadow-xl md:hidden"
+          >
+            <SheetTitle className="px-3 font-serif text-lg text-primary">Explore Torah For The Table</SheetTitle>
+            <SheetDescription className="px-3 text-sm">Browse weekly Divrei Torah and past editions.</SheetDescription>
             <SearchForm mobile />
             <div className="grid gap-1">
               <Link to="/" hash="this-weeks-collection" onClick={() => { setMobileOpen(false); if (pathname === "/") requestWeeklyCollection(); }} className={mobileLinkCls}>This Week</Link>
@@ -425,8 +435,8 @@ function SiteNav() {
               <Link to="/about" className={mobileLinkCls}>About</Link>
               <Link to="/contact" className={mobileLinkCls}>Contact</Link>
             </div>
-          </div>
-        )}
+          </SheetContent>
+        </Sheet>
       </nav>
     </header>
   );
