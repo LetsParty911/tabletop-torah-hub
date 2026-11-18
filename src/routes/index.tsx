@@ -25,7 +25,6 @@ import { HiddenGemTeaser } from "@/components/HiddenGem";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
-import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { seriesBrief, TFTT_ORIGINAL_EDITION_SERIES, tfttOriginalSeriesById } from "@/lib/tftt-originals";
 import { weeklyCardBadges } from "@/lib/weekly-card-badges";
 import { publicationLabel } from "@/lib/badges";
@@ -1102,7 +1101,7 @@ function Index() {
                           {(() => {
                             const summary = r.summary_quick || r.subtitle || r.description;
                             return summary ? (
-                              <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground sm:mt-2 sm:line-clamp-none">{leadWithPublicationTitle(displayTitle(r), summary)}</p>
+                              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground sm:mt-2">{summary}</p>
                             ) : null;
                           })()}
                         </div>
