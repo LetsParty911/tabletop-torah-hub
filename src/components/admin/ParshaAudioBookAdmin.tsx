@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { adminListAudioBooks, adminSaveAudioBook } from "@/integrations/supabase/parsha-audio-books.functions";
-import { MAX_AUDIO_BOOK_BYTES, canonicalAudioParsha, type AudioBook } from "@/lib/parsha-audio-book";
+import { MAX_AUDIO_BOOK_BYTES, MAX_AUDIO_BOOK_COVER_BYTES, canonicalAudioParsha, type AudioBook } from "@/lib/parsha-audio-book";
 import { PARSHIYOS } from "@/lib/parshiyos";
 
 export function ParshaAudioBookAdmin({accessToken}:{accessToken:string}) {
@@ -8,6 +8,7 @@ export function ParshaAudioBookAdmin({accessToken}:{accessToken:string}) {
  const [title,setTitle]=useState("Parsha Audio Book — Parshas Vayetzei");
  const [description,setDescription]=useState("A captivating narrated retelling of Parshas Vayetzei, based on the Chumash with explanations from Rashi.");
  const [file,setFile]=useState<File|null>(null),[path,setPath]=useState<string|null>(null);
+ const [coverFile,setCoverFile]=useState<File|null>(null),[coverPath,setCoverPath]=useState<string|null>(null);
  const [books,setBooks]=useState<AudioBook[]>([]);
  const [counts,setCounts]=useState<Record<string,{plays:number;downloads:number}>>({});
  const [busy,setBusy]=useState(false),[notice,setNotice]=useState(""),[error,setError]=useState("");
@@ -19,7 +20,7 @@ export function ParshaAudioBookAdmin({accessToken}:{accessToken:string}) {
  useEffect(()=>{void refresh().catch(e=>setError(e instanceof Error?e.message:"Could not load audio books"));},[accessToken]);
  function pick(book:AudioBook) {
    setParsha(book.parsha_key);setYear(book.jewish_year);setTitle(book.title);
-   setDescription(book.description||"");setPath(book.audio_path);
+   setDescription(book.description||"");setPath(book.audio_path);setCoverPath(book.cover_path);setCoverFile(null);
    setFile(null);setPublished(book.published);setError("");setNotice("");
  }
  async function submit(publish:boolean) {
@@ -29,7 +30,7 @@ export function ParshaAudioBookAdmin({accessToken}:{accessToken:string}) {
      if(file) {
        if(file.size>MAX_AUDIO_BOOK_BYTES || !file.name.toLowerCase().endsWith(".mp3")) throw new Error("Choose an MP3 no larger than 20 MB");
        setNotice("Uploading the audiobook…");
-       const form=new FormData();form.set("file",file,file.name);
+       const form=new FormData();form.set("file",file,file.name);form.set("kind","audio");
        form.set("parshaKey",canonicalAudioParsha(parsha));form.set("jewishYear",String(year));
        const response=await fetch("/api/parsha-audio-book-upload",{
          method:"POST",headers:{Authorization:"Bearer "+accessToken},body:form,credentials:"same-origin",
@@ -38,10 +39,25 @@ export function ParshaAudioBookAdmin({accessToken}:{accessToken:string}) {
        if(!response.ok || !body.path) throw new Error(body.error||"Upload failed");
        next=body.path;setPath(next);
      }
+     let nextCover=coverPath;
+     if (coverFile) {
+       const ext=coverFile.name.toLowerCase().split(".").pop();
+       if (coverFile.size<128 || coverFile.size>MAX_AUDIO_BOOK_COVER_BYTES || !["jpg","jpeg","png"].includes(ext||""))
+         throw new Error("Choose a JPG or PNG cover under 5 MB");
+       setNotice("Uploading cover artwork…");
+       const form=new FormData();form.set("file",coverFile,coverFile.name);
+       form.set("kind","cover");form.set("parshaKey",canonicalAudioParsha(parsha));form.set("jewishYear",String(year));
+       const response=await fetch("/api/parsha-audio-book-upload",{
+         method:"POST",headers:{Authorization:"Bearer "+accessToken},body:form,credentials:"same-origin",
+       });
+       const body=await response.json() as {path?:string;error?:string};
+       if(!response.ok || !body.path) throw new Error(body.error||"Cover upload failed");
+       nextCover=body.path;setCoverPath(nextCover);
+     }
      const saved=await adminSaveAudioBook({data:{
-       accessToken,parshaKey:parsha,jewishYear:year,title,description,audioPath:next,published:publish,
+       accessToken,parshaKey:parsha,jewishYear:year,title,description,audioPath:next,coverPath:nextCover,published:publish,
      }});
-     setPublished(saved.published);setFile(null);
+     setPublished(saved.published);setFile(null);setCoverFile(null);
      await refresh();setNotice(publish?"Published successfully. Check the public Audio Book page.":"Saved as a private draft.");
    } catch(e) {setError(e instanceof Error?e.message:"Unable to save audio book");setNotice("");}
    finally {setBusy(false);}
@@ -59,13 +75,13 @@ export function ParshaAudioBookAdmin({accessToken}:{accessToken:string}) {
    <div className="grid gap-4 sm:grid-cols-2">
     <label className="text-sm">Parsha
       <select className="mt-1 w-full rounded-md border bg-background p-3" value={parsha}
-        onChange={e=>{setParsha(e.target.value);setPath(null);setFile(null);setPublished(false);}}>
+        onChange={e=>{setParsha(e.target.value);setPath(null);setCoverPath(null);setFile(null);setCoverFile(null);setPublished(false);}}>
         {PARSHIYOS.map(p=><option key={p} value={p}>{p}</option>)}
       </select>
     </label>
     <label className="text-sm">Jewish Year
       <input type="number" min={5000} max={7000} value={year} className="mt-1 w-full rounded-md border bg-background p-3"
-        onChange={e=>{setYear(Number(e.target.value));setPath(null);setFile(null);setPublished(false);}}/>
+        onChange={e=>{setYear(Number(e.target.value));setPath(null);setCoverPath(null);setFile(null);setCoverFile(null);setPublished(false);}}/>
     </label>
    </div>
    <label className="block text-sm">Title
@@ -78,6 +94,11 @@ export function ParshaAudioBookAdmin({accessToken}:{accessToken:string}) {
      <input type="file" accept=".mp3,audio/mpeg" className="mt-2 block w-full" onChange={e=>setFile(e.target.files?.[0]||null)}/>
      {path&&<span className="text-muted-foreground">An MP3 is already stored; choose a new file only to replace it.</span>}
    </label>
+   <label className="block text-sm">Cover image for the online player (JPG or PNG; maximum 5 MB)
+     <input type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" className="mt-2 block w-full" onChange={e=>setCoverFile(e.target.files?.[0]||null)}/>
+     {coverPath&&<span className="block text-muted-foreground">Cover uploaded. Select a different image only to replace it.</span>}
+   </label>
+   <p className="text-xs text-muted-foreground">The cover upload displays the picture on the website. For offline artwork, upload an MP3 that already contains the cover in its ID3 tags.</p>
    {existing&&<p className="text-sm">Current recording: {existing.published?"Published":"Draft"} · Plays requested: {counts[existing.id]?.plays||0} · Downloads requested: {counts[existing.id]?.downloads||0}</p>}
    {published&&<p className="text-sm">Published. Save as Draft to hide it from visitors.</p>}
    {notice&&<p role="status" className="text-sm text-primary">{notice}</p>}
