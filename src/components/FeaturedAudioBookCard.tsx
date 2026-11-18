@@ -31,7 +31,7 @@ export function FeaturedAudioBookCard({ book }: { book: AudioBook }) {
             </div>
           )}
         </div>
-        <div className="min-w-0 space-y-3 text-center sm:text-left">
+        <div className="min-w-0 space-y-2 text-center sm:text-left">
           <div className="flex justify-center sm:justify-start">
             <span className="inline-flex items-center gap-2 rounded-full border border-accent/60 bg-accent/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-primary">
               <Headphones size={15} aria-hidden="true" />
@@ -40,12 +40,15 @@ export function FeaturedAudioBookCard({ book }: { book: AudioBook }) {
           </div>
           <div>
             <h2 id="featured-audio-book-title" className="font-serif text-2xl font-bold leading-tight text-primary sm:text-3xl">
-              Parsha Audio Book
+              Parsha Alive{" — "}
+              <span className="mt-0.5 block font-serif text-base font-semibold leading-snug text-primary/80 sm:text-lg">
+                Hear the Parsha Come Alive!
+              </span>
             </h2>
             <p className="mt-1 font-serif text-lg font-semibold text-foreground">Parshas Vayetzei</p>
           </div>
           <p className="mx-auto max-w-xl text-sm leading-relaxed text-muted-foreground sm:mx-0 sm:text-base">
-            Listen to the Parsha as a professionally narrated story, brought to life with explanations from Rashi. An engaging listening experience for children and adults.
+            Exciting, professionally narrated Parsha storytelling for all ages.
           </p>
           <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground sm:justify-start">
             <Clock3 size={15} aria-hidden="true" />
@@ -64,7 +67,7 @@ export function FeaturedAudioBookCard({ book }: { book: AudioBook }) {
             className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:w-auto"
           >
             <Play size={17} aria-hidden="true" />
-            Listen to Parshas Vayetzei
+            Listen Now
           </Link>
         </div>
       </div>

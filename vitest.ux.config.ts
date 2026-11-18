@@ -21,5 +21,6 @@ export default defineConfig({
     "src/lib/pdf-action-label.test.ts", "src/lib/publication-description.test.ts",
     "src/lib/route-structure.test.ts",
     "src/lib/weekly-card-badges.test.ts", "src/components/HeaderSearchToggle.test.tsx",
+    "src/components/FeaturedAudioBookCard.test.tsx",
   ] },
 });
