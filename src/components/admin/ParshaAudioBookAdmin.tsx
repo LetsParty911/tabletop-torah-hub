@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { adminListAudioBooks, adminSaveAudioBook } from "@/integrations/supabase/parsha-audio-books.functions";
+import { adminListAudioBooks, adminSaveAudioBook, adminCreateAudioBookUploadUrl } from "@/integrations/supabase/parsha-audio-books.functions";
 import { MAX_AUDIO_BOOK_BYTES, MAX_AUDIO_BOOK_COVER_BYTES, canonicalAudioParsha, type AudioBook } from "@/lib/parsha-audio-book";
 import { PARSHIYOS } from "@/lib/parshiyos";
 
@@ -19,41 +19,49 @@ export function ParshaAudioBookAdmin({accessToken}:{accessToken:string}) {
  }
  useEffect(()=>{void refresh().catch(e=>setError(e instanceof Error?e.message:"Could not load audio books"));},[accessToken]);
  function pick(book:AudioBook) {
-   setParsha(book.parsha_key);setYear(book.jewish_year);setTitle(book.title);
+   setParsha(PARSHIYOS.find((item)=>canonicalAudioParsha(item)===book.parsha_key) || "Vayetzei");setYear(book.jewish_year);setTitle(book.title);
    setDescription(book.description||"");setPath(book.audio_path);setCoverPath(book.cover_path);setCoverFile(null);
    setFile(null);setPublished(book.published);setError("");setNotice("");
+ }
+ async function uploadMedia(selected:File,kind:"audio"|"cover"):Promise<string> {
+   const label=kind==="audio"?"audiobook MP3":"cover image";
+   const planned=await adminCreateAudioBookUploadUrl({data:{
+     accessToken,parshaKey:parsha,jewishYear:year,kind,
+     filename:selected.name,fileSize:selected.size,
+   }});
+   setNotice("Uploading "+label+" directly to secure storage…");
+   let response:Response;
+   try {
+     response=await fetch(planned.signedUrl,{
+       method:"PUT",headers:{"Content-Type":planned.contentType},body:selected,
+     });
+   } catch {
+     throw new Error("Could not connect to secure audio storage. Check the connection or try Chrome. No publication was changed.");
+   }
+   if (!response.ok) {
+     const detail=await response.text().catch(()=>"");
+     let msg="";
+     try {const parsed=JSON.parse(detail) as {message?:string;error?:string};msg=parsed.message||parsed.error||"";}catch {msg=detail.slice(0,160);}
+     throw new Error("Storage rejected "+label+" ("+response.status+"). "+msg);
+   }
+   return planned.path;
  }
  async function submit(publish:boolean) {
    setBusy(true);setError("");setNotice("");
    try {
      let next=path;
      if(file) {
-       if(file.size>MAX_AUDIO_BOOK_BYTES || !file.name.toLowerCase().endsWith(".mp3")) throw new Error("Choose an MP3 no larger than 20 MB");
-       setNotice("Uploading the audiobook…");
-       const form=new FormData();form.set("file",file,file.name);form.set("kind","audio");
-       form.set("parshaKey",canonicalAudioParsha(parsha));form.set("jewishYear",String(year));
-       const response=await fetch("/api/parsha-audio-book-upload",{
-         method:"POST",headers:{Authorization:"Bearer "+accessToken},body:form,credentials:"same-origin",
-       });
-       const body=await response.json() as {path?:string;error?:string};
-       if(!response.ok || !body.path) throw new Error(body.error||"Upload failed");
-       next=body.path;setPath(next);
+       if(file.size<128||file.size>MAX_AUDIO_BOOK_BYTES||!file.name.toLowerCase().endsWith(".mp3")) throw new Error("Choose an MP3 no larger than 20 MB");
+       next=await uploadMedia(file,"audio");setPath(next);
      }
      let nextCover=coverPath;
-     if (coverFile) {
+     if(coverFile) {
        const ext=coverFile.name.toLowerCase().split(".").pop();
-       if (coverFile.size<128 || coverFile.size>MAX_AUDIO_BOOK_COVER_BYTES || !["jpg","jpeg","png"].includes(ext||""))
+       if(coverFile.size<128||coverFile.size>MAX_AUDIO_BOOK_COVER_BYTES||!["jpg","jpeg","png"].includes(ext||""))
          throw new Error("Choose a JPG or PNG cover under 5 MB");
-       setNotice("Uploading cover artwork…");
-       const form=new FormData();form.set("file",coverFile,coverFile.name);
-       form.set("kind","cover");form.set("parshaKey",canonicalAudioParsha(parsha));form.set("jewishYear",String(year));
-       const response=await fetch("/api/parsha-audio-book-upload",{
-         method:"POST",headers:{Authorization:"Bearer "+accessToken},body:form,credentials:"same-origin",
-       });
-       const body=await response.json() as {path?:string;error?:string};
-       if(!response.ok || !body.path) throw new Error(body.error||"Cover upload failed");
-       nextCover=body.path;setCoverPath(nextCover);
+       nextCover=await uploadMedia(coverFile,"cover");setCoverPath(nextCover);
      }
+     setNotice("Verifying files and saving audiobook details…");
      const saved=await adminSaveAudioBook({data:{
        accessToken,parshaKey:parsha,jewishYear:year,title,description,audioPath:next,coverPath:nextCover,published:publish,
      }});
