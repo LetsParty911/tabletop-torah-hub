@@ -1,11 +1,19 @@
-import { useRef, useState } from "react";
-import { BookOpen, Download, Pause, Play } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { BookOpen, Download, LoaderCircle, Pause, Play } from "lucide-react";
 import type { AudioBook } from "@/lib/parsha-audio-book";
 
 export function ParshaAudioBookPlayer({ book }: { book: AudioBook }) {
   const player = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [downloadState, setDownloadState] = useState<"idle" | "preparing" | "retry">("idle");
+  // A normal browser download has no reliable completion event. Offer a retry
+  // after a short delay without claiming the file was actually saved.
+  useEffect(() => {
+    if (downloadState !== "preparing") return;
+    const timeout = window.setTimeout(() => setDownloadState("retry"), 8000);
+    return () => window.clearTimeout(timeout);
+  }, [downloadState]);
   const playHref = "/api/parsha-audio-book/" + encodeURIComponent(book.id) + "?action=play";
   const coverHref = "/api/parsha-audio-book/" + encodeURIComponent(book.id) + "?action=cover";
   const downloadHref = "/api/parsha-audio-book/" + encodeURIComponent(book.id) + "?action=download";
@@ -43,11 +51,39 @@ export function ParshaAudioBookPlayer({ book }: { book: AudioBook }) {
           {playing ? <Pause size={17} aria-hidden="true"/> : <Play size={17} aria-hidden="true"/>}
           {playing ? "Pause" : "Listen Now"}
         </button>
-        <a href={downloadHref}
-          className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-primary px-5 py-2 font-semibold text-primary">
-          <Download size={17} aria-hidden="true"/> Download MP3
+        <a
+          href={downloadHref}
+          onClick={(event) => {
+            if (downloadState === "preparing") {
+              event.preventDefault();
+              return;
+            }
+            // Preserve the direct link so the browser performs a normal MP3
+            // download and the server counts the request as before.
+            setDownloadState("preparing");
+          }}
+          aria-disabled={downloadState === "preparing"}
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-primary px-5 py-2 font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          {downloadState === "preparing" ? (
+            <LoaderCircle size={17} className="animate-spin" aria-hidden="true" />
+          ) : (
+            <Download size={17} aria-hidden="true" />
+          )}
+          {downloadState === "preparing"
+            ? "Preparing your download…"
+            : downloadState === "retry"
+              ? "Download MP3 again"
+              : "Download MP3"}
         </a>
       </div>
+      {downloadState !== "idle" && (
+        <p role="status" aria-live="polite" className="mt-3 text-sm font-medium text-primary">
+          {downloadState === "preparing"
+            ? "Your MP3 download is being requested. Your browser may take several seconds to show it."
+            : "If the download has not appeared, check your browser’s Downloads or tap Download MP3 again."}
+        </p>
+      )}
       <p className="mt-3 text-xs text-muted-foreground">The audio may take a few seconds to begin.</p>
     </article>
   );
