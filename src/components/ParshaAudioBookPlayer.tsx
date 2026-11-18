@@ -48,7 +48,7 @@ export function ParshaAudioBookPlayer({ book }: { book: AudioBook }) {
           <Download size={17} aria-hidden="true"/> Download MP3
         </a>
       </div>
-      <p className="mt-3 text-xs text-muted-foreground">The audio may take a few seconds to begin. Plays and download requests are tracked separately.</p>
+      <p className="mt-3 text-xs text-muted-foreground">The audio may take a few seconds to begin.</p>
     </article>
   );
 }
