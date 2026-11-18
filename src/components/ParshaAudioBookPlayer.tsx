@@ -1,12 +1,61 @@
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Download, LoaderCircle, Pause, Play } from "lucide-react";
 import type { AudioBook } from "@/lib/parsha-audio-book";
+import { getVisitorId } from "@/lib/first-party-analytics";
 
 export function ParshaAudioBookPlayer({ book }: { book: AudioBook }) {
   const player = useRef<HTMLAudioElement>(null);
+  const listening = useRef<{ sessionId: string; lastMedia: number; lastWall: number; pending: number } | null>(null);
+  // Count elapsed playback, not seeking or merely loading the MP3.
+  // Session identifiers are anonymous and per playback; distinct visitors
+  // are deduplicated by the existing first-party browser cookie.
+  function startProgress(audio: HTMLAudioElement) {
+    getVisitorId(); // Ensures the same first-party browser ID used by the site.
+    if (!listening.current) listening.current = {
+      sessionId: crypto.randomUUID(), lastMedia: audio.currentTime,
+      lastWall: performance.now(), pending: 0,
+    };
+    listening.current.lastMedia = audio.currentTime;
+    listening.current.lastWall = performance.now();
+  }
+  function tickProgress(audio: HTMLAudioElement) {
+    const state = listening.current;
+    if (!state || audio.seeking || audio.paused) return;
+    const now = performance.now();
+    const progressed = audio.currentTime - state.lastMedia;
+    const elapsed = Math.max(0, (now - state.lastWall) / 1000);
+    // A seek cannot manufacture listening time, nor can an inactive player.
+    if (progressed > 0 && elapsed > 0)
+      state.pending += Math.max(0, Math.min(progressed, elapsed + 0.5, 30));
+    state.lastMedia = audio.currentTime;
+    state.lastWall = now;
+    if (state.pending >= 8) flushProgress(false);
+  }
+  function flushProgress(ended: boolean) {
+    const state = listening.current, audio = player.current;
+    if (!state || !audio || !Number.isFinite(audio.duration) || audio.duration <= 0) return;
+    const seconds = Math.floor(state.pending);
+    if (!seconds && !ended) return;
+    state.pending -= seconds;
+    const payload = JSON.stringify({
+      bookId: book.id, sessionId: state.sessionId, deltaSeconds: Math.min(30, seconds),
+      durationSeconds: audio.duration, ended,
+    });
+    void fetch("/api/parsha-audio-book-engagement", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "same-origin", keepalive: true, body: payload,
+    }).catch(() => undefined);
+  }
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [downloadState, setDownloadState] = useState<"idle" | "preparing" | "retry">("idle");
+  useEffect(() => {
+    const flushOnHide = () => flushProgress(false);
+    window.addEventListener("pagehide", flushOnHide);
+    return () => { window.removeEventListener("pagehide", flushOnHide); flushProgress(false); };
+    // Playback belongs to this book instance.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [book.id]);
   // A normal browser download has no reliable completion event. Offer a retry
   // after a short delay without claiming the file was actually saved.
   useEffect(() => {
@@ -42,7 +91,22 @@ export function ParshaAudioBookPlayer({ book }: { book: AudioBook }) {
         </div>
       </div>
       <audio ref={player} controls preload="none" src={playHref} className="mt-4 w-full"
-        onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}
+        onPlay={event => { startProgress(event.currentTarget); setPlaying(true); }}
+        onTimeUpdate={event => tickProgress(event.currentTarget)}
+        onSeeking={event => {
+          if (listening.current) {
+            listening.current.lastMedia = event.currentTarget.currentTime;
+            listening.current.lastWall = performance.now();
+          }
+        }}
+        onSeeked={event => {
+          if (listening.current) {
+            listening.current.lastMedia = event.currentTarget.currentTime;
+            listening.current.lastWall = performance.now();
+          }
+        }}
+        onPause={() => { flushProgress(false); setPlaying(false); }}
+        onEnded={() => { flushProgress(true); setPlaying(false); }}
         onError={() => setError("Audio unavailable. Please try again.")} aria-label={"Listen to " + book.title} />
       {error && <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}
       <div className="mt-4 flex flex-wrap gap-3">
