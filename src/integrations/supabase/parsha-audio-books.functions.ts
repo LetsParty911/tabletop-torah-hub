@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { verifyAdminAccessToken } from "@/lib/admin-auth.server";
-import { AUDIO_BOOK_BUCKET, canonicalAudioParsha, validAudioBookPath, validAudioBookCoverPath, type AudioBook } from "@/lib/parsha-audio-book";
+import { AUDIO_BOOK_BUCKET, MAX_AUDIO_BOOK_BYTES, MAX_AUDIO_BOOK_COVER_BYTES, canonicalAudioParsha, validAudioBookPath, validAudioBookCoverPath, type AudioBook } from "@/lib/parsha-audio-book";
 
 const columns = "id,parsha_key,jewish_year,title,description,audio_path,cover_path,published,created_at";
 
@@ -31,6 +31,47 @@ export const adminListAudioBooks = createServerFn({ method: "POST" })
    }
    return { books: (books || []) as AudioBook[], counts };
  });
+
+
+/**
+ * Prepare a signed upload to external Supabase Storage.
+ * The browser sends media directly to Storage, not through Lovable/Vercel's
+ * application server. Only verified administrators can mint upload tokens.
+ */
+const uploadRequestSchema = z.object({
+  accessToken: z.string().min(10),
+  parshaKey: z.string().min(2).max(120),
+  jewishYear: z.number().int().min(5000).max(7000),
+  kind: z.enum(["audio", "cover"]),
+  filename: z.string().min(5).max(240),
+  fileSize: z.number().int().min(128),
+});
+
+export const adminCreateAudioBookUploadUrl = createServerFn({ method: "POST" })
+  .inputValidator((input: z.input<typeof uploadRequestSchema>) => uploadRequestSchema.parse(input))
+  .handler(async ({ data }) => {
+    await verifyAdminAccessToken(data.accessToken);
+    const parsha = canonicalAudioParsha(data.parshaKey);
+    const suffix = data.filename.trim().toLowerCase().split(".").pop() || "";
+    const isAudio = data.kind === "audio";
+    const isPng = suffix === "png";
+    const isJpeg = suffix === "jpg" || suffix === "jpeg";
+    const isValid = isAudio ? suffix === "mp3" : (isPng || isJpeg);
+    const limit = isAudio ? MAX_AUDIO_BOOK_BYTES : MAX_AUDIO_BOOK_COVER_BYTES;
+    if (!isValid || data.fileSize > limit) {
+      throw new Error(isAudio ? "Choose an MP3 no larger than 20 MB" : "Choose a JPG or PNG under 5 MB");
+    }
+    const ext = isAudio ? "mp3" : isPng ? "png" : "jpg";
+    const contentType = isAudio ? "audio/mpeg" : isPng ? "image/png" : "image/jpeg";
+    const prefix = data.jewishYear + "/" + parsha + "/";
+    const path = prefix + (isAudio ? "" : "cover-") + crypto.randomUUID() + "." + ext;
+    const { data: signed, error } = await getSupabaseAdmin().storage.from(AUDIO_BOOK_BUCKET)
+      .createSignedUploadUrl(path);
+    if (error || !signed?.signedUrl) {
+      throw new Error("Could not start the direct storage upload");
+    }
+    return { path, signedUrl: signed.signedUrl as string, contentType };
+  });
 
 const saveSchema = z.object({
  accessToken: z.string().min(10), parshaKey: z.string().min(2).max(120),
