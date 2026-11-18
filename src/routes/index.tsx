@@ -84,18 +84,19 @@ type Resource = {
 };
 
 // First-page preview for every publication; also acts as a tracked PDF-open link.
-function StarterThumb({ src, smallSrc, alt, title, href, onOpen }: {
+function StarterThumb({ src, smallSrc, alt, title, href, onOpen, compactOnMobile = false }: {
   src: string;
   smallSrc?: string | null;
   alt: string;
   title: string;
   href: string;
   onOpen: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+  compactOnMobile?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   if (failed) {
     return (
-      <div role="img" aria-label={`Cover unavailable for ${title}`} className="flex h-[145px] w-28 shrink-0 items-center justify-center rounded-lg bg-accent/12 text-primary">
+      <div role="img" aria-label={`Cover unavailable for ${title}`} className={`flex shrink-0 items-center justify-center rounded-lg bg-accent/12 text-primary ${compactOnMobile ? "h-[83px] w-16 sm:h-[145px] sm:w-28" : "h-[145px] w-28"}`}>
         <FileText className="h-5 w-5" aria-hidden="true" />
       </div>
     );
@@ -108,7 +109,7 @@ function StarterThumb({ src, smallSrc, alt, title, href, onOpen }: {
       aria-label={`Open PDF in a new tab: ${title}`}
       title={`Open PDF: ${title}`}
       onClick={onOpen}
-      className="block h-[145px] w-28 shrink-0 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className={`block shrink-0 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${compactOnMobile ? "h-[83px] w-16 sm:h-[145px] sm:w-28" : "h-[145px] w-28"}`}
     >
       <SmallPdfImage
         key={src}
@@ -120,7 +121,7 @@ function StarterThumb({ src, smallSrc, alt, title, href, onOpen }: {
         loading="lazy"
         decoding="async"
         onUnavailable={() => setFailed(true)}
-        className="h-[145px] w-28 rounded-sm border border-accent/40 bg-card object-contain shadow-sm hover:border-accent"
+        className={`rounded-sm border border-accent/40 bg-card object-contain shadow-sm hover:border-accent ${compactOnMobile ? "h-[83px] w-16 sm:h-[145px] sm:w-28" : "h-[145px] w-28"}`}
       />
     </a>
   );
@@ -639,11 +640,12 @@ function Index() {
   const isTfttOriginal = (r: Resource) => Boolean(tfttOriginalSeriesById(r.publication_id));
   // Display the correct uploaded PDF cover on all publication cards in ALL
   // homepage states, including when last week's collection is shown as fallback.
-  const originalCover = (r: Resource) => {
+  const originalCover = (r: Resource, compactOnMobile = false) => {
     if (!r.thumb_url) return null;
     const href = pdfActionHrefs(r.id).open;
     return (
       <StarterThumb
+        compactOnMobile={compactOnMobile}
         smallSrc={r.small_thumb_url}
         src={r.publication_id === "bd544c49-a810-478d-bf5c-38b94a81bc31" ? "/publication-covers/mi-kaamcha-yisroel-permanent.jpg" : r.thumb_url}
         alt={r.publication_id === "bd544c49-a810-478d-bf5c-38b94a81bc31" ? "Mi Ka'amcha Yisroel permanent cover" : `Cover for ${displayTitle(r)} for ${r.parsha_key ?? displayedParshaKey ?? "this week"}`}
@@ -755,6 +757,46 @@ function Index() {
             <p className="mt-3 text-xs text-muted-foreground">Divrei Torah in Hebrew — Coming Soon</p>
           </div>
         </section>
+        {!isFallback && sortedResources.length > 0 && (
+          <section
+            aria-labelledby="mobile-weekly-preview-heading"
+            className="rounded-xl border border-accent/45 bg-card/70 px-3 py-4 shadow-sm sm:hidden"
+          >
+            <h2 id="mobile-weekly-preview-heading" className="font-serif text-xl font-bold text-primary">
+              Available This Week
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Start reading now. More selections are added as they are published.
+            </p>
+            <ul className="mt-3 space-y-2">
+              {sortedResources.slice(0, 4).map((r) => (
+                <li key={r.id}>
+                  <Link
+                    to="/view/$id"
+                    params={{ id: r.id }}
+                    onClick={() =>
+                      trackFp("recommendation_click", {
+                        publication_id: r.id,
+                        publication_title: r.title,
+                        parsha: r.parsha_key ?? displayedParshaKey,
+                        metadata: { placement: "homepage_mobile_weekly_preview" },
+                      })
+                    }
+                    className="block min-h-12 rounded-lg border border-accent/30 bg-background/80 px-3 py-2.5 transition-colors hover:border-accent hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  >
+                    <span className="block font-serif text-base font-semibold leading-snug text-primary">
+                      {displayTitle(r)}
+                    </span>
+                    <span className="mt-1 block text-xs font-semibold text-accent-readable">Read Now</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <Button onClick={browseAllSelections} className="mt-3 h-auto min-h-11 w-full whitespace-normal rounded-full px-4 py-2.5 font-serif text-sm font-semibold">
+              Browse All {sortedResources.length} Selections
+            </Button>
+          </section>
+        )}
         {loaderData.featuredAudioBook && (
           <FeaturedAudioBookCard book={loaderData.featuredAudioBook} />
         )}
@@ -1296,14 +1338,14 @@ function Index() {
                       parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey ?? null}
                     >
                       <div className="flex flex-1 items-start gap-3">
-                        {r.thumb_url ? originalCover(r) : (
+                        {r.thumb_url ? originalCover(r, true) : (
                           <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-accent/12 text-primary shrink-0">
                             <FileText className="h-5 w-5" aria-hidden="true" />
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className="min-w-0 flex-1 break-words font-serif text-base font-bold leading-snug text-primary sm:text-xl">
+                          <div className="flex min-w-0 flex-col items-start gap-1.5 sm:flex-row sm:justify-between sm:gap-2">
+                            <h3 className="min-w-0 w-full flex-1 break-words font-serif text-base font-bold leading-snug text-primary sm:text-xl">
                               <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline transition-colors duration-150">
                                 {displayTitle(r)}
                               </Link>
