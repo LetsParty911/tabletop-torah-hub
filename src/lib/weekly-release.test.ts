@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { weeklyReleaseAt, weeklyReleaseState } from "./weekly-release";
-import { currentYearRows, isProgressForReading, isCollectionComplete } from "./collection-status";
+import { bindCompletedProgressEta, currentYearRows, isProgressForReading, isCollectionComplete } from "./collection-status";
 import { toParshaComparableKey } from "./parsha-normalize";
 
 const readingDate = "2026-10-24";
@@ -40,5 +40,24 @@ describe("Lech Lecha 5787 weekly release truth", () => {
     expect(isCollectionComplete(isProgressForReading(null, readingDate) ? 100 : null, false, 1)).toBe(false);
     expect(isProgressForReading("2026-10-22T20:00:00-04:00", readingDate)).toBe(true);
     expect(isCollectionComplete(100, true, 30)).toBe(false);
+  });
+  it("a 100% save with no ETA counts as complete for this week's reading", () => {
+    const savedThursday = Date.parse("2026-10-22T21:00:00-04:00");
+    const eta = bindCompletedProgressEta(100, null, savedThursday);
+    expect(isProgressForReading(eta, readingDate)).toBe(true);
+    expect(isCollectionComplete(isProgressForReading(eta, readingDate) ? 100 : null, false, 12)).toBe(true);
+  });
+  it("a 100% save still holding last week's ETA is rebound to this week", () => {
+    const eta = bindCompletedProgressEta(100, "2026-10-15T20:00:00-04:00", Date.parse("2026-10-20T10:00:00-04:00"));
+    expect(isProgressForReading(eta, readingDate)).toBe(true);
+  });
+  it("keeps a current-week ETA and never rebinds partial progress", () => {
+    expect(bindCompletedProgressEta(100, "2026-10-22T20:00:00-04:00", Date.parse("2026-10-21T10:00:00-04:00"))).toBe("2026-10-22T20:00:00-04:00");
+    expect(bindCompletedProgressEta(75, null, Date.parse("2026-10-21T10:00:00-04:00"))).toBeNull();
+    expect(bindCompletedProgressEta(95, "2026-10-15T20:00:00-04:00", Date.parse("2026-10-21T10:00:00-04:00"))).toBe("2026-10-15T20:00:00-04:00");
+  });
+  it("last week's completed save does not carry into next week", () => {
+    const eta = bindCompletedProgressEta(100, null, Date.parse("2026-10-15T21:00:00-04:00"));
+    expect(isProgressForReading(eta, readingDate)).toBe(false);
   });
 });

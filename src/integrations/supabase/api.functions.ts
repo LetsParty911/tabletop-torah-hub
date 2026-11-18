@@ -13,7 +13,7 @@ import { purgePdfEdgeCache, warmPdfEdgeCache } from "@/lib/pdf-edge-cache";
 import { checkRateLimit } from "@/lib/rate-limit.server";
 import { isSupabaseQuotaRestricted } from "@/lib/supabase-quota";
 import { isOverrideCurrent, validateParshaOverride } from "@/lib/parsha-override";
-import { currentYearRows } from "@/lib/collection-status";
+import { bindCompletedProgressEta, currentYearRows } from "@/lib/collection-status";
 
 // Recompresses safe embedded JPEGs (grayscale/RGB, never CMYK) via MozJPEG
 // and losslessly repacks the file's internal structure. See
@@ -2162,7 +2162,7 @@ export const adminSetThursdayProgress = createServerFn({ method: "POST" })
       .from("settings")
       .update({
         progress_fill_step: data.fillStep,
-        progress_eta: data.eta,
+        progress_eta: bindCompletedProgressEta(data.fillStep, data.eta, Date.now()),
       })
       .eq("id", 1);
     if (error) throw new Error(error.message);

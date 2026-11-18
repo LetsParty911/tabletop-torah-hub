@@ -61,6 +61,23 @@ export function isProgressForReading(eta: string | null | undefined, readingDate
   return local >= reading.toISOString().slice(0, 10) && local <= readingDate;
 }
 
+/**
+ * A saved 100% must bind to the week it was saved in. The admin ETA field is
+ * optional, so when a completed save has no ETA, or one dated before this
+ * Sunday (New York), use the save time. Partial progress keeps its ETA as-is.
+ */
+export function bindCompletedProgressEta(fillStep: number, eta: string | null, now: number): string | null {
+  if (fillStep !== 100) return eta;
+  const nyDate = (ms: number) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(ms));
+  const today = nyDate(now);
+  const sunday = new Date(`${today}T12:00:00Z`);
+  sunday.setUTCDate(sunday.getUTCDate() - sunday.getUTCDay());
+  const weekStart = sunday.toISOString().slice(0, 10);
+  const etaMs = eta ? Date.parse(eta) : NaN;
+  if (Number.isFinite(etaMs) && nyDate(etaMs) >= weekStart) return eta;
+  return new Date(now).toISOString();
+}
+
 /** Historical PDFs for the same parsha are not evidence of this year's release. */
 export function currentYearRows<T extends { parsha_key: string; jewish_year: number | null }>(rows: T[], comparableKeys: string[], year: number | null, normalize: (key: string) => string): T[] {
   if (!year) return [];
