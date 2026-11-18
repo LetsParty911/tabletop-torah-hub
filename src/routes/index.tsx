@@ -717,8 +717,8 @@ function Index() {
                 : postShabbos
                   ? "These Torah sheets remain available to read or print."
                   : resources.length > 0
-                    ? `${resources.length} selections for the Shabbos table. New editions every Thursday.`
-                    : "New Divrei Torah are prepared for your Shabbos table every Thursday."}
+                    ? `${resources.length} selections available now. More Divrei Torah are added throughout the week, with updates through Thursday at 8:00 PM ET.`
+                    : "New Divrei Torah are added throughout the week, with updates through Thursday at 8:00 PM ET."}
             </p>
             {heroDateLine && (
               <p className="mt-1 text-xs text-muted-foreground">{heroDateLine}</p>
@@ -727,7 +727,7 @@ function Index() {
               <Button onClick={browseAllSelections} className="mt-4 h-auto min-h-11 max-w-full whitespace-normal rounded-full px-6 py-3 font-serif text-base font-semibold">
                 {isFallback
                   ? `Browse Earlier Collection: ${displayedLabel} (${resources.length})`
-                  : `Browse All ${resources.length} This Week’s Selections`}
+                  : `Browse ${resources.length} Available Selections`}
               </Button>
             )}
             <p className="mt-3 text-xs text-muted-foreground">Divrei Torah in Hebrew — Coming Soon</p>
@@ -780,6 +780,14 @@ function Index() {
             <p className="mt-1 text-sm text-muted-foreground">
               Created by Torah For The Table. New editions every Thursday. Read, print, or explore an earlier edition.
             </p>
+            <div className="mt-4 rounded-xl border border-accent/50 bg-background px-4 py-4 text-center sm:px-5">
+              <h3 className="font-serif text-base font-bold text-primary sm:text-lg">
+                More Divrei Torah Are Added Throughout the Week!
+              </h3>
+              <p className="mx-auto mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                Our four original series are just the beginning. Additional Divrei Torah from respected Torah publishers are posted throughout the week, with updates through <strong className="text-primary">Thursday at 8:00 PM ET</strong>. Please check back for new selections.
+              </p>
+            </div>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
               {starterSelections.map(({ key, label, resource: r }, index) => (
                 <article key={r.id} ref={index === 0 ? originalsRef : undefined} style={{ order: TFTT_ORIGINAL_EDITION_SERIES.findIndex((s) => s.id === r.publication_id) }} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
@@ -894,7 +902,7 @@ function Index() {
                 ? `Previous Collection — ${displayedLabel}`
                 : isCurrentYomKippur
                   ? "Yom Kippur Divrei Torah and preparation"
-                  : "All This Week's Selections"}
+                  : "Available This Week"}
             </h2>
             {(isFallback || !isCurrentYomKippur) && (
               <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-muted-foreground">
