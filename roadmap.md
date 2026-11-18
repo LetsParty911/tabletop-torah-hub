@@ -119,3 +119,8 @@
 - [x] PDF buttons named with title + parsha/year
 - [ ] Combined-parsha hubs (/parsha/nitzavim-vayeilech etc.) still 404 — links on archive/publication/year pages; awaiting owner decision (touches sitemap/SEO hub list)
 - [ ] "Shabbos Table Torah Stories" vs "Stories for the Shabbos Table": two publication IDs, both have a Nitzavim-Vayeilech 5786 PDF — not merged; owner to confirm
+
+## 2026-11-18 focused refinements
+- [x] Header search shows the word "Search" (or "Close") from 1024px up; icon only at tablet width
+- [x] Homepage originals intro lists each series with one short explanation line
+- [x] "TFTT Original" on weekly cards is a quiet label above the title; NEW stays a gold badge

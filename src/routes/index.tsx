@@ -26,7 +26,8 @@ import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
-import { TFTT_ORIGINAL_EDITION_SERIES, tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { seriesBrief, TFTT_ORIGINAL_EDITION_SERIES, tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { weeklyCardBadges } from "@/lib/weekly-card-badges";
 import { publicationLabel } from "@/lib/badges";
 import { publicationFilterName } from "@/lib/publication-filter";
 import { Button } from "@/components/ui/button";
@@ -1075,18 +1076,23 @@ function Index() {
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <div className="flex min-w-0 flex-col items-start gap-1.5 sm:flex-row sm:justify-between sm:gap-2">
-                            <h3 className="min-w-0 w-full flex-1 break-words font-serif text-base font-bold leading-snug text-primary sm:text-xl">
-                              <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline transition-colors duration-150">
-                                {displayTitle(r)}
-                              </Link>
-                            </h3>
-                            {(isTfttOriginal(r) || r.badge) && (
-                              <span className="shrink-0 rounded-full border border-accent/60 bg-accent/10 px-2 py-0.5 text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-primary">
-                                {isTfttOriginal(r) ? "TFTT Original" : r.badge}
-                              </span>
-                            )}
-                          </div>
+                          {(() => {
+                            const badges = weeklyCardBadges(isTfttOriginal(r), r.badge);
+                            return badges.length > 0 ? (
+                              <p className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                                {badges.map((b) => b.tone === "subtle" ? (
+                                  <span key={b.label} className="font-sans text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{b.label}</span>
+                                ) : (
+                                  <span key={b.label} className="inline-flex items-center rounded-full bg-accent px-2 py-0.5 font-sans text-[11px] font-bold uppercase leading-none tracking-wide text-accent-foreground">{b.label}</span>
+                                ))}
+                              </p>
+                            ) : null;
+                          })()}
+                          <h3 className="min-w-0 break-words font-serif text-base font-bold leading-snug text-primary sm:text-xl">
+                            <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline transition-colors duration-150">
+                              {displayTitle(r)}
+                            </Link>
+                          </h3>
                           {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
                           <PublicationQuickFacts
                             audience={audienceLabel(normalizeAudience(r.audience, displayTitle(r))) ?? r.audience}
@@ -1183,16 +1189,20 @@ function Index() {
             <h2 id="starter-selections-heading" className="mt-1 font-serif text-xl font-bold text-primary sm:text-2xl">
               Our Four Original Weekly Series
             </h2>
-            <p className="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              Created by Torah For The Table with new editions each week:{" "}
+            <p className="mx-auto mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              Created by Torah For The Table, with new editions each week:
+            </p>
+            <ul className="mx-auto mt-2 grid max-w-2xl gap-x-6 gap-y-1.5 text-left text-sm leading-snug sm:grid-cols-2">
               {TFTT_ORIGINAL_EDITION_SERIES.map((series, index) => (
-                <span key={series.id}>
-                  {index > 0 && (index === TFTT_ORIGINAL_EDITION_SERIES.length - 1 ? ", and " : ", ")}
+                <li key={series.id} className="border-l-2 border-accent/50 pl-2.5">
                   <span className="font-semibold text-primary">{series.title}</span>
                   {index === TFTT_ORIGINAL_EDITION_SERIES.length - 1 && <>{" "}<NewSeriesBadge /></>}
-                </span>
+                  <span className="text-muted-foreground"> — {seriesBrief(series)}</span>
+                </li>
               ))}
-              . Divrei Torah from respected outside publishers join them throughout the week, all in the collection above.
+            </ul>
+            <p className="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              Divrei Torah from respected outside publishers join them throughout the week, all in the collection above.
             </p>
             <Link
               to="/originals"

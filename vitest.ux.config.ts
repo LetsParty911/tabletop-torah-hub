@@ -20,5 +20,6 @@ export default defineConfig({
     "src/lib/public-spelling.test.ts", "src/lib/reader-back-link.test.ts",
     "src/lib/pdf-action-label.test.ts", "src/lib/publication-description.test.ts",
     "src/lib/route-structure.test.ts",
+    "src/lib/weekly-card-badges.test.ts", "src/components/HeaderSearchToggle.test.tsx",
   ] },
 });

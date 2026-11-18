@@ -1,6 +1,7 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Menu, Search, X } from "lucide-react";
+import { HeaderSearchToggle } from "@/components/HeaderSearchToggle";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -301,6 +302,7 @@ function SiteNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const locationHref = useRouterState({ select: (s) => s.location.href });
   const menuTrigger = useRef<HTMLButtonElement>(null);
+  const searchTrigger = useRef<HTMLButtonElement>(null);
   const mobilePanel = useRef<HTMLDivElement>(null);
   const isAdmin =
     pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/admin-analytics";
@@ -360,9 +362,11 @@ function SiteNav() {
     <header
       onKeyDown={(event) => {
         if (event.key === "Escape") {
+          const wasSearchOpen = searchOpen;
           setMobileOpen(false);
           setSearchOpen(false);
-          menuTrigger.current?.focus();
+          if (wasSearchOpen) searchTrigger.current?.focus();
+          else menuTrigger.current?.focus();
         }
       }}
       className="sticky top-0 z-40 border-b border-accent/20 bg-background sm:bg-background/95 sm:backdrop-blur-sm"
@@ -405,16 +409,7 @@ function SiteNav() {
             >
               Our Originals
             </Link>
-            <Button
-              variant="ghost"
-              type="button"
-              aria-label={searchOpen ? "Close site search" : "Search Torah For The Table"}
-              aria-expanded={searchOpen}
-              onClick={() => setSearchOpen((open) => !open)}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent/35 text-primary transition-colors hover:bg-accent/10"
-            >
-              {searchOpen ? <X className="h-4 w-4" aria-hidden="true" /> : <Search className="h-4 w-4" aria-hidden="true" />}
-            </Button>
+            <HeaderSearchToggle ref={searchTrigger} open={searchOpen} onToggle={() => setSearchOpen((open) => !open)} />
           </div>
 
           <Button
