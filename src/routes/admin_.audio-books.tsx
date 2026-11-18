@@ -32,6 +32,16 @@ function AudioBookUploadPage() {
       void checkIsAdmin({ data: { accessToken } })
         .then((result) => {
           if (active) setIsAdmin(result.isAdmin);
+          if (result.isAdmin) {
+            // Match the main admin dashboard: the standalone audiobook admin must
+            // also mark this browser internal for all first-party/audio metrics.
+            void fetch("/api/internal-device", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ accessToken, action: "mark" }),
+            }).catch(() => undefined);
+          }
         })
         .catch(() => {
           if (active) setCheckError("Could not verify administrator access. Reload and try again.");
