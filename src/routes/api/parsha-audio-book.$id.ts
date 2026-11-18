@@ -35,7 +35,17 @@ export const Route = createFileRoute("/api/parsha-audio-book/$id")({
       const isAutomated = isAutomatedAgent(request.headers.get("user-agent") || "");
       if (kind !== "cover" && !isAutomated && !(await isInternalRequest(request))) {
         const { error: eventError } = await admin.from("parsha_audio_book_events")
-          .insert({ book_id: id, event_type: kind });
+          .insert({ book_id: id, event_type: kind, visitor_id: (() => {
+            // Same first-party pseudonymous identifier as the site's visitor analytics.
+            // Do not trust arbitrary query parameters for unique-person reporting.
+            const cookie = request.headers.get("cookie") || "";
+            const match = cookie.match(/(?:^|;\\s*)tftt_vid=([^;]+)/);
+            if (!match) return null;
+            try {
+              const value = decodeURIComponent(match[1]);
+              return /^[A-Za-z0-9_-]{8,100}$/.test(value) ? value : null;
+            } catch { return null; }
+          })() });
         if (eventError) console.error("[parsha-audio-book] event tracking failed", eventError.message);
       }
 
