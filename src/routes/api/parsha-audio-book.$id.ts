@@ -39,10 +39,11 @@ export const Route = createFileRoute("/api/parsha-audio-book/$id")({
             // Same first-party pseudonymous identifier as the site's visitor analytics.
             // Do not trust arbitrary query parameters for unique-person reporting.
             const cookie = request.headers.get("cookie") || "";
-            const match = cookie.match(/(?:^|;\\s*)tftt_vid=([^;]+)/);
+            const match = cookie.split(";").map(part => part.trim())
+              .find(part => part.startsWith("tftt_vid="));
             if (!match) return null;
             try {
-              const value = decodeURIComponent(match[1]);
+              const value = decodeURIComponent(match.slice("tftt_vid=".length));
               return /^[A-Za-z0-9_-]{8,100}$/.test(value) ? value : null;
             } catch { return null; }
           })() });
