@@ -7,6 +7,7 @@ export function ParshaAudioBookPlayer({ book }: { book: AudioBook }) {
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const playHref = "/api/parsha-audio-book/" + encodeURIComponent(book.id) + "?action=play";
+  const coverHref = "/api/parsha-audio-book/" + encodeURIComponent(book.id) + "?action=cover";
   const downloadHref = "/api/parsha-audio-book/" + encodeURIComponent(book.id) + "?action=download";
 
   function toggle() {
@@ -21,8 +22,10 @@ export function ParshaAudioBookPlayer({ book }: { book: AudioBook }) {
 
   return (
     <article className="rounded-2xl border border-accent/40 bg-card/80 p-5 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div aria-hidden className="rounded-xl bg-primary/10 p-3 text-primary"><BookOpen size={28} /></div>
+      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+        {book.cover_path
+          ? <img src={coverHref} alt={"Cover artwork for " + book.title} className="h-48 w-48 shrink-0 rounded-xl border border-accent/40 object-cover shadow-sm" loading="lazy"/>
+          : <div aria-hidden className="rounded-xl bg-primary/10 p-3 text-primary"><BookOpen size={28} /></div>}
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wider text-accent-readable">Torah For The Table · Parsha Audio Book</p>
           <h2 className="mt-1 font-serif text-xl font-bold text-primary">{book.title}</h2>
