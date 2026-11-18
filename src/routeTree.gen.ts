@@ -49,6 +49,7 @@ import { Route as WazRouteImport } from './routes/waz'
 import { Route as ApiEnhancedFingerprintRouteImport } from './routes/api/enhanced-fingerprint'
 import { Route as ApiEventsRouteImport } from './routes/api/events'
 import { Route as ApiParshaAudioBookUploadRouteImport } from './routes/api/parsha-audio-book-upload'
+import { Route as ApiParshaAudioBookChunkRouteImport } from './routes/api/parsha-audio-book-chunk'
 import { Route as ApiParshaAudioBookIdRouteImport } from './routes/api/parsha-audio-book.$id'
 import { Route as ApiParshaSongUploadRouteImport } from './routes/api/parsha-song-upload'
 import { Route as ApiInternalDeviceRouteImport } from './routes/api/internal-device'
@@ -268,6 +269,11 @@ const ApiEventsRoute = ApiEventsRouteImport.update({
   path: '/api/events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiParshaAudioBookChunkRoute = ApiParshaAudioBookChunkRouteImport.update({
+  id: '/api/parsha-audio-book-chunk',
+  path: '/api/parsha-audio-book-chunk',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiParshaAudioBookUploadRoute = ApiParshaAudioBookUploadRouteImport.update({
   id: '/api/parsha-audio-book-upload',
   path: '/api/parsha-audio-book-upload',
@@ -429,6 +435,7 @@ export interface FileRoutesByFullPath {
   '/waz': typeof WazRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/parsha-audio-book-chunk': typeof ApiParshaAudioBookChunkRoute
   '/api/parsha-audio-book-upload': typeof ApiParshaAudioBookUploadRoute
   '/api/parsha-audio-book/$id': typeof ApiParshaAudioBookIdRoute
   '/api/parsha-song-upload': typeof ApiParshaSongUploadRoute
@@ -494,6 +501,7 @@ export interface FileRoutesByTo {
   '/waz': typeof WazRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/parsha-audio-book-chunk': typeof ApiParshaAudioBookChunkRoute
   '/api/parsha-audio-book-upload': typeof ApiParshaAudioBookUploadRoute
   '/api/parsha-audio-book/$id': typeof ApiParshaAudioBookIdRoute
   '/api/parsha-song-upload': typeof ApiParshaSongUploadRoute
@@ -560,6 +568,7 @@ export interface FileRoutesById {
   '/waz': typeof WazRoute
   '/api/enhanced-fingerprint': typeof ApiEnhancedFingerprintRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/parsha-audio-book-chunk': typeof ApiParshaAudioBookChunkRoute
   '/api/parsha-audio-book-upload': typeof ApiParshaAudioBookUploadRoute
   '/api/parsha-audio-book/$id': typeof ApiParshaAudioBookIdRoute
   '/api/parsha-song-upload': typeof ApiParshaSongUploadRoute
@@ -627,6 +636,7 @@ export interface FileRouteTypes {
     | '/waz'
     | '/api/enhanced-fingerprint'
     | '/api/events'
+    | '/api/parsha-audio-book-chunk'
     | '/api/parsha-audio-book-upload'
     | '/api/parsha-audio-book/$id'
     | '/api/parsha-song-upload'
@@ -692,6 +702,7 @@ export interface FileRouteTypes {
     | '/waz'
     | '/api/enhanced-fingerprint'
     | '/api/events'
+    | '/api/parsha-audio-book-chunk'
     | '/api/parsha-audio-book-upload'
     | '/api/parsha-audio-book/$id'
     | '/api/parsha-song-upload'
@@ -757,6 +768,7 @@ export interface FileRouteTypes {
     | '/waz'
     | '/api/enhanced-fingerprint'
     | '/api/events'
+    | '/api/parsha-audio-book-chunk'
     | '/api/parsha-audio-book-upload'
     | '/api/parsha-audio-book/$id'
     | '/api/parsha-song-upload'
@@ -823,6 +835,7 @@ export interface RootRouteChildren {
   WazRoute: typeof WazRoute
   ApiEnhancedFingerprintRoute: typeof ApiEnhancedFingerprintRoute
   ApiEventsRoute: typeof ApiEventsRoute
+  ApiParshaAudioBookChunkRoute: typeof ApiParshaAudioBookChunkRoute
   ApiParshaAudioBookUploadRoute: typeof ApiParshaAudioBookUploadRoute
   ApiParshaAudioBookIdRoute: typeof ApiParshaAudioBookIdRoute
   ApiParshaSongUploadRoute: typeof ApiParshaSongUploadRoute
@@ -1121,6 +1134,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/parsha-audio-book-chunk': {
+      id: '/api/parsha-audio-book-chunk'
+      path: '/api/parsha-audio-book-chunk'
+      fullPath: '/api/parsha-audio-book-chunk'
+      preLoaderRoute: typeof ApiParshaAudioBookChunkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/parsha-audio-book-upload': {
       id: '/api/parsha-audio-book-upload'
       path: '/api/parsha-audio-book-upload'
@@ -1357,6 +1377,7 @@ const rootRouteChildren: RootRouteChildren = {
   WazRoute: WazRoute,
   ApiEnhancedFingerprintRoute: ApiEnhancedFingerprintRoute,
   ApiEventsRoute: ApiEventsRoute,
+  ApiParshaAudioBookChunkRoute: ApiParshaAudioBookChunkRoute,
   ApiParshaAudioBookUploadRoute: ApiParshaAudioBookUploadRoute,
   ApiParshaAudioBookIdRoute: ApiParshaAudioBookIdRoute,
   ApiParshaSongUploadRoute: ApiParshaSongUploadRoute,

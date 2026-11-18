@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { adminListAudioBooks, adminSaveAudioBook, adminCreateAudioBookUploadUrl } from "@/integrations/supabase/parsha-audio-books.functions";
+import { adminListAudioBooks, adminSaveAudioBook } from "@/integrations/supabase/parsha-audio-books.functions";
 import { MAX_AUDIO_BOOK_BYTES, MAX_AUDIO_BOOK_COVER_BYTES, canonicalAudioParsha, type AudioBook } from "@/lib/parsha-audio-book";
 import { PARSHIYOS } from "@/lib/parshiyos";
 
@@ -24,27 +24,48 @@ export function ParshaAudioBookAdmin({accessToken}:{accessToken:string}) {
    setFile(null);setPublished(book.published);setError("");setNotice("");
  }
  async function uploadMedia(selected:File,kind:"audio"|"cover"):Promise<string> {
-   const label=kind==="audio"?"audiobook MP3":"cover image";
-   const planned=await adminCreateAudioBookUploadUrl({data:{
-     accessToken,parshaKey:parsha,jewishYear:year,kind,
-     filename:selected.name,fileSize:selected.size,
-   }});
-   setNotice("Uploading "+label+" directly to secure storage…");
-   let response:Response;
-   try {
-     response=await fetch(planned.signedUrl,{
-       method:"PUT",headers:{"Content-Type":planned.contentType},body:selected,
-     });
-   } catch {
-     throw new Error("Could not connect to secure audio storage. Check the connection or try Chrome. No publication was changed.");
+   const label=kind==="audio"?"MP3":"cover image";
+   const uploadId=crypto.randomUUID();
+   const extension=selected.name.toLowerCase().split(".").pop() || "";
+   const chunkBytes=1024*1024;
+   const count=Math.ceil(selected.size/chunkBytes);
+   const sendPart=async(action:"chunk"|"complete",index?:number)=>{
+     const form=new FormData();
+     form.set("action",action);
+     form.set("uploadId",uploadId);
+     form.set("kind",kind);
+     form.set("extension",extension);
+     form.set("fileSize",String(selected.size));
+     form.set("parshaKey",canonicalAudioParsha(parsha));
+     form.set("jewishYear",String(year));
+     if(action==="chunk" && index!==undefined) {
+       form.set("index",String(index));
+       form.set("chunk",selected.slice(index*chunkBytes,Math.min(selected.size,(index+1)*chunkBytes)),selected.name);
+     }
+     let response:Response;
+     try {
+       response=await fetch("/api/parsha-audio-book-chunk",{
+         method:"POST",headers:{Authorization:"Bearer "+accessToken},
+         body:form,credentials:"same-origin",
+       });
+     } catch {
+       throw new Error("The website upload connection failed for "+label+". Your recording is still private.");
+     }
+     let payload:{error?:string;path?:string;ok?:boolean};
+     try { payload=await response.json(); } catch {
+       throw new Error("The server did not complete the "+label+" upload request (HTTP "+response.status+").");
+     }
+     if(!response.ok) throw new Error(payload.error||"Could not upload "+label+" (HTTP "+response.status+").");
+     return payload;
+   };
+   for(let i=0;i<count;i++){
+     setNotice("Uploading "+label+" — part "+(i+1)+" of "+count+"…");
+     await sendPart("chunk",i);
    }
-   if (!response.ok) {
-     const detail=await response.text().catch(()=>"");
-     let msg="";
-     try {const parsed=JSON.parse(detail) as {message?:string;error?:string};msg=parsed.message||parsed.error||"";}catch {msg=detail.slice(0,160);}
-     throw new Error("Storage rejected "+label+" ("+response.status+"). "+msg);
-   }
-   return planned.path;
+   setNotice("Verifying and assembling "+label+" in secure storage…");
+   const result=await sendPart("complete");
+   if(!result.path) throw new Error("Storage did not confirm the "+label+" file");
+   return result.path;
  }
  async function submit(publish:boolean) {
    setBusy(true);setError("");setNotice("");
