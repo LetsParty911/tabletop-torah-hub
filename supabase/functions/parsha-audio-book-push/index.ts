@@ -72,6 +72,30 @@ Deno.serve(async (request: Request) => {
       pushover_configured: !!Deno.env.get("PUSHOVER_USER_KEY") && !!Deno.env.get("PUSHOVER_APP_TOKEN"),
     });
   }
+  // A private end-to-end test that never creates an engagement event.
+  if (payload.notification_test === true) {
+    const user = Deno.env.get("PUSHOVER_USER_KEY");
+    const app = Deno.env.get("PUSHOVER_APP_TOKEN");
+    if (!user || !app) return result({ error: "pushover_not_configured" }, 503);
+    const response = await fetch("https://api.pushover.net/1/messages.json", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        token: app,
+        user,
+        title: "Torah For The Table - Audiobook Push Test",
+        message: "Audiobook notifications are connected. This is a test; no playback or download was recorded.",
+        priority: "0",
+        sound: "pushover",
+      }).toString(),
+      signal: AbortSignal.timeout(9000),
+    }).catch(() => null);
+    if (!response?.ok) return result({ error: "test_delivery_failed" }, 502);
+    const receipt = await response.json().catch(() => null);
+    return receipt?.status === 1
+      ? result({ status: "test_accepted_by_pushover" })
+      : result({ error: "test_delivery_unconfirmed" }, 502);
+  }
 
   const eventId = Number(payload.event_id);
   if (!Number.isSafeInteger(eventId) || eventId < 1) return result({ error: "invalid_event" }, 400);
