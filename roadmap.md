@@ -108,3 +108,6 @@
 - [x] Add compact near-top signup while preserving the lower form and unique anchors
 - [x] Run 55 focused and 325 full-suite regressions plus 12 calendar/download tests; verify desktop/mobile signup and authenticated owner report without subscriber or production changes
 
+
+## 2026-11-18 homepage simplification (owner-approved)
+- [x] One weekly PDF list right after the hero; audiobook below; compact originals intro + /originals link; mobile quick list, large originals cards and featured picks removed; compact mobile cards; tests updated

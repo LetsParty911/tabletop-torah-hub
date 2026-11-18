@@ -17,6 +17,6 @@ export default defineConfig({
     "src/pwa-register.test.ts", "src/components/PdfCoverThumbnail.test.tsx",
     "src/lib/open-pdf-clicks.test.ts", "src/lib/pdf-route-diagnostics.test.ts",
     "src/lib/archive-search.test.ts", "src/lib/navigation-recovery.test.ts",
-    "src/lib/homepage-dedupe.test.ts", "src/lib/public-spelling.test.ts",
+    "src/lib/public-spelling.test.ts",
   ] },
 });

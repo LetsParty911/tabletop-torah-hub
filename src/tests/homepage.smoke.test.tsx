@@ -77,6 +77,9 @@ vi.mock("@/components/WeeklyEmailSignup", () => ({
 }));
 vi.mock("@/components/SiteFooter", () => ({ SiteFooter: () => null }));
 vi.mock("@/components/BackToTop", () => ({ BackToTop: () => null }));
+vi.mock("@/components/FeaturedAudioBookCard", () => ({
+  FeaturedAudioBookCard: ({ book }: { book: { title: string } }) => <section aria-label="Featured Parsha Audio Book">{book.title}</section>,
+}));
 vi.mock("@/hooks/use-prewarm-downloads", () => ({ usePrewarmDownloads: () => undefined }));
 vi.mock("@/lib/analytics", () => ({ trackEvent: vi.fn() }));
 vi.mock("@/lib/first-party-analytics", () => ({ trackFp: vi.fn(), getSessionId: vi.fn(() => null) }));
@@ -148,19 +151,41 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(message).not.toContain("Parshas Lech-Lecha");
   });
 
-  it("shows concise descriptions for the three original series without a line clamp", () => {
+  it("lists this week's PDFs exactly once, originals included, with a compact link to the originals page", () => {
     setHomepage(false);
-    state.loader.resources = TFTT_ORIGINAL_SERIES.map((series, index) => ({
-      ...example(index + 1, "Lech-Lecha"),
-      title: series.title,
-      publication_id: series.id,
-    }));
+    state.loader.resources = [
+      ...TFTT_ORIGINAL_SERIES.map((series, index) => ({
+        ...example(index + 1, "Lech-Lecha"),
+        title: series.title,
+        publication_id: series.id,
+      })),
+      { ...example(5, "Lech-Lecha"), featured_slot: "children" },
+      { ...example(6, "Lech-Lecha"), featured_slot: "family" },
+    ];
     render(<Homepage />);
+    const openHrefs = screen.getAllByRole("link", { name: "Open PDF" }).map((link) => link.getAttribute("href"));
+    expect(openHrefs).toHaveLength(6);
+    expect(new Set(openHrefs).size).toBe(6);
     for (const series of TFTT_ORIGINAL_SERIES) {
-      const description = screen.getByText(series.expectation);
-      expect(description.className).not.toContain("line-clamp");
+      expect(screen.getAllByRole("link", { name: series.title })).toHaveLength(1);
     }
-    expect(screen.getByText("Our Four Original Weekly Series")).toBeTruthy();
+    expect(document.querySelectorAll("#this-weeks-collection")).toHaveLength(1);
+    expect(screen.queryByText(/Also Available This Week/)).toBeNull();
+    expect(screen.queryByText(/Recommended Picks/)).toBeNull();
+    expect(screen.getAllByRole("heading", { name: "Our Four Original Weekly Series" })).toHaveLength(1);
+    expect(screen.getByRole("link", { name: "Explore Our Original Series" }).getAttribute("href")).toBe("/originals");
+  });
+
+  it("opens a PDF from the weekly list and shows the audiobook below it", () => {
+    setHomepage(false);
+    state.loader.featuredAudioBook = { id: "book-1", title: "Sample Parsha Audio Book" };
+    render(<Homepage />);
+    const firstOpen = screen.getAllByRole("link", { name: "Open PDF" })[0];
+    expect(firstOpen.getAttribute("href")).toBe("/view/example-1/pdf");
+    const collection = document.getElementById("this-weeks-collection")!;
+    const audio = screen.getByRole("region", { name: "Featured Parsha Audio Book" });
+    expect(collection.contains(firstOpen)).toBe(true);
+    expect(collection.compareDocumentPosition(audio) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("shows every PDF and one stable collection anchor for small weekly releases", () => {
@@ -174,12 +199,12 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.getByRole("link", { name: "Share on WhatsApp" })).toBeTruthy();
   });
 
-  it("shows six selections before expanding a larger collection", () => {
+  it("shows every selection of a larger collection once, with no extra expand step", () => {
     setHomepage(false);
     state.loader.resources = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => example(n, "Lech-Lecha"));
     render(<Homepage />);
-    expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(6);
-    expect(screen.getByRole("button", { name: "View all 8 Lech-Lecha selections" })).toBeTruthy();
+    expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(8);
+    expect(screen.queryByRole("button", { name: /View all 8/ })).toBeNull();
   });
 
   it("keeps four mobile category choices without a redundant recommended-picks link", () => {
@@ -192,7 +217,6 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.getByRole("button", { name: "Stories" })).toBeTruthy();
     expect(screen.queryByRole("link", { name: /Not sure\\? See our recommended picks/i })).toBeNull();
     expect(screen.queryByRole("link", { name: /Browse all available Divrei Torah/i })).toBeNull();
-    expect(screen.getByRole("button", { name: "View all 6 Lech-Lecha selections" })).toBeTruthy();
   });
 
   it("reveals the complete PDF selection on explicit request", () => {
@@ -211,7 +235,7 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     setHomepage(false);
     render(<Homepage />);
     expect(screen.queryByTestId("table-chooser")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /View all 4 .* selections/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Browse 4 Available Selections" }));
     expect(screen.queryByTestId("table-chooser")).toBeNull();
   });
 

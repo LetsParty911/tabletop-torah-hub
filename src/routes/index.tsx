@@ -57,8 +57,7 @@ import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { TableChooser } from "@/components/TableChooser";
 import { MobileCollectionControlsBar } from "@/components/MobileCollectionControlsBar";
-import { excludeShownOriginals } from "@/lib/homepage-dedupe";
-import { CHOOSERS, chooseReason, pickRecommendations, pickStarterSelections, type ChooserKey } from "@/lib/table-chooser";
+import { CHOOSERS, pickRecommendations, pickStarterSelections, type ChooserKey } from "@/lib/table-chooser";
 
 type Resource = {
   id: string;
@@ -338,13 +337,6 @@ export const Route = createFileRoute("/")({
   },
 });
 
-const FEATURED_SLOTS = [
-  { key: "children", label: "Best for Children" },
-  { key: "family", label: "Best for the Family Table" },
-  { key: "quickest", label: "Quickest Read" },
-  { key: "deeper", label: "Deeper Learning" },
-] as const;
-
 // Only show a table thought when an approved entry matches the active parsha.
 const TABLE_THOUGHTS: Record<string, { quote: string; sourceHebrew: string }> = {
   "chayei sarah": {
@@ -515,12 +507,8 @@ function Index() {
   // third-party substitute for an absent series.
   const starterSelections = isFallback ? [] : pickStarterSelections(sortedResources);
   const starterCardCount = starterSelections.length;
-  // The mobile quick list skips originals already shown as cards below, so the
-  // same four titles are not repeated back to back on small screens.
-  const mobilePreviewResources = excludeShownOriginals(sortedResources, starterSelections.map(({ resource }) => resource.id));
   // Show all this week's publications by default; Browse All is a shortcut, not a gate.
   const showCompleteCollection = resources.length > 0 || isWeeklyCollectionHash(collectionHash) || showAllResources || isCurrentYomKippur;
-  const viewAllLabel = `View all ${resources.length} ${displayedLabel.replace(/^Parshas\s+/i, "")} selections`;
   // Section views are passive; they do not establish human engagement.
   const originalsRef = useHomepageSectionImpression<HTMLElement>("originals", !isCurrentYomKippur);
   const weeklyHeadingRef = useHomepageSectionImpression<HTMLHeadingElement>("weekly_collection", resources.length > 0 && showCompleteCollection);
@@ -602,10 +590,6 @@ function Index() {
     ? 1
     : Number(audienceFilter !== "All") + Number(lengthFilter !== "All") + Number(contentTypeFilter !== "All") + Number(publicationFilter !== "All");
 
-  const featuredPicks = FEATURED_SLOTS.map((slot) => ({
-    ...slot,
-    resource: resources.find((r) => (r.featured_slot ?? "").trim().toLowerCase() === slot.key),
-  })).filter((p) => !!p.resource);
   const quickChoices = (["quick", "family", "kids", "story"] as const).map((key) => {
     const chooser = CHOOSERS.find((option) => option.key === key);
     const labels: Record<(typeof key), string> = {
@@ -774,185 +758,6 @@ function Index() {
             <p className="mt-3 text-xs text-muted-foreground">Divrei Torah in Hebrew — Coming Soon</p>
           </div>
         </section>
-        {!isFallback && mobilePreviewResources.length > 0 && (
-          <section
-            aria-labelledby="mobile-weekly-preview-heading"
-            className="rounded-xl border border-accent/45 bg-card/70 px-3 py-4 shadow-sm sm:hidden"
-          >
-            <h2 id="mobile-weekly-preview-heading" className="font-serif text-xl font-bold text-primary">
-              {starterSelections.length > 0 ? "Also Available This Week" : "Available This Week"}
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Start reading now. More selections are added as they are published.
-            </p>
-            <ul className="mt-3 space-y-2">
-              {mobilePreviewResources.slice(0, 4).map((r) => (
-                <li key={r.id}>
-                  <Link
-                    to="/view/$id"
-                    params={{ id: r.id }}
-                    onClick={() =>
-                      trackFp("recommendation_click", {
-                        publication_id: r.id,
-                        publication_title: r.title,
-                        parsha: r.parsha_key ?? displayedParshaKey,
-                        metadata: { placement: "homepage_mobile_weekly_preview" },
-                      })
-                    }
-                    className="block min-h-12 rounded-lg border border-accent/30 bg-background/80 px-3 py-2.5 transition-colors hover:border-accent hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                  >
-                    <span className="block font-serif text-base font-semibold leading-snug text-primary">
-                      {displayTitle(r)}
-                    </span>
-                    <span className="mt-1 block text-xs font-semibold text-accent-readable">Read Now</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <Button onClick={browseAllSelections} className="mt-3 h-auto min-h-11 w-full whitespace-normal rounded-full px-4 py-2.5 font-serif text-sm font-semibold">
-              Browse All {sortedResources.length} Selections
-            </Button>
-          </section>
-        )}
-        {loaderData.featuredAudioBook && (
-          <FeaturedAudioBookCard book={loaderData.featuredAudioBook} />
-        )}
-        {!isFallback && tableThought && (
-          <section
-            aria-labelledby="table-thought-heading"
-            className="mx-auto w-full max-w-3xl rounded-2xl border border-accent/50 bg-card/70 px-5 py-5 text-center shadow-sm sm:px-8 sm:py-6"
-          >
-            <h2
-              id="table-thought-heading"
-              className="font-sans text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-xs"
-            >
-              TABLE TALK
-            </h2>
-            <p className="mt-1 font-sans text-[11px] uppercase tracking-[0.1em] text-muted-foreground sm:text-[11px]">
-              A THOUGHT FOR YOUR SHABBOS TABLE
-            </p>
-            <blockquote className="mx-auto mt-3 max-w-2xl font-serif text-lg leading-relaxed text-primary sm:text-2xl sm:leading-relaxed">
-              “{tableThought.quote}”
-            </blockquote>
-            <p lang="he" dir="rtl" className="mt-3 font-serif text-sm text-muted-foreground">
-              {tableThought.sourceHebrew}
-            </p>
-          </section>
-        )}
-        <ThursdayProgressMeter
-          readingDate={readingDate}
-          isFallback={isFallback}
-          currentPublishedCount={currentPublishedCount}
-          progressFillStep={progressFillStep}
-          progressEta={progressEta}
-          isYomTov={isYomTovCollection}
-          initialNow={loaderData.renderedAt}
-        />
-
-
-        {!isCurrentYomKippur && (
-          <section id="our-originals" tabIndex={-1} aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border-2 border-accent/50 bg-card/50 px-4 py-5 sm:px-6">
-            <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-xs">
-              Home of the original Torah For The Table series
-            </p>
-            <h2 id="starter-selections-heading" className="mt-1 font-serif text-xl font-bold text-primary sm:text-2xl">
-              Our Four Original Weekly Series
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Created by Torah For The Table, with new editions each week. Divrei Torah from respected outside publishers join them throughout the week. Read, print, or explore an earlier edition.
-            </p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
-              {starterSelections.map(({ key, label, resource: r }, index) => (
-                <article key={r.id} ref={index === 0 ? originalsRef : undefined} style={{ order: TFTT_ORIGINAL_EDITION_SERIES.findIndex((s) => s.id === r.publication_id) }} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
-                  <div className="flex min-w-0 flex-col items-center gap-4 text-center">
-                  {r.thumb_url && (
-                    <StarterThumb
-                      smallSrc={r.small_thumb_url}
-                      src={r.thumb_url}
-                      alt={`First page of ${displayTitle(r)}`}
-                      title={displayTitle(r)}
-                      href={pdfActionHrefs(r.id).open}
-                      onOpen={(event) => {
-                        recordPdfAction(event, "open_pdf", pdfActionHrefs(r.id).open, {
-                          publicationId: r.id,
-                          publicationName: displayPublicationName(r),
-                          publicationTitle: displayTitle(r),
-                          publicationSeries: r.publication,
-                          publisher: r.publisher,
-                          parsha: r.parsha_key ?? displayedParshaKey,
-                        }, "thumbnail");
-                        trackFp("recommendation_click", {
-                          publication_id: r.id,
-                          publication_title: r.title,
-                          parsha: r.parsha_key ?? displayedParshaKey,
-                          metadata: { chooser: key, placement: "homepage_start_here" },
-                        });
-                      }}
-                    />
-                  )}
-                  <div className="min-w-0 w-full">
-                  {!isTfttOriginal(r) && <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">{label}</p>}
-                  <h3 className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 font-serif text-xl font-bold leading-snug text-primary">
-                    <Link to="/view/$id" params={{ id: r.id }} onClick={() => trackFp("recommendation_click", { publication_id: r.id, publication_title: r.title, parsha: r.parsha_key ?? displayedParshaKey, metadata: { chooser: key, placement: "homepage_start_here" } })} className="hover:text-accent hover:underline">
-                      {displayTitle(r)}
-                    </Link>
-                    {r.publication_id === TFTT_ORIGINAL_EDITION_SERIES[3].id && <>{" "}<NewSeriesBadge /></>}
-                  </h3>
-                  <p className="mt-2 text-xs font-semibold text-accent-readable">
-                    {audienceLabel(normalizeAudience(r.audience, displayTitle(r))) ?? r.audience}
-                  </p>
-                  <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
-                    {tfttOriginalSeriesById(r.publication_id)?.expectation ?? leadWithPublicationTitle(displayTitle(r), chooseReason(r))}
-                  </p>
-                  </div>
-                  </div>
-                  <div className="mt-auto pt-5">
-                    <DownloadAndPrintButtons
-                      href={`/view/${r.id}/pdf`}
-                      publicationId={r.id}
-                      publicationName={displayPublicationName(r)}
-                      publicationTitle={displayTitle(r)}
-                      publisher={r.publisher}
-                      publicationSeries={r.publication}
-                      parsha={r.parsha_key ?? displayedParshaKey}
-                      className="w-full"
-                      onClick={() => trackFp("recommendation_click", {
-                        publication_id: r.id,
-                        publication_title: r.title,
-                        parsha: r.parsha_key ?? displayedParshaKey,
-                        metadata: { chooser: key, placement: "homepage_start_here" },
-                      })}
-                    />
-                  </div>
-                </article>
-              ))}
-              {TFTT_ORIGINAL_EDITION_SERIES.filter((series) => !starterSelections.some(({ resource }) => resource.publication_id === series.id)).map((series, index) => (
-                <article key={series.id} ref={starterSelections.length === 0 && index === 0 ? originalsRef : undefined} style={{ order: TFTT_ORIGINAL_EDITION_SERIES.findIndex((s) => s.id === series.id) }} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
-                  <div className="flex flex-1 flex-col items-center gap-3 text-center">
-                    <div role="img" aria-label={series.title} className="flex h-[145px] w-28 items-center justify-center rounded-sm border border-accent/40 bg-accent/10 text-primary shadow-sm">
-                      <FileText className="h-6 w-6" aria-hidden="true" />
-                    </div>
-                    <h3 className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 font-serif text-lg font-bold leading-snug text-primary">
-                      <span>{series.title}</span>
-                      {series.id === TFTT_ORIGINAL_EDITION_SERIES[3].id && <>{" "}<NewSeriesBadge /></>}
-                    </h3>
-                    <p className="text-sm leading-relaxed text-muted-foreground">{series.expectation}</p>
-                  </div>
-                  <div className="mt-auto pt-5">
-                    <Link to="/originals" className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-accent/50 bg-background px-3 py-2 font-serif text-sm font-semibold text-primary hover:bg-accent/10">About This Series</Link>
-                    <p className="mt-2 text-center text-xs text-muted-foreground">This week's edition is being prepared.</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-            {resources.length > starterSelections.length && (
-              <Button onClick={browseAllSelections} className="mt-4 h-auto min-h-11 whitespace-normal rounded-full px-5 py-2.5 font-serif text-sm font-semibold">
-                {viewAllLabel}
-              </Button>
-            )}
-          </section>
-        )}
-
         {(isFallback || resources.length === 0) && (
           <UpdateCountdown
             compact
@@ -1030,88 +835,7 @@ function Index() {
           </section>
         )}
 
-            {featuredPicks.length > 0 && starterSelections.length === 0 && !activeChooser && (
-              <p className="mt-5 text-center font-sans text-sm text-muted-foreground">
-                Start with four curated choices, or choose what fits your table.
-              </p>
-            )}
-
             <>
-            {featuredPicks.length > 0 && starterSelections.length === 0 && (
-              <>
-                <section className="parchment-frame">
-                  <div className="parchment-panel">
-                    <p className="text-center font-sans text-[11px] font-bold uppercase tracking-[0.2em] text-accent-readable sm:text-xs">
-                      <span aria-hidden="true">★</span> Featured
-                    </p>
-                    <h2 className="mt-1 font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
-                      {isFallback ? `Recommended from ${displayedLabel}` : "This Week's Recommended Picks"}
-                    </h2>
-                    <div className="mt-5 grid gap-4 grid-cols-1 sm:grid-cols-2">
-                      {featuredPicks.map(({ key, label, resource }) => {
-                        const r = resource!;
-                        return (
-                          <PublicationCardTracker
-                            key={key}
-                            className="h-full rounded-xl border border-accent/50 bg-background/70 p-4 sm:p-5 flex flex-col"
-                            publication_id={r.id}
-                            publication_title={r.title}
-                            publication_series={r.publication ?? null}
-                            publisher={r.publisher ?? null}
-                            parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey ?? null}
-                          >
-                            <span className="self-start rounded-full bg-accent px-3 py-1 text-[11px] sm:text-xs font-bold uppercase tracking-wide text-accent-foreground">
-                              {label}
-                            </span>
-                            {r.thumb_url && (
-                              <div className="mt-3">
-                                {originalCover(r)}
-                              </div>
-                            )}
-                            <h3 className="mt-3 font-serif text-base sm:text-xl font-bold text-primary leading-snug">
-                              <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline transition-colors duration-150">
-                                {displayTitle(r)}
-                              </Link>
-                            </h3>
-                            {r.publisher && !isTfttOriginal(r) && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
-                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{leadWithPublicationTitle(displayTitle(r), r.subtitle || chooseReason(r))}</p>
-                            {pageCountLabel(r) && (
-                              <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                {pageCountLabel(r)}
-                              </p>
-                            )}
-                            <div className="mt-auto pt-4">
-                              <DownloadAndPrintButtons
-                                href={`/view/${r.id}/pdf`}
-                                publicationId={r.id}
-                                publicationName={displayPublicationName(r)}
-                                publicationTitle={r.title}
-                                publisher={r.publisher}
-                                publicationSeries={r.publication}
-                                parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
-                                className="w-full px-3 py-2.5 lg:py-2"
-                              />
-                               <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-                                 <SharePublicationButton
-                                   pdfId={r.id}
-                                   title={r.title}
-                                   parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
-                                 />
-                               </div>
-                            </div>
-                          </PublicationCardTracker>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </section>
-
-                <div className="gold-divider" aria-hidden>
-                  <span className="gold-divider-dot" />
-                </div>
-              </>
-            )}
-
             {resources.length === 0 ? (
               <p className="mt-6 text-center text-muted-foreground max-w-md mx-auto">
                 New Divrei Torah for {currentLabel} are being prepared. Check back soon!
@@ -1337,7 +1061,7 @@ function Index() {
                   {filteredResources.map((r) => (
                     <PublicationCardTracker
                       key={r.id}
-                      className="h-full rounded-xl border border-accent/35 bg-background/55 p-4 sm:p-5 hover:border-accent/70 hover:shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
+                      className="h-full rounded-xl border border-accent/35 bg-background/55 p-3 sm:p-5 hover:border-accent/70 hover:shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
                       publication_id={r.id}
                       publication_title={r.title}
                       publication_series={r.publication ?? null}
@@ -1372,13 +1096,13 @@ function Index() {
                           {(() => {
                             const summary = r.summary_quick || r.subtitle || r.description;
                             return summary ? (
-                              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{leadWithPublicationTitle(displayTitle(r), summary)}</p>
+                              <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground sm:mt-2 sm:line-clamp-none">{leadWithPublicationTitle(displayTitle(r), summary)}</p>
                             ) : null;
                           })()}
                         </div>
                       </div>
 
-                      <div className="mt-auto pt-4">
+                      <div className="mt-auto pt-3 sm:pt-4">
                         <DownloadAndPrintButtons
                           href={`/view/${r.id}/pdf`}
                           publicationId={r.id}
@@ -1416,6 +1140,69 @@ function Index() {
         </section>
         )}
 
+        {loaderData.featuredAudioBook && (
+          <FeaturedAudioBookCard book={loaderData.featuredAudioBook} />
+        )}
+        {!isFallback && tableThought && (
+          <section
+            aria-labelledby="table-thought-heading"
+            className="mx-auto w-full max-w-3xl rounded-2xl border border-accent/50 bg-card/70 px-5 py-5 text-center shadow-sm sm:px-8 sm:py-6"
+          >
+            <h2
+              id="table-thought-heading"
+              className="font-sans text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-xs"
+            >
+              TABLE TALK
+            </h2>
+            <p className="mt-1 font-sans text-[11px] uppercase tracking-[0.1em] text-muted-foreground sm:text-[11px]">
+              A THOUGHT FOR YOUR SHABBOS TABLE
+            </p>
+            <blockquote className="mx-auto mt-3 max-w-2xl font-serif text-lg leading-relaxed text-primary sm:text-2xl sm:leading-relaxed">
+              “{tableThought.quote}”
+            </blockquote>
+            <p lang="he" dir="rtl" className="mt-3 font-serif text-sm text-muted-foreground">
+              {tableThought.sourceHebrew}
+            </p>
+          </section>
+        )}
+        <ThursdayProgressMeter
+          readingDate={readingDate}
+          isFallback={isFallback}
+          currentPublishedCount={currentPublishedCount}
+          progressFillStep={progressFillStep}
+          progressEta={progressEta}
+          isYomTov={isYomTovCollection}
+          initialNow={loaderData.renderedAt}
+        />
+
+        {!isCurrentYomKippur && (
+          <section ref={originalsRef} id="our-originals" tabIndex={-1} aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border border-accent/50 bg-card/50 px-4 py-4 text-center sm:px-6 sm:py-5">
+            <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-xs">
+              Home of the original Torah For The Table series
+            </p>
+            <h2 id="starter-selections-heading" className="mt-1 font-serif text-xl font-bold text-primary sm:text-2xl">
+              Our Four Original Weekly Series
+            </h2>
+            <p className="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              Created by Torah For The Table with new editions each week:{" "}
+              {TFTT_ORIGINAL_EDITION_SERIES.map((series, index) => (
+                <span key={series.id}>
+                  {index > 0 && (index === TFTT_ORIGINAL_EDITION_SERIES.length - 1 ? ", and " : ", ")}
+                  <span className="font-semibold text-primary">{series.title}</span>
+                  {index === TFTT_ORIGINAL_EDITION_SERIES.length - 1 && <>{" "}<NewSeriesBadge /></>}
+                </span>
+              ))}
+              . Divrei Torah from respected outside publishers join them throughout the week, all in the collection above.
+            </p>
+            <Link
+              to="/originals"
+              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full border border-accent/50 bg-background px-5 py-2.5 font-serif text-sm font-semibold text-primary transition-colors hover:border-accent hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Explore Our Original Series
+            </Link>
+          </section>
+        )}
+
         <HomepageShare onWhatsApp={() => {
           trackEvent("share_whatsapp", { parsha: displayedParshaKey ?? displayedLabel, count: resources.length });
           trackFp("share_click", { metadata: { placement: "homepage_veahavta", share_method: "whatsapp" } });
@@ -1448,7 +1235,7 @@ function Index() {
             <div className="mt-6 border-t border-accent/25 pt-5">
               <h2 className="font-serif text-xl font-bold text-primary">Browse Earlier Editions</h2>
               <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                The archive of past weeks' Divrei Torah, from every available year, is open anytime. Thursday at 8:00 PM ET is only the update deadline for this week's new selections.
+                The archive of past weeks' Divrei Torah, from every available year, is open anytime.
               </p>
               <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
                 <Link
