@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { isPostShabbosWindow } from "@/lib/post-shabbos";
+import { weeklyReleaseAt } from "@/lib/weekly-release";
 import { FileText } from "lucide-react";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
@@ -693,6 +694,13 @@ function Index() {
     if (collectionScrollRequest > 0 && showCompleteCollection) scrollToWeeklyCollection();
   }, [collectionScrollRequest, showCompleteCollection]);
 
+  const showMoreComingNotice =
+    !isFallback &&
+    !postShabbos &&
+    !isYomTovCollection &&
+    !collectionComplete &&
+    (weeklyReleaseAt(readingDate)?.getTime() ?? 0) > (loaderData.renderedAt ?? Date.now());
+
   return (
     <div className="min-h-screen bg-background">
       <AnnouncementBanner initialBanner={Route.useLoaderData().announcement} />
@@ -717,11 +725,25 @@ function Index() {
                 : postShabbos
                   ? "These Torah sheets remain available to read or print."
                   : resources.length > 0
-                    ? `${resources.length} selections available now. More Divrei Torah are added throughout the week, with updates through Thursday at 8:00 PM ET.`
-                    : "New Divrei Torah are added throughout the week, with updates through Thursday at 8:00 PM ET."}
+                    ? `${resources.length} selections available now.`
+                    : "New Divrei Torah will appear here as soon as they are published."}
             </p>
             {heroDateLine && (
               <p className="mt-1 text-xs text-muted-foreground">{heroDateLine}</p>
+            )}
+            {showMoreComingNotice && (
+              <aside aria-label="Upcoming Divrei Torah" className="mx-auto mt-4 max-w-xl rounded-xl border border-accent/50 bg-background/80 px-4 py-3 text-center shadow-sm sm:px-5">
+                <h2 className="font-serif text-base font-bold text-primary sm:text-lg">
+                  More Divrei Torah Coming This Week!
+                </h2>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                  Additional Divrei Torah will be uploaded throughout the week, with new selections added through{" "}
+                  <strong className="font-semibold text-primary">Thursday at 8:00 PM ET</strong>.
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  Please check back for updates. Thank you for visiting Torah For The Table!
+                </p>
+              </aside>
             )}
             {resources.length > 0 && (
               <Button onClick={browseAllSelections} className="mt-4 h-auto min-h-11 max-w-full whitespace-normal rounded-full px-6 py-3 font-serif text-base font-semibold">
