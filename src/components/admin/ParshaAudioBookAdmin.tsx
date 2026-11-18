@@ -10,7 +10,7 @@ export function ParshaAudioBookAdmin({accessToken}:{accessToken:string}) {
  const [file,setFile]=useState<File|null>(null),[path,setPath]=useState<string|null>(null);
  const [coverFile,setCoverFile]=useState<File|null>(null),[coverPath,setCoverPath]=useState<string|null>(null);
  const [books,setBooks]=useState<AudioBook[]>([]);
- const [counts,setCounts]=useState<Record<string,{plays:number;downloads:number}>>({});
+ const [counts,setCounts]=useState<Record<string,{plays:number;downloads:number;unique_downloaders:number;unique_listeners:number;engaged_listeners:number;completed_listens:number;listened_seconds:number}>>({});
  const [busy,setBusy]=useState(false),[notice,setNotice]=useState(""),[error,setError]=useState("");
  const [published,setPublished]=useState(false);
  async function refresh() {
@@ -128,7 +128,20 @@ export function ParshaAudioBookAdmin({accessToken}:{accessToken:string}) {
      {coverPath&&<span className="block text-muted-foreground">Cover uploaded. Select a different image only to replace it.</span>}
    </label>
    <p className="text-xs text-muted-foreground">The cover upload displays the picture on the website. For offline artwork, upload an MP3 that already contains the cover in its ID3 tags.</p>
-   {existing&&<p className="text-sm">Current recording: {existing.published?"Published":"Draft"} · Plays requested: {counts[existing.id]?.plays||0} · Downloads requested: {counts[existing.id]?.downloads||0}</p>}
+   {existing && <div className="rounded-lg border border-border p-3 text-sm space-y-2">
+     <p className="font-semibold">Audiobook engagement — {existing.published ? "Published" : "Draft"}</p>
+     <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+       <div><span className="text-muted-foreground">Play requests</span><strong className="block text-lg">{counts[existing.id]?.plays ?? 0}</strong></div>
+       <div><span className="text-muted-foreground">Download requests</span><strong className="block text-lg">{counts[existing.id]?.downloads ?? 0}</strong></div>
+       <div><span className="text-muted-foreground">Unique download browsers</span><strong className="block text-lg">{counts[existing.id]?.unique_downloaders ?? 0}</strong></div>
+       <div><span className="text-muted-foreground">Unique listening browsers</span><strong className="block text-lg">{counts[existing.id]?.unique_listeners ?? 0}</strong></div>
+       <div><span className="text-muted-foreground">Listened 30+ seconds</span><strong className="block text-lg">{counts[existing.id]?.engaged_listeners ?? 0}</strong></div>
+       <div><span className="text-muted-foreground">Completed listening sessions</span><strong className="block text-lg">{counts[existing.id]?.completed_listens ?? 0}</strong></div>
+       <div><span className="text-muted-foreground">Listening time</span><strong className="block text-lg">{Math.round((counts[existing.id]?.listened_seconds ?? 0) / 60)} min</strong></div>
+     </div>
+     <p className="text-xs text-muted-foreground">Unique counts use anonymous browser identifiers, not verified people. Listening duration is measured while audio plays; completion requires at least 90% of the recording played. Earlier request records cannot be uniquely attributed retroactively. Internal-marked browsers and bots are excluded.</p>
+     <button type="button" className="text-primary underline" onClick={() => void refresh().catch(e => setError(e instanceof Error ? e.message : "Could not refresh counts"))}>Refresh engagement counts</button>
+   </div>}
    {published&&<p className="text-sm">Published. Save as Draft to hide it from visitors.</p>}
    {notice&&<p role="status" className="text-sm text-primary">{notice}</p>}
    {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
