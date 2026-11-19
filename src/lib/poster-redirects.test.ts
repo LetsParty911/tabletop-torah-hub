@@ -93,5 +93,11 @@ describe("/k OurKehilla short link", () => {
     expect(url.pathname).toBe("/");
     expect(url.searchParams.get("utm_source")).toBe("ourkehilla");
   });
+
+  it("is a permanent OurKehilla referral, not tied to any parsha or campaign", () => {
+    expect(K_REDIRECT_TARGET).toBe(
+      "https://torahforthetable.com/?utm_source=ourkehilla&utm_medium=referral&utm_campaign=ourkehilla",
+    );
+  });
 });
 

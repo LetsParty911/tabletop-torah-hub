@@ -5,4 +5,4 @@
  * Inbound query strings on /k are intentionally ignored.
  */
 export const K_REDIRECT_TARGET =
-  "https://torahforthetable.com/?utm_source=ourkehilla&utm_medium=email&utm_campaign=chayei_sarah_5787&utm_content=announcement";
+  "https://torahforthetable.com/?utm_source=ourkehilla&utm_medium=referral&utm_campaign=ourkehilla";
