@@ -22,3 +22,4 @@
 - The homepage weekly publication list (#this-weeks-collection) is the only place current PDFs render; originals get a compact text intro linking /originals, with no preview, featured or starter PDF cards. Why: the same PDFs must never repeat on the homepage.
 - Parsha year pages live in `parsha.$slug_.$year.tsx` (not nested under the all-years parsha page, which has no Outlet); the reader page's back link comes from the pure reader-back-link helper. Why: year URLs must render their own collection and one canonical, and older PDFs must return to their real collection.
 - A 100% Thursday-progress save binds its ETA to the save week (bindCompletedProgressEta) when the optional ETA is empty or older. Why: the global progress row is only week-scoped by its ETA.
+- /k keeps its target in src/lib/k-redirect.ts, shared by the request middleware, server route and a client beforeLoad redirect. Why: direct, refreshed and in-app visits must attribute identically.

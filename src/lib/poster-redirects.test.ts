@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { R_REDIRECT_TARGET } from "./r-redirect";
 import { S_REDIRECT_TARGET } from "./s-redirect";
 import { J_REDIRECT_TARGET } from "./j-redirect";
+import { K_REDIRECT_TARGET } from "./k-redirect";
 
 /**
  * Poster short links: /r (OurKehilla), /s (shul), /j (workplace).
@@ -84,3 +85,13 @@ describe("poster short-link targets", () => {
     }
   });
 });
+
+describe("/k OurKehilla short link", () => {
+  it("lands on the torahforthetable.com homepage attributed to source ourkehilla", () => {
+    const url = new URL(K_REDIRECT_TARGET);
+    expect(url.origin).toBe("https://torahforthetable.com");
+    expect(url.pathname).toBe("/");
+    expect(url.searchParams.get("utm_source")).toBe("ourkehilla");
+  });
+});
+

@@ -1,4 +1,5 @@
 import { createStart, createMiddleware } from "@tanstack/react-start";
+import { K_REDIRECT_TARGET } from "@/lib/k-redirect";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 // All methods and paths reaching Start, before redirects/auth/security/telemetry.
@@ -141,8 +142,7 @@ const ourKehillaShortLink = createMiddleware().server(async ({ next, request }) 
       response: new Response(null, {
         status: 302,
         headers: {
-          Location:
-            "https://torahforthetable.com/?utm_source=ourkehilla&utm_medium=email&utm_campaign=chayei_sarah_5787&utm_content=announcement",
+          Location: K_REDIRECT_TARGET,
           "Cache-Control": "no-store",
           "X-Robots-Tag": "noindex",
         },
