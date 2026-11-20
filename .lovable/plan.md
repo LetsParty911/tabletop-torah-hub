@@ -10,3 +10,8 @@
 
 ## If approved later (separate request)
 Owner provides public Drive links or a linked Drive connection, plus the four row IDs. Then: download, check, replace each file, regenerate covers, review descriptions, and read everything back from the catalog to confirm. No publishing is needed because the site reads from the catalog.
+
+## Drive check result (2026-11-20, read-only)
+- Workspace has no Google Drive connection, so files shared with thisisyouai@gmail.com cannot be read.
+- Direct download test for all 4 IDs returned a Google sign-in page (HTML), not PDF bytes. Nothing was downloaded or changed.
+- To make it possible: (a) create a Google Drive connection signed in as thisisyouai@gmail.com: https://lovable.dev/connectors/google_drive/connect?workspace=aTRHZjS8mpX9gO3ybIRs or (b) set the 4 files to "Anyone with the link can view". Then I'd download, check the files start with %PDF, and record size and SHA-256 before any replacement.
