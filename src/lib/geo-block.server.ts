@@ -35,7 +35,6 @@ export type BlockedCity = {
 export const BLOCKED_CITIES: BlockedCity[] = [
   { city: "ashburn", regions: ["virginia", "va"], country: "us", label: "Ashburn, VA" },
   { city: "hackensack", regions: ["new jersey", "nj"], country: "us", label: "Hackensack, NJ" },
-  { city: "irvington", regions: ["new jersey", "nj"], country: "us", label: "Irvington, NJ" },
   { city: "cranford", regions: ["new jersey", "nj"], country: "us", label: "Cranford, NJ" },
   { city: "council bluffs", regions: ["iowa", "ia"], country: "us", label: "Council Bluffs, IA" },
   { city: "bayonne", regions: ["new jersey", "nj"], country: "us", label: "Bayonne, NJ" },
