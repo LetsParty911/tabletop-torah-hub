@@ -6,7 +6,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { getPdfById, getParshaOverride } from "@/integrations/supabase/api.functions";
 import { getItemPublicationContext, getOriginalHtmlContent, getRelatedParshaItems } from "@/integrations/supabase/item-page.functions";
 import { resolveHebcalParsha } from "@/lib/hebcal";
@@ -248,6 +248,23 @@ function ViewPdf() {
     .filter(Boolean)
     .join(" · ");
 
+  // Separate conversion event: an article reader deliberately opens the current
+  // weekly collection. This is never counted as a PDF open or download.
+  const trackExploreCollection = () => {
+    trackFp("weekly_collection_cta_click", {
+      publication_id: pdf.id,
+      publication_title: pdf.title,
+      publication_series: publication?.name ?? pdf.publication ?? null,
+      publisher: publication?.publisher ?? pdf.publisher ?? null,
+      parsha: pdf.parsha_key ?? null,
+      jewish_year: pdf.jewish_year ?? null,
+      metadata: {
+        placement: "article_top",
+        destination: "/#this-weeks-collection",
+      },
+    });
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <div className="flex-1 mx-auto w-full max-w-5xl px-4 sm:px-6 py-6 sm:py-10">
@@ -302,6 +319,24 @@ function ViewPdf() {
             )}
           </div>
         </div>
+
+        {/* Visible early on mobile: direct-link readers can discover the whole site. */}
+        <Link
+          to="/"
+          hash="this-weeks-collection"
+          onClick={trackExploreCollection}
+          className="group mt-5 flex min-h-16 w-full items-center justify-between gap-3 rounded-xl border border-accent/70 bg-primary px-4 py-3 text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:px-5"
+        >
+          <span className="flex min-w-0 flex-col gap-1">
+            <span className="text-base font-semibold leading-snug sm:text-lg">
+              Explore All This Week’s Divrei Torah
+            </span>
+            <span className="text-xs leading-snug text-primary-foreground/85 sm:text-sm">
+              Discover more Torah for your Shabbos table
+            </span>
+          </span>
+          <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+        </Link>
 
         {pdf.parsha_key && !isYomTovReading(pdf.parsha_key) && (
           <section className="mt-5 rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
