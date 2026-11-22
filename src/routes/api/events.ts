@@ -27,6 +27,7 @@ const ALLOWED_EVENTS = new Set([
   "section_impression",
   "publication_impression",
   "publication_click",
+  "weekly_collection_cta_click",
   "filter_change",
   "search",
   "pdf_open",
