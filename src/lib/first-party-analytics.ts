@@ -19,6 +19,7 @@ export type FpEventName =
   | "section_impression"
   | "publication_impression"
   | "publication_click"
+  | "weekly_collection_cta_click"
   | "filter_change"
   | "search"
   | "pdf_open"
@@ -508,6 +509,7 @@ const IMMEDIATE: ReadonlySet<string> = new Set<string>([
   "signup",
   "error",
   "publication_click",
+  "weekly_collection_cta_click",
   // Ensure share clicks are recorded even when WhatsApp opens immediately.
   "share_click",
   // Sent right away: the browser is usually about to leave the site.
