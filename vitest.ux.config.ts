@@ -8,6 +8,7 @@ export default defineConfig({
     "src/lib/sitemap-lastmod.test.ts",
     "src/lib/public-label-sizing.test.ts",
     "src/lib/publication-thumbnail-fit.test.ts",
+    "src/lib/site-search-focus.test.ts",
     "src/lib/view-description.test.ts", "src/components/SmallPdfImage.test.tsx",
     "src/lib/table-chooser.starter.test.ts", "src/lib/original-editions.test.ts",
     "src/lib/parsha-detective.test.ts",
