@@ -12,6 +12,7 @@ export default defineConfig({
     "src/lib/table-chooser.starter.test.ts", "src/lib/original-editions.test.ts",
     "src/lib/parsha-detective.test.ts",
     "src/lib/hidden-gems.test.ts", "src/components/HomepageShare.test.tsx",
+    "src/components/BackToTop.test.tsx",
     "src/tests/admin-upload-form.test.tsx",
     "src/lib/verified-thumbnails.test.ts", "src/lib/pdf-display-title.test.ts",
     "src/pwa-register.test.ts", "src/components/PdfCoverThumbnail.test.tsx",
