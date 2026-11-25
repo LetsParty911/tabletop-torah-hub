@@ -11,7 +11,7 @@ import {
   type OriginalEditionCard,
   type OriginalEditionGroup,
 } from "@/lib/original-editions";
-import { ORIGINAL_PROMOTION_SERIES, originalsPromotionDescription, promotionSeriesById, latestPromotionEdition } from "@/lib/originals-promotion";
+import { ORIGINAL_PROMOTION_SERIES, originalsPromotionDescription, promotionSeriesById, latestPromotionEdition, type OriginalPromotionCover } from "@/lib/originals-promotion";
 
 export const Route = createFileRoute("/originals")({
   component: ResourcesPage,
@@ -50,19 +50,20 @@ type SeriesCard = {
   cta: string;
 };
 
-function OriginalSeriesGrid({ groups, activeSeriesIds }: { groups: OriginalEditionGroup[]; activeSeriesIds: readonly string[] }) {
+function OriginalSeriesGrid({ groups, activeSeriesIds, promotionCovers }: { groups: OriginalEditionGroup[]; activeSeriesIds: readonly string[]; promotionCovers: readonly OriginalPromotionCover[] }) {
   return (
     <div className="mx-auto mt-5 flex max-w-6xl flex-wrap justify-center gap-3">
       {ORIGINAL_PROMOTION_SERIES.map((series) => {
         const selected = latestPromotionEdition(series, groups);
         const latest = selected?.edition;
         const latestGroup = selected?.group;
+        const cover = promotionCovers.find((item) => item.seriesId === series.publicationId);
         const hasPublished = series.publicationId !== null && activeSeriesIds.includes(series.publicationId);
         return (
           <article key={series.key} className="flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-accent/40 bg-card shadow-sm sm:w-[calc(50%-0.375rem)] xl:w-[calc(25%-0.5625rem)]">
             <div className="flex flex-1 gap-3 p-3 sm:flex-col sm:gap-2 sm:p-4">
               <div className="w-[27%] max-w-[112px] shrink-0 sm:mx-auto sm:w-[72%] sm:max-w-[148px]">
-                <OriginalSeriesCover series={series} src={latest?.thumbUrl} editionLabel={latestGroup?.label} published={Boolean(latest) || hasPublished} />
+                <OriginalSeriesCover series={series} src={cover?.thumbUrl} smallSrc={cover?.smallThumbUrl} editionLabel={cover?.label} published={Boolean(latest) || hasPublished} />
               </div>
               <div className="flex min-w-0 flex-1 flex-col">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-accent">TFTT Original</span>
@@ -247,7 +248,7 @@ function OriginalEditions({ groups }: { groups: OriginalEditionGroup[] }) {
 }
 
 function ResourcesPage() {
-  const { groups, activeSeriesIds } = Route.useLoaderData();
+  const { groups, activeSeriesIds, promotionCovers } = Route.useLoaderData();
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-8 md:px-8 md:py-14 space-y-6 sm:space-y-8">
@@ -276,7 +277,7 @@ function ResourcesPage() {
 
             <h2 className="mt-10 text-center font-serif text-2xl font-bold text-primary">Our Seven Original Weekly Series</h2>
             <p className="mt-2 text-center text-sm text-muted-foreground">New editions every Thursday. Explore the series, or open a published issue below.</p>
-            <OriginalSeriesGrid groups={groups} activeSeriesIds={activeSeriesIds ?? []} />
+            <OriginalSeriesGrid groups={groups} activeSeriesIds={activeSeriesIds ?? []} promotionCovers={promotionCovers ?? []} />
             <OriginalEditions groups={groups} />
 
             <h2 className="mt-10 text-center font-serif text-2xl font-bold text-primary">Featured Independent Series</h2>
