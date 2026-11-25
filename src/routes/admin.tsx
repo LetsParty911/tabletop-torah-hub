@@ -1,4 +1,5 @@
 import { usesIndividualPdfTitle } from "@/lib/pdf-display-title";
+import { originalPublicationError, requiredOriginalSeries } from "@/lib/original-upload-validation";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import AdminMiniDashboard from "@/components/AdminMiniDashboard";
 import SubscribersManager, { type Subscriber } from "@/components/admin/SubscribersManager";
@@ -727,9 +728,10 @@ function AdminPage() {
 
   const useExpectedTitle = (title: string) => {
     setTitle(title);
-    const match = canonicalPubs.find(
-      (p) => p.name.trim().toLowerCase() === title.trim().toLowerCase(),
-    );
+    const original = requiredOriginalSeries(title);
+    const match = canonicalPubs.find((p) => p.active && (original
+      ? p.id === original.id
+      : p.name.trim().toLowerCase() === title.trim().toLowerCase()));
     if (match) {
       selectPublicationId(match.id);
       setTitleFreeText(false);
@@ -852,6 +854,12 @@ function AdminPage() {
   ) => {
     e?.preventDefault();
     if (!accessToken || !file || busy) return;
+    const associationError = originalPublicationError(title, publicationId);
+    if (associationError) {
+      setMsg({ kind: "error", text: associationError });
+      setUploadResult(null);
+      return;
+    }
     const willPublish = action === "publish";
     const submittedTitle = title;
     const submittedParsha = parshaKey;

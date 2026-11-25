@@ -1,4 +1,5 @@
 import { usesIndividualPdfTitle } from "@/lib/pdf-display-title";
+import { originalPublicationError } from "@/lib/original-upload-validation";
 import { renameLegacySeriesText } from "@/lib/tftt-originals";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { audienceLabel } from "@/lib/audience";
@@ -81,6 +82,7 @@ export default function UploadPdfForm({
 }: UploadPdfFormProps) {
   const busy = busyAction !== null;
   const isIndividualArticle = usesIndividualPdfTitle(publicationId);
+  const associationError = originalPublicationError(title, publicationId);
   return (
     <form onSubmit={onSubmit} className="mt-4 grid gap-4 md:grid-cols-2">
       <label className="block">
@@ -153,6 +155,9 @@ export default function UploadPdfForm({
             </>
           )}
         </label>
+        {associationError && (
+          <p className="mt-2 text-xs font-semibold text-destructive" role="alert">{associationError}</p>
+        )}
         {isIndividualArticle && !titleFreeText && (
           <label className="mt-3 block">
             <span className="text-sm font-medium">This week's article title</span>
