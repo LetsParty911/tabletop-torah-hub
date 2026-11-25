@@ -148,8 +148,9 @@ function trackOpen(
   }, entryPoint);
 }
 
-function EditionCover({ edition, group }: { edition: OriginalEditionCard; group: OriginalEditionGroup }) {
+function EditionCover({ edition, group, historical = false }: { edition: OriginalEditionCard; group: OriginalEditionGroup; historical?: boolean }) {
   const seriesTitle = promotionSeriesById(edition.seriesId)?.title ?? edition.seriesTitle;
+  const seriesCover = historical ? undefined : promotionSeriesById(edition.seriesId);
   const [failed, setFailed] = useState(false);
   const showImage = !!edition.thumbUrl && !failed;
   return (
@@ -161,7 +162,7 @@ function EditionCover({ edition, group }: { edition: OriginalEditionCard; group:
       aria-label={`Open PDF in a new tab: ${seriesTitle}, ${group.label}`}
       className="group block rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
-      <div className="aspect-[17/22] w-full overflow-hidden rounded-md border border-accent/40 bg-card shadow-sm transition-colors group-hover:border-accent">
+      {seriesCover ? <OriginalSeriesCover series={seriesCover} /> : <div className="aspect-[17/22] w-full overflow-hidden rounded-md border border-accent/40 bg-card shadow-sm transition-colors group-hover:border-accent">
         {showImage ? (
           <img
             src={edition.thumbUrl ?? undefined}
@@ -180,12 +181,12 @@ function EditionCover({ edition, group }: { edition: OriginalEditionCard; group:
             <span className="text-[11px] text-muted-foreground">{group.label}</span>
           </div>
         )}
-      </div>
+      </div>}
     </a>
   );
 }
 
-function EditionGroup({ group }: { group: OriginalEditionGroup }) {
+function EditionGroup({ group, historical = false }: { group: OriginalEditionGroup; historical?: boolean }) {
   const headingId = `editions-${group.key.replace(/[^a-z0-9]+/gi, "-")}`;
   return (
     <section aria-labelledby={headingId} className="mt-6">
@@ -195,7 +196,7 @@ function EditionGroup({ group }: { group: OriginalEditionGroup }) {
       <ul className={`mt-4 grid grid-cols-2 gap-4 ${group.editions.length >= 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
         {group.editions.map((edition) => (
           <li key={edition.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background/60 p-3">
-            <EditionCover edition={edition} group={group} />
+            <EditionCover edition={edition} group={group} historical={historical} />
             <p className="mt-3 font-serif text-sm sm:text-base font-bold leading-snug text-primary">{promotionSeriesById(edition.seriesId)?.title ?? edition.seriesTitle}</p>
             <p className="mt-0.5 flex-1 text-xs text-muted-foreground">{group.label}</p>
             <a
@@ -231,7 +232,7 @@ function OriginalEditions({ groups }: { groups: OriginalEditionGroup[] }) {
       {earlier.length > 0 && (
         <div className="mt-6 text-center">
           <h2 className="font-serif text-xl font-bold text-primary">Browse earlier editions</h2>
-          {showEarlier && earlier.map((group) => <EditionGroup key={group.key} group={group} />)}
+          {showEarlier && earlier.map((group) => <EditionGroup key={group.key} group={group} historical />)}
           <button
             type="button"
             onClick={() => setShowEarlier((v) => !v)}
