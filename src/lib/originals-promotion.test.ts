@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { ORIGINAL_PROMOTION_SERIES, NEW_ORIGINAL_SERIES, canShowOriginalsLaunch, promotionSeriesById, originalsPromotionDescription, latestPromotionEdition } from "./originals-promotion";
+import { ORIGINAL_PROMOTION_SERIES, NEW_ORIGINAL_SERIES, canShowOriginalsLaunch, promotionSeriesById, originalsPromotionDescription, latestPromotionEdition, resolveListingCover } from "./originals-promotion";
 import { TFTT_ORIGINAL_SERIES, PARSHA_DETECTIVE_PUBLICATION_ID } from "./tftt-originals";
 
 describe("Originals promotional catalog", () => {
@@ -62,4 +62,41 @@ it("has a distinct, valid permanent 4:5 WebP asset for every original", () => {
     expect(bytes.readUInt16LE(28) & 0x3fff).toBe(400);
     expect(bytes.length).toBeLessThan(40000);
   }
+});
+
+describe("permanent public listing artwork policy", () => {
+  it("always resolves all seven covers by canonical series ID, regardless of weekly previews", () => {
+    for (const series of ORIGINAL_PROMOTION_SERIES) {
+      expect(series.publicationId).toBeTruthy();
+      for (const preview of [null, "/first-week.png", "/new-week.png"]) {
+        expect(resolveListingCover(series.publicationId, preview, "/weekly.small.webp")).toEqual({
+          series, src: series.coverSrc, smallSrc: null,
+        });
+      }
+    }
+  });
+  it("keeps actual issue previews in the historical archive and preserves independent publishers", () => {
+    for (const series of ORIGINAL_PROMOTION_SERIES) {
+      expect(resolveListingCover(series.publicationId, "/issue.png", "/issue.small.webp", "archive")).toEqual({
+        series: undefined, src: "/issue.png", smallSrc: "/issue.small.webp",
+      });
+    }
+    for (const id of [null, "unrelated-id", "Parsha Questions & Answers", PARSHA_DETECTIVE_PUBLICATION_ID]) {
+      expect(resolveListingCover(id, "/other.png", "/other.small.webp")).toEqual({
+        series: undefined, src: "/other.png", smallSrc: "/other.small.webp",
+      });
+    }
+    expect(resolveListingCover(null, null)).toEqual({ series: undefined, src: null, smallSrc: null });
+  });
+  it("keeps the listing policy wired to all current discovery surfaces and explicit archive exceptions", () => {
+    const source = (path: string) => readFileSync(path, "utf8");
+    expect(source("src/routes/index.tsx")).toContain("resolveListingCover(r.publication_id, r.thumb_url, r.small_thumb_url)");
+    expect(source("src/routes/index.tsx")).toContain("originalCover(r, true) ??");
+    expect(source("src/routes/publications.tsx")).toContain("resolveListingCover(publication.id, publication.thumb_url)");
+    expect(source("src/components/PdfCoverThumbnail.tsx")).toContain("resolveListingCover(seriesPublicationId, thumbnailUrl, smallThumbnailUrl, coverContext)");
+    expect(source("src/components/ReadingCollectionView.tsx")).toContain("seriesPublicationId={resource.publication_id}");
+    expect(source("src/routes/publication.$slug.tsx")).toContain('coverContext={prominent ? "listing" : "archive"}');
+    expect(source("src/routes/originals.tsx")).toContain('historical ? "archive" : "listing"');
+    expect(source("src/routes/archive.tsx")).toContain('coverContext="archive"');
+  });
 });
