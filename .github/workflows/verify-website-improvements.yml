@@ -30,6 +30,8 @@ on:
       - "src/lib/originals-promotion*.ts"
       - "src/lib/tftt-originals.ts"
       - "src/components/OriginalSeriesCover*.tsx"
+      - "src/components/PdfCoverThumbnail*.tsx"
+      - "src/components/ReadingCollectionView.tsx"
       - "public/original-series-covers/**"
       - "src/components/admin/OriginalCoverManager*.tsx"
       - "src/lib/pdf-thumb.ts"
@@ -87,6 +89,6 @@ jobs:
       - name: Run isolated homepage interaction smoke tests
         run: bunx vitest run --config vitest.signup.config.ts src/tests/homepage.smoke.test.tsx
       - name: Verify Originals catalog and real publication ownership
-        run: bunx vitest run --config vitest.ux.config.ts src/lib/originals-promotion.test.ts src/lib/original-editions.test.ts src/lib/parsha-detective.test.ts src/lib/weekly-card-badges.test.ts src/lib/verified-thumbnails.server.test.ts src/components/admin/OriginalCoverManager.test.tsx
+        run: bunx vitest run --config vitest.ux.config.ts src/lib/originals-promotion.test.ts src/lib/original-editions.test.ts src/lib/parsha-detective.test.ts src/lib/weekly-card-badges.test.ts src/lib/verified-thumbnails.server.test.ts src/components/admin/OriginalCoverManager.test.tsx src/components/PdfCoverThumbnail.test.tsx
       - name: Build application
         run: bun run build
