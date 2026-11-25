@@ -2,7 +2,7 @@ import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/reac
 import { Fragment, useEffect, useState } from "react";
 import { isPostShabbosWindow } from "@/lib/post-shabbos";
 import { weeklyReleaseAt } from "@/lib/weekly-release";
-import { BookOpen, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { BookOpen, FileText, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
@@ -796,38 +796,48 @@ function Index() {
                 </div>
 
                 <div id="filters" aria-label="Weekly collection filters" className="mt-3 scroll-mt-24 rounded-lg border border-accent/35 bg-card/60 px-2 py-2 sm:mt-4 sm:rounded-xl sm:px-4 sm:py-3">
-                  <div className="flex flex-wrap items-center gap-1.5 sm:hidden" role="group" aria-label="Quick filters">
-                    {(["All", "Children", "Families", "Adults"] as const).filter((audience) => audience === "All" || sortedResources.some((r) => matchesAudience(r, audience))).map((audience) => {
-                      const active = audience === "All" ? activeFilterCount === 0 : audienceFilter === audience;
+                  <div className="space-y-1.5 sm:hidden" role="group" aria-label="Quick filters">
+                    {([["All", "Children", "Families"], ["Adults", "Brief Insights"]] as const).map((row, rowIndex) => {
+                      const available = row.filter((choice) => choice === "All" || (choice === "Brief Insights"
+                        ? contentTypeOptions.includes("Brief Insights")
+                        : sortedResources.some((r) => matchesAudience(r, choice))));
+                      if (available.length === 0) return null;
                       return (
-                        <button key={audience} type="button" aria-pressed={active} onClick={() => {
-                          clearFilters();
-                          const next = active ? "All" : audience;
-                          setAudienceFilter(next);
-                          trackFp("filter_change", { metadata: { filter: "audience", value: next } });
-                        }} className={`min-h-11 rounded-full border px-3 py-1 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${active ? "border-primary bg-primary text-primary-foreground" : "border-accent/45 bg-background text-primary hover:bg-accent/10"}`}>{audienceLabel(audience)}</button>
+                        <div key={rowIndex} className={`grid gap-1.5 ${available.length === 3 ? "grid-cols-3" : available.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
+                          {available.map((choice) => {
+                            const isBrief = choice === "Brief Insights";
+                            const active = choice === "All" ? activeFilterCount === 0 : isBrief ? contentTypeFilter === "Brief Insights" : audienceFilter === choice;
+                            return (
+                              <button key={choice} type="button" aria-pressed={active} onClick={() => {
+                                clearFilters();
+                                if (isBrief) {
+                                  const next = active ? "All" : "Brief Insights";
+                                  setContentTypeFilter(next);
+                                  trackFp("filter_change", { metadata: { filter: "content_type", value: next } });
+                                } else {
+                                  const next = active ? "All" : choice;
+                                  setAudienceFilter(next);
+                                  trackFp("filter_change", { metadata: { filter: "audience", value: next } });
+                                }
+                              }} className={`min-h-11 min-w-0 rounded-full border px-2 py-1.5 text-center text-xs font-semibold leading-tight focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${active ? "border-primary bg-primary text-primary-foreground" : "border-accent/45 bg-background text-primary hover:bg-accent/10"}`}>{isBrief ? "Brief Insights" : audienceLabel(choice)}</button>
+                            );
+                          })}
+                        </div>
                       );
                     })}
-                    {contentTypeOptions.includes("Brief Insights") && (
-                      <button type="button" aria-pressed={contentTypeFilter === "Brief Insights"} onClick={() => {
-                        const next = contentTypeFilter === "Brief Insights" ? "All" : "Brief Insights";
-                        clearFilters();
-                        setContentTypeFilter(next);
-                        trackFp("filter_change", { metadata: { filter: "content_type", value: next } });
-                      }} className={`min-h-11 rounded-full border px-3 py-1 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${contentTypeFilter === "Brief Insights" ? "border-primary bg-primary text-primary-foreground" : "border-accent/45 bg-background text-primary hover:bg-accent/10"}`}>Brief Insights</button>
-                    )}
                   </div>
-                  <div className="mt-1 flex items-center justify-between gap-2 sm:hidden">
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-accent/25 pt-1 sm:hidden">
                     <button
                       type="button"
                       aria-expanded={filtersOpen}
                       aria-controls="weekly-filter-options"
                       onClick={() => setFiltersOpen((open) => !open)}
-                      className="min-h-11 rounded-full border border-accent/45 bg-background px-3 py-1.5 text-left text-xs font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                      className="inline-flex min-h-11 items-center gap-1.5 rounded-md px-1 py-1 text-left text-xs font-semibold text-primary hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                     >
+                      <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
                       {filtersOpen ? "Fewer filters" : "More filters"}{activeFilterCount > 0 ? ` · ${activeFilterCount} active` : ""}
                     </button>
-                    <span role="status" className="text-xs text-muted-foreground">{`${filteredResources.length} ${filteredResources.length === 1 ? "selection" : "selections"}`}</span>
+                    <span role="status" className="ml-auto text-right text-xs text-muted-foreground">{`${filteredResources.length} ${filteredResources.length === 1 ? "selection" : "selections"}`}</span>
                     {activeFilterCount > 0 && (
                       <button
                         type="button"
