@@ -145,7 +145,7 @@ export function WeeklyEmailSignup({
                 {consentInput}
                 <span>
                   I agree to receive emails from Torah For The Table. You can unsubscribe at any
-                  time.
+                  time.{" "}<a href="/privacy" className="font-medium text-primary underline underline-offset-2">Privacy policy</a>.
                 </span>
               </label>
             </form>
@@ -210,7 +210,7 @@ export function WeeklyEmailSignup({
                 {consentInput}
                 <span>
                   I agree to receive emails from Torah For The Table. You can unsubscribe at any
-                  time.
+                  time.{" "}<a href="/privacy" className="font-medium text-primary underline underline-offset-2">Privacy policy</a>.
                 </span>
               </label>
               <Button type="submit" disabled={submitting} className="h-auto min-h-11 rounded-full bg-primary px-6 py-2.5 font-serif font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-60 disabled:cursor-not-allowed">
