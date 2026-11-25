@@ -64,6 +64,7 @@ import { Route as ManageTableTokenRouteImport } from './routes/manage-table.$tok
 import { Route as OgImageDotpngRouteImport } from './routes/og.image[.]png'
 import { Route as ParshaSlugRouteImport } from './routes/parsha.$slug'
 import { Route as PublicationSlugRouteImport } from './routes/publication.$slug'
+import { Route as ParshaIndexRouteImport } from './routes/parsha.index'
 import { Route as UnsubscribeIndexRouteImport } from './routes/unsubscribe.index'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as ViewIdRouteImport } from './routes/view.$id'
@@ -352,6 +353,11 @@ const PublicationSlugRoute = PublicationSlugRouteImport.update({
   path: '/publication/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ParshaIndexRoute = ParshaIndexRouteImport.update({
+  id: '/parsha/',
+  path: '/parsha/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UnsubscribeIndexRoute = UnsubscribeIndexRouteImport.update({
   id: '/unsubscribe/',
   path: '/unsubscribe/',
@@ -461,6 +467,7 @@ export interface FileRoutesByFullPath {
   '/publication/$slug': typeof PublicationSlugRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
+  '/parsha/': typeof ParshaIndexRoute
   '/unsubscribe/': typeof UnsubscribeIndexRoute
   '/api/parsha-audio-book/$id': typeof ApiParshaAudioBookIdRoute
   '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
@@ -528,6 +535,7 @@ export interface FileRoutesByTo {
   '/publication/$slug': typeof PublicationSlugRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
+  '/parsha': typeof ParshaIndexRoute
   '/unsubscribe': typeof UnsubscribeIndexRoute
   '/api/parsha-audio-book/$id': typeof ApiParshaAudioBookIdRoute
   '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
@@ -596,6 +604,7 @@ export interface FileRoutesById {
   '/publication/$slug': typeof PublicationSlugRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/view/$id': typeof ViewIdRouteWithChildren
+  '/parsha/': typeof ParshaIndexRoute
   '/unsubscribe/': typeof UnsubscribeIndexRoute
   '/api/parsha-audio-book/$id': typeof ApiParshaAudioBookIdRoute
   '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
@@ -665,6 +674,7 @@ export interface FileRouteTypes {
     | '/publication/$slug'
     | '/unsubscribe/$token'
     | '/view/$id'
+    | '/parsha/'
     | '/unsubscribe/'
     | '/api/parsha-audio-book/$id'
     | '/api/unsubscribe/$token'
@@ -732,6 +742,7 @@ export interface FileRouteTypes {
     | '/publication/$slug'
     | '/unsubscribe/$token'
     | '/view/$id'
+    | '/parsha'
     | '/unsubscribe'
     | '/api/parsha-audio-book/$id'
     | '/api/unsubscribe/$token'
@@ -799,6 +810,7 @@ export interface FileRouteTypes {
     | '/publication/$slug'
     | '/unsubscribe/$token'
     | '/view/$id'
+    | '/parsha/'
     | '/unsubscribe/'
     | '/api/parsha-audio-book/$id'
     | '/api/unsubscribe/$token'
@@ -867,6 +879,7 @@ export interface RootRouteChildren {
   PublicationSlugRoute: typeof PublicationSlugRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   ViewIdRoute: typeof ViewIdRouteWithChildren
+  ParshaIndexRoute: typeof ParshaIndexRoute
   UnsubscribeIndexRoute: typeof UnsubscribeIndexRoute
   ApiParshaAudioBookIdRoute: typeof ApiParshaAudioBookIdRoute
   ApiUnsubscribeTokenRoute: typeof ApiUnsubscribeTokenRoute
@@ -1262,6 +1275,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicationSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/parsha/': {
+      id: '/parsha/'
+      path: '/parsha'
+      fullPath: '/parsha/'
+      preLoaderRoute: typeof ParshaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/unsubscribe/': {
       id: '/unsubscribe/'
       path: '/unsubscribe'
@@ -1406,6 +1426,7 @@ const rootRouteChildren: RootRouteChildren = {
   PublicationSlugRoute: PublicationSlugRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   ViewIdRoute: ViewIdRouteWithChildren,
+  ParshaIndexRoute: ParshaIndexRoute,
   UnsubscribeIndexRoute: UnsubscribeIndexRoute,
   ApiParshaAudioBookIdRoute: ApiParshaAudioBookIdRoute,
   ApiUnsubscribeTokenRoute: ApiUnsubscribeTokenRoute,
