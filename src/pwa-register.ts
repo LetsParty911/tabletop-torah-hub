@@ -2,21 +2,12 @@
 // Never registers in dev, iframe previews, Lovable preview hosts, or admin pages.
 // Supports a kill switch via ?sw=off which unregisters existing workers and clears app-owned caches.
 
-declare const __BUILD_ID__: string;
+import { BUILD_ID, isPreviewHost } from "@/lib/site-freshness";
 
 const SW_URL = "/sw.js";
 // Cache-busting build id: changing the script URL forces the browser to fetch
 // and install the new worker, and the worker derives its cache names from it.
-const BUILD_ID = typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev";
 const SW_REGISTER_URL = `${SW_URL}?v=${encodeURIComponent(BUILD_ID)}`;
-
-function isPreviewHost(host: string): boolean {
-  if (host.startsWith("id-preview--") || host.startsWith("preview--")) return true;
-  if (host === "lovableproject.com" || host.endsWith(".lovableproject.com")) return true;
-  if (host === "lovableproject-dev.com" || host.endsWith(".lovableproject-dev.com")) return true;
-  if (host === "beta.lovable.dev" || host.endsWith(".beta.lovable.dev")) return true;
-  return false;
-}
 
 async function unregisterMatching() {
   if (!("serviceWorker" in navigator)) return;
@@ -70,16 +61,7 @@ export function registerPwa() {
     return;
   }
 
-  // Only a *replacement* of an existing controller means a new build took
-  // over; the first-ever install claiming the page must not reload it.
-  const hadController = Boolean(navigator.serviceWorker.controller);
-  let reloading = false;
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (!hadController || reloading) return;
-    reloading = true;
-    window.location.reload();
-  });
-
+  // The safe release checker owns reloads; a worker takeover must never interrupt a PDF or admin form.
   const performRegistration = () => {
     navigator.serviceWorker
       .register(SW_REGISTER_URL, { scope: "/", updateViaCache: "none" })

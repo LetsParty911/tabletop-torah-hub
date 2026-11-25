@@ -15,7 +15,7 @@ export default defineConfig({
     "src/tests/admin-upload-form.test.tsx", "src/components/admin/OriginalCoverManager.test.tsx",
     "src/lib/verified-thumbnails.server.test.ts",
     "src/lib/verified-thumbnails.test.ts", "src/lib/pdf-display-title.test.ts",
-    "src/pwa-register.test.ts", "src/components/PdfCoverThumbnail.test.tsx",
+    "src/pwa-register.test.ts", "src/lib/site-freshness.test.ts", "src/components/PdfCoverThumbnail.test.tsx",
     "src/lib/open-pdf-clicks.test.ts", "src/lib/pdf-route-diagnostics.test.ts",
     "src/lib/archive-search.test.ts", "src/lib/navigation-recovery.test.ts",
     "src/lib/public-spelling.test.ts", "src/lib/reader-back-link.test.ts",

@@ -35,7 +35,7 @@ export function PdfCoverThumbnail({
   parsha?: string | null;
   jewishYear?: number | null;
 }) {
-  const [failed, setFailed] = useState(false);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const [permanentFailed, setPermanentFailed] = useState(false);
 
   // Preserve the same timeless cover throughout these two weekly series.
@@ -52,7 +52,7 @@ export function PdfCoverThumbnail({
   const imageUrl = usingLegacyPermanent ? permanentCover : cover.src;
   const dimensions = cover.series ? "h-20 w-16" : "h-[83px] w-16";
 
-  if (!imageUrl || failed) {
+  if (!imageUrl || failedUrl === imageUrl) {
     return (
       <div
         role="img"
@@ -102,7 +102,7 @@ export function PdfCoverThumbnail({
         decoding="async"
         onUnavailable={() => {
           if (usingLegacyPermanent) setPermanentFailed(true);
-          else setFailed(true);
+          else setFailedUrl(imageUrl);
         }}
         className={`${dimensions} rounded-sm border border-accent/40 bg-card object-contain shadow-sm hover:border-accent`}
       />

@@ -1,0 +1,9 @@
+# Permanent site freshness policy
+
+- HTML and live server functions must never be served from browser or shared HTTP cache. The service worker fetches documents with no-store and only displays the offline notice when the network fails.
+- Only fingerprinted Vite code/fonts and content-hashed series artwork are immutable. Mutable same-origin assets revalidate. Storage thumbnails use their verified original ETag as a URL version; the confirmed small derivative is immutable and must match the original. Future overwritten PNGs request zero browser max-age.
+- PDFs already use unique object paths on replacement; reader/download redirects resolve the current published file and are never cached by the service worker.
+- The release endpoint returns the Vite build ID without querying a database. Visible, idle catalogue tabs check at load, when resumed, and every minute. At most one full reload per target build per tab. On return, refresh catalogue route data without a new browser navigation. Do not poll the entire database every minute or refresh readers, admin forms, active controls, print flows, dialogs or background tabs.
+- Published row metadata coalesces simultaneous reads but does not retain successful responses across requests. Failure backoff remains. Thumbnail inventory remains a batched per-isolate cache (up to two minutes) to avoid excess storage requests; changes may take that long to appear in other isolates. Retain verified ETag matching. 
+- Hosting may serve static resources before Start middleware. After deployment verify actual production headers, /api/site-version build_id, a warm repeat visit, a returning tab, and changed thumbnails/PDFs. CDN configuration/purges are independent and must not be assumed from repository changes.
+- Run the freshness workflow and existing reader-discovery workflow before merge. Never loosen maintenance, access gates, analytics classification or admin permissions to implement freshness.

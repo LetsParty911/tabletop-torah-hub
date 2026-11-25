@@ -9,6 +9,7 @@ export function smallThumbnailUrl(source: string | null | undefined, verified?: 
       const small = new URL(verified);
       const match = /\/storage\/v1\/object\/public\/pdf-thumbs\/([a-f0-9-]{36})\.png$/.exec(original.pathname);
       if (match && original.protocol === "https:" && small.origin === original.origin &&
+          (!original.search || (/^\?v=[a-f0-9]{32}$/.test(original.search) && small.pathname.includes(`.${original.searchParams.get("v")}.small.webp`))) &&
           new RegExp(`^/storage/v1/object/public/pdf-thumbs/${match[1]}\\.[a-f0-9]{32}\\.small\\.webp$`).test(small.pathname) && !small.search && !small.hash) return verified;
     } catch { /* Original-only on malformed or mismatched input. */ }
   }

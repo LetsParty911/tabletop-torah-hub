@@ -1,4 +1,4 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouterState } from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Menu, Search, X } from "lucide-react";
 import { HeaderSearchToggle } from "@/components/HeaderSearchToggle";
@@ -9,6 +9,7 @@ import { requestWeeklyCollection } from "@/lib/weekly-navigation";
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPwa } from "@/pwa-register";
+import { startSiteFreshness } from "@/lib/site-freshness";
 import { captureAttribution, trackPageView } from "@/lib/site-analytics";
 import {
   startHeartbeat,
@@ -273,9 +274,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function PwaRegistrar() {
+  const router = useRouter();
   useEffect(() => {
     registerPwa();
-  }, []);
+    return startSiteFreshness(() => {
+      if (router.state.status === "idle") return router.invalidate();
+    });
+  }, [router]);
   return null;
 }
 

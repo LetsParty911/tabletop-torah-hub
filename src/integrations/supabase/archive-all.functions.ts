@@ -12,7 +12,7 @@ import { matchesPageLength, type LengthFilter } from "@/lib/length-filter";
 import { pdfThumbUrl } from "@/integrations/supabase/api.functions";
 import { pdfDisplayTitle } from "@/lib/pdf-display-title";
 import { publicationFilterName } from "@/lib/publication-filter";
-import { readVerifiedThumbnails } from "@/lib/verified-thumbnails.server";
+import { readThumbnailInventory } from "@/lib/verified-thumbnails.server";
 import { verifiedSmallThumbnailUrl } from "@/lib/verified-thumbnails";
 
 export type ArchivePdfAll = {
@@ -91,7 +91,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
     // The thumbnail inventory is one shared, briefly cached batch per isolate.
     // Query builders are lazy thenables: Promise.resolve starts the request now.
     const pubsPromise = Promise.resolve(admin.from("publications").select("id, name, publisher, sort_order"));
-    const thumbsPromise = readVerifiedThumbnails(admin).catch(() => new Map<string, string>());
+    const thumbsPromise = readThumbnailInventory(admin);
 
     const { data: rows, error } = await admin
       .from("pdfs")
@@ -238,7 +238,8 @@ export const listArchiveAll = createServerFn({ method: "GET" })
     const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
     // A single batched inventory; only show WebPs confirmed against the current PNG ETag.
     // Missing/unavailable inventory retains the original cover without a speculative 404.
-    const verifiedThumbnails = pageRows.length ? await thumbsPromise : new Map<string, string>();
+    const inventory = pageRows.length ? await thumbsPromise : null;
+    const verifiedThumbnails = inventory?.smallPaths ?? new Map<string, string>();
 
     const yearMap = new Map<number, Map<string, ArchivePdfAll[]>>();
     for (const row of pageRows) {
@@ -256,6 +257,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
       } = row;
       parshaMap.get(row.parshaKey)?.push({
         ...pdf,
+        thumb_url: pdfThumbUrl(row.id, row.publication_id, inventory?.originalVersions.get(row.id)),
         small_thumb_url: verifiedSmallThumbnailUrl(row.thumb_url, row.id, verifiedThumbnails),
       });
     }

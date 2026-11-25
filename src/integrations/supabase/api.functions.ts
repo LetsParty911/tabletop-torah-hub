@@ -284,8 +284,9 @@ async function selectAllPublished(admin: ReturnType<typeof getSupabaseAdmin>, co
   return { data: out, error: null };
 }
 
-// Public published metadata is identical for all readers. Share a short-lived
-// response per Worker isolate without ever caching admin/private queries.
+// Coalesce simultaneous catalogue reads, but do not retain successful rows
+// across requests: the next visitor must see the current published collection.
+// Preserve short failure backoff to avoid hammering a restricted database.
 let publishedRowsCache: { rows: any[]; until: number } | null = null;
 let publishedRowsPending: Promise<any[]> | null = null;
 
@@ -307,7 +308,7 @@ async function fetchAllPublishedRows(admin: ReturnType<typeof getSupabaseAdmin>)
       const { data, error } = await selectAllPublished(admin, columns);
       if (!error) {
         const rows = data ?? [];
-        publishedRowsCache = { rows, until: Date.now() + 45_000 };
+        publishedRowsCache = null;
         return rows;
       }
       if (isSupabaseQuotaRestricted(error)) {
@@ -332,8 +333,9 @@ async function buildResources(
   rows: any[],
 ): Promise<PdfResource[]> {
   if (rows.length === 0) return [];
-  const { readVerifiedThumbnails } = await import("@/lib/verified-thumbnails.server");
-  const smallPaths = await readVerifiedThumbnails(admin);
+  const { readThumbnailInventory } = await import("@/lib/verified-thumbnails.server");
+  const inventory = await readThumbnailInventory(admin);
+  const smallPaths = inventory.smallPaths;
   const orderMap = await getTitleSortOrderMap(admin);
   const canonical = await getCanonicalByPdfId(admin);
   const displayTitle = (r: any): string => pdfDisplayTitle(r.title, tfttOriginalSeriesById(r.publication_id)?.title ?? canonical.get(r.id as string)?.name, r.publication_id);
@@ -370,7 +372,7 @@ async function buildResources(
         badge: (r.badge as string | null) ?? null,
         featured_slot: (r.featured_slot as string | null) ?? null,
         // Each published PDF has its own automatically uploaded first-page preview.
-        thumb_url: pdfThumbUrl(r.id as string, (r.publication_id as string | null) ?? null),
+        thumb_url: pdfThumbUrl(r.id as string, (r.publication_id as string | null) ?? null, inventory.originalVersions.get(r.id)),
         small_thumb_url: smallPaths.has(r.id) ? pdfThumbUrl(r.id, r.publication_id)?.replace(`${r.id}.png`, smallPaths.get(r.id) ?? `${r.id}.png`) : null,
       };
     }),
@@ -599,6 +601,8 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
       const v = orderMap.get(sortTitleKey(title));
       return typeof v === "number" ? v : 999999;
     };
+    const { readThumbnailInventory } = await import("@/lib/verified-thumbnails.server");
+    const inventory = await readThumbnailInventory(admin);
     const yearMap = new Map<
       number,
       Map<string, Array<ArchivePdf & { created_at: string }>>
@@ -633,7 +637,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
         content_type: (r.content_type as string | null) ?? null,
         page_count: typeof r.page_count === "number" ? r.page_count : null,
         badge: (r.badge as string | null) ?? null,
-        thumb_url: pdfThumbUrl(r.id as string, (r.publication_id as string | null) ?? null),
+        thumb_url: pdfThumbUrl(r.id as string, (r.publication_id as string | null) ?? null, inventory.originalVersions.get(r.id)),
         created_at: r.created_at,
       });
     }
@@ -694,13 +698,14 @@ const PERMANENT_COVERS_BY_PUBLICATION_ID: Record<string, string> = {
   "bd544c49-a810-478d-bf5c-38b94a81bc31": "/publication-covers/mi-kaamcha-yisroel-permanent.jpg",
 };
 
-export function pdfThumbUrl(id: string, publicationId?: string | null): string | null {
+export function pdfThumbUrl(id: string, publicationId?: string | null, version?: string): string | null {
   if (publicationId && PERMANENT_COVERS_BY_PUBLICATION_ID[publicationId]) {
     return PERMANENT_COVERS_BY_PUBLICATION_ID[publicationId];
   }
   const base = process.env.EXT_SUPABASE_URL || process.env.SUPABASE_URL;
   if (!base) return null;
-  return `${base.replace(/\/$/, "")}/storage/v1/object/public/pdf-thumbs/${id}.png`;
+  const original = `${base.replace(/\/$/, "")}/storage/v1/object/public/pdf-thumbs/${id}.png`;
+  return version && /^[a-f0-9]{32}$/.test(version) ? `${original}?v=${version}` : original;
 }
 
 // Published editions only: permanent promotional artwork is served from the repository.
@@ -726,7 +731,7 @@ export const listOriginalEditions = createServerFn({ method: "GET" }).handler(as
     // The shared cached inventory distinguishes missing PNGs from real ones;
     // on a storage outage preserve the previous original-URL behavior.
     const hasCover = (id: string) => inventory.originalIds === null || inventory.originalIds.has(id);
-    const allGroups = groupOriginalEditions(rows, (id) => hasCover(id) ? pdfThumbUrl(id) : null, 300);
+    const allGroups = groupOriginalEditions(rows, (id) => hasCover(id) ? pdfThumbUrl(id, null, inventory.originalVersions.get(id)) : null, 300);
     return {
       groups: allGroups.slice(0, 12),
       activeSeriesIds: activeOriginalSeriesIds(rows),
@@ -821,6 +826,8 @@ export const getPdfById = createServerFn({ method: "GET" })
     } catch {
       /* pre-migration: keep pdfs.title */
     }
+    const { readThumbnailInventory } = await import("@/lib/verified-thumbnails.server");
+    const inventory = await readThumbnailInventory(admin);
     const { data: signed } = await admin.storage
       .from("pdfs")
       .createSignedUrl(row.file_path, 60 * 60);
@@ -842,7 +849,7 @@ export const getPdfById = createServerFn({ method: "GET" })
         badge: row.badge ?? null,
         publication: renameLegacySeriesText(row.publication ?? null),
         parsha_key: row.parsha_key ?? null,
-        thumb_url: pdfThumbUrl(row.id, publicationId),
+        thumb_url: pdfThumbUrl(row.id, publicationId, inventory.originalVersions.get(row.id)),
         jewish_year: row.jewish_year ?? null,
         summary_quick: renameLegacySeriesText(standardizeCopy(row.summary_quick ?? null)),
         summary_full: renameLegacySeriesText(standardizeCopy(row.summary_full ?? null)),
@@ -1479,7 +1486,7 @@ export const adminUploadPdfThumb = createServerFn({ method: "POST" })
     }
     const { error } = await admin.storage
       .from("pdf-thumbs")
-      .upload(`${data.id}.png`, buf, { contentType: "image/png", upsert: true });
+      .upload(`${data.id}.png`, buf, { contentType: "image/png", upsert: true, cacheControl: "0" });
     if (error) {
       console.error("adminUploadPdfThumb error", error);
       return { ok: false, error: error.message };

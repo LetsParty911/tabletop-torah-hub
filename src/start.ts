@@ -16,8 +16,8 @@ const countryGate = createMiddleware().server(async ({ next, request }) => {
  *
  * - HTML documents must always be revalidated so that new deploys are picked up
  *   immediately (hashed JS/CSS references in the shell change every build).
- * - Hashed files under /assets/ are content-addressed and safe to cache
- *   aggressively (immutable, 1 year).
+ * - Only fingerprinted code and original series covers are immutable.
+ *   Mutable logos and publication artwork must be revalidated.
  *
  * HTML <meta http-equiv="Cache-Control"> is unreliable and ignored by most
  * browsers / CDNs, so we set real HTTP response headers here on the Worker.
@@ -48,46 +48,31 @@ const cacheControl = createMiddleware().server(async ({ next, request }) => {
   const result = await next();
   const response = (result as { response?: Response }).response;
   if (!response || !(response instanceof Response)) return result;
-
-
-  try {
-    const url = new URL(request.url);
-    const path = url.pathname;
-    const contentType = response.headers.get("content-type") || "";
-
-    // Long-lived immutable cache for hashed static assets.
-    if (path.startsWith("/assets/")) {
-      response.headers.set(
-        "Cache-Control",
-        "public, max-age=31536000, immutable",
-      );
-      return result;
-    }
-
-    // The homepage is driven by the current live collection. Never retain its
-    // SSR response in a browser or shared edge cache after publication data changes.
-    if (path === "/" && contentType.includes("text/html")) {
-      response.headers.set("Cache-Control", "private, no-store, max-age=0");
-      response.headers.set("Pragma", "no-cache");
-      response.headers.set("Expires", "0");
-      return result;
-    }
-
-    // Other HTML documents: no shared/edge cache retention (we have no way to
-    // purge the platform edge), and the browser must revalidate on every visit.
-    if (contentType.includes("text/html")) {
-      response.headers.set(
-        "Cache-Control",
-        "public, max-age=0, must-revalidate, s-maxage=0",
-      );
-      response.headers.delete("Pragma");
-      response.headers.delete("Expires");
-    }
-  } catch {
-    /* header mutation is best-effort; never break the response */
+  const path = new URL(request.url).pathname;
+  const contentType = response.headers.get("content-type") || "";
+  const isDocument = contentType.includes("text/html");
+  const isLiveData = /^\/(?:_serverFn)(?:\/|$)/.test(path) || path === "/api/site-version";
+  // /assets contains mutable public logos as well as fingerprinted Vite files.
+  // Only genuinely versioned files are immutable; never blanket-cache /assets.
+  const isImmutable = /^\/original-series-covers\/[^/]+\.[a-f0-9]{10}\.webp$/.test(path) ||
+    /^\/assets\/[^/]+-[A-Za-z0-9_-]{8}\.(?:js|mjs|css|woff2?)$/.test(path);
+  const isMutableAsset = /^\/(?:assets|publication-covers|original-series-covers)\//.test(path) ||
+    path === "/sw.js" || path === "/manifest.webmanifest";
+  if (!isDocument && !isLiveData && !isImmutable && !isMutableAsset) return result;
+  const headers = new Headers(response.headers);
+  if (isDocument || isLiveData) {
+    headers.set("Cache-Control", "private, no-store, max-age=0");
+    headers.set("Pragma", "no-cache");
+    headers.set("Expires", "0");
+  } else if (isImmutable && response.ok) {
+    headers.set("Cache-Control", "public, max-age=31536000, immutable");
+  } else {
+    headers.set("Cache-Control", "no-cache, max-age=0, must-revalidate");
   }
-
-  return result;
+  // Response headers may be immutable at the Worker boundary.
+  return { ...result, response: new Response(response.body, {
+    status: response.status, statusText: response.statusText, headers,
+  }) };
 });
 
 /**
