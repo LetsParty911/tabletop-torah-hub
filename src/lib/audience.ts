@@ -1,6 +1,8 @@
 // Tolerates casing/synonym differences in the stored audience value.
 // Titles that are unmistakably kid-oriented always resolve to "Children",
 // even if the stored audience field was tagged incorrectly.
+import { TFTT_ORIGINAL_SERIES } from "./tftt-originals";
+
 const KIDS_TITLE_HINTS = ["pirchei", "kids corner", "junior", "for kids", "kids "];
 
 export type AudienceKey = "Children" | "Families" | "Adults";
@@ -23,17 +25,21 @@ export function audienceLabel(
 export function normalizeAudience(
   value: string | null,
   title?: string | null,
+  publicationId?: string | null,
 ): AudienceKey | null {
   // Stored metadata is authoritative. Title hints are only a fallback for
   // rows with no audience tagged at all.
   const v = (value ?? "").trim().toLowerCase();
   if (!v) {
+    // The registered Ramban series is editorially designated Deeper Learning.
+    // Never infer ownership or classification from the title alone.
+    if (publicationId === TFTT_ORIGINAL_SERIES[3].id) return "Adults";
     const t = (title ?? "").trim().toLowerCase();
     return t && KIDS_TITLE_HINTS.some((h) => t.includes(h)) ? "Children" : null;
   }
   if (v.startsWith("child") || v.startsWith("kid") || v.startsWith("youth")) return "Children";
   if (v.startsWith("famil")) return "Families";
-  if (v.startsWith("adult") || v.startsWith("teen")) return "Adults";
+  if (v.startsWith("adult") || v.startsWith("teen") || v === "deeper learning") return "Adults";
   return null;
 }
 

@@ -8,6 +8,17 @@ on:
       - "src/lib/publication-description*"
       - "src/lib/collection-status*"
       - "src/routes/archive.tsx"
+      - "src/routes/divrei-torah-parsha.tsx"
+      - "src/routes/parsha.$slug.tsx"
+      - "src/routes/brief-insights.tsx"
+      - "src/integrations/supabase/parsha-seo.functions.ts"
+      - "src/integrations/supabase/reading-pages.functions.ts"
+      - "src/lib/reading-library*.ts"
+      - "src/lib/audience.ts"
+      - "src/components/HeaderSearchToggle*.tsx"
+      - "src/components/SharePublicationButton.tsx"
+      - "src/components/BackToTop.tsx"
+      - "src/components/WeeklyEmailSignup.tsx"
       - "src/lib/pdf-display-title*.ts"
       - "src/integrations/supabase/api.functions.ts"
       - "src/integrations/supabase/archive-all.functions.ts"
@@ -95,5 +106,7 @@ jobs:
         run: bunx vitest run --config vitest.ux.config.ts src/lib/originals-promotion.test.ts src/lib/original-editions.test.ts src/lib/parsha-detective.test.ts src/lib/weekly-card-badges.test.ts src/lib/verified-thumbnails.server.test.ts src/components/admin/OriginalCoverManager.test.tsx src/components/PdfCoverThumbnail.test.tsx
       - name: Verify original upload identity and admin form
         run: bunx vitest run --config vitest.ux.config.ts src/lib/original-upload-validation.test.ts src/tests/admin-upload-form.test.tsx
+      - name: Verify complete reading library, audience defaults and accessible search
+        run: bunx vitest run --config vitest.ux.config.ts src/lib/reading-library.test.ts src/lib/length-filter.test.ts src/components/HeaderSearchToggle.test.tsx
       - name: Build application
         run: bun run build

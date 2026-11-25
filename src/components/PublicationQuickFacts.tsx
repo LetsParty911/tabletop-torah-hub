@@ -24,7 +24,7 @@ export function PublicationQuickFacts(props: PublicationQuickFactsProps) {
   return (
     <ul aria-label="Selection at a glance" className="mt-2 flex flex-wrap gap-1.5">
       {facts.map((fact) => (
-        <li key={fact.key} className="rounded-md border border-accent/30 bg-accent/5 px-2 py-1 text-xs font-medium leading-snug text-primary">
+        <li key={fact.key} className={`rounded-full border px-2.5 py-1 text-xs leading-snug text-primary ${fact.key === "audience" ? "border-accent/50 bg-accent/15 font-semibold" : "border-accent/25 bg-background font-medium"}`}>
           {fact.text}
         </li>
       ))}

@@ -69,7 +69,7 @@ function OriginalSeriesGrid({ groups, activeSeriesIds }: { groups: OriginalEditi
                 <h3 className="mt-0.5 font-serif text-lg font-bold leading-tight text-primary">{series.title}</h3>
                 <p className="mt-1 font-serif text-sm font-semibold italic text-primary">{series.tagline}</p>
                 <p className="mt-1.5 text-sm leading-snug text-foreground">{series.description}</p>
-                <p className="mt-2 text-xs font-medium text-muted-foreground">{series.audience}</p>
+                <p className="mt-2 w-fit rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-semibold text-primary">{series.audience}</p>
                 {latestGroup && <p className="mt-1 text-xs text-muted-foreground">Latest: {latestGroup.label}</p>}
                 <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-2">
                   {latest && latestGroup && (
@@ -269,13 +269,13 @@ function ResourcesPage() {
               </p>
             </div>
 
-            <div className="mt-8 max-w-2xl mx-auto text-left font-serif text-base sm:text-lg text-foreground leading-relaxed">
+            <div className="mt-4 max-w-2xl mx-auto text-center font-serif text-sm sm:text-base text-foreground leading-relaxed">
               <p>
-                Every week, Torah For The Table creates original, printable Torah publications designed to spark meaningful discussion, deepen understanding of the Parsha, and enrich your Shabbos table. From engaging questions and inspiring stories to carefully selected insights from our classical Meforshim, discover seven distinctive ways to connect with the weekly Parsha.
+                Seven original weekly series for children, families, and deeper learning. Discover questions, stories, and insights from our classical Meforshim.
               </p>
             </div>
 
-            <h2 className="mt-10 text-center font-serif text-2xl font-bold text-primary">Our Original Weekly Series</h2>
+            <h2 className="mt-6 text-center font-serif text-2xl font-bold text-primary">Our Original Weekly Series</h2>
             <p className="mt-2 text-center text-sm text-muted-foreground">New editions every Thursday. Explore the series, or open a published issue below.</p>
             <OriginalSeriesGrid groups={groups} activeSeriesIds={activeSeriesIds ?? []} />
             <OriginalEditions groups={groups} />

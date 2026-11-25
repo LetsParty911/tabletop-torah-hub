@@ -17,7 +17,7 @@ describe("seven active weekly originals", () => {
       "Parsha Questions & Answers",
       "Stories for the Shabbos Table",
       "In the Margins",
-      "Parsha Pearls",
+      "Parsha Pearls from the Ramban",
       "Chizkuni Insights",
       "Treasures from the Medrash",
       "Questions Beneath the Surface",

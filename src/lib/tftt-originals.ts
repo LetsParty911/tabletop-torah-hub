@@ -36,7 +36,7 @@ export const TFTT_ORIGINAL_SERIES = [
   },
   {
     id: "81b9fadd-3f96-43a2-b21d-6619567e8b1b",
-    title: "Parsha Pearls",
+    title: "Parsha Pearls from the Ramban",
     brief: "One Ramban explained in depth",
     shortDescription: "One Ramban fully unpacked, with one meaningful question for the Shabbos table.",
     expectation: "One Ramban, fully unpacked, and one question for the table.",

@@ -46,22 +46,21 @@ export function BackToTop({ collectionId }: Props) {
 
   const scrollToTop = () => {
     if (typeof window === "undefined") return;
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   };
 
   const visible = collectionScrolled && !footerVisible;
 
+  const buttonContent = <><ArrowUp className="h-4 w-4" aria-hidden="true" /><span>Back to top</span></>;
+  const buttonStyle = "min-h-11 items-center justify-center gap-1.5 rounded-full border border-accent/50 bg-background px-4 py-2 text-xs font-semibold text-primary transition-colors hover:border-accent hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
   return (
-    <button
-      type="button"
-      onClick={scrollToTop}
-      aria-label="Back to top"
-      className={`fixed bottom-20 right-4 z-40 inline-flex items-center justify-center gap-1.5 rounded-full border border-accent/50 bg-background/90 px-3 py-2 text-xs font-semibold text-primary shadow-sm backdrop-blur-sm transition-opacity duration-200 hover:border-accent hover:bg-accent hover:text-accent-foreground ${
-        visible ? "opacity-100" : "pointer-events-none opacity-0"
-      }`}
-    >
-      <ArrowUp className="h-3.5 w-3.5" />
-      <span className="hidden sm:inline">Back to top</span>
-    </button>
+    <>
+      <div className="text-center sm:hidden">
+        <button type="button" onClick={scrollToTop} className={`inline-flex ${buttonStyle}`}>{buttonContent}</button>
+      </div>
+      {visible && (
+        <button type="button" onClick={scrollToTop} className={`fixed bottom-20 right-4 z-40 hidden shadow-sm sm:inline-flex ${buttonStyle}`}>{buttonContent}</button>
+      )}
+    </>
   );
 }

@@ -17,7 +17,7 @@ export const HeaderSearchToggle = forwardRef<HTMLButtonElement, { open: boolean;
         aria-label={open ? "Close site search" : "Search Torah For The Table"}
         aria-expanded={open}
         onClick={onToggle}
-        className="inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-full border border-accent/35 px-0 text-primary transition-colors hover:bg-accent/10 lg:w-auto lg:px-3.5"
+        className={`inline-flex h-11 w-11 shrink-0 items-center justify-center gap-1.5 rounded-full border px-0 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 lg:w-auto lg:px-3.5 ${open ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90" : "border-accent/35 bg-background text-primary hover:bg-accent/10"}`}
       >
         {open ? <X className="h-4 w-4" aria-hidden="true" /> : <Search className="h-4 w-4" aria-hidden="true" />}
         <span className="hidden font-serif text-sm font-semibold lg:inline">{open ? "Close" : "Search"}</span>

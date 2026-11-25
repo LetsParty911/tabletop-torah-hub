@@ -13,7 +13,7 @@ import { formatTypeLabel } from "@/lib/format-labels";
 import { mergeLabelCounts } from "@/lib/label-counts";
 
 function seferForParsha(parshaKey: string): string {
-  const index = PARSHIYOS_54.indexOf(parshaKey);
+  const index = PARSHIYOS_54.indexOf(parshaKey.split("-")[0]);
   if (index <= 11) return "Sefer Bereishis";
   if (index <= 22) return "Sefer Shemos";
   if (index <= 32) return "Sefer Vayikra";

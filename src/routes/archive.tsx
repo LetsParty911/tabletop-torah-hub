@@ -490,6 +490,7 @@ function ArchivePage() {
                       );
                     })}
                 </div>
+                {audienceCounts.All > audienceCounts.Children + audienceCounts.Families + audienceCounts.Adults && <p className="text-xs text-muted-foreground">{`${audienceCounts.All - audienceCounts.Children - audienceCounts.Families - audienceCounts.Adults} selections without a specified audience are included in All.`}</p>}
               </div>
 
               <div className="mt-4 flex flex-col items-center gap-2">
@@ -631,10 +632,12 @@ function ArchivePage() {
                       {y.year}
                     </h2>
                     {(() => {
-                      const pdfCount = y.parshiyos.reduce((s: number, p: ArchiveParsha) => s + p.pdfs.length, 0);
+                      const pageCount = y.parshiyos.reduce((s: number, p: ArchiveParsha) => s + p.pdfs.length, 0);
+                      const pdfCount = y.totalPdfs ?? pageCount;
+                      const readingCount = y.totalParshiyos ?? y.parshiyos.length;
                       return (
                         <span className="font-sans text-xs sm:text-sm uppercase tracking-[0.2em] text-accent">
-                          {y.parshiyos.length} {y.parshiyos.length === 1 ? "Parsha" : "Parshiyos"} · {pdfCount} {pdfCount === 1 ? "Dvar" : "Divrei"} Torah
+                          {`${readingCount} ${readingCount === 1 ? "Reading" : "Readings"} · ${pdfCount} ${pdfCount === 1 ? "Dvar" : "Divrei"} Torah${y.totalPdfs === undefined ? " on this page" : pageCount !== pdfCount ? ` · ${pageCount} on this page` : ""}`}
                         </span>
                       );
                     })()}
@@ -747,24 +750,25 @@ function ArchivePage() {
         </div>
 
         {filteredYears.length > 0 && totalPages > 1 && (
-          <nav aria-label="Archive pages" className="flex items-center justify-center gap-3">
+          <nav aria-label="Archive pages" className="flex flex-wrap items-center justify-center gap-3">
             {safePage > 1 && (
               <button
                 type="button"
                 onClick={() => setSearch({ page: safePage - 1 })}
-                className="rounded-full border border-accent/45 bg-background px-4 py-2 text-sm font-semibold text-primary hover:bg-accent/10"
+                className="inline-flex min-h-11 items-center rounded-full border border-accent/45 bg-background px-4 py-2 text-sm font-semibold text-primary hover:bg-accent/10"
               >
                 ← Previous
               </button>
             )}
             <span className="text-sm text-muted-foreground">
-              Page {safePage} of {totalPages} · {totalPdfs} results
+              {`Page ${safePage} of ${totalPages} · ${totalPdfs} results`}
             </span>
+            <label className="flex items-center gap-2 text-sm text-primary">Go to page<select aria-label="Go to archive page" value={safePage} onChange={(event) => setSearch({ page: Number(event.target.value) })} className="min-h-11 rounded-md border border-accent/45 bg-background px-2 text-primary">{Array.from({ length: totalPages }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}</select></label>
             {safePage < totalPages && (
               <button
                 type="button"
                 onClick={() => setSearch({ page: safePage + 1 })}
-                className="rounded-full border border-accent/45 bg-background px-4 py-2 text-sm font-semibold text-primary hover:bg-accent/10"
+                className="inline-flex min-h-11 items-center rounded-full border border-accent/45 bg-background px-4 py-2 text-sm font-semibold text-primary hover:bg-accent/10"
               >
                 Next →
               </button>
@@ -772,9 +776,9 @@ function ArchivePage() {
           </nav>
         )}
 
+        <BackToTop collectionId="archive-results" />
         <SiteFooter />
       </div>
-      <BackToTop collectionId="archive-results" />
     </div>
   );
 }

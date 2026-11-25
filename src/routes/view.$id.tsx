@@ -35,6 +35,14 @@ function ReaderBack({ link, className, children }: { link: ReaderBackLink; class
 
 
 export const Route = createFileRoute("/view/$id")({
+  pendingMs: 0,
+  pendingMinMs: 0,
+  pendingComponent: () => (
+    <div className="mx-auto min-h-[60vh] max-w-5xl px-4 py-10 text-center" role="status" aria-live="polite" aria-busy="true">
+      <p className="font-serif text-xl font-semibold text-primary">Opening publication…</p>
+      <p className="mt-2 text-sm text-muted-foreground">Preparing the requested Divrei Torah.</p>
+    </div>
+  ),
   loader: async ({ params }) => {
     const [r, publicationContext, relatedParsha, originalHtml] = await Promise.all([
       getPdfById({ data: { id: params.id } }),
@@ -183,7 +191,7 @@ function ViewPdf() {
   const detailThumbnailUrl = isTorahWellsprings
     ? "/publication-covers/torah-wellsprings-plaque-v2.jpg"
     : isMiKaamcha ? "/publication-covers/mi-kaamcha-yisroel-permanent.jpg" : pdf.thumb_url;
-  const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=FitH`;
+  const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=Fit`;
   const isMobile = useIsMobile();
   const [mounted, setMounted] = useState(false);
   const [thumbFailed, setThumbFailed] = useState(false);
@@ -235,7 +243,7 @@ function ViewPdf() {
   })();
 
   const metaLine = [
-    audienceLabel(normalizeAudience(pdf.audience, pdf.title)) ?? pdf.audience,
+    audienceLabel(normalizeAudience(pdf.audience, pdf.title, publication?.id)) ?? pdf.audience,
     pdf.content_type === "Questions & Answers"
       ? "Questions & Answers"
       : formatTypeLabel(pdf.format_type),

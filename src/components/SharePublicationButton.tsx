@@ -86,7 +86,7 @@ export function SharePublicationButton({
         <button
           type="button"
           onClick={handleShare}
-          className="inline-flex items-center justify-center gap-2 rounded-md border border-accent/60 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-accent/10 transition-colors"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-md border border-accent/60 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-accent/10 transition-colors"
           aria-label={`Share ${title} on WhatsApp`}
         >
           <Share2 className="h-4 w-4" />
@@ -95,7 +95,7 @@ export function SharePublicationButton({
         <button
           type="button"
           onClick={handleCopy}
-          className="inline-flex items-center justify-center gap-2 rounded-md border border-accent/60 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-accent/10 transition-colors"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-md border border-accent/60 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-accent/10 transition-colors"
           aria-label={`Copy link to ${title}`}
         >
           {copied ? (
@@ -119,7 +119,7 @@ export function SharePublicationButton({
       <button
         type="button"
         onClick={handleShare}
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+        className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
         aria-label={`Share ${title} on WhatsApp`}
       >
         <Share2 className="h-3.5 w-3.5" />
@@ -131,7 +131,7 @@ export function SharePublicationButton({
       <button
         type="button"
         onClick={handleCopy}
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+        className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
         aria-label={`Copy link to ${title}`}
       >
         {copied ? (

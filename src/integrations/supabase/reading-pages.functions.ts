@@ -2,6 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { readingSlug, isYomTovReading } from "@/lib/reading-page";
+import { toParshaComparableKey } from "@/lib/parsha-normalize";
+import { canonicalLibraryReading } from "@/lib/reading-library";
+import { normalizeAudience } from "@/lib/audience";
+import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
 import { publicationSlug } from "@/lib/publication-slug";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { formatReadingLabel } from "@/lib/parshiyos";
@@ -107,11 +111,11 @@ export const getReadingCollection = createServerFn({ method: "GET" })
       return { collection: null, resources: [] as ReadingResource[] };
     }
 
-    const parshaKey = [...new Set((candidates ?? []).map((r: any) => r.parsha_key as string))].find(
-      (key: any) =>
-        readingSlug(key as string) === data.slug &&
-        (isYomTovReading(key as string) ? "yom-tov" : "parsha") === data.kind,
+    const aliases = [...new Set<string>(((candidates ?? []) as Array<{ parsha_key: string | null }>).flatMap(row => row.parsha_key ? [row.parsha_key] : []))].filter(key =>
+      (readingSlug(key) === data.slug || toParshaComparableKey(key) === toParshaComparableKey(data.slug)) &&
+      (isYomTovReading(canonicalLibraryReading(key) ?? key) ? "yom-tov" : "parsha") === data.kind,
     );
+    const parshaKey = aliases[0] ? canonicalLibraryReading(aliases[0]) ?? aliases[0] : null;
     if (!parshaKey) {
       return { collection: null, resources: [] as ReadingResource[] };
     }
@@ -123,7 +127,7 @@ export const getReadingCollection = createServerFn({ method: "GET" })
       )
       .eq("published", true)
       .eq("jewish_year", data.year)
-      .eq("parsha_key", parshaKey)
+      .in("parsha_key", aliases)
       .order("created_at", { ascending: true });
 
     if (rowsError) {
@@ -162,11 +166,11 @@ export const getReadingCollection = createServerFn({ method: "GET" })
       const fallbackPublication = (r.publication as string | null) ?? null;
       return {
         id: r.id as string,
-        title: r.title as string,
+        title: tfttOriginalSeriesById(pubId)?.title ?? r.title as string,
         subtitle: standardizeCopy((r.subtitle as string | null) ?? null),
         description: standardizeCopy((r.description as string | null) ?? null),
         summary_quick: standardizeCopy((r.summary_quick as string | null) ?? null),
-        audience: (r.audience as string | null) ?? null,
+        audience: normalizeAudience(r.audience ?? null, r.title, pubId) ?? r.audience ?? null,
         format_type: (r.format_type as string | null) ?? null,
         content_type: (r.content_type as string | null) ?? null,
         page_count: typeof r.page_count === "number" ? r.page_count : null,
@@ -174,7 +178,7 @@ export const getReadingCollection = createServerFn({ method: "GET" })
         parsha_key: r.parsha_key as string,
         jewish_year: r.jewish_year as number,
         publication_id: pubId,
-        publication_name: canonical?.name ?? fallbackPublication,
+        publication_name: tfttOriginalSeriesById(pubId)?.title ?? canonical?.name ?? fallbackPublication,
         publication_slug: canonical?.slug ?? null,
         publisher: canonical?.publisher ?? null,
         thumb_url: pdfThumbUrl(r.id as string, pubId, inventory.originalVersions.get(r.id as string)),

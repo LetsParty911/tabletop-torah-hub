@@ -82,8 +82,9 @@ function AboutPage() {
                   <li>Publishes weekly Torah resources</li>
                   <li>Organizes Divrei Torah from multiple respected sources</li>
                   <li>
-                    Creates original educational materials, including Parsha Questions & Answers,
-                    Stories for the Shabbos Table, and In the Margins
+                    Creates seven original weekly series: Parsha Questions & Answers, Stories for the Shabbos Table,
+                    In the Margins, Parsha Pearls from the Ramban, Chizkuni Insights,
+                    Treasures from the Medrash, and Questions Beneath the Surface
                   </li>
                   <li>Provides content for children, families, and deeper Torah learning</li>
                   <li>Helps visitors easily download and print materials before Shabbos</li>

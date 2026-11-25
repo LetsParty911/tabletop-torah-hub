@@ -32,7 +32,7 @@ export type ArchivePdfAll = {
 };
 
 export type ArchiveParshaAll = { parshaKey: string; pdfs: ArchivePdfAll[] };
-export type ArchiveYearAll = { year: number; parshiyos: ArchiveParshaAll[] };
+export type ArchiveYearAll = { year: number; parshiyos: ArchiveParshaAll[]; totalPdfs?: number; totalParshiyos?: number };
 
 export type ArchivePageInput = {
   year: string;
@@ -163,7 +163,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
         ),
         subtitle: renameLegacySeriesText(standardizeCopy((row.subtitle as string | null) ?? null)),
         description: renameLegacySeriesText(standardizeCopy((row.description as string | null) ?? null)),
-        audience: (row.audience as string | null) ?? null,
+        audience: normalizeAudience(row.audience ?? null, row.title, row.publication_id) ?? row.audience ?? null,
         format_type: (row.format_type as string | null) ?? null,
         content_type: (row.content_type as string | null) ?? null,
         page_count: typeof row.page_count === "number" ? row.page_count : null,
@@ -232,6 +232,13 @@ export const listArchiveAll = createServerFn({ method: "GET" })
       return a.title.localeCompare(b.title);
     });
 
+    const yearTotals = new Map<number, { count: number; readings: Set<string> }>();
+    for (const row of filtered) {
+      const entry = yearTotals.get(row.year) ?? { count: 0, readings: new Set<string>() };
+      entry.count += 1;
+      entry.readings.add(toParshaComparableKey(row.parshaKey));
+      yearTotals.set(row.year, entry);
+    }
     const totalPdfs = filtered.length;
     const totalPages = Math.max(1, Math.ceil(totalPdfs / PAGE_SIZE));
     const safePage = Math.min(data.page, totalPages);
@@ -264,6 +271,8 @@ export const listArchiveAll = createServerFn({ method: "GET" })
 
     const years: ArchiveYearAll[] = Array.from(yearMap.entries()).map(([year, parshaMap]) => ({
       year,
+      totalPdfs: yearTotals.get(year)?.count,
+      totalParshiyos: yearTotals.get(year)?.readings.size,
       parshiyos: Array.from(parshaMap.entries()).map(([parshaKey, pdfs]) => ({
         parshaKey,
         pdfs,
