@@ -6,6 +6,7 @@ import { publicationSlug } from "@/lib/publication-slug";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { formatReadingLabel } from "@/lib/parshiyos";
 import { pdfThumbUrl } from "@/integrations/supabase/api.functions";
+import { readThumbnailInventory } from "@/lib/verified-thumbnails.server";
 
 export type ReadingResource = {
   id: string;
@@ -154,6 +155,7 @@ export const getReadingCollection = createServerFn({ method: "GET" })
       }
     }
 
+    const inventory = await readThumbnailInventory(admin);
     const resources: ReadingResource[] = (rows ?? []).map((r: any) => {
       const pubId = (r.publication_id as string | null) ?? null;
       const canonical = pubId ? publicationMap.get(pubId) : undefined;
@@ -175,7 +177,7 @@ export const getReadingCollection = createServerFn({ method: "GET" })
         publication_name: canonical?.name ?? fallbackPublication,
         publication_slug: canonical?.slug ?? null,
         publisher: canonical?.publisher ?? null,
-        thumb_url: pdfThumbUrl(r.id as string, pubId),
+        thumb_url: pdfThumbUrl(r.id as string, pubId, inventory.originalVersions.get(r.id as string)),
       };
     });
 

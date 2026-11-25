@@ -1,131 +1,66 @@
-/* Torah for the Table — service worker
- * Strategy:
- *  - App shell (navigations): network-first, fallback to cache, then /offline
- *  - Supabase API + /api data: network-first with cache fallback; /_serverFn bypassed
- *  - Fonts and images: cache-first; JS/CSS: network-first, cache fallback
- *  - PDFs and audio: bypass (do NOT cache)
- */
-const VERSION =
-  new URL(self.location.href).searchParams.get("v") || "dev";
-const SHELL_CACHE = `tftt-shell-${VERSION}`;
-const STATIC_CACHE = `tftt-static-${VERSION}`;
-const DATA_CACHE = `tftt-data-${VERSION}`;
+/* Torah For The Table: fresh online documents and data; offline notice only.
+ * Never cache API, auth, PDF, cross-origin storage, or mutable artwork in the
+ * service worker. Cache only explicitly versioned static files. */
+const VERSION = new URL(self.location.href).searchParams.get("v") || "dev";
+const SHELL_CACHE = `tftt-v2-shell-${VERSION}`;
+const STATIC_CACHE = `tftt-v2-static-${VERSION}`;
 const OFFLINE_URL = "/offline";
-const PRECACHE_URLS = [OFFLINE_URL, "/manifest.webmanifest", "/favicon.png", "/icon-192.png"];
-
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(SHELL_CACHE).then((c) => c.addAll(PRECACHE_URLS).catch(() => undefined))
-  );
+self.addEventListener("install", event => {
+  event.waitUntil(caches.open(SHELL_CACHE).then(c =>
+    c.add(new Request(OFFLINE_URL, { cache: "reload" })).catch(() => undefined)));
   self.skipWaiting();
 });
-
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    (async () => {
-      const keys = await caches.keys();
-      await Promise.all(
-        keys
-          .filter((k) => k.startsWith("tftt-") && ![SHELL_CACHE, STATIC_CACHE, DATA_CACHE].includes(k))
-          .map((k) => caches.delete(k))
-      );
-      await self.clients.claim();
-    })()
-  );
+self.addEventListener("activate", event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => k.startsWith("tftt-") &&
+      ![SHELL_CACHE, STATIC_CACHE].includes(k)).map(k => caches.delete(k)));
+    await self.clients.claim();
+  })());
 });
-
-function isBypassed(url) {
-  const p = url.pathname.toLowerCase();
-  if (p.endsWith(".pdf") || p.endsWith(".mp3") || p.endsWith(".m4a") || p.endsWith(".wav") || p.endsWith(".ogg")) return true;
-  // File delivery endpoints: must stream straight to the browser. Handling
-  // them here would buffer the whole PDF through the worker (and cache it as
-  // an app-shell "navigation"), delaying the browser's download by seconds.
-  if (/\/view\/[^/]+\/(download|pdf)$/.test(p)) return true;
-  // App data requests (filters, search, page changes) go straight to the
-  // network so the router alone owns their loading/cancellation and every
-  // filter combination is not copied into Cache Storage.
-  if (url.pathname.startsWith("/_serverFn/")) return true;
-  // Supabase storage PDFs/audio
-  if (url.hostname.includes("supabase.co") && p.includes("/storage/")) return true;
-  return false;
+function bypass(url) {
+  return url.origin !== self.location.origin ||
+    /^\/(?:api|_serverFn)(?:\/|$)/.test(url.pathname) ||
+    /\/(?:view)\/[^/]+\/(?:download|pdf)\/?$/i.test(url.pathname) ||
+    /\.(?:pdf|mp3|m4a|wav|ogg)$/i.test(url.pathname);
 }
-
-function isDataRequest(url) {
-  if (url.hostname.includes("supabase.co")) return true;
-  if (url.pathname.startsWith("/api/")) return true;
-  return false;
+function immutable(url) {
+  return /^\/original-series-covers\/[^/]+\.[a-f0-9]{10}\.webp$/.test(url.pathname) ||
+    /^\/assets\/[^/]+-[A-Za-z0-9_-]{8}\.(?:js|mjs|css|woff2?)$/.test(url.pathname);
 }
-
-function isStaticAsset(url, req) {
-  const dest = req.destination;
-  if (["style", "script", "font", "image"].includes(dest)) return true;
-  if (/\.(css|js|mjs|woff2?|ttf|otf|png|jpe?g|gif|webp|svg|ico)$/i.test(url.pathname)) return true;
-  return false;
+function staticAsset(url, request) {
+  return ["image", "font", "script", "style"].includes(request.destination) ||
+    /\.(?:css|js|mjs|woff2?|ttf|otf|png|jpe?g|gif|webp|svg|ico)$/i.test(url.pathname);
 }
-
-async function networkFirst(req, cacheName) {
-  const cache = await caches.open(cacheName);
-  try {
-    const res = await fetch(req);
-    if (res && res.ok && req.method === "GET") cache.put(req, res.clone()).catch(() => {});
-    return res;
-  } catch (err) {
-    const cached = await cache.match(req);
-    if (cached) return cached;
-    throw err;
-  }
-}
-
-async function cacheFirst(req, cacheName) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(req);
-  if (cached) return cached;
-  const res = await fetch(req);
-  if (res && res.ok) cache.put(req, res.clone()).catch(() => {});
-  return res;
-}
-
-async function handleNavigation(req) {
-  try {
-    // Never reuse an older HTML app shell after a deployment. Going offline
-    // should display the offline notice, not old Download/Print controls.
-    return await fetch(req, { cache: "no-store" });
-  } catch {
-    const cache = await caches.open(SHELL_CACHE);
-    const offline = await cache.match(OFFLINE_URL);
-    if (offline) return offline;
+async function navigation(request) {
+  try { return await fetch(request, { cache: "no-store" }); }
+  catch {
+    try {
+      const offline = await (await caches.open(SHELL_CACHE)).match(OFFLINE_URL);
+      if (offline) return offline;
+    } catch { /* cache disabled */ }
     return new Response("Offline", { status: 503, statusText: "Offline" });
   }
 }
-
-self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  if (req.method !== "GET") return;
-  const url = new URL(req.url);
-  if (url.protocol !== "http:" && url.protocol !== "https:") return;
-  if (isBypassed(url)) return;
-
-  if (req.mode === "navigate") {
-    event.respondWith(handleNavigation(req));
-    return;
-  }
-  if (isDataRequest(url)) {
-    event.respondWith(networkFirst(req, DATA_CACHE));
-    return;
-  }
-  if (isStaticAsset(url, req)) {
-    // A cached JS/CSS file can keep the previous interface visible even
-    // when the HTML is fresh. Check the network first for those resources;
-    // retain a cache fallback if the device goes offline.
-    const needsFreshCode =
-      req.destination === "script" ||
-      req.destination === "style" ||
-      /\.(js|mjs|css)$/i.test(url.pathname);
-    event.respondWith(needsFreshCode ? networkFirst(req, STATIC_CACHE) : cacheFirst(req, STATIC_CACHE));
-    return;
-  }
+async function versionedAsset(request) {
+  try {
+    const cache = await caches.open(STATIC_CACHE);
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    const response = await fetch(request);
+    if (response.ok) await cache.put(request, response.clone()).catch(() => {});
+    return response;
+  } catch { return fetch(request); }
+}
+self.addEventListener("fetch", event => {
+  const request = event.request;
+  if (request.method !== "GET") return;
+  const url = new URL(request.url);
+  if (!/^https?:$/.test(url.protocol) || bypass(url)) return;
+  if (request.mode === "navigate") { event.respondWith(navigation(request)); return; }
+  if (immutable(url)) { event.respondWith(versionedAsset(request)); return; }
+  if (staticAsset(url, request)) event.respondWith(fetch(request, { cache: "no-cache" }));
 });
-
-self.addEventListener("message", (event) => {
+self.addEventListener("message", event => {
   if (event.data === "SKIP_WAITING") self.skipWaiting();
 });

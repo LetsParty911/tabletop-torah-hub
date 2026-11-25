@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { BUILD_ID } from "@/lib/site-freshness";
 
-// A non-sensitive release marker for verifying that the published website
-// includes PR #19's analytics fixes. This is NOT a dynamically resolved SHA,
-// authentication endpoint, analytics event, or uptime probe.
+// Preserve the historical analytics marker and expose the current build ID.
+// No database reads, credentials, or analytics side effects.
 //
 // Keep independent of Supabase so it remains read-only and cannot affect
 // tracking counts or visitor notifications.
@@ -15,6 +15,7 @@ export const Route = createFileRoute("/api/site-version")({
       GET: async () =>
         new Response(
           JSON.stringify({
+            build_id: BUILD_ID,
             tracking_release: TRACKING_RELEASE_MARKER,
             tracking_change_anchor_commit: TRACKING_RELEASE_ANCHOR,
           }),

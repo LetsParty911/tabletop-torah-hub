@@ -5,6 +5,7 @@ import { publicationSlug } from "@/lib/publication-slug";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { tfttOriginalSeriesById, renameLegacySeriesText } from "@/lib/tftt-originals";
 import { pdfThumbUrl } from "@/integrations/supabase/api.functions";
+import { readThumbnailInventory } from "@/lib/verified-thumbnails.server";
 
 function publicPublicationName(p: { id: string; name: string }): string {
   return tfttOriginalSeriesById(p.id)?.title ?? renameLegacySeriesText(p.name);
@@ -62,6 +63,7 @@ export const listPublicationPages = createServerFn({ method: "GET" }).handler(
       console.error("listPublicationPages pdfs error", rowsError);
     }
 
+    const inventory = await readThumbnailInventory(admin);
     const counts = new Map<string, number>();
     const latest = new Map<string, { id: string; created_at: string }>();
     for (const row of rows ?? []) {
@@ -84,7 +86,7 @@ export const listPublicationPages = createServerFn({ method: "GET" }).handler(
           default_format_type: (p.default_format_type as string | null) ?? null,
           default_description: renameLegacySeriesText(standardizeCopy((p.default_description as string | null) ?? null)),
           edition_count: counts.get(p.id as string) ?? 0,
-          thumb_url: latest.get(p.id as string) ? pdfThumbUrl(latest.get(p.id as string)!.id, p.id as string) : null,
+          thumb_url: latest.get(p.id as string) ? pdfThumbUrl(latest.get(p.id as string)!.id, p.id as string, inventory.originalVersions.get(latest.get(p.id as string)!.id)) : null,
         }))
         .filter((p: any) => p.edition_count > 0),
     };
@@ -127,6 +129,7 @@ export const getPublicationPage = createServerFn({ method: "GET" })
       return { publication: null, editions: [] as PublicationEdition[] };
     }
 
+    const inventory = await readThumbnailInventory(admin);
     return {
       publication: {
         id: publication.id as string,
@@ -151,7 +154,7 @@ export const getPublicationPage = createServerFn({ method: "GET" })
         parsha_key: r.parsha_key as string,
         jewish_year: typeof r.jewish_year === "number" ? r.jewish_year : null,
         created_at: (r.created_at as string | null) ?? null,
-        thumb_url: pdfThumbUrl(r.id as string, publication.id as string),
+        thumb_url: pdfThumbUrl(r.id as string, publication.id as string, inventory.originalVersions.get(r.id as string)),
       })) as PublicationEdition[],
     };
   });

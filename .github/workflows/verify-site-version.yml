@@ -4,6 +4,15 @@ on:
   pull_request:
     paths:
       - "src/routes/api/site-version.ts"
+      - "src/lib/site-freshness*.ts"
+      - "src/start.ts"
+      - "src/pwa-register*.ts"
+      - "public/sw.js"
+      - "src/routes/__root.tsx"
+      - "src/lib/thumbnail-preview.ts"
+      - "src/integrations/supabase/*functions.ts"
+      - "src/components/PdfCoverThumbnail.tsx"
+      - "vitest.ux.config.ts"
       - ".github/workflows/verify-site-version.yml"
 
 permissions:
@@ -17,5 +26,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - name: Install dependencies
         run: bun install --frozen-lockfile
+      - name: Verify freshness and thumbnail regressions
+        run: bunx vitest run --config vitest.ux.config.ts src/lib/site-freshness.test.ts src/pwa-register.test.ts src/components/SmallPdfImage.test.tsx src/components/PdfCoverThumbnail.test.tsx src/lib/verified-thumbnails.test.ts src/lib/verified-thumbnails.server.test.ts
       - name: Build production site
         run: bun run build
