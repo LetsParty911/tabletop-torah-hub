@@ -52,3 +52,35 @@ export async function renderSmallThumbBase64(pngBase64: string): Promise<string 
     return null;
   }
 }
+
+
+// Browser-only manual cover upload. Normalize a chosen PDF or raster image to
+// the same PNG format used by the existing per-issue thumbnail upload.
+export async function renderManualCoverBase64(file: File): Promise<string | null> {
+  if (file.size === 0 || file.size > 20 * 1024 * 1024) return null;
+  if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
+    return renderFirstPageThumbBase64(file);
+  }
+  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) return null;
+  const url = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    image.src = url;
+    await image.decode();
+    if (!image.naturalWidth || !image.naturalHeight) return null;
+    const scale = Math.min(1, 800 / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/png").split(",")[1] ?? null;
+  } catch {
+    return null;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
