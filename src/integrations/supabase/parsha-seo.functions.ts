@@ -5,6 +5,8 @@ import { PARSHIYOS, formatReadingLabel } from "@/lib/parshiyos";
 import { readingSlug, isYomTovReading } from "@/lib/reading-page";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { summarizeReadingLibrary } from "@/lib/reading-library";
+import { normalizeAudience } from "@/lib/audience";
+import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { renameLegacySeriesText } from "@/lib/tftt-originals";
 
@@ -46,11 +48,11 @@ export const getParshaSeoPage = createServerFn({ method: "GET" })
     const admin = getSupabaseAdmin();
     const { data: candidates, error: candidateError } = await admin.from("pdfs").select("parsha_key").eq("published", true).not("jewish_year", "is", null);
     if (candidateError) throw new Error("Unable to load publication readings");
-    const aliases = Array.from(new Set((candidates ?? []).map(row => row.parsha_key).filter((key): key is string => typeof key === "string" && toParshaComparableKey(key) === toParshaComparableKey(canonical))));
+    const aliases = Array.from(new Set<string>(((candidates ?? []) as Array<{ parsha_key: string | null }>).map(row => row.parsha_key).filter((key): key is string => typeof key === "string" && toParshaComparableKey(key) === toParshaComparableKey(canonical))));
     const { data: rows, error } = await admin
       .from("pdfs")
       .select(
-        "id, title, description, summary_quick, audience, format_type, content_type, page_count, jewish_year, parsha_key, created_at",
+        "id, title, description, summary_quick, audience, format_type, content_type, page_count, jewish_year, parsha_key, created_at, publication_id",
       )
       .eq("published", true)
       .in("parsha_key", aliases.length ? aliases : [canonical])
@@ -87,7 +89,7 @@ export const getParshaSeoPage = createServerFn({ method: "GET" })
     const audience_counts: Record<string, number> = {};
     const type_counts: Record<string, number> = {};
     for (const row of matches) {
-      const audience = String((row as any).audience ?? "").trim();
+      const audience = normalizeAudience(row.audience ?? null, row.title, row.publication_id) ?? String(row.audience ?? "").trim();
       if (audience) audience_counts[audience] = (audience_counts[audience] ?? 0) + 1;
       const type = String(
         (row as any).content_type === "Questions & Answers"
@@ -99,10 +101,10 @@ export const getParshaSeoPage = createServerFn({ method: "GET" })
 
     const resources: ParshaSeoResource[] = matches.map((row: any) => ({
       id: row.id as string,
-      title: renameLegacySeriesText(row.title as string),
+      title: tfttOriginalSeriesById(row.publication_id)?.title ?? renameLegacySeriesText(row.title as string),
       description: renameLegacySeriesText(standardizeCopy((row.description as string | null) ?? null)),
       summary_quick: renameLegacySeriesText(standardizeCopy((row.summary_quick as string | null) ?? null)),
-      audience: (row.audience as string | null) ?? null,
+      audience: normalizeAudience(row.audience ?? null, row.title, row.publication_id) ?? row.audience ?? null,
       format_type: (row.format_type as string | null) ?? null,
       content_type: (row.content_type as string | null) ?? null,
       page_count: typeof row.page_count === "number" ? row.page_count : null,

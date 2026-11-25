@@ -243,7 +243,7 @@ function ViewPdf() {
   })();
 
   const metaLine = [
-    audienceLabel(normalizeAudience(pdf.audience, pdf.title)) ?? pdf.audience,
+    audienceLabel(normalizeAudience(pdf.audience, pdf.title, publication?.id)) ?? pdf.audience,
     pdf.content_type === "Questions & Answers"
       ? "Questions & Answers"
       : formatTypeLabel(pdf.format_type),

@@ -490,6 +490,7 @@ function ArchivePage() {
                       );
                     })}
                 </div>
+                {audienceCounts.All > audienceCounts.Children + audienceCounts.Families + audienceCounts.Adults && <p className="text-xs text-muted-foreground">{`${audienceCounts.All - audienceCounts.Children - audienceCounts.Families - audienceCounts.Adults} selections without a specified audience are included in All.`}</p>}
               </div>
 
               <div className="mt-4 flex flex-col items-center gap-2">

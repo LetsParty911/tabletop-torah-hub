@@ -163,7 +163,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
         ),
         subtitle: renameLegacySeriesText(standardizeCopy((row.subtitle as string | null) ?? null)),
         description: renameLegacySeriesText(standardizeCopy((row.description as string | null) ?? null)),
-        audience: (row.audience as string | null) ?? null,
+        audience: normalizeAudience(row.audience ?? null, row.title, row.publication_id) ?? row.audience ?? null,
         format_type: (row.format_type as string | null) ?? null,
         content_type: (row.content_type as string | null) ?? null,
         page_count: typeof row.page_count === "number" ? row.page_count : null,

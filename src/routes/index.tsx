@@ -505,7 +505,7 @@ function Index() {
 
 
   const matchesAudience = (r: Resource, value = audienceFilter) =>
-    value === "All" || normalizeAudience(r.audience, r.title) === value;
+    value === "All" || normalizeAudience(r.audience, r.title, r.publication_id) === value;
   const matchesLength = (r: Resource, value = lengthFilter) => matchesPageLength(r.page_count, value);
   const resourceContentType = (r: Resource) =>
     displayContentType(r.content_type, r.format_type, formatTypeLabel);
@@ -537,7 +537,7 @@ function Index() {
   useEffect(() => {
     if (
       audienceFilter !== "All" &&
-      !sortedResources.some((r) => normalizeAudience(r.audience, r.title) === audienceFilter)
+      !sortedResources.some((r) => normalizeAudience(r.audience, r.title, r.publication_id) === audienceFilter)
     ) {
       setAudienceFilter("All");
     }
@@ -1145,7 +1145,7 @@ function Index() {
                           </h4>
                           {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
                           <PublicationQuickFacts
-                            audience={audienceLabel(normalizeAudience(r.audience, displayTitle(r))) ?? r.audience}
+                            audience={audienceLabel(normalizeAudience(r.audience, displayTitle(r), r.publication_id)) ?? r.audience}
                             format={resourceContentType(r)}
                             length={pageCountLabel(r)}
                           />
