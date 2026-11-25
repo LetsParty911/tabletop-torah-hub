@@ -5,6 +5,7 @@ import { formatReadingLabel } from "@/lib/parshiyos";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
+import { publicationShareImages, publicationShareImageMeta } from "@/lib/publication-share-image";
 import { isYomTovReading, readingSlug } from "@/lib/reading-page";
 import { DownloadAndPrintButtons } from "@/components/DownloadAndPrintButtons";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -32,7 +33,8 @@ export const Route = createFileRoute("/publication/$slug")({
     ) ?? "";
     const url = `https://torahforthetable.com/publication/${params.slug}`;
     const title = fitPageTitle(name, " — Divrei Torah & Printable Editions");
-    const image = `https://torahforthetable.com/og/image.png?title=${encodeURIComponent(name)}`;
+    const shareImages = publicationShareImages({ publicationId: publication?.id, title: publication ? name : null });
+    const image = shareImages[0].url;
 
     return {
       meta: [
@@ -43,11 +45,12 @@ export const Route = createFileRoute("/publication/$slug")({
         { property: "og:type", content: "website" },
         { property: "og:url", content: url },
         { property: "og:site_name", content: "Torah For The Table" },
-        { property: "og:image", content: image },
-        { name: "twitter:card", content: "summary_large_image" },
+        ...publicationShareImageMeta(shareImages, name),
+        { name: "twitter:card", content: shareImages[0].mime === "image/webp" ? "summary" : "summary_large_image" },
         { name: "twitter:title", content: name },
         { name: "twitter:description", content: description },
         { name: "twitter:image", content: image },
+        { name: "twitter:image:alt", content: name },
       ],
       links: [{ rel: "canonical", href: url }],
       scripts: [
