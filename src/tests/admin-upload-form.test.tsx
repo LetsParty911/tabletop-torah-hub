@@ -68,6 +68,17 @@ describe("UploadPdfForm actions", () => {
     expect(props.onSubmit).not.toHaveBeenCalled();
   });
 
+  it("warns before a free-text original is saved and directs the admin to the registered series", () => {
+    renderForm({ title: "Parsha Pearls from the Ramban", publicationId: "" });
+    expect(screen.getByRole("alert").textContent).toContain("Select \"Parsha Pearls from the Ramban\"");
+  });
+  it("does not show the warning for the correct series or an outside publication", () => {
+    renderForm({ title: "Parsha Pearls from the Ramban", publicationId: "81b9fadd-3f96-43a2-b21d-6619567e8b1b" });
+    expect(screen.queryByRole("alert")).toBeNull();
+    cleanup();
+    renderForm({ title: "Outside Torah Publication", publicationId: "" });
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
   it("disables both buttons and shows publishing busy text while publishing", () => {
     renderForm({ busyAction: "publish" });
     const publish = screen.getByRole("button", { name: "Uploading & publishing…" });

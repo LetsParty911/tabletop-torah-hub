@@ -1,4 +1,5 @@
 import { TFTT_ORIGINAL_EDITION_SERIES, tfttOriginalSeriesById, renameLegacySeriesText } from "@/lib/tftt-originals";
+import { originalPublicationError, originalPublicationEditError } from "@/lib/original-upload-validation";
 import { activeOriginalSeriesIds, groupOriginalEditions, type OriginalEditionRow } from "@/lib/original-editions";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
@@ -1350,6 +1351,12 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { userId, email } = await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
+    const associationError = originalPublicationError(data.title, data.publicationId);
+    if (associationError) throw new Error(associationError);
+    if (data.publicationId) {
+      const { data: selected, error } = await admin.from("publications").select("id, active").eq("id", data.publicationId).maybeSingle();
+      if (error || !selected?.active) throw new Error("The selected publication could not be verified. Select an active publication before uploading.");
+    }
     let createdBy: string | null = null;
     try {
       const { data: authUsers } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
@@ -1436,7 +1443,8 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     if (data.featuredSlot !== undefined && data.featuredSlot !== null)
       insertRow.featured_slot = data.featuredSlot;
 
-    const metaKeys = ["publication_id", "description", "audience", "format_type", "page_count", "badge", "featured_slot"] as const;
+    // publication_id is identity, never optional metadata that a retry may discard.
+    const metaKeys = ["description", "audience", "format_type", "page_count", "badge", "featured_slot"] as const;
     const tryInsert = async (row: Record<string, unknown>) => (await admin.from("pdfs").insert(row)).error;
     let currentRow: Record<string, unknown> = { ...insertRow };
     let insErr = await tryInsert(currentRow);
@@ -1447,8 +1455,9 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
       delete currentRow[offending];
       insErr = await tryInsert(currentRow);
     }
-    if (insErr && /publication/i.test(insErr.message)) {
-      const { publication: _p, ...fallback } = currentRow as any;
+    if (insErr && /\bpublication\b/i.test(insErr.message) && "publication" in currentRow) {
+      // Legacy display category only; preserve publication_id in every retry.
+      const { publication: _p, ...fallback } = currentRow;
       insErr = await tryInsert(fallback);
     }
     if (insErr) {
@@ -1570,6 +1579,13 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
     await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
     const update: Record<string, unknown> = {};
+    if (data.title !== undefined || data.publicationId !== undefined) {
+      const { data: current, error } = await admin.from("pdfs").select("title, publication_id").eq("id", data.id).maybeSingle();
+      if (error || !current) throw new Error("Could not verify the existing publication association.");
+      const next = { title: data.title ?? current.title, publication_id: data.publicationId !== undefined ? data.publicationId : current.publication_id };
+      const associationError = originalPublicationEditError(current, next);
+      if (associationError) throw new Error(associationError);
+    }
     if (data.title !== undefined) update.title = data.title;
     if (data.publicationId !== undefined) update.publication_id = data.publicationId;
     if (data.subtitle !== undefined) update.subtitle = data.subtitle;
@@ -1584,7 +1600,8 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
     if (data.featuredSlot !== undefined) update.featured_slot = data.featuredSlot;
     if (data.contentType !== undefined) update.content_type = data.contentType;
     if (Object.keys(update).length === 0) return { ok: true };
-    const metaKeys = ["publication_id", "description", "audience", "format_type", "page_count", "badge", "publication", "featured_slot"] as const;
+    // Never strip an explicitly requested publication association on retry.
+    const metaKeys = ["description", "audience", "format_type", "page_count", "badge", "publication", "featured_slot"] as const;
     let current: Record<string, unknown> = { ...update };
     let { error } = await admin.from("pdfs").update(current).eq("id", data.id);
     while (error) {
@@ -1745,6 +1762,12 @@ export const adminTogglePublished = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
+    if (data.published) {
+      const { data: row, error } = await admin.from("pdfs").select("title, publication_id").eq("id", data.id).maybeSingle();
+      if (error || !row) throw new Error("Could not verify the publication association before publishing.");
+      const associationError = originalPublicationError(row.title, row.publication_id);
+      if (associationError) throw new Error(associationError);
+    }
     const { error } = await admin.from("pdfs").update({ published: data.published }).eq("id", data.id);
     if (error) throw new Error(error.message);
     if (!data.published) {
@@ -1774,6 +1797,12 @@ export const adminBulkPublish = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
+    const { data: rows, error: readError } = await admin.from("pdfs").select("id, title, publication_id").in("id", data.ids);
+    if (readError || !rows || rows.length !== new Set(data.ids).size) throw new Error("Could not verify every publication before bulk publishing.");
+    for (const row of rows) {
+      const associationError = originalPublicationError(row.title, row.publication_id);
+      if (associationError) throw new Error(associationError);
+    }
     const { error } = await admin
       .from("pdfs")
       .update({ published: true })
