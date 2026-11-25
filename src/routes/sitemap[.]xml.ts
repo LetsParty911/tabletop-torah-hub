@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
-import { publicationSlug } from "@/lib/publication-slug";
+import { canonicalPublicationSlug } from "@/lib/publication-slug";
 import { readingPagePath, readingSlug } from "@/lib/reading-page";
 import { PARSHIYOS_54 } from "@/lib/parshiyos";
 import { latestSitemapDate } from "@/lib/sitemap-lastmod";
@@ -75,7 +75,7 @@ export const Route = createFileRoute("/sitemap.xml")({
             for (const pub of pubs.data ?? []) {
               if (!publicationDates.has(pub.id as string)) continue;
               urls.push({
-                loc: `${SITE_URL}/publication/${publicationSlug(pub.name as string)}`,
+                loc: `${SITE_URL}/publication/${canonicalPublicationSlug(pub)}`,
                 lastmod: publicationDates.get(pub.id as string) ?? null,
                 priority: "0.7",
               });
