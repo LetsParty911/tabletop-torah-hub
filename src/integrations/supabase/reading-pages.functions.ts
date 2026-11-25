@@ -6,7 +6,7 @@ import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { canonicalLibraryReading } from "@/lib/reading-library";
 import { normalizeAudience } from "@/lib/audience";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
-import { publicationSlug } from "@/lib/publication-slug";
+import { canonicalPublicationName, canonicalPublicationSlug } from "@/lib/publication-slug";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { formatReadingLabel } from "@/lib/parshiyos";
 import { pdfThumbUrl } from "@/integrations/supabase/api.functions";
@@ -152,9 +152,9 @@ export const getReadingCollection = createServerFn({ method: "GET" })
         .in("id", publicationIds);
       for (const p of pubs ?? []) {
         publicationMap.set(p.id as string, {
-          name: p.name as string,
+          name: canonicalPublicationName(p),
           publisher: (p.publisher as string | null) ?? null,
-          slug: publicationSlug(p.name as string),
+          slug: canonicalPublicationSlug(p),
         });
       }
     }
