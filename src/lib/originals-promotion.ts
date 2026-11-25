@@ -112,3 +112,34 @@ export function latestPromotionEdition(series: OriginalPromotionSeries, groups: 
   }
   return undefined;
 }
+
+/** Artwork is separate from the latest Read Now target: a new edition may
+ * be published before its thumbnail finishes uploading. Keep the previous
+ * real cover until a new one is available. Never borrow another series. */
+export type OriginalPromotionCover = {
+  seriesId: string;
+  editionId: string;
+  thumbUrl: string;
+  smallThumbUrl: string | null;
+  label: string;
+};
+
+export function selectPromotionCovers(
+  groups: readonly OriginalEditionGroup[],
+  smallThumbnail: (id: string, url: string) => string | null = () => null,
+): OriginalPromotionCover[] {
+  return ORIGINAL_PROMOTION_SERIES.flatMap((series) => {
+    if (!series.publicationId) return [];
+    for (const group of groups) {
+      const edition = group.editions.find((item) => item.seriesId === series.publicationId && !!item.thumbUrl);
+      if (edition?.thumbUrl) return [{
+        seriesId: series.publicationId,
+        editionId: edition.id,
+        thumbUrl: edition.thumbUrl,
+        smallThumbUrl: smallThumbnail(edition.id, edition.thumbUrl),
+        label: group.label,
+      }];
+    }
+    return [];
+  });
+}
