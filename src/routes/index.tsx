@@ -23,7 +23,7 @@ import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
-import { canShowOriginalsLaunch, NEW_ORIGINAL_SERIES, ORIGINAL_PROMOTION_SERIES, resolveListingCover } from "@/lib/originals-promotion";
+import { canShowOriginalsLaunch, NEW_ORIGINAL_SERIES, ORIGINAL_PROMOTION_SERIES, resolveListingCover, promotionSeriesById } from "@/lib/originals-promotion";
 import { OriginalSeriesCover } from "@/components/OriginalSeriesCover";
 import { weeklyCardBadges } from "@/lib/weekly-card-badges";
 import { publicationLabel } from "@/lib/badges";
@@ -55,7 +55,6 @@ import { trackEvent } from "@/lib/analytics";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { TableChooser } from "@/components/TableChooser";
-import { MobileCollectionControlsBar } from "@/components/MobileCollectionControlsBar";
 import { CHOOSERS, pickRecommendations, pickStarterSelections, type ChooserKey } from "@/lib/table-chooser";
 
 type Resource = {
@@ -261,7 +260,7 @@ export const Route = createFileRoute("/")({
   head: () => {
     const title = "Torah For The Table | Printable Weekly Divrei Torah";
     const description =
-      "Original weekly Parsha Questions & Answers, Stories for the Shabbos Table, In the Margins, and Parsha Pearls, alongside printable Divrei Torah from respected Torah publishers.";
+      "Seven original weekly Torah series and printable Divrei Torah from respected publishers, for children, families and deeper learning at the Shabbos table.";
     const url = "https://torahforthetable.com/";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -576,12 +575,13 @@ function Index() {
     ? 1
     : Number(audienceFilter !== "All") + Number(lengthFilter !== "All") + Number(contentTypeFilter !== "All") + Number(publicationFilter !== "All");
 
-  const quickChoices = (["quick", "family", "kids", "story"] as const).map((key) => {
+  const quickChoices = (["quick", "family", "kids", "deeper", "story"] as const).map((key) => {
     const chooser = CHOOSERS.find((option) => option.key === key);
     const labels: Record<(typeof key), string> = {
       quick: "Brief Insights",
       family: "Family Table",
       kids: "Children",
+      deeper: "Deeper Learning",
       story: "Stories",
     };
     return { key, label: labels[key], trackingLabel: chooser?.label ?? labels[key] };
@@ -607,18 +607,20 @@ function Index() {
     return r.parsha_key;
   };
   const displayTitle = (r: Resource) => {
-    const base = tfttOriginalSeriesById(r.publication_id)?.title === "Parsha Questions & Answers"
-      ? r.title.replace(/^Parsha Challenge/i, "Parsha Questions & Answers")
-      : isHaazinuWeek && r.title === "Parsha Questions & Answers" ? haazinuQaTitle : r.title;
+    const series = promotionSeriesById(r.publication_id);
+    const base = series?.key === "ramban"
+      ? r.title.replace(/^Parsha Pearls(?:\s+(?:from|on)\s+the\s+Ramban)?\b/i, series.title)
+      : series?.key === "qa"
+        ? r.title.replace(/^Parsha Challenge/i, series.title)
+        : isHaazinuWeek && r.title === "Parsha Questions & Answers" ? haazinuQaTitle : r.title;
     const qualifier = holidayQualifier(r);
     return qualifier ? `${base} — ${qualifier}` : base;
   };
   const displayPublicationName = (r: Resource) =>
-    tfttOriginalSeriesById(r.publication_id)?.title === "Parsha Questions & Answers"
-      ? "Parsha Questions & Answers"
-      : isHaazinuWeek && r.title === "Parsha Questions & Answers"
+    promotionSeriesById(r.publication_id)?.title ??
+      (isHaazinuWeek && r.title === "Parsha Questions & Answers"
         ? haazinuQaTitle
-        : publicationLabel(r.publication || r.title) || r.title;
+        : publicationLabel(r.publication || r.title) || r.title);
 
   const isTfttOriginal = (r: Resource) => Boolean(tfttOriginalSeriesById(r.publication_id));
   // Preserve the recommendation order in guided mode; otherwise partition
@@ -754,7 +756,6 @@ function Index() {
                   : `Browse ${resources.length} Available Selections`}
               </Button>
             )}
-            <p className="mt-3 text-xs text-muted-foreground">Divrei Torah in Hebrew — Coming Soon</p>
           </div>
         </section>
         {(isFallback || resources.length === 0) && (
@@ -831,9 +832,9 @@ function Index() {
               </p>
             )}
         {resources.length >= 6 && (
-          <section aria-labelledby="mobile-quick-choices" className="sm:hidden">
-            <h2 id="mobile-quick-choices" className="sr-only">Choose what fits your table</h2>
-            <p className="mb-2 text-xs text-muted-foreground">Choose a category, or browse every selection below.</p>
+          <section aria-labelledby="mobile-quick-choices" className="mt-4 rounded-xl border border-accent/35 bg-card/60 p-3 sm:hidden">
+            <h3 id="mobile-quick-choices" className="mb-1 font-serif text-sm font-bold text-primary">Choose what fits your table</h3>
+            <p className="mb-2 text-xs text-muted-foreground">Choose a category for suggested selections, or browse everything below.</p>
             <div className="grid grid-cols-2 gap-2">
               {quickChoices.map((choice) => {
                 const active = mobileQuickChoice === choice.key;
@@ -864,7 +865,7 @@ function Index() {
                         });
                       });
                     }}
-                    className={`min-h-11 min-w-0 rounded-lg border px-3 py-2.5 font-serif text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                    className={`${choice.key === "story" ? "col-span-2 " : ""}min-h-11 min-w-0 rounded-lg border px-3 py-2.5 font-serif text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                       active
                         ? "border-accent bg-accent/15 text-primary shadow-sm"
                         : "border-accent/40 bg-background/70 text-primary hover:bg-accent/10"
@@ -918,17 +919,12 @@ function Index() {
                   )}
                 </div>
 
-                <MobileCollectionControlsBar
-                  anchorId="filters"
-                  count={filteredResources.length}
-                  activeFilterCount={activeFilterCount}
-                  onOpenFilters={() => setFiltersOpen(true)}
-                />
-                <div id="filters" className="mt-5 sticky top-14 z-30 -mx-3 bg-background/95 px-3 py-3 backdrop-blur border-y border-accent/20 sm:static sm:z-auto sm:mx-0 sm:rounded-xl sm:border sm:px-4 sm:shadow-sm scroll-mt-24">
+                <div id="filters" className="mt-4 scroll-mt-24 rounded-xl border border-accent/35 bg-card/60 px-3 py-3 sm:px-4">
                   <div className="flex items-center justify-between gap-3 sm:hidden">
                     <button
                       type="button"
                       aria-expanded={filtersOpen}
+                      aria-controls="weekly-filter-options"
                       onClick={() => setFiltersOpen((open) => !open)}
                       className="min-h-11 flex-1 rounded-full border border-accent/45 bg-background px-4 py-2 text-left font-serif text-sm font-semibold text-primary shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                     >
@@ -946,7 +942,7 @@ function Index() {
                   </div>
 
 
-                  <div className={`${filtersOpen ? "block" : "hidden"} mt-3 space-y-3 sm:mt-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:items-start sm:gap-4 sm:space-y-0`}>
+                  <div id="weekly-filter-options" className={`${filtersOpen ? "block" : "hidden"} mt-3 space-y-3 sm:mt-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:items-start sm:gap-4 sm:space-y-0`}>
                     {activeFilterCount > 0 && (
                       <div className="hidden justify-end sm:col-span-3 sm:flex">
                         <button
@@ -1111,7 +1107,7 @@ function Index() {
                     {group.items.map((r) => (
                     <PublicationCardTracker
                       key={r.id}
-                      className="h-full rounded-xl border border-accent/35 bg-background/55 p-3 sm:p-5 hover:border-accent/70 hover:shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
+                      className="h-full rounded-xl border border-accent/40 bg-card p-3 sm:p-4 hover:border-accent/70 hover:shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
                       publication_id={r.id}
                       publication_title={r.title}
                       publication_series={r.publication ?? null}
@@ -1243,7 +1239,7 @@ function Index() {
           <WeeklyEmailSignup
             sourceId="homepage"
             heading="Receive the Weekly Shabbos Collection"
-            description="Receive our original Torah publications and additional Divrei Torah in your inbox each week, ready to read or print before Shabbos."
+            description="Receive our seven original weekly series and additional Divrei Torah in your inbox, ready to read or print before Shabbos."
           />
         </section>
 
@@ -1321,6 +1317,7 @@ function Index() {
           </div>
         </section>
 
+        <p className="text-center text-xs text-muted-foreground">Divrei Torah in Hebrew — Coming Soon</p>
         <SiteFooter />
       </div>
       <BackToTop collectionId={showCompleteCollection ? "this-weeks-collection" : "starter-selections-heading"} />
