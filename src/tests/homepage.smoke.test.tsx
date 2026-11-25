@@ -1,6 +1,6 @@
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 
 // Real homepage component, with only the data and nested services replaced.
 // No network calls, real subscriber email, database credentials, or maintenance bypass.
@@ -87,6 +87,7 @@ vi.mock("@/lib/first-party-analytics", () => ({ trackFp: vi.fn(), getSessionId: 
 
 import { Route } from "../routes/index";
 import { TFTT_ORIGINAL_SERIES } from "@/lib/tftt-originals";
+import { ORIGINAL_PROMOTION_SERIES } from "@/lib/originals-promotion";
 
 const example = (index: number, parshaKey: string) => ({
   id: `example-${index}`,
@@ -180,6 +181,22 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.getByRole("heading", { name: "More Divrei Torah for Your Table" })).toBeTruthy();
     expect(screen.queryByText("Introducing Three New Weekly Series")).toBeNull();
     expect(screen.getByRole("link", { name: "Explore Our Original Series" }).getAttribute("href")).toBe("/originals");
+  });
+
+  it("renders seven real promotional covers even when a series is absent from the current weekly list", () => {
+    setHomepage(false);
+    state.loader.promotionCovers = ORIGINAL_PROMOTION_SERIES.map((series) => ({
+      seriesId: series.publicationId, editionId: series.key, thumbUrl: "/cover-" + series.key + ".png",
+      smallThumbUrl: null, label: "Parshas Vayetzei 5787",
+    }));
+    render(<Homepage />);
+    const promotion = screen.getByRole("region", { name: "Seven Original Weekly Torah Publications" });
+    expect(within(promotion).getAllByRole("img")).toHaveLength(7);
+    for (const series of ORIGINAL_PROMOTION_SERIES) {
+      expect(within(promotion).getByRole("img", { name: "First page of " + series.title + ", Parshas Vayetzei 5787" }).getAttribute("src")).toBe("/cover-" + series.key + ".png");
+    }
+    expect(within(promotion).queryByText(/Coming Soon/)).toBeNull();
+    expect(within(promotion).queryByText(/Published cover previews/)).toBeNull();
   });
 
   it("opens a weekly PDF without displaying an audiobook promotion", () => {
