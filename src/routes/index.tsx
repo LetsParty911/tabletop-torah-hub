@@ -709,8 +709,8 @@ function Index() {
               <p className="mt-1 text-xs text-muted-foreground">{heroDateLine}</p>
             )}
             {showMoreComingNotice && (
-              <p aria-label="Upcoming Divrei Torah" className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                More Divrei Torah will be added through <strong className="font-semibold text-primary">Thursday at 8:00 PM ET.</strong>
+              <p aria-label="Upcoming Divrei Torah" className="mx-auto mt-2 max-w-xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
+                More Divrei Torah through <strong className="whitespace-nowrap font-semibold text-primary">Thursday, 8 PM ET</strong>
               </p>
             )}
             {resources.length > 0 && (
