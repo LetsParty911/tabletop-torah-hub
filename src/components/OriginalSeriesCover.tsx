@@ -4,7 +4,7 @@ import type { OriginalPromotionSeries } from "@/lib/originals-promotion";
 /**
  * Permanent series branding, never a weekly issue preview.
  * All repository-owned assets are exact 320 x 400 WebP images.
- * Actual PDF cards and archives continue to use their own first-page previews.
+ * Public discovery cards reuse this artwork; historical archives and PDF previews retain actual issue images.
  */
 export function OriginalSeriesCover({ series, eager = false }: { series: OriginalPromotionSeries; eager?: boolean }) {
   const [failed, setFailed] = useState(false);
