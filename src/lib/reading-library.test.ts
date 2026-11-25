@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { summarizeReadingLibrary } from "./reading-library";
+import { summarizeReadingLibrary, readingLibraryGroup } from "./reading-library";
 describe("complete reading index", () => {
   it("includes combined readings, holidays and legacy aliases without double counting", () => {
     const rows = [
@@ -17,5 +17,17 @@ describe("complete reading index", () => {
     expect(result.find(r=>r.slug==="acharei-mos-kedoshim")?.permanentParsha).toBe(true);
     expect(result.find(r=>r.slug==="sukkos")?.permanentParsha).toBe(false);
     expect(result.find(r=>r.slug==="special-collection")?.permanentParsha).toBe(false);
+  });
+});
+
+describe("reading library groups", () => {
+  it("keeps canonical, combined, holiday and unknown readings distinct", () => {
+    expect(readingLibraryGroup("Vayeitzei")).toBe("bereishis");
+    expect(readingLibraryGroup("Vayakhel-Pekudei")).toBe("shemos");
+    expect(readingLibraryGroup("Behar-Bechukosai")).toBe("vayikra");
+    expect(readingLibraryGroup("Matos-Masei")).toBe("bamidbar");
+    expect(readingLibraryGroup("Nitzavim-Vayeilech")).toBe("devarim");
+    expect(readingLibraryGroup("Pesach")).toBe("yom-tov");
+    expect(readingLibraryGroup("Special collection")).toBe("other-readings");
   });
 });
