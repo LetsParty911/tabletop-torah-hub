@@ -26,7 +26,8 @@ import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
-import { canShowOriginalsLaunch, NEW_ORIGINAL_SERIES } from "@/lib/originals-promotion";
+import { canShowOriginalsLaunch, NEW_ORIGINAL_SERIES, ORIGINAL_PROMOTION_SERIES } from "@/lib/originals-promotion";
+import { OriginalSeriesCover } from "@/components/OriginalSeriesCover";
 import { weeklyCardBadges } from "@/lib/weekly-card-badges";
 import { publicationLabel } from "@/lib/badges";
 import { publicationFilterName } from "@/lib/publication-filter";
@@ -792,6 +793,18 @@ function Index() {
               From engaging Parsha questions and meaningful stories to the timeless wisdom of our Meforshim.
             </p>
             <p className="mt-1 font-serif text-sm italic text-[#f0d18b]">Enriching your Shabbos table, one Parsha at a time.</p>
+            <ul aria-label="Explore the seven series" className="mx-auto mt-4 flex max-w-3xl flex-wrap justify-center gap-x-2 gap-y-3 sm:flex-nowrap sm:gap-3">
+              {ORIGINAL_PROMOTION_SERIES.map((series) => {
+                const resource = series.publicationId ? resources.find((item) => item.publication_id === series.publicationId) : undefined;
+                return (
+                  <li key={series.key} className="w-[21%] min-w-0 max-w-[92px] sm:w-[14%]">
+                    <OriginalSeriesCover series={series} src={resource?.thumb_url} smallSrc={resource?.small_thumb_url} editionLabel={resource?.parsha_key} published={Boolean(resource)} mini />
+                    <p className="mt-1 break-words font-serif text-[10px] font-semibold leading-tight text-[#fff8e9] sm:text-xs">{series.title}</p>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="mt-2 text-[10px] leading-snug text-[#e9dfcb]">Published cover previews where available; forthcoming series are shown with their series identities.</p>
             <Link
               to="/originals"
               className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#d9b875] px-5 py-2.5 font-serif text-sm font-bold text-[#11243c] transition-colors hover:bg-[#f0d18b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#fff8e9]"
