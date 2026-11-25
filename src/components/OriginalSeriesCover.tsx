@@ -23,7 +23,7 @@ export function OriginalSeriesCover({
   published?: boolean;
 }) {
   // Remount the image state when a new weekly thumbnail arrives.
-  return <CoverImage key={src ?? series.key} {...{ series, src, smallSrc, editionLabel, mini, published }} />;
+  return <CoverImage key={`${src ?? series.key}|${smallSrc ?? ""}`} {...{ series, src, smallSrc, editionLabel, mini, published }} />;
 }
 
 function CoverImage({
