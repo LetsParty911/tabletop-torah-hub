@@ -82,7 +82,7 @@ export function SharePublicationButton({
 
   if (variant === "inline") {
     return (
-      <div className={`flex items-center gap-2 ${className}`}>
+      <div className={`flex flex-wrap items-center gap-2 ${className}`}>
         <button
           type="button"
           onClick={handleShare}
@@ -90,7 +90,7 @@ export function SharePublicationButton({
           aria-label={`Share ${title} on WhatsApp`}
         >
           <Share2 className="h-4 w-4" />
-          Share
+          Share on WhatsApp
         </button>
         <button
           type="button"
@@ -115,15 +115,15 @@ export function SharePublicationButton({
   }
 
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
+    <div className={`flex flex-wrap items-center gap-2 ${className}`}>
       <button
         type="button"
         onClick={handleShare}
-        className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+        className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
         aria-label={`Share ${title} on WhatsApp`}
       >
         <Share2 className="h-3.5 w-3.5" />
-        Share
+        Share on WhatsApp
       </button>
       <span className="text-accent/40" aria-hidden>
         |
@@ -131,7 +131,7 @@ export function SharePublicationButton({
       <button
         type="button"
         onClick={handleCopy}
-        className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+        className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
         aria-label={`Copy link to ${title}`}
       >
         {copied ? (
