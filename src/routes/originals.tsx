@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/SiteFooter";
 import { fitPageTitle } from "@/lib/page-title";
 import { useState } from "react";
-import { BookOpen, BookText, Gem, HelpCircle, PenLine, ScrollText, Search, Library } from "lucide-react";
+import { BookOpen } from "lucide-react";
+import { OriginalSeriesCover } from "@/components/OriginalSeriesCover";
 import { listOriginalEditions } from "@/integrations/supabase/api.functions";
 import { recordPdfAction } from "@/components/DownloadToPrintButton";
 import { pdfActionHrefs } from "@/lib/collection-status";
@@ -10,7 +11,7 @@ import {
   type OriginalEditionCard,
   type OriginalEditionGroup,
 } from "@/lib/original-editions";
-import { ORIGINAL_PROMOTION_SERIES, originalsPromotionDescription, promotionSeriesById } from "@/lib/originals-promotion";
+import { ORIGINAL_PROMOTION_SERIES, originalsPromotionDescription, promotionSeriesById, latestPromotionEdition } from "@/lib/originals-promotion";
 
 export const Route = createFileRoute("/originals")({
   component: ResourcesPage,
@@ -49,50 +50,43 @@ type SeriesCard = {
   cta: string;
 };
 
-const SERIES_ICONS = {
-  qa: HelpCircle,
-  stories: BookOpen,
-  margins: PenLine,
-  ramban: Gem,
-  chizkuni: Library,
-  medrash: ScrollText,
-  questions: Search,
-} as const;
-
 function OriginalSeriesGrid({ groups, activeSeriesIds }: { groups: OriginalEditionGroup[]; activeSeriesIds: readonly string[] }) {
   return (
-    <div className="mx-auto mt-6 grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="mx-auto mt-5 flex max-w-6xl flex-wrap justify-center gap-3">
       {ORIGINAL_PROMOTION_SERIES.map((series) => {
-        const Icon = SERIES_ICONS[series.key as keyof typeof SERIES_ICONS] ?? BookText;
-        const latestGroup = series.publicationId ? groups.find((group) => group.editions.some((edition) => edition.seriesId === series.publicationId)) : undefined;
-        const latest = latestGroup?.editions.find((edition) => edition.seriesId === series.publicationId);
+        const selected = latestPromotionEdition(series, groups);
+        const latest = selected?.edition;
+        const latestGroup = selected?.group;
         const hasPublished = series.publicationId !== null && activeSeriesIds.includes(series.publicationId);
         return (
-          <article key={series.key} className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-accent/40 bg-card shadow-sm">
-            <div className="flex min-h-28 flex-col items-center justify-center gap-2 border-b border-[#d9b875]/50 bg-[#11243c] px-4 py-4 text-center">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d9b875]/60 text-[#f0d18b]" aria-hidden="true"><Icon className="h-5 w-5" /></span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#f0d18b]">TFTT Original</span>
-              <h3 className="font-serif text-lg font-bold leading-tight text-[#fff8e9]">{series.title}</h3>
-            </div>
-            <div className="flex flex-1 flex-col p-4">
-              <p className="font-serif text-sm font-semibold italic text-primary">{series.tagline}</p>
-              <p className="mt-2 text-sm leading-relaxed text-foreground">{series.description}</p>
-              <p className="mt-3 text-xs font-medium text-muted-foreground">{series.audience}</p>
-              <div className="mt-auto pt-4">
-                {latest && latestGroup && (
-                  <a
-                    href={pdfActionHrefs(latest.id).open}
-                    target="_blank"
-                    rel="nofollow noopener noreferrer"
-                    onClick={(event) => trackOpen(event, latest, latestGroup, "button")}
-                    className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground"
-                    aria-label={`Read latest: ${series.title}, ${latestGroup.label}`}
-                  >Read Latest</a>
-                )}
-                {hasPublished && series.archiveQuery && (
-                  <Link to="/archive" search={{ q: series.archiveQuery }} className="mt-2 block text-center text-sm font-semibold text-primary underline decoration-accent/60 underline-offset-4 hover:text-accent">Browse Archive</Link>
-                )}
-                {!hasPublished && !latest && <p className="rounded-md border border-accent/30 bg-background px-3 py-2 text-center text-sm font-medium text-muted-foreground">Coming Soon</p>}
+          <article key={series.key} className="flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-accent/40 bg-card shadow-sm sm:w-[calc(50%-0.375rem)] xl:w-[calc(25%-0.5625rem)]">
+            <div className="flex flex-1 gap-3 p-3 sm:flex-col sm:gap-2 sm:p-4">
+              <div className="w-[27%] max-w-[112px] shrink-0 sm:mx-auto sm:w-[72%] sm:max-w-[148px]">
+                <OriginalSeriesCover series={series} src={latest?.thumbUrl} editionLabel={latestGroup?.label} published={Boolean(latest) || hasPublished} />
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-accent">TFTT Original</span>
+                <h3 className="mt-0.5 font-serif text-lg font-bold leading-tight text-primary">{series.title}</h3>
+                <p className="mt-1 font-serif text-sm font-semibold italic text-primary">{series.tagline}</p>
+                <p className="mt-1.5 text-sm leading-snug text-foreground">{series.description}</p>
+                <p className="mt-2 text-xs font-medium text-muted-foreground">{series.audience}</p>
+                {latestGroup && <p className="mt-1 text-xs text-muted-foreground">Latest: {latestGroup.label}</p>}
+                <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-2">
+                  {latest && latestGroup && (
+                    <a
+                      href={pdfActionHrefs(latest.id).open}
+                      target="_blank"
+                      rel="nofollow noopener noreferrer"
+                      onClick={(event) => trackOpen(event, latest, latestGroup, "button")}
+                      className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground"
+                      aria-label={`Read latest: ${series.title}, ${latestGroup.label}`}
+                    >Read Latest</a>
+                  )}
+                  {hasPublished && series.archiveQuery && (
+                    <Link to="/archive" search={{ q: series.archiveQuery }} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline decoration-accent/60 underline-offset-4 hover:text-accent">Browse Archive</Link>
+                  )}
+                  {!hasPublished && !latest && <span className="text-sm font-medium text-muted-foreground">Coming Soon</span>}
+                </div>
               </div>
             </div>
           </article>
@@ -256,7 +250,7 @@ function ResourcesPage() {
   const { groups, activeSeriesIds } = Route.useLoaderData();
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-5xl px-3 py-5 sm:px-4 sm:py-8 md:px-8 md:py-14 space-y-6 sm:space-y-8">
+      <div className="mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-8 md:px-8 md:py-14 space-y-6 sm:space-y-8">
         <section className="parchment-frame">
           <div className="parchment-panel">
             <div className="text-center">
