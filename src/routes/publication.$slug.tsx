@@ -16,9 +16,9 @@ export const Route = createFileRoute("/publication/$slug")({
   loader: async ({ params }) => {
     const result = await getPublicationPage({ data: { slug: params.slug } });
     if (!result.publication) throw notFound();
-    // Historical Parsha Challenge links still resolve, but the canonical URL uses the new title.
+    // Historical publication links resolve permanently to their canonical series URL.
     if (params.slug !== result.publication.slug) {
-      throw redirect({ to: "/publication/$slug", params: { slug: result.publication.slug } });
+      throw redirect({ to: "/publication/$slug", params: { slug: result.publication.slug }, statusCode: 301, replace: true });
     }
     return result;
   },
