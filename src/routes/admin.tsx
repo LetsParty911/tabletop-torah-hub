@@ -1,5 +1,6 @@
 import { usesIndividualPdfTitle } from "@/lib/pdf-display-title";
 import { originalPublicationError, requiredOriginalSeries } from "@/lib/original-upload-validation";
+import { publicationQualityError } from "@/lib/publication-quality";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import AdminMiniDashboard from "@/components/AdminMiniDashboard";
 import SubscribersManager, { type Subscriber } from "@/components/admin/SubscribersManager";
@@ -861,6 +862,18 @@ function AdminPage() {
       return;
     }
     const willPublish = action === "publish";
+    if (willPublish) {
+      const qualityError = publicationQualityError({
+        title, parsha_key: parshaKey, audience: uploadAudience,
+        format_type: uploadFormatType, description: uploadDescription,
+      }, false);
+      if (qualityError) {
+        setShowUploadDetails(true);
+        setMsg({ kind: "error", text: qualityError });
+        setUploadResult(null);
+        return;
+      }
+    }
     const submittedTitle = title;
     const submittedParsha = parshaKey;
     setBusy(true);
