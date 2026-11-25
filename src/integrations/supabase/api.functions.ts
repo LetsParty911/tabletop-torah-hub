@@ -727,13 +727,21 @@ export const listOriginalEditions = createServerFn({ method: "GET" }).handler(as
     const rows = (data as OriginalEditionRow[]) ?? [];
     // The shared cached inventory distinguishes missing PNGs from real ones;
     // on a storage outage preserve the previous original-URL behavior.
-    const allGroups = groupOriginalEditions(rows, (id) =>
-      inventory.originalIds === null || inventory.originalIds.has(id) ? pdfThumbUrl(id) : null, 300);
+    const hasCover = (id: string) => inventory.originalIds === null || inventory.originalIds.has(id);
+    const allGroups = groupOriginalEditions(rows, (id) => hasCover(id) ? pdfThumbUrl(id) : null, 300);
+    // Filter before grouping, so even an older upload in the same parsha
+    // remains eligible while the replacement issue has no preview.
+    const coverGroups = groupOriginalEditions(rows.filter((row) => hasCover(row.id)), pdfThumbUrl, 300);
+    const promotionCovers = selectPromotionCovers(coverGroups, (id, url) =>
+      verifiedSmallThumbnailUrl(url, id, inventory.smallPaths)).map((cover) => {
+      const version = inventory.originalVersions.get(cover.editionId);
+      // Keep the immutable small image, and cache-bust the PNG fallback on replacement.
+      return version ? { ...cover, thumbUrl: cover.thumbUrl + "?v=" + version } : cover;
+    });
     return {
       groups: allGroups.slice(0, 12),
       activeSeriesIds: activeOriginalSeriesIds(rows),
-      promotionCovers: selectPromotionCovers(allGroups, (id, url) =>
-        verifiedSmallThumbnailUrl(url, id, inventory.smallPaths)),
+      promotionCovers,
     };
   } catch (e) {
     console.error("listOriginalEditions failed", e instanceof Error ? e.message : e);
@@ -1468,7 +1476,7 @@ export const adminUploadPdfThumb = createServerFn({ method: "POST" })
       .object({
         accessToken: z.string().min(10),
         id: z.string().uuid(),
-        pngBase64: z.string().min(10),
+        pngBase64: z.string().min(10).max(6000000),
         smallWebpBase64: z.string().min(10).max(200000).nullable().optional(),
       })
       .parse(input),
@@ -1477,6 +1485,10 @@ export const adminUploadPdfThumb = createServerFn({ method: "POST" })
     await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
     const buf = Buffer.from(data.pngBase64, "base64");
+    if (buf.length < 24 || buf.length > 4 * 1024 * 1024 ||
+        !buf.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) {
+      return { ok: false, error: "Invalid PNG thumbnail.", smallStored: false };
+    }
     const { error } = await admin.storage
       .from("pdf-thumbs")
       .upload(`${data.id}.png`, buf, { contentType: "image/png", upsert: true });
