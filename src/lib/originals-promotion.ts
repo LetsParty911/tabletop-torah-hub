@@ -131,7 +131,7 @@ export function canShowOriginalsLaunch(publishedIds: readonly string[]): boolean
 }
 
 export function originalsPromotionDescription(): string {
-  return "Discover seven original weekly series from Torah For The Table: Parsha questions, stories, classical Meforshim, Ramban, Chizkuni, Medrash and in-depth questions.";
+  return "Discover Torah For The Table original weekly series — seven in all: Parsha questions, stories, classical Meforshim, Ramban, Chizkuni, Medrash and in-depth questions.";
 }
 
 /** Latest published edition by verified canonical publication ID, never title. */
