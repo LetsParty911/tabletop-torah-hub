@@ -6,7 +6,7 @@ import { readingSlug, isYomTovReading } from "@/lib/reading-page";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { summarizeReadingLibrary } from "@/lib/reading-library";
 import { normalizeAudience } from "@/lib/audience";
-import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { tfttOriginalSeriesById, originalDescriptionFallback } from "@/lib/tftt-originals";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { renameLegacySeriesText } from "@/lib/tftt-originals";
 
@@ -102,7 +102,7 @@ export const getParshaSeoPage = createServerFn({ method: "GET" })
     const resources: ParshaSeoResource[] = matches.map((row: any) => ({
       id: row.id as string,
       title: tfttOriginalSeriesById(row.publication_id)?.title ?? renameLegacySeriesText(row.title as string),
-      description: renameLegacySeriesText(standardizeCopy((row.description as string | null) ?? null)),
+      description: originalDescriptionFallback(row.publication_id, renameLegacySeriesText(standardizeCopy((row.description as string | null) ?? null))),
       summary_quick: renameLegacySeriesText(standardizeCopy((row.summary_quick as string | null) ?? null)),
       audience: normalizeAudience(row.audience ?? null, row.title, row.publication_id) ?? row.audience ?? null,
       format_type: (row.format_type as string | null) ?? null,
