@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { isPostShabbosWindow } from "@/lib/post-shabbos";
 import { weeklyReleaseAt } from "@/lib/weekly-release";
-import { FileText } from "lucide-react";
+import { BookOpen, FileText } from "lucide-react";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
@@ -25,7 +25,8 @@ import { HiddenGemTeaser } from "@/components/HiddenGem";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
-import { seriesBrief, TFTT_ORIGINAL_EDITION_SERIES, tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { canShowOriginalsLaunch, NEW_ORIGINAL_SERIES } from "@/lib/originals-promotion";
 import { weeklyCardBadges } from "@/lib/weekly-card-badges";
 import { publicationLabel } from "@/lib/badges";
 import { publicationFilterName } from "@/lib/publication-filter";
@@ -85,14 +86,6 @@ type Resource = {
 
 // First-page preview for every publication; also acts as a tracked PDF-open link.
 /** Visible "New" pill whose accessible text reads "(New series)" after the title. */
-function NewSeriesBadge() {
-  return (
-    <span className="inline-flex shrink-0 items-center rounded-full bg-accent px-2 py-0.5 font-sans text-[11px] font-bold uppercase leading-none tracking-wide text-accent-foreground">
-      <span className="sr-only">(</span>New<span className="sr-only"> series)</span>
-    </span>
-  );
-}
-
 function StarterThumb({ src, smallSrc, alt, title, href, onOpen, compactOnMobile = false }: {
   src: string;
   smallSrc?: string | null;
@@ -635,6 +628,14 @@ function Index() {
         : publicationLabel(r.publication || r.title) || r.title;
 
   const isTfttOriginal = (r: Resource) => Boolean(tfttOriginalSeriesById(r.publication_id));
+  // Preserve the recommendation order in guided mode; otherwise partition
+  // the already-filtered list by verified publication ownership, exactly once.
+  const weeklyResourceGroups = mobileQuickChoice || isCurrentYomKippur
+    ? [{ key: "all", heading: null, items: filteredResources }]
+    : [
+        { key: "originals", heading: "Our Original Publications", items: filteredResources.filter(isTfttOriginal) },
+        { key: "additional", heading: "More Divrei Torah for Your Table", items: filteredResources.filter((r) => !isTfttOriginal(r)) },
+      ].filter((group) => group.items.length > 0);
   // Display the correct uploaded PDF cover on all publication cards in ALL
   // homepage states, including when last week's collection is shown as fallback.
   const originalCover = (r: Resource, compactOnMobile = false) => {
@@ -768,6 +769,43 @@ function Index() {
             collectionComplete={false}
             initialNow={loaderData.renderedAt}
           />
+        )}
+
+        {!isCurrentYomKippur && (
+          <section
+            ref={originalsRef}
+            id="our-originals"
+            tabIndex={-1}
+            aria-labelledby="starter-selections-heading"
+            className="relative scroll-mt-24 overflow-hidden rounded-2xl border border-[#b99a5b] bg-[#11243c] px-5 py-5 text-center text-[#fff8e9] shadow-sm sm:px-8 sm:py-6"
+          >
+            <div className="mx-auto flex max-w-2xl flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-4">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d9b875]/60 text-[#f0d18b]" aria-hidden="true">
+                <BookOpen className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#f0d18b] sm:text-xs">Torah For The Table Originals</p>
+                <h2 id="starter-selections-heading" className="mt-1 font-serif text-xl font-bold leading-tight text-[#fff8e9] sm:text-3xl">Seven Original Weekly Torah Publications</h2>
+              </div>
+            </div>
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-[#e9dfcb]">
+              From engaging Parsha questions and meaningful stories to the timeless wisdom of our Meforshim.
+            </p>
+            <p className="mt-1 font-serif text-sm italic text-[#f0d18b]">Enriching your Shabbos table, one Parsha at a time.</p>
+            <Link
+              to="/originals"
+              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#d9b875] px-5 py-2.5 font-serif text-sm font-bold text-[#11243c] transition-colors hover:bg-[#f0d18b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#fff8e9]"
+            >
+              Explore Our Original Series
+            </Link>
+            {!isFallback && canShowOriginalsLaunch(resources.flatMap((resource) => resource.publication_id ? [resource.publication_id] : [])) && (
+              <aside aria-label="New original series" className="mx-auto mt-4 max-w-xl border-t border-[#d9b875]/40 pt-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#f0d18b]">Introducing Three New Weekly Series</p>
+                <p className="mt-1 font-serif text-lg font-bold">More Torah. More Discovery.</p>
+                <p className="mt-1 text-sm text-[#e9dfcb]">{NEW_ORIGINAL_SERIES.map((series) => series.title).join(" · ")}</p>
+              </aside>
+            )}
+          </section>
         )}
 
         {(resources.length === 0 || showCompleteCollection) && (
@@ -1058,7 +1096,14 @@ function Index() {
                 )}
 
                 <div id="weekly-publication-list" className="mt-5 scroll-mt-24 grid grid-cols-1 gap-3 sm:mt-6 sm:grid-cols-2 sm:gap-4">
-                  {filteredResources.map((r) => (
+                  {weeklyResourceGroups.map((group) => (
+                    <Fragment key={group.key}>
+                    {group.heading && (
+                      <h3 className="col-span-full mt-2 border-b border-accent/40 pb-2 font-serif text-lg font-bold text-primary sm:text-xl">
+                        {group.heading}
+                      </h3>
+                    )}
+                    {group.items.map((r) => (
                     <PublicationCardTracker
                       key={r.id}
                       className="h-full rounded-xl border border-accent/35 bg-background/55 p-3 sm:p-5 hover:border-accent/70 hover:shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
@@ -1087,11 +1132,11 @@ function Index() {
                               </p>
                             ) : null;
                           })()}
-                          <h3 className="min-w-0 break-words font-serif text-base font-bold leading-snug text-primary sm:text-xl">
+                          <h4 className="min-w-0 break-words font-serif text-base font-bold leading-snug text-primary sm:text-xl">
                             <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline transition-colors duration-150">
                               {displayTitle(r)}
                             </Link>
-                          </h3>
+                          </h4>
                           {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
                           <PublicationQuickFacts
                             audience={audienceLabel(normalizeAudience(r.audience, displayTitle(r))) ?? r.audience}
@@ -1127,6 +1172,8 @@ function Index() {
                         </div>
                       </div>
                     </PublicationCardTracker>
+                    ))}
+                    </Fragment>
                   ))}
                 </div>
 
@@ -1180,38 +1227,6 @@ function Index() {
           initialNow={loaderData.renderedAt}
         />
 
-        {!isCurrentYomKippur && (
-          <section ref={originalsRef} id="our-originals" tabIndex={-1} aria-labelledby="starter-selections-heading" className="scroll-mt-24 rounded-2xl border border-accent/50 bg-card/50 px-4 py-4 text-center sm:px-6 sm:py-5">
-            <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-readable sm:text-xs">
-              Home of the original Torah For The Table series
-            </p>
-            <h2 id="starter-selections-heading" className="mt-1 font-serif text-xl font-bold text-primary sm:text-2xl">
-              Our Four Original Weekly Series
-            </h2>
-            <p className="mx-auto mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              Created by Torah For The Table, with new editions each week:
-            </p>
-            <ul className="mx-auto mt-2 grid max-w-2xl gap-x-6 gap-y-1.5 text-left text-sm leading-snug sm:grid-cols-2">
-              {TFTT_ORIGINAL_EDITION_SERIES.map((series, index) => (
-                <li key={series.id} className="border-l-2 border-accent/50 pl-2.5">
-                  <span className="font-semibold text-primary">{series.title}</span>
-                  {index === TFTT_ORIGINAL_EDITION_SERIES.length - 1 && <>{" "}<NewSeriesBadge /></>}
-                  <span className="text-muted-foreground"> — {seriesBrief(series)}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              Divrei Torah from respected outside publishers join them throughout the week, all in the collection above.
-            </p>
-            <Link
-              to="/originals"
-              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full border border-accent/50 bg-background px-5 py-2.5 font-serif text-sm font-semibold text-primary transition-colors hover:border-accent hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            >
-              Explore Our Original Series
-            </Link>
-          </section>
-        )}
-
         <HomepageShare onWhatsApp={() => {
           trackEvent("share_whatsapp", { parsha: displayedParshaKey ?? displayedLabel, count: resources.length });
           trackFp("share_click", { metadata: { placement: "homepage_veahavta", share_method: "whatsapp" } });
@@ -1226,7 +1241,7 @@ function Index() {
           <WeeklyEmailSignup
             sourceId="homepage"
             heading="Receive the Weekly Shabbos Collection"
-            description="A weekly email when the new collection is ready, featuring Parsha Questions & Answers, Stories for the Shabbos Table, In the Margins, Parsha Pearls, and other Divrei Torah. Read or print before Shabbos."
+            description="Receive our original Torah publications and additional Divrei Torah in your inbox each week, ready to read or print before Shabbos."
           />
         </section>
 
