@@ -6,10 +6,16 @@
  */
 const DENIED_COUNTRIES: ReadonlySet<string> = new Set(["IN", "PK", "BD", "VN", "CN"]);
 
+// Owner-authorized exact-IP abuse denials. Check at the first request gate,
+// before auth, geolocation, VPN lookups, analytics or any database writes.
+const DENIED_ABUSE_IPS: ReadonlySet<string> = new Set(["47.253.4.207", "47.253.152.120"]);
+
 export function checkCountryBlock(request: Request): Response | null {
   // Exact uppercase only; no normalization, alternate headers or identity bypass.
   const country = request.headers.get("cf-ipcountry");
-  if (country === null || !DENIED_COUNTRIES.has(country)) return null;
+  const ip = request.headers.get("cf-connecting-ip");
+  const deniedIp = ip !== null && DENIED_ABUSE_IPS.has(ip);
+  if (!deniedIp && (country === null || !DENIED_COUNTRIES.has(country))) return null;
 
   const path = new URL(request.url).pathname;
   const machineResponse = path === "/api" || path.startsWith("/api/") ||
