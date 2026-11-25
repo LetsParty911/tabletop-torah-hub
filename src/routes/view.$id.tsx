@@ -1,6 +1,7 @@
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { viewDescription } from "@/lib/view-description";
+import { publicationShareImages, publicationShareImageMeta } from "@/lib/publication-share-image";
 import { fitPageTitle } from "@/lib/page-title";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
@@ -98,7 +99,13 @@ export const Route = createFileRoute("/view/$id")({
       parshaLabel, loaderData?.pdf?.jewish_year ?? null);
 
     const url = `https://torahforthetable.com/view/${params.id}`;
-    const image = "https://torahforthetable.com/og-image.png";
+    const shareImages = publicationShareImages({
+      publicationId: loaderData?.publicationContext?.publication?.id,
+      title: loaderData?.pdf?.title,
+      readingLabel: parshaLabel,
+      jewishYear: loaderData?.pdf?.jewish_year,
+    });
+    const image = shareImages[0].url;
 
     const toIso = (v: string | null | undefined): string | null => {
       if (!v) return null;
@@ -144,14 +151,12 @@ export const Route = createFileRoute("/view/$id")({
         { property: "og:description", content: description },
         { property: "og:url", content: url },
         { property: "og:site_name", content: "Torah For The Table" },
-        { property: "og:image", content: image },
-        { property: "og:image:width", content: "1200" },
-        { property: "og:image:height", content: "630" },
-        { property: "og:image:alt", content: shareTitle },
-        { name: "twitter:card", content: "summary_large_image" },
+        ...publicationShareImageMeta(shareImages, shareTitle),
+        { name: "twitter:card", content: shareImages[0].mime === "image/webp" ? "summary" : "summary_large_image" },
         { name: "twitter:title", content: shareTitle },
         { name: "twitter:description", content: description },
         { name: "twitter:image", content: image },
+        { name: "twitter:image:alt", content: shareTitle },
       ],
       links: [{ rel: "canonical", href: url }],
       scripts: [
