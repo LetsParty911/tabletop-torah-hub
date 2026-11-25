@@ -1,11 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { READING_LIBRARY_GROUPS, readingLibraryGroup } from "@/lib/reading-library";
+import { toParshaComparableKey } from "@/lib/parsha-normalize";
+import { resolveHebcalParsha } from "@/lib/hebcal";
+import { getParshaOverride } from "@/integrations/supabase/api.functions";
 import { BookOpen, ChevronRight } from "lucide-react";
 import { SiteFooter } from "@/components/SiteFooter";
 import { fitPageTitle } from "@/lib/page-title";
 import { listParshaSeoSummaries } from "@/integrations/supabase/parsha-seo.functions";
 
 export const Route = createFileRoute("/divrei-torah-parsha")({
-  loader: () => listParshaSeoSummaries(),
+  loader: async () => {
+    const [readings, override, resolved] = await Promise.all([
+      listParshaSeoSummaries(),
+      getParshaOverride().catch(() => null),
+      resolveHebcalParsha().catch(() => null),
+    ]);
+    return { readings, currentKey: override?.isActive && override.override ? override.override : resolved?.parshaKey ?? null };
+  },
   head: () => {
     const title = fitPageTitle("Divrei Torah on the Parsha", " — Weekly Dvar Torah Library");
     const description =
@@ -46,8 +57,9 @@ export const Route = createFileRoute("/divrei-torah-parsha")({
 });
 
 function DivreiTorahParshaPage() {
-  const parshiyos = Route.useLoaderData();
+  const { readings: parshiyos, currentKey } = Route.useLoaderData();
   const available = parshiyos.filter((p) => p.count > 0);
+  const current = currentKey ? available.find(p => toParshaComparableKey(p.parsha_key) === toParshaComparableKey(currentKey)) : undefined;
   const totalSelections = available.reduce((sum, reading) => sum + reading.count, 0);
 
   return (
@@ -73,17 +85,28 @@ function DivreiTorahParshaPage() {
             Choose a reading to explore its published selections across available years. Combined Parshiyos and Yom Tov collections are included.
           </p>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {available.map((parsha) => {
+          <div className="mt-5 rounded-xl border border-accent/40 bg-background p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-accent-readable">This Week</p>
+            {current ? <><p className="mt-1 font-serif text-xl font-bold text-primary">{current.label}</p>{current.permanentParsha ? <Link to="/parsha/$slug" params={{ slug: current.slug }} className="mt-2 inline-block underline text-primary">Browse all editions</Link> : <Link to="/archive" search={{ parsha: current.parsha_key }} className="mt-2 inline-block underline text-primary">Browse all editions</Link>}</> : <p className="mt-1 text-sm text-muted-foreground">See the weekly page for current publishing updates.</p>}
+            <Link to="/" hash="this-weeks-collection" className="mt-2 block text-sm underline text-primary">This week’s selections and updates</Link>
+          </div>
+          {READING_LIBRARY_GROUPS.map(group => {
+            const entries = available.filter(p => readingLibraryGroup(p.parsha_key) === group.id);
+            if (!entries.length && group.id === "other-readings") return null;
+            return <section key={group.id} id={group.id} className="mt-6 scroll-mt-24"><h3 className="font-serif text-xl font-bold text-primary">{group.label}</h3>
+            {!entries.length && <p className="mt-2 text-sm text-muted-foreground">Selections will appear as the library grows.</p>}
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {entries.map((parsha) => {
               const className = "group flex items-center justify-between gap-3 rounded-xl border border-accent/25 bg-background/70 p-4 transition-colors hover:border-accent/60 hover:bg-accent/5";
-              const card = <><div className="min-w-0"><h3 className="font-serif text-lg font-bold text-primary">{parsha.label}</h3><p className="mt-1 text-xs text-muted-foreground">{`${parsha.count} ${parsha.count === 1 ? "selection" : "selections"} · ${parsha.years.length} ${parsha.years.length === 1 ? "year" : "years"}`}</p></div><ChevronRight aria-hidden="true" className="h-4 w-4 shrink-0 text-accent transition-transform group-hover:translate-x-0.5" /></>;
+              const card = <><div className="min-w-0"><h4 className="font-serif text-lg font-bold text-primary">{parsha.label}</h4><p className="mt-1 text-xs text-muted-foreground">{`${parsha.count} ${parsha.count === 1 ? "selection" : "selections"}`}</p></div><ChevronRight aria-hidden="true" className="h-4 w-4 shrink-0 text-accent transition-transform group-hover:translate-x-0.5" /></>;
               return parsha.permanentParsha ? (
                 <Link key={parsha.slug} to="/parsha/$slug" params={{ slug: parsha.slug }} className={className}>{card}</Link>
               ) : (
                 <Link key={parsha.slug} to="/archive" search={{ parsha: parsha.parsha_key }} className={className}>{card}</Link>
               );
             })}
-          </div>
+            </div></section>;
+          })}
           <p className="mt-5 text-sm text-muted-foreground">
             Additional parsha pages will appear automatically as material is added to the archive.
           </p>
