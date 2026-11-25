@@ -121,3 +121,8 @@ export function tfttOriginalSeriesById(publicationId: string | null | undefined)
     ? { id: PARSHA_DETECTIVE_PUBLICATION_ID, ...PARSHA_DETECTIVE_SERIES_COPY }
     : null;
 }
+
+/** Use approved series copy only when the edition has no description of its own. */
+export function originalDescriptionFallback(publicationId: string | null | undefined, description: string | null | undefined): string | null {
+  return description?.trim() ? description : tfttOriginalSeriesById(publicationId)?.shortDescription ?? null;
+}
