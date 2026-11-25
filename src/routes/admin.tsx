@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import AdminMiniDashboard from "@/components/AdminMiniDashboard";
 import SubscribersManager, { type Subscriber } from "@/components/admin/SubscribersManager";
 import UploadPdfForm from "@/components/admin/UploadPdfForm";
+import OriginalCoverManager from "@/components/admin/OriginalCoverManager";
 import { ParshaAudioBookAdmin } from "@/components/admin/ParshaAudioBookAdmin";
 import SimpleBannerForm from "@/components/admin/SimpleBannerForm";
 import WhatsNewPopupForm from "@/components/admin/WhatsNewPopupForm";
@@ -1563,6 +1564,7 @@ function AdminPage() {
               <h2 className="font-serif text-2xl font-semibold text-primary">PDF Library</h2>
               <p className="mt-1 text-sm text-muted-foreground">Search and manage all publications here. Weekly uploads and the release checklist remain under This Week.</p>
             </div>
+            {accessToken && <OriginalCoverManager accessToken={accessToken} pdfs={pdfs} />}
         <section className="parchment-frame">
           <div className="parchment-panel">
             <PdfListSection
