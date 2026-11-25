@@ -69,7 +69,7 @@ function OriginalSeriesGrid({ groups, activeSeriesIds }: { groups: OriginalEditi
                 <h3 className="mt-0.5 font-serif text-lg font-bold leading-tight text-primary">{series.title}</h3>
                 <p className="mt-1 font-serif text-sm font-semibold italic text-primary">{series.tagline}</p>
                 <p className="mt-1.5 text-sm leading-snug text-foreground">{series.description}</p>
-                <p className="mt-2 text-xs font-medium text-muted-foreground">{series.audience}</p>
+                <p className="mt-2 w-fit rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-semibold text-primary">{series.audience}</p>
                 {latestGroup && <p className="mt-1 text-xs text-muted-foreground">Latest: {latestGroup.label}</p>}
                 <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-2">
                   {latest && latestGroup && (
