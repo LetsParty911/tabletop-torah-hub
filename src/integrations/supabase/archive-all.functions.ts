@@ -7,7 +7,7 @@ import { readingChronoIndex } from "@/lib/parshiyos";
 import { matchesParshaSearch, toParshaComparableKey } from "@/lib/parsha-normalize";
 import { normalizeAudience, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
-import { tfttOriginalSeriesById, renameLegacySeriesText } from "@/lib/tftt-originals";
+import { tfttOriginalSeriesById, renameLegacySeriesText, originalDescriptionFallback } from "@/lib/tftt-originals";
 import { matchesPageLength, type LengthFilter } from "@/lib/length-filter";
 import { pdfThumbUrl } from "@/integrations/supabase/api.functions";
 import { pdfDisplayTitle } from "@/lib/pdf-display-title";
@@ -162,7 +162,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
             : (row.publication as string | null) ?? null)
         ),
         subtitle: renameLegacySeriesText(standardizeCopy((row.subtitle as string | null) ?? null)),
-        description: renameLegacySeriesText(standardizeCopy((row.description as string | null) ?? null)),
+        description: originalDescriptionFallback(row.publication_id, renameLegacySeriesText(standardizeCopy((row.description as string | null) ?? null))),
         audience: normalizeAudience(row.audience ?? null, row.title, row.publication_id) ?? row.audience ?? null,
         format_type: (row.format_type as string | null) ?? null,
         content_type: (row.content_type as string | null) ?? null,

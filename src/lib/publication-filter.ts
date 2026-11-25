@@ -1,4 +1,4 @@
-import { renameLegacySeriesText } from "@/lib/tftt-originals";
+import { renameLegacySeriesText, tfttOriginalSeriesById } from "@/lib/tftt-originals";
 
 /** Reader-facing publication/source facet.
  *
@@ -28,12 +28,13 @@ function hasKleinByline(title: string | null | undefined): boolean {
 export type PublicationFilterResource = {
   publication_id?: string | null;
   publication?: string | null;
+  publication_name?: string | null;
   title?: string | null;
 };
 
 export function publicationFilterName(r: PublicationFilterResource): string | null {
   const publicationId = r.publication_id ?? "";
-  const publication = r.publication?.trim() ?? "";
+  const publication = tfttOriginalSeriesById(publicationId)?.title || r.publication_name?.trim() || r.publication?.trim() || "";
   const publicationKey = normalized(publication);
 
   if (

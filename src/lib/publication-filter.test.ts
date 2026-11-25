@@ -43,3 +43,17 @@ describe("publication/source filter grouping", () => {
       .toBeNull();
   });
 });
+
+describe("canonical weekly publication facets", () => {
+  it("prefers the canonical publication name over a raw legacy slug", () => {
+    expect(publicationFilterName({ publication_id: "bd544c49-a810-478d-bf5c-38b94a81bc31", publication_name: "Mi Ka'amcha Yisroel", publication: "mikaamcha" })).toBe("Mi Ka'amcha Yisroel");
+    expect(publicationFilterName({ publication_name: "Toras Avigdor", publication: null })).toBe("Toras Avigdor");
+  });
+  it("recognizes registered Originals even if legacy metadata is absent", () => {
+    expect(publicationFilterName({ publication_id: "81b9fadd-3f96-43a2-b21d-6619567e8b1b", publication: null })).toBe("Parsha Pearls from the Ramban");
+  });
+  it("keeps the two Klein uploads in one facet despite canonical slot names", () => {
+    expect(publicationFilterName({ publication_id: "4d5f000c-6e90-4d58-aa9f-fd73fc005115", publication_name: "R' Yehuda Zev Klein — Dvar Torah 1" })).toBe(KLEIN_PUBLICATION_FILTER);
+    expect(publicationFilterName({ publication_id: "c3fa24ef-b7a8-42d1-a237-480bc24cba57", publication_name: "R' Yehuda Zev Klein — Dvar Torah 2" })).toBe(KLEIN_PUBLICATION_FILTER);
+  });
+});

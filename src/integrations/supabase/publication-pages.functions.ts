@@ -1,3 +1,4 @@
+import { originalDescriptionFallback } from "@/lib/tftt-originals";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
@@ -80,7 +81,7 @@ export const listPublicationPages = createServerFn({ method: "GET" }).handler(
           publisher: (p.publisher as string | null) ?? null,
           default_audience: (p.default_audience as string | null) ?? null,
           default_format_type: (p.default_format_type as string | null) ?? null,
-          default_description: renameLegacySeriesText(standardizeCopy((p.default_description as string | null) ?? null)),
+          default_description: originalDescriptionFallback(p.id, renameLegacySeriesText(standardizeCopy((p.default_description as string | null) ?? null))),
           edition_count: counts.get(p.id as string) ?? 0,
           thumb_url: latest.get(p.id as string) ? pdfThumbUrl(latest.get(p.id as string)!.id, p.id as string, inventory.originalVersions.get(latest.get(p.id as string)!.id)) : null,
         }))
@@ -143,15 +144,15 @@ export const getPublicationPage = createServerFn({ method: "GET" })
         publisher: (publication.publisher as string | null) ?? null,
         default_audience: (publication.default_audience as string | null) ?? null,
         default_format_type: (publication.default_format_type as string | null) ?? null,
-        default_description: renameLegacySeriesText(standardizeCopy(
+        default_description: originalDescriptionFallback(publication.id, renameLegacySeriesText(standardizeCopy(
           (publication.default_description as string | null) ?? null,
-        )),
+        ))),
       },
       editions: (rows ?? []).map((r: any) => ({
         id: r.id as string,
         title: renameLegacySeriesText(r.title as string),
         subtitle: renameLegacySeriesText(standardizeCopy((r.subtitle as string | null) ?? null)),
-        description: renameLegacySeriesText(standardizeCopy((r.description as string | null) ?? null)),
+        description: originalDescriptionFallback(publication.id, renameLegacySeriesText(standardizeCopy((r.description as string | null) ?? null))),
         audience: (r.audience as string | null) ?? null,
         format_type: (r.format_type as string | null) ?? null,
         page_count: typeof r.page_count === "number" ? r.page_count : null,

@@ -5,7 +5,7 @@ import { readingSlug, isYomTovReading } from "@/lib/reading-page";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { canonicalLibraryReading } from "@/lib/reading-library";
 import { normalizeAudience } from "@/lib/audience";
-import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { tfttOriginalSeriesById, originalDescriptionFallback } from "@/lib/tftt-originals";
 import { canonicalPublicationName, canonicalPublicationSlug } from "@/lib/publication-slug";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { formatReadingLabel } from "@/lib/parshiyos";
@@ -168,7 +168,7 @@ export const getReadingCollection = createServerFn({ method: "GET" })
         id: r.id as string,
         title: tfttOriginalSeriesById(pubId)?.title ?? r.title as string,
         subtitle: standardizeCopy((r.subtitle as string | null) ?? null),
-        description: standardizeCopy((r.description as string | null) ?? null),
+        description: originalDescriptionFallback(pubId, standardizeCopy((r.description as string | null) ?? null)),
         summary_quick: standardizeCopy((r.summary_quick as string | null) ?? null),
         audience: normalizeAudience(r.audience ?? null, r.title, pubId) ?? r.audience ?? null,
         format_type: (r.format_type as string | null) ?? null,
