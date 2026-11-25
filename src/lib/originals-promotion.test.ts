@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { ORIGINAL_PROMOTION_SERIES, NEW_ORIGINAL_SERIES, canShowOriginalsLaunch, promotionSeriesById, originalsPromotionDescription, latestPromotionEdition } from "./originals-promotion";
 import { TFTT_ORIGINAL_SERIES, PARSHA_DETECTIVE_PUBLICATION_ID } from "./tftt-originals";
 
@@ -17,7 +19,8 @@ describe("Originals promotional catalog", () => {
   });
   it("uses only verified IDs and preserves archive searches", () => {
     expect(ORIGINAL_PROMOTION_SERIES.slice(0, 4).map((s) => s.publicationId)).toEqual(TFTT_ORIGINAL_SERIES.map((s) => s.id));
-    expect(NEW_ORIGINAL_SERIES.every((s) => s.publicationId === null && s.archiveQuery === null)).toBe(true);
+    expect(NEW_ORIGINAL_SERIES.map((s) => s.publicationId)).toEqual(['a247e4ef-b79f-4967-b2a8-8000c8278ecb', '40e5fe38-3ca5-4f29-8d97-6542b3bd7899', '805a1953-841e-4e12-a9fd-cc17a7ad3200']);
+    expect(NEW_ORIGINAL_SERIES.every((s) => s.archiveQuery === s.title)).toBe(true);
     expect(promotionSeriesById(TFTT_ORIGINAL_SERIES[3].id)?.title).toBe("Parsha Pearls from the Ramban");
     expect(promotionSeriesById(PARSHA_DETECTIVE_PUBLICATION_ID)).toBeUndefined();
     expect(promotionSeriesById(null)).toBeUndefined();
@@ -25,7 +28,7 @@ describe("Originals promotional catalog", () => {
   it("does not advertise an active launch before publication and owner activation", () => {
     expect(canShowOriginalsLaunch([])).toBe(false);
     expect(canShowOriginalsLaunch(TFTT_ORIGINAL_SERIES.map((s) => s.id))).toBe(false);
-    expect(originalsPromotionDescription()).toContain("seven");
+    expect(originalsPromotionDescription()).toContain("original weekly series");
     expect(originalsPromotionDescription()).not.toContain("Detective");
   });
 });
@@ -45,4 +48,18 @@ describe("latest published cover selection", () => {
     const firstIssue = group("Vayishlach", [{ id: "first-issue", seriesId: registered.publicationId, seriesTitle: registered.title, thumbUrl: "/first-issue.png" }]);
     expect(latestPromotionEdition(registered, [firstIssue])?.edition.id).toBe("first-issue");
   });
+});
+
+it("has a distinct, valid permanent 4:5 WebP asset for every original", () => {
+  expect(new Set(ORIGINAL_PROMOTION_SERIES.map((series) => series.coverSrc)).size).toBe(7);
+  for (const series of ORIGINAL_PROMOTION_SERIES) {
+    expect(series.coverSrc).toMatch(/^\/original-series-covers\/[a-z-]+\.[0-9a-f]{10}\.webp$/);
+    const bytes = readFileSync(resolve(process.cwd(), "public", series.coverSrc.slice(1)));
+    expect(bytes.subarray(0, 4).toString("ascii")).toBe("RIFF");
+    expect(bytes.subarray(8, 12).toString("ascii")).toBe("WEBP");
+    expect(bytes.subarray(12, 16).toString("ascii")).toBe("VP8 ");
+    expect(bytes.readUInt16LE(26) & 0x3fff).toBe(320);
+    expect(bytes.readUInt16LE(28) & 0x3fff).toBe(400);
+    expect(bytes.length).toBeLessThan(40000);
+  }
 });

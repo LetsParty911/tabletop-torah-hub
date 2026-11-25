@@ -1,6 +1,6 @@
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 
 // Real homepage component, with only the data and nested services replaced.
 // No network calls, real subscriber email, database credentials, or maintenance bypass.
@@ -32,6 +32,7 @@ vi.mock("@tanstack/react-router", async () => {
 });
 
 vi.mock("@/integrations/supabase/api.functions", () => ({
+  listOriginalEditions: vi.fn(async () => ({ groups: [], activeSeriesIds: [], promotionCovers: [] })),
   getParshaOverride: vi.fn(async () => ({ override: null, isActive: false })),
   getActiveSubscriberCount: vi.fn(async () => ({ count: 0 })),
   getAnnouncementBanner: vi.fn(async () => ({ enabled: false })),
@@ -86,6 +87,7 @@ vi.mock("@/lib/first-party-analytics", () => ({ trackFp: vi.fn(), getSessionId: 
 
 import { Route } from "../routes/index";
 import { TFTT_ORIGINAL_SERIES } from "@/lib/tftt-originals";
+import { ORIGINAL_PROMOTION_SERIES } from "@/lib/originals-promotion";
 
 const example = (index: number, parshaKey: string) => ({
   id: `example-${index}`,
@@ -172,13 +174,31 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(document.querySelectorAll("#this-weeks-collection")).toHaveLength(1);
     expect(screen.queryByText(/Also Available This Week/)).toBeNull();
     expect(screen.queryByText(/Recommended Picks/)).toBeNull();
-    const promotion = screen.getByRole("region", { name: "Seven Original Weekly Torah Publications" });
+    const promotion = screen.getByRole("region", { name: "Our Original Weekly Publications" });
     expect(document.querySelectorAll("#our-originals")).toHaveLength(1);
     expect(promotion.compareDocumentPosition(document.getElementById("this-weeks-collection")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Our Original Publications" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "More Divrei Torah for Your Table" })).toBeTruthy();
     expect(screen.queryByText("Introducing Three New Weekly Series")).toBeNull();
     expect(screen.getByRole("link", { name: "Explore Our Original Series" }).getAttribute("href")).toBe("/originals");
+  });
+
+  it("renders all seven permanent artworks independently of the current weekly issue thumbnails", () => {
+    setHomepage(false);
+    state.loader.resources = [example(1, "Lech-Lecha")];
+    render(<Homepage />);
+    const promotion = screen.getByRole("region", { name: "Our Original Weekly Publications" });
+    expect(within(promotion).getAllByRole("img")).toHaveLength(7);
+    for (const series of ORIGINAL_PROMOTION_SERIES) {
+      const image = within(promotion).getByRole("img", { name: "Promotional cover of " + series.title });
+      expect(image.getAttribute("src")).toBe(series.coverSrc);
+      expect(image.getAttribute("width")).toBe("320");
+      expect(image.getAttribute("height")).toBe("400");
+      expect(within(promotion).getByRole("link", { name: "Explore " + series.title })).toBeTruthy();
+    }
+    expect(within(promotion).queryByText(/Coming Soon/)).toBeNull();
+    expect(within(promotion).queryByText(/Published cover previews/)).toBeNull();
+    expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(1);
   });
 
   it("opens a weekly PDF without displaying an audiobook promotion", () => {

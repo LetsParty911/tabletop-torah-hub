@@ -10,7 +10,7 @@ const row = (id: string, publication_id: string, parsha_key = "Vayetzei"): Origi
   id, publication_id, parsha_key, jewish_year: 5787, created_at: "2026-11-16T12:00:00Z",
 });
 
-describe("four active weekly originals", () => {
+describe("seven active weekly originals", () => {
   it("uses the verified publication IDs and stable fixed order", () => {
     expect(TFTT_ORIGINAL_SERIES.map((s) => s.id)).toEqual([PC, ST, IM, PP]);
     expect(TFTT_ORIGINAL_EDITION_SERIES.map((s) => s.title)).toEqual([
@@ -18,12 +18,15 @@ describe("four active weekly originals", () => {
       "Stories for the Shabbos Table",
       "In the Margins",
       "Parsha Pearls",
+      "Chizkuni Insights",
+      "Treasures from the Medrash",
+      "Questions Beneath the Surface",
     ]);
   });
 
-  it("always shows four series descriptions, even with no current PDF", () => {
-    expect(visibleOriginalSeries([]).map((s) => s.id)).toEqual([PC, ST, IM, PP]);
-    expect(visibleOriginalSeries(undefined)).toHaveLength(4);
+  it("always shows seven series descriptions, even with no current PDF", () => {
+    expect(visibleOriginalSeries([]).map((s) => s.id)).toEqual([PC, ST, IM, PP, "a247e4ef-b79f-4967-b2a8-8000c8278ecb", "40e5fe38-3ca5-4f29-8d97-6542b3bd7899", "805a1953-841e-4e12-a9fd-cc17a7ad3200"]);
+    expect(visibleOriginalSeries(undefined)).toHaveLength(7);
     expect(originalsPageDescription(visibleOriginalSeries([]))).toContain("Parsha Pearls");
     expect(originalsPageDescription(visibleOriginalSeries([]))).not.toContain("The Parsha Detective");
   });

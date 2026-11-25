@@ -49,27 +49,27 @@ export function seriesBrief(series: TfttOriginalSeries): string {
 }
 
 /**
- * One registration point for the forthcoming Originals. Bind each value only
- * after the owner creates the publication record and its real ID is verified.
+ * Registration point for the three new Originals. The canonical IDs below
+ * were verified against the external production publication catalog.
  * No title-based ownership guessing and no synthetic publication IDs.
  */
 export const FORTHCOMING_TFTT_ORIGINALS: Record<"chizkuni" | "medrash" | "questions", Omit<TfttOriginalSeries, "id"> & { id: string | null }> = {
   chizkuni: {
-    id: null,
+    id: "a247e4ef-b79f-4967-b2a8-8000c8278ecb",
     title: "Chizkuni Insights",
     brief: "Distinctive explanations of familiar pesukim",
     shortDescription: "Explore the Chizkuni's distinctive readings of the Torah and the textual difficulties his explanations address.",
     expectation: "Focused insights from the Chizkuni's commentary.",
   },
   medrash: {
-    id: null,
+    id: "40e5fe38-3ca5-4f29-8d97-6542b3bd7899",
     title: "Treasures from the Medrash",
     brief: "Discover the teachings behind the Parsha",
     shortDescription: "Discover teachings from the Medrash that illuminate the people, events, and meaning of the weekly Parsha.",
     expectation: "Source-based teachings from Chazal.",
   },
   questions: {
-    id: null,
+    id: "805a1953-841e-4e12-a9fd-cc17a7ad3200",
     title: "Questions Beneath the Surface",
     brief: "Difficult questions and source-based answers",
     shortDescription: "Explore challenging Parsha questions through carefully researched Torah sources and clear reasoning.",

@@ -13,7 +13,7 @@ on:
       - "src/integrations/supabase/archive-all.functions.ts"
       - "src/lib/verified-thumbnails*.ts"
       - "src/pwa-register*.ts"
-      - "src/routes/sitemap[.]xml.ts"
+      - "src/routes/sitemap*.ts"
       - "src/lib/sitemap-lastmod*.ts"
       - "src/lib/public-label-sizing.test.ts"
       - "src/lib/publication-thumbnail-fit.test.ts"
@@ -30,6 +30,10 @@ on:
       - "src/lib/originals-promotion*.ts"
       - "src/lib/tftt-originals.ts"
       - "src/components/OriginalSeriesCover*.tsx"
+      - "public/original-series-covers/**"
+      - "src/components/admin/OriginalCoverManager*.tsx"
+      - "src/lib/pdf-thumb.ts"
+      - "src/routes/admin.tsx"
       - "vitest.ux.config.ts"
       - "src/tests/homepage.smoke.test.tsx"
       - "src/components/UpdateCountdown.tsx"
@@ -83,6 +87,6 @@ jobs:
       - name: Run isolated homepage interaction smoke tests
         run: bunx vitest run --config vitest.signup.config.ts src/tests/homepage.smoke.test.tsx
       - name: Verify Originals catalog and real publication ownership
-        run: bunx vitest run --config vitest.ux.config.ts src/lib/originals-promotion.test.ts src/lib/original-editions.test.ts src/lib/parsha-detective.test.ts
+        run: bunx vitest run --config vitest.ux.config.ts src/lib/originals-promotion.test.ts src/lib/original-editions.test.ts src/lib/parsha-detective.test.ts src/lib/weekly-card-badges.test.ts src/lib/verified-thumbnails.server.test.ts src/components/admin/OriginalCoverManager.test.tsx
       - name: Build application
         run: bun run build

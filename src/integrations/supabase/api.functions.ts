@@ -703,27 +703,37 @@ export function pdfThumbUrl(id: string, publicationId?: string | null): string |
   return `${base.replace(/\/$/, "")}/storage/v1/object/public/pdf-thumbs/${id}.png`;
 }
 
-// /originals: recent published editions of the three canonical TFTT series,
-// keyed strictly by publication_id and grouped by each row's own parsha/year.
+// Published editions only: permanent promotional artwork is served from the repository.
 export const listOriginalEditions = createServerFn({ method: "GET" }).handler(async () => {
+  const empty = { groups: [] as ReturnType<typeof groupOriginalEditions>, activeSeriesIds: [] as string[] };
   try {
     const admin = getSupabaseAdmin();
-    const { data, error } = await admin
-      .from("pdfs")
-      .select("id, parsha_key, jewish_year, publication_id, created_at")
-      .eq("published", true)
-      .in("publication_id", TFTT_ORIGINAL_EDITION_SERIES.map((s) => s.id))
-      .order("created_at", { ascending: false })
-      .limit(300);
+    const { readThumbnailInventory } = await import("@/lib/verified-thumbnails.server");
+    const [{ data, error }, inventory] = await Promise.all([
+      admin.from("pdfs")
+        .select("id, parsha_key, jewish_year, publication_id, created_at")
+        .eq("published", true)
+        .in("publication_id", TFTT_ORIGINAL_EDITION_SERIES.map((s) => s.id))
+        .order("created_at", { ascending: false })
+        .limit(300),
+      readThumbnailInventory(admin),
+    ]);
     if (error) {
       console.error("listOriginalEditions error", error.message);
-      return { groups: [], activeSeriesIds: [] as string[] };
+      return empty;
     }
     const rows = (data as OriginalEditionRow[]) ?? [];
-    return { groups: groupOriginalEditions(rows, pdfThumbUrl), activeSeriesIds: activeOriginalSeriesIds(rows) };
+    // The shared cached inventory distinguishes missing PNGs from real ones;
+    // on a storage outage preserve the previous original-URL behavior.
+    const hasCover = (id: string) => inventory.originalIds === null || inventory.originalIds.has(id);
+    const allGroups = groupOriginalEditions(rows, (id) => hasCover(id) ? pdfThumbUrl(id) : null, 300);
+    return {
+      groups: allGroups.slice(0, 12),
+      activeSeriesIds: activeOriginalSeriesIds(rows),
+    };
   } catch (e) {
     console.error("listOriginalEditions failed", e instanceof Error ? e.message : e);
-    return { groups: [], activeSeriesIds: [] as string[] };
+    return empty;
   }
 });
 
@@ -1454,7 +1464,7 @@ export const adminUploadPdfThumb = createServerFn({ method: "POST" })
       .object({
         accessToken: z.string().min(10),
         id: z.string().uuid(),
-        pngBase64: z.string().min(10),
+        pngBase64: z.string().min(10).max(6000000),
         smallWebpBase64: z.string().min(10).max(200000).nullable().optional(),
       })
       .parse(input),
@@ -1463,6 +1473,10 @@ export const adminUploadPdfThumb = createServerFn({ method: "POST" })
     await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
     const buf = Buffer.from(data.pngBase64, "base64");
+    if (buf.length < 24 || buf.length > 4 * 1024 * 1024 ||
+        !buf.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) {
+      return { ok: false, error: "Invalid PNG thumbnail.", smallStored: false };
+    }
     const { error } = await admin.storage
       .from("pdf-thumbs")
       .upload(`${data.id}.png`, buf, { contentType: "image/png", upsert: true });

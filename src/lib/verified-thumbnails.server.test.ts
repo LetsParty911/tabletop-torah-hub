@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { clearVerifiedThumbnailCache, readVerifiedThumbnails } from "./verified-thumbnails.server";
+import { clearVerifiedThumbnailCache, readVerifiedThumbnails, readThumbnailInventory } from "./verified-thumbnails.server";
 
 afterEach(() => {
   clearVerifiedThumbnailCache();
@@ -41,4 +41,20 @@ describe("per-isolate thumbnail inventory cache", () => {
     await readVerifiedThumbnails(admin);
     expect(list).toHaveBeenCalledTimes(1);
   });
+});
+
+it("shares verified PNG existence and replacement version with the cover selector", async () => {
+  const id = "d6fe8aa5-7d0f-474d-bf38-90ccd3f65ec9";
+  const version = "a".repeat(32);
+  const list = vi.fn(async () => ({ data: [{ name: id + ".png", metadata: { eTag: version } }], error: null }));
+  const admin = adminWithList(list);
+  const inventory = await readThumbnailInventory(admin);
+  expect(inventory.originalIds?.has(id)).toBe(true);
+  expect(inventory.originalVersions.get(id)).toBe(version);
+  expect((await readVerifiedThumbnails(admin)).size).toBe(0);
+  expect(list).toHaveBeenCalledTimes(1);
+});
+it("distinguishes a failed inventory from a successful empty inventory", async () => {
+  const admin = adminWithList(vi.fn(async () => ({ data: null, error: { message: "denied" } })));
+  expect((await readThumbnailInventory(admin)).originalIds).toBeNull();
 });

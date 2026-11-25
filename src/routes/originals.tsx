@@ -59,10 +59,10 @@ function OriginalSeriesGrid({ groups, activeSeriesIds }: { groups: OriginalEditi
         const latestGroup = selected?.group;
         const hasPublished = series.publicationId !== null && activeSeriesIds.includes(series.publicationId);
         return (
-          <article key={series.key} className="flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-accent/40 bg-card shadow-sm sm:w-[calc(50%-0.375rem)] xl:w-[calc(25%-0.5625rem)]">
+          <article key={series.key} id={`series-${series.key}`} className="scroll-mt-24 flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-accent/40 bg-card shadow-sm sm:w-[calc(50%-0.375rem)] xl:w-[calc(25%-0.5625rem)]">
             <div className="flex flex-1 gap-3 p-3 sm:flex-col sm:gap-2 sm:p-4">
               <div className="w-[27%] max-w-[112px] shrink-0 sm:mx-auto sm:w-[72%] sm:max-w-[148px]">
-                <OriginalSeriesCover series={series} src={latest?.thumbUrl} editionLabel={latestGroup?.label} published={Boolean(latest) || hasPublished} />
+                <OriginalSeriesCover series={series} />
               </div>
               <div className="flex min-w-0 flex-1 flex-col">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-accent">TFTT Original</span>
@@ -264,7 +264,7 @@ function ResourcesPage() {
                 Torah For The Table Originals
               </h1>
               <p className="mt-3 font-serif italic text-base sm:text-lg text-accent">
-                Seven Original Weekly Torah Publications. One Mission.
+                Original Weekly Torah Publications. One Mission.
               </p>
             </div>
 
@@ -274,7 +274,7 @@ function ResourcesPage() {
               </p>
             </div>
 
-            <h2 className="mt-10 text-center font-serif text-2xl font-bold text-primary">Our Seven Original Weekly Series</h2>
+            <h2 className="mt-10 text-center font-serif text-2xl font-bold text-primary">Our Original Weekly Series</h2>
             <p className="mt-2 text-center text-sm text-muted-foreground">New editions every Thursday. Explore the series, or open a published issue below.</p>
             <OriginalSeriesGrid groups={groups} activeSeriesIds={activeSeriesIds ?? []} />
             <OriginalEditions groups={groups} />
