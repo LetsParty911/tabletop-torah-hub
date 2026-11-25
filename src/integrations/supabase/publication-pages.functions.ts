@@ -105,7 +105,18 @@ export const getPublicationPage = createServerFn({ method: "GET" })
       return { publication: null, editions: [] as PublicationEdition[] };
     }
 
-    const publication = findPublicationBySlug(pubs ?? [], data.slug);
+    // The external client is not schema-typed. Preserve the selected row's
+    // full metadata shape when passing it through the generic slug helper.
+    type SelectedPublication = {
+      id: string;
+      name: string;
+      publisher: string | null;
+      default_audience: string | null;
+      default_format_type: string | null;
+      default_description: string | null;
+      active: boolean;
+    };
+    const publication = findPublicationBySlug<SelectedPublication>(pubs ?? [], data.slug);
     if (!publication) {
       return { publication: null, editions: [] as PublicationEdition[] };
     }

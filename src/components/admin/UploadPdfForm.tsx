@@ -1,5 +1,6 @@
 import { usesIndividualPdfTitle } from "@/lib/pdf-display-title";
 import { originalPublicationError } from "@/lib/original-upload-validation";
+import { missingPublicationFields } from "@/lib/publication-quality";
 import { renameLegacySeriesText } from "@/lib/tftt-originals";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { audienceLabel } from "@/lib/audience";
@@ -83,6 +84,10 @@ export default function UploadPdfForm({
   const busy = busyAction !== null;
   const isIndividualArticle = usesIndividualPdfTitle(publicationId);
   const associationError = originalPublicationError(title, publicationId);
+  const missing = missingPublicationFields({
+    title, parsha_key: parshaKey, audience: uploadAudience,
+    format_type: uploadFormatType, description: uploadDescription,
+  }, false);
   return (
     <form onSubmit={onSubmit} className="mt-4 grid gap-4 md:grid-cols-2">
       <label className="block">
@@ -241,6 +246,11 @@ export default function UploadPdfForm({
           className="mt-1 w-full"
         />
       </label>
+      {missing.length > 0 && (
+        <p className="md:col-span-2 text-sm text-muted-foreground" aria-live="polite">
+          Required before publishing: {missing.join(", ")}. You can save a draft first.
+        </p>
+      )}
       <div className="md:col-span-2 flex flex-wrap items-center gap-3">
         <button
           type="submit"

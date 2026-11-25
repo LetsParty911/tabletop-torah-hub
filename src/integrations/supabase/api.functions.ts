@@ -1,5 +1,6 @@
 import { TFTT_ORIGINAL_EDITION_SERIES, tfttOriginalSeriesById, renameLegacySeriesText } from "@/lib/tftt-originals";
 import { originalPublicationError, originalPublicationEditError } from "@/lib/original-upload-validation";
+import { publicationQualityError, publishedMetadataEditError } from "@/lib/publication-quality";
 import { activeOriginalSeriesIds, groupOriginalEditions, type OriginalEditionRow } from "@/lib/original-editions";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
@@ -1353,6 +1354,13 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     const admin = getSupabaseAdmin();
     const associationError = originalPublicationError(data.title, data.publicationId);
     if (associationError) throw new Error(associationError);
+    if (data.published) {
+      const qualityError = publicationQualityError({
+        title: data.title, parsha_key: data.parshaKey, jewish_year: data.jewishYear,
+        audience: data.audience, format_type: data.formatType, description: data.description,
+      }, false);
+      if (qualityError) throw new Error(qualityError);
+    }
     if (data.publicationId) {
       const { data: selected, error } = await admin.from("publications").select("id, active").eq("id", data.publicationId).maybeSingle();
       if (error || !selected?.active) throw new Error("The selected publication could not be verified. Select an active publication before uploading.");
@@ -1400,6 +1408,27 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     // right after upload succeeds, so compression still happens automatically
     // but no longer blocks (or risks) the upload response.
     const buf = Buffer.from(data.fileBase64, "base64");
+    // Page count is always derived from the uploaded PDF itself.
+    let derivedPageCount: number | null = null;
+    try {
+      const { PDFDocument } = await import("pdf-lib");
+      const doc = await PDFDocument.load(new Uint8Array(buf), {
+        updateMetadata: false,
+        ignoreEncryption: true,
+      });
+      derivedPageCount = doc.getPageCount();
+    } catch {
+      derivedPageCount = null;
+    }
+    const finalPageCount = derivedPageCount ?? data.pageCount ?? null;
+    if (data.published) {
+      const qualityError = publicationQualityError({
+        title: data.title, parsha_key: data.parshaKey, jewish_year: data.jewishYear,
+        audience: data.audience, format_type: data.formatType, description: data.description,
+        page_count: derivedPageCount,
+      });
+      if (qualityError) throw new Error(qualityError);
+    }
     const { error: upErr } = await admin.storage
       .from("pdfs")
       .upload(path, buf, { contentType: "application/pdf", upsert: false });
@@ -1425,26 +1454,17 @@ export const adminUploadPdf = createServerFn({ method: "POST" })
     if (data.description !== undefined && data.description !== null) insertRow.description = data.description;
     if (data.audience !== undefined && data.audience !== null) insertRow.audience = data.audience;
     if (data.formatType !== undefined && data.formatType !== null) insertRow.format_type = data.formatType;
-    // Page count is always derived from the uploaded PDF itself.
-    let derivedPageCount: number | null = null;
-    try {
-      const { PDFDocument } = await import("pdf-lib");
-      const doc = await PDFDocument.load(new Uint8Array(buf), {
-        updateMetadata: false,
-        ignoreEncryption: true,
-      });
-      derivedPageCount = doc.getPageCount();
-    } catch {
-      derivedPageCount = null;
-    }
-    const finalPageCount = derivedPageCount ?? data.pageCount ?? null;
+
     if (finalPageCount !== null) insertRow.page_count = finalPageCount;
     if (data.badge !== undefined && data.badge !== null) insertRow.badge = data.badge;
     if (data.featuredSlot !== undefined && data.featuredSlot !== null)
       insertRow.featured_slot = data.featuredSlot;
 
     // publication_id is identity, never optional metadata that a retry may discard.
-    const metaKeys = ["description", "audience", "format_type", "page_count", "badge", "featured_slot"] as const;
+    // Never silently discard required metadata on a published insert.
+    const metaKeys = data.published
+      ? ["badge", "featured_slot"] as const
+      : ["description", "audience", "format_type", "page_count", "badge", "featured_slot"] as const;
     const tryInsert = async (row: Record<string, unknown>) => (await admin.from("pdfs").insert(row)).error;
     let currentRow: Record<string, unknown> = { ...insertRow };
     let insErr = await tryInsert(currentRow);
@@ -1600,8 +1620,16 @@ export const adminUpdatePdfMeta = createServerFn({ method: "POST" })
     if (data.featuredSlot !== undefined) update.featured_slot = data.featuredSlot;
     if (data.contentType !== undefined) update.content_type = data.contentType;
     if (Object.keys(update).length === 0) return { ok: true };
-    // Never strip an explicitly requested publication association on retry.
-    const metaKeys = ["description", "audience", "format_type", "page_count", "badge", "publication", "featured_slot"] as const;
+    const { data: existing, error: existingError } = await admin.from("pdfs")
+      .select("published, title, parsha_key, jewish_year, audience, format_type, description, page_count")
+      .eq("id", data.id).maybeSingle();
+    if (existingError || !existing) throw new Error("Could not verify the existing PDF metadata.");
+    if (existing.published) {
+      const qualityError = publishedMetadataEditError(existing, { ...existing, ...update });
+      if (qualityError) throw new Error(qualityError);
+    }
+    // Never silently discard an explicitly requested required field or association.
+    const metaKeys = ["badge", "publication", "featured_slot"] as const;
     let current: Record<string, unknown> = { ...update };
     let { error } = await admin.from("pdfs").update(current).eq("id", data.id);
     while (error) {
@@ -1763,10 +1791,12 @@ export const adminTogglePublished = createServerFn({ method: "POST" })
     await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
     if (data.published) {
-      const { data: row, error } = await admin.from("pdfs").select("title, publication_id").eq("id", data.id).maybeSingle();
-      if (error || !row) throw new Error("Could not verify the publication association before publishing.");
+      const { data: row, error } = await admin.from("pdfs").select("title, publication_id, parsha_key, jewish_year, audience, format_type, description, page_count").eq("id", data.id).maybeSingle();
+      if (error || !row) throw new Error("Could not verify the publication metadata before publishing.");
       const associationError = originalPublicationError(row.title, row.publication_id);
       if (associationError) throw new Error(associationError);
+      const qualityError = publicationQualityError(row);
+      if (qualityError) throw new Error(qualityError);
     }
     const { error } = await admin.from("pdfs").update({ published: data.published }).eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -1797,11 +1827,13 @@ export const adminBulkPublish = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireAdmin(data.accessToken);
     const admin = getSupabaseAdmin();
-    const { data: rows, error: readError } = await admin.from("pdfs").select("id, title, publication_id").in("id", data.ids);
+    const { data: rows, error: readError } = await admin.from("pdfs").select("id, title, publication_id, parsha_key, jewish_year, audience, format_type, description, page_count").in("id", data.ids);
     if (readError || !rows || rows.length !== new Set(data.ids).size) throw new Error("Could not verify every publication before bulk publishing.");
     for (const row of rows) {
       const associationError = originalPublicationError(row.title, row.publication_id);
       if (associationError) throw new Error(associationError);
+      const qualityError = publicationQualityError(row);
+      if (qualityError) throw new Error(`${row.title}: ${qualityError}`);
     }
     const { error } = await admin
       .from("pdfs")
