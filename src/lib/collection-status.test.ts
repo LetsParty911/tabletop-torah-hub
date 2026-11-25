@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectionCountLine, displayContentType, hasDisplayedCollectionChanged, isCollectionComplete, pdfActionHrefs } from "./collection-status";
+import { currentBriefInsights, collectionCountLine, displayContentType, hasDisplayedCollectionChanged, isCollectionComplete, pdfActionHrefs } from "./collection-status";
 import { formatTypeLabel } from "./format-labels";
 
 describe("collection status", () => {
@@ -64,5 +64,22 @@ describe("home collection identity after hydration", () => {
       { isFallback: false, fallbackParshaKey: null },
       { isFallback: false, fallbackParshaKey: null },
     )).toBe(false);
+  });
+});
+
+describe("current Brief Insights editions", () => {
+  const resources = [
+    { id: "a", format_type: "Short Vorts", content_type: null },
+    { id: "b", format_type: "Brief Insights", content_type: null },
+    { id: "c", format_type: null, content_type: "Brief Insights" },
+    { id: "d", format_type: "Short Vorts", content_type: "Questions & Answers" },
+    { id: "e", format_type: "Essays", content_type: null },
+  ];
+  it("returns every matching edition in canonical weekly order using the same filter as the homepage", () => {
+    expect(currentBriefInsights({ isFallback: false, resources }).map(r => r.id)).toEqual(["a", "b", "c"]);
+  });
+  it("does not show last year's or last week's fallback as current", () => {
+    expect(currentBriefInsights({ isFallback: true, resources })).toEqual([]);
+    expect(currentBriefInsights({ isFallback: false, resources: [] })).toEqual([]);
   });
 });
