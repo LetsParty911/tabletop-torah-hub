@@ -1,3 +1,5 @@
+import { formatTypeLabel } from "./format-labels";
+
 /**
  * Pure helpers for the public weekly-collection status and PDF action links.
  * The collection counts as finished only when the admin progress meter reads
@@ -83,4 +85,10 @@ export function currentYearRows<T extends { parsha_key: string; jewish_year: num
   if (!year) return [];
   const wanted = new Set(comparableKeys);
   return rows.filter(row => row.jewish_year === year && wanted.has(normalize(row.parsha_key)));
+}
+
+/** Match the weekly filters exactly and never label a historical fallback as current. */
+export function currentBriefInsights<T extends { content_type?: string | null; format_type?: string | null }>(week: { isFallback: boolean; resources: T[] }): T[] {
+  if (week.isFallback) return [];
+  return week.resources.filter(resource => displayContentType(resource.content_type, resource.format_type, formatTypeLabel) === "Brief Insights");
 }
