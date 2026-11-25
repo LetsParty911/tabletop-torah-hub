@@ -135,7 +135,7 @@ function PublicationPage() {
         }`}
       >
         <div className="float-left mr-3 mb-2">
-          <PdfCoverThumbnail pdfId={edition.id} thumbnailUrl={edition.thumb_url} title={editionTitle} publicationName={displayName} publisher={publication.publisher} parsha={edition.parsha_key} jewishYear={edition.jewish_year} />
+          <PdfCoverThumbnail pdfId={edition.id} seriesPublicationId={publication.id} coverContext={prominent ? "listing" : "archive"} thumbnailUrl={edition.thumb_url} title={editionTitle} publicationName={displayName} publisher={publication.publisher} parsha={edition.parsha_key} jewishYear={edition.jewish_year} />
         </div>
         <p className="font-sans text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-accent-readable">
           {!isYomTovReading(edition.parsha_key) ? (
