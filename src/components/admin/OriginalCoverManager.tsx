@@ -75,7 +75,7 @@ export default function OriginalCoverManager({ accessToken, pdfs }: { accessToke
         <h2 id="original-cover-heading" className="font-serif text-2xl font-semibold text-primary">Original Series PDF Thumbnails</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Optional repair for the seven originals' actual first-page PDF thumbnails. Choose the first page of the listed issue as a PDF or image.
-          This never changes the permanent promotional artwork, PDF, or publishing status. New issue thumbnails are generated automatically.
+          This never changes permanent series artwork on public listings, the PDF, or publishing status. Actual issue thumbnails are retained for archives and previews and generated automatically.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {ORIGINAL_PROMOTION_SERIES.map((series) => {
