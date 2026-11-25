@@ -8,6 +8,8 @@ import type { OriginalEditionGroup } from "./original-editions";
  */
 export type OriginalPromotionSeries = {
   key: string;
+  coverSrc: string;
+  accentColor: string;
   publicationId: string | null;
   archiveQuery: string | null;
   title: string;
@@ -19,7 +21,8 @@ export type OriginalPromotionSeries = {
 
 export const ORIGINAL_PROMOTION_SERIES: readonly OriginalPromotionSeries[] = [
   {
-    key: "qa", publicationId: TFTT_ORIGINAL_SERIES[0].id,
+    key: "qa", coverSrc: "/original-series-covers/parsha-questions-and-answers.5a57741b75.webp", accentColor: "#24558a",
+    publicationId: TFTT_ORIGINAL_SERIES[0].id,
     archiveQuery: TFTT_ORIGINAL_SERIES[0].title,
     title: "Parsha Questions & Answers",
     tagline: "How well do you know the Parsha?",
@@ -28,7 +31,8 @@ export const ORIGINAL_PROMOTION_SERIES: readonly OriginalPromotionSeries[] = [
     audience: "Children · Families",
   },
   {
-    key: "stories", publicationId: TFTT_ORIGINAL_SERIES[1].id,
+    key: "stories", coverSrc: "/original-series-covers/stories-for-the-shabbos-table.e003166510.webp", accentColor: "#8c211c",
+    publicationId: TFTT_ORIGINAL_SERIES[1].id,
     archiveQuery: TFTT_ORIGINAL_SERIES[1].title,
     title: "Stories for the Shabbos Table",
     tagline: "Stories that inspire. Lessons that last.",
@@ -37,7 +41,8 @@ export const ORIGINAL_PROMOTION_SERIES: readonly OriginalPromotionSeries[] = [
     audience: "Families",
   },
   {
-    key: "margins", publicationId: TFTT_ORIGINAL_SERIES[2].id,
+    key: "margins", coverSrc: "/original-series-covers/in-the-margins.cbb7bf4a37.webp", accentColor: "#37552c",
+    publicationId: TFTT_ORIGINAL_SERIES[2].id,
     archiveQuery: TFTT_ORIGINAL_SERIES[2].title,
     title: "In the Margins",
     tagline: "Discover what you may have overlooked.",
@@ -46,7 +51,8 @@ export const ORIGINAL_PROMOTION_SERIES: readonly OriginalPromotionSeries[] = [
     audience: "Deeper Learning",
   },
   {
-    key: "ramban", publicationId: TFTT_ORIGINAL_SERIES[3].id,
+    key: "ramban", coverSrc: "/original-series-covers/parsha-pearls-from-the-ramban.c561984dc6.webp", accentColor: "#102540",
+    publicationId: TFTT_ORIGINAL_SERIES[3].id,
     archiveQuery: TFTT_ORIGINAL_SERIES[3].title,
     title: "Parsha Pearls from the Ramban",
     tagline: "Discover the depth of the Ramban.",
@@ -55,7 +61,8 @@ export const ORIGINAL_PROMOTION_SERIES: readonly OriginalPromotionSeries[] = [
     audience: "Deeper Learning",
   },
   {
-    key: "chizkuni", publicationId: FORTHCOMING_TFTT_ORIGINALS.chizkuni.id,
+    key: "chizkuni", coverSrc: "/original-series-covers/chizkuni-insights.0a420aa941.webp", accentColor: "#662a75",
+    publicationId: FORTHCOMING_TFTT_ORIGINALS.chizkuni.id,
     archiveQuery: FORTHCOMING_TFTT_ORIGINALS.chizkuni.id ? FORTHCOMING_TFTT_ORIGINALS.chizkuni.title : null,
     title: "Chizkuni Insights",
     tagline: "A fresh perspective on familiar pesukim.",
@@ -64,7 +71,8 @@ export const ORIGINAL_PROMOTION_SERIES: readonly OriginalPromotionSeries[] = [
     audience: "Deeper Learning",
   },
   {
-    key: "medrash", publicationId: FORTHCOMING_TFTT_ORIGINALS.medrash.id,
+    key: "medrash", coverSrc: "/original-series-covers/treasures-from-the-medrash.fb7a7f51ff.webp", accentColor: "#a35b18",
+    publicationId: FORTHCOMING_TFTT_ORIGINALS.medrash.id,
     archiveQuery: FORTHCOMING_TFTT_ORIGINALS.medrash.id ? FORTHCOMING_TFTT_ORIGINALS.medrash.title : null,
     title: "Treasures from the Medrash",
     tagline: "Ancient teachings. Timeless discoveries.",
@@ -73,7 +81,8 @@ export const ORIGINAL_PROMOTION_SERIES: readonly OriginalPromotionSeries[] = [
     audience: "Families · Deeper Learning",
   },
   {
-    key: "questions", publicationId: FORTHCOMING_TFTT_ORIGINALS.questions.id,
+    key: "questions", coverSrc: "/original-series-covers/questions-beneath-the-surface.3472e762bc.webp", accentColor: "#19656d",
+    publicationId: FORTHCOMING_TFTT_ORIGINALS.questions.id,
     archiveQuery: FORTHCOMING_TFTT_ORIGINALS.questions.id ? FORTHCOMING_TFTT_ORIGINALS.questions.title : null,
     title: "Questions Beneath the Surface",
     tagline: "Look closer. Think deeper.",
@@ -100,7 +109,7 @@ export function canShowOriginalsLaunch(publishedIds: readonly string[]): boolean
 }
 
 export function originalsPromotionDescription(): string {
-  return "Discover seven Torah For The Table original weekly series, from Parsha questions and stories to insights from the Ramban, Chizkuni, Medrash, and classical Meforshim. Explore published editions and forthcoming series.";
+  return "Discover Torah For The Table original weekly series, from Parsha questions and stories to insights from the Ramban, Chizkuni, Medrash, and classical Meforshim. Explore published editions and forthcoming series.";
 }
 
 /** Latest published edition by verified canonical publication ID, never title. */
@@ -113,33 +122,3 @@ export function latestPromotionEdition(series: OriginalPromotionSeries, groups: 
   return undefined;
 }
 
-/** Artwork is separate from the latest Read Now target: a new edition may
- * be published before its thumbnail finishes uploading. Keep the previous
- * real cover until a new one is available. Never borrow another series. */
-export type OriginalPromotionCover = {
-  seriesId: string;
-  editionId: string;
-  thumbUrl: string;
-  smallThumbUrl: string | null;
-  label: string;
-};
-
-export function selectPromotionCovers(
-  groups: readonly OriginalEditionGroup[],
-  smallThumbnail: (id: string, url: string) => string | null = () => null,
-): OriginalPromotionCover[] {
-  return ORIGINAL_PROMOTION_SERIES.flatMap((series) => {
-    if (!series.publicationId) return [];
-    for (const group of groups) {
-      const edition = group.editions.find((item) => item.seriesId === series.publicationId && !!item.thumbUrl);
-      if (edition?.thumbUrl) return [{
-        seriesId: series.publicationId,
-        editionId: edition.id,
-        thumbUrl: edition.thumbUrl,
-        smallThumbUrl: smallThumbnail(edition.id, edition.thumbUrl),
-        label: group.label,
-      }];
-    }
-    return [];
-  });
-}

@@ -23,7 +23,7 @@ import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
-import { canShowOriginalsLaunch, NEW_ORIGINAL_SERIES, ORIGINAL_PROMOTION_SERIES, type OriginalPromotionCover } from "@/lib/originals-promotion";
+import { canShowOriginalsLaunch, NEW_ORIGINAL_SERIES, ORIGINAL_PROMOTION_SERIES } from "@/lib/originals-promotion";
 import { OriginalSeriesCover } from "@/components/OriginalSeriesCover";
 import { weeklyCardBadges } from "@/lib/weekly-card-badges";
 import { publicationLabel } from "@/lib/badges";
@@ -45,7 +45,6 @@ import { formatReadingLabel } from "@/lib/parshiyos";
 import { isYomTovReading, readingSlug } from "@/lib/reading-page";
 import {
   listHomepageWeek,
-  listOriginalEditions,
   getParshaOverride,
   getActiveSubscriberCount,
   getAnnouncementBanner,
@@ -142,11 +141,9 @@ type LoaderData = {
   progressFillStep?: number | null;
   progressEta?: string | null;
   renderedAt?: number;
-  promotionCovers?: OriginalPromotionCover[];
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
-  const originalsPromise = listOriginalEditions().catch(() => ({ promotionCovers: [] as OriginalPromotionCover[] }));
   const announcementPromise = getAnnouncementBanner().catch(() => ({ enabled: false, text: null, linkUrl: null, linkLabel: null }));
   const subscriberCountPromise = getActiveSubscriberCount().catch((e) => {
     console.error("Failed to load subscriber count", e);
@@ -231,7 +228,6 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     progressFillStep,
     progressEta,
     renderedAt: Date.now(),
-    promotionCovers: (await originalsPromise).promotionCovers,
   };
 }
 
@@ -340,7 +336,6 @@ function Index() {
   // `resources` was implicated in a production ReferenceError, so the value is
   // read explicitly where it is used instead.
   const loaderData = Route.useLoaderData() as LoaderData;
-  const promotionCovers = loaderData.promotionCovers ?? [];
   const currentLabel = loaderData.label;
   const currentParshaKey = loaderData.parshaKey;
   const isFallback = loaderData.isFallback;
@@ -771,46 +766,37 @@ function Index() {
             id="our-originals"
             tabIndex={-1}
             aria-labelledby="starter-selections-heading"
-            className="relative scroll-mt-24 overflow-hidden rounded-2xl border border-[#b99a5b] bg-[#11243c] px-5 py-5 text-center text-[#fff8e9] shadow-sm sm:px-8 sm:py-6"
+            className="relative scroll-mt-24 overflow-hidden rounded-2xl border border-[#b99a5b] bg-[#fbefda] px-4 py-4 text-center text-[#17304d] shadow-sm sm:px-6 sm:py-5"
           >
-            <div className="mx-auto flex max-w-2xl flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d9b875]/60 text-[#f0d18b]" aria-hidden="true">
-                <BookOpen className="h-5 w-5" />
+            <div className="mx-auto flex max-w-2xl items-center justify-center gap-2">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#b99a5b]/70 text-[#8d6b30]" aria-hidden="true">
+                <BookOpen className="h-4 w-4" />
               </span>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#f0d18b] sm:text-xs">Torah For The Table Originals</p>
-                <h2 id="starter-selections-heading" className="mt-1 font-serif text-xl font-bold leading-tight text-[#fff8e9] sm:text-3xl">Seven Original Weekly Torah Publications</h2>
-              </div>
+              <h2 id="starter-selections-heading" className="font-serif text-xl font-bold leading-tight text-[#17304d] sm:text-3xl">Our Original Weekly Publications</h2>
             </div>
-            <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-[#e9dfcb]">
-              From engaging Parsha questions and meaningful stories to the timeless wisdom of our Meforshim.
+            <p className="mx-auto mt-2 max-w-xl font-serif text-sm italic leading-relaxed text-[#17304d]">
+              Discover our original weekly printable Divrei Torah.
             </p>
-            <p className="mt-1 font-serif text-sm italic text-[#f0d18b]">Enriching your Shabbos table, one Parsha at a time.</p>
-            <ul aria-label="Explore the seven series" className="mx-auto mt-4 flex max-w-3xl flex-wrap justify-center gap-x-2 gap-y-3 sm:flex-nowrap sm:gap-3">
-              {ORIGINAL_PROMOTION_SERIES.map((series) => {
-                const cover = promotionCovers.find((item) => item.seriesId === series.publicationId);
-                const resource = series.publicationId ? resources.find((item) => item.publication_id === series.publicationId) : undefined;
-                return (
-                  <li key={series.key} className="w-[21%] min-w-0 max-w-[92px] sm:w-[14%]">
-                    <OriginalSeriesCover series={series} src={cover?.thumbUrl ?? resource?.thumb_url} smallSrc={cover ? cover.smallThumbUrl : resource?.small_thumb_url} editionLabel={cover?.label ?? resource?.parsha_key} published={Boolean(cover || resource)} mini />
-                    <p className="mt-1 break-words font-serif text-[10px] font-semibold leading-tight text-[#fff8e9] sm:text-xs">{series.title}</p>
-                  </li>
-                );
-              })}
+            <ul aria-label="Explore the original series" className="mx-auto mt-4 flex max-w-[46rem] snap-x snap-mandatory gap-3 overflow-x-auto pb-2 text-left sm:flex-wrap sm:justify-center sm:overflow-visible sm:pb-0">
+              {ORIGINAL_PROMOTION_SERIES.map((series, index) => (
+                <li key={series.key} className="w-[44vw] max-w-[160px] shrink-0 snap-start sm:w-[calc(25%-0.75rem)] sm:max-w-none">
+                  <Link to="/originals" hash={`series-${series.key}`} aria-label={`Explore ${series.title}`} className="block rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#17304d]">
+                    <OriginalSeriesCover series={series} eager={index < 2} />
+                    <p className="mt-1 text-center break-words font-serif text-xs font-semibold leading-tight text-[#17304d]">{series.title}</p>
+                  </Link>
+                </li>
+              ))}
             </ul>
-            {ORIGINAL_PROMOTION_SERIES.some((series) => !promotionCovers.some((cover) => cover.seriesId === series.publicationId) &&
-              !resources.some((resource) => series.publicationId && resource.publication_id === series.publicationId && resource.thumb_url)) && (
-              <p className="mt-2 text-[10px] leading-snug text-[#e9dfcb]">Published cover previews where available; forthcoming series are shown with their series identities.</p>
-            )}
+            <p className="mt-1 text-xs text-[#5d513a] sm:hidden">Swipe to explore all series.</p>
             <Link
               to="/originals"
-              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#d9b875] px-5 py-2.5 font-serif text-sm font-bold text-[#11243c] transition-colors hover:bg-[#f0d18b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#fff8e9]"
+              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#17304d] px-5 py-2.5 font-serif text-sm font-bold text-[#fff8e9] transition-colors hover:bg-[#284b73] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#17304d]"
             >
               Explore Our Original Series
             </Link>
             {!isFallback && canShowOriginalsLaunch(resources.flatMap((resource) => resource.publication_id ? [resource.publication_id] : [])) && (
               <aside aria-label="New original series" className="mx-auto mt-4 max-w-xl border-t border-[#d9b875]/40 pt-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#f0d18b]">Introducing Three New Weekly Series</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#8d6b30]">Introducing Three New Weekly Series</p>
                 <p className="mt-1 font-serif text-lg font-bold">More Torah. More Discovery.</p>
                 <p className="mt-1 text-sm text-[#e9dfcb]">{NEW_ORIGINAL_SERIES.map((series) => series.title).join(" · ")}</p>
               </aside>

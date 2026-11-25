@@ -27,7 +27,7 @@ function CoverControl({ accessToken, title, target }: {
       const smallWebpBase64 = await renderSmallThumbBase64(pngBase64);
       const result = await adminUploadPdfThumb({ data: { accessToken, id: target.id, pngBase64, smallWebpBase64 } });
       if (!result.ok) throw new Error(result.error || "Thumbnail upload failed.");
-      setStatus({ ok: true, message: "Cover saved. Both public pages will use the updated cover after the cache refreshes." });
+      setStatus({ ok: true, message: "Cover saved. The issue thumbnail updates after the cache refreshes; permanent promotional artwork is unchanged." });
       setFile(null);
       if (input.current) input.current.value = "";
     } catch (error) {
@@ -72,10 +72,10 @@ export default function OriginalCoverManager({ accessToken, pdfs }: { accessToke
   return (
     <section className="parchment-frame" aria-labelledby="original-cover-heading">
       <div className="parchment-panel">
-        <h2 id="original-cover-heading" className="font-serif text-2xl font-semibold text-primary">Original Series Covers</h2>
+        <h2 id="original-cover-heading" className="font-serif text-2xl font-semibold text-primary">Original Series PDF Thumbnails</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage all seven original publication covers. Choose the first page of the listed issue as a PDF or image.
-          This changes the thumbnail only, not the PDF or publishing status. New published issues update automatically.
+          Optional repair for the seven originals' actual first-page PDF thumbnails. Choose the first page of the listed issue as a PDF or image.
+          This never changes the permanent promotional artwork, PDF, or publishing status. New issue thumbnails are generated automatically.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {ORIGINAL_PROMOTION_SERIES.map((series) => {

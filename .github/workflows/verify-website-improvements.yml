@@ -30,6 +30,7 @@ on:
       - "src/lib/originals-promotion*.ts"
       - "src/lib/tftt-originals.ts"
       - "src/components/OriginalSeriesCover*.tsx"
+      - "public/original-series-covers/**"
       - "src/components/admin/OriginalCoverManager*.tsx"
       - "src/lib/pdf-thumb.ts"
       - "src/routes/admin.tsx"

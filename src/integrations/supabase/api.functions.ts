@@ -1,6 +1,5 @@
 import { TFTT_ORIGINAL_EDITION_SERIES, tfttOriginalSeriesById, renameLegacySeriesText } from "@/lib/tftt-originals";
 import { activeOriginalSeriesIds, groupOriginalEditions, type OriginalEditionRow } from "@/lib/original-editions";
-import { selectPromotionCovers, type OriginalPromotionCover } from "@/lib/originals-promotion";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
@@ -704,13 +703,12 @@ export function pdfThumbUrl(id: string, publicationId?: string | null): string |
   return `${base.replace(/\/$/, "")}/storage/v1/object/public/pdf-thumbs/${id}.png`;
 }
 
-// /originals and homepage: use the same real, published series covers.
+// Published editions only: permanent promotional artwork is served from the repository.
 export const listOriginalEditions = createServerFn({ method: "GET" }).handler(async () => {
-  const empty = { groups: [] as ReturnType<typeof groupOriginalEditions>, activeSeriesIds: [] as string[], promotionCovers: [] as OriginalPromotionCover[] };
+  const empty = { groups: [] as ReturnType<typeof groupOriginalEditions>, activeSeriesIds: [] as string[] };
   try {
     const admin = getSupabaseAdmin();
     const { readThumbnailInventory } = await import("@/lib/verified-thumbnails.server");
-    const { verifiedSmallThumbnailUrl } = await import("@/lib/verified-thumbnails");
     const [{ data, error }, inventory] = await Promise.all([
       admin.from("pdfs")
         .select("id, parsha_key, jewish_year, publication_id, created_at")
@@ -729,19 +727,9 @@ export const listOriginalEditions = createServerFn({ method: "GET" }).handler(as
     // on a storage outage preserve the previous original-URL behavior.
     const hasCover = (id: string) => inventory.originalIds === null || inventory.originalIds.has(id);
     const allGroups = groupOriginalEditions(rows, (id) => hasCover(id) ? pdfThumbUrl(id) : null, 300);
-    // Filter before grouping, so even an older upload in the same parsha
-    // remains eligible while the replacement issue has no preview.
-    const coverGroups = groupOriginalEditions(rows.filter((row) => hasCover(row.id)), pdfThumbUrl, 300);
-    const promotionCovers = selectPromotionCovers(coverGroups, (id, url) =>
-      verifiedSmallThumbnailUrl(url, id, inventory.smallPaths)).map((cover) => {
-      const version = inventory.originalVersions.get(cover.editionId);
-      // Keep the immutable small image, and cache-bust the PNG fallback on replacement.
-      return version ? { ...cover, thumbUrl: cover.thumbUrl + "?v=" + version } : cover;
-    });
     return {
       groups: allGroups.slice(0, 12),
       activeSeriesIds: activeOriginalSeriesIds(rows),
-      promotionCovers,
     };
   } catch (e) {
     console.error("listOriginalEditions failed", e instanceof Error ? e.message : e);

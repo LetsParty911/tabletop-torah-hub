@@ -174,7 +174,7 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(document.querySelectorAll("#this-weeks-collection")).toHaveLength(1);
     expect(screen.queryByText(/Also Available This Week/)).toBeNull();
     expect(screen.queryByText(/Recommended Picks/)).toBeNull();
-    const promotion = screen.getByRole("region", { name: "Seven Original Weekly Torah Publications" });
+    const promotion = screen.getByRole("region", { name: "Our Original Weekly Publications" });
     expect(document.querySelectorAll("#our-originals")).toHaveLength(1);
     expect(promotion.compareDocumentPosition(document.getElementById("this-weeks-collection")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Our Original Publications" })).toBeTruthy();
@@ -183,20 +183,22 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.getByRole("link", { name: "Explore Our Original Series" }).getAttribute("href")).toBe("/originals");
   });
 
-  it("renders seven real promotional covers even when a series is absent from the current weekly list", () => {
+  it("renders all seven permanent artworks independently of the current weekly issue thumbnails", () => {
     setHomepage(false);
-    state.loader.promotionCovers = ORIGINAL_PROMOTION_SERIES.map((series) => ({
-      seriesId: series.publicationId, editionId: series.key, thumbUrl: "/cover-" + series.key + ".png",
-      smallThumbUrl: null, label: "Parshas Vayetzei 5787",
-    }));
+    state.loader.resources = [example(1, "Lech-Lecha")];
     render(<Homepage />);
-    const promotion = screen.getByRole("region", { name: "Seven Original Weekly Torah Publications" });
+    const promotion = screen.getByRole("region", { name: "Our Original Weekly Publications" });
     expect(within(promotion).getAllByRole("img")).toHaveLength(7);
     for (const series of ORIGINAL_PROMOTION_SERIES) {
-      expect(within(promotion).getByRole("img", { name: "First page of " + series.title + ", Parshas Vayetzei 5787" }).getAttribute("src")).toBe("/cover-" + series.key + ".png");
+      const image = within(promotion).getByRole("img", { name: "Promotional cover of " + series.title });
+      expect(image.getAttribute("src")).toBe(series.coverSrc);
+      expect(image.getAttribute("width")).toBe("320");
+      expect(image.getAttribute("height")).toBe("400");
+      expect(within(promotion).getByRole("link", { name: "Explore " + series.title })).toBeTruthy();
     }
     expect(within(promotion).queryByText(/Coming Soon/)).toBeNull();
     expect(within(promotion).queryByText(/Published cover previews/)).toBeNull();
+    expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(1);
   });
 
   it("opens a weekly PDF without displaying an audiobook promotion", () => {

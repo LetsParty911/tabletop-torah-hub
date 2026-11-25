@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { ORIGINAL_PROMOTION_SERIES, NEW_ORIGINAL_SERIES, canShowOriginalsLaunch, promotionSeriesById, originalsPromotionDescription, latestPromotionEdition, selectPromotionCovers } from "./originals-promotion";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { ORIGINAL_PROMOTION_SERIES, NEW_ORIGINAL_SERIES, canShowOriginalsLaunch, promotionSeriesById, originalsPromotionDescription, latestPromotionEdition } from "./originals-promotion";
 import { TFTT_ORIGINAL_SERIES, PARSHA_DETECTIVE_PUBLICATION_ID } from "./tftt-originals";
 
 describe("Originals promotional catalog", () => {
@@ -26,7 +28,7 @@ describe("Originals promotional catalog", () => {
   it("does not advertise an active launch before publication and owner activation", () => {
     expect(canShowOriginalsLaunch([])).toBe(false);
     expect(canShowOriginalsLaunch(TFTT_ORIGINAL_SERIES.map((s) => s.id))).toBe(false);
-    expect(originalsPromotionDescription()).toContain("seven");
+    expect(originalsPromotionDescription()).toContain("original weekly series");
     expect(originalsPromotionDescription()).not.toContain("Detective");
   });
 });
@@ -48,15 +50,16 @@ describe("latest published cover selection", () => {
   });
 });
 
-it("retains the previous real cover until the newest issue has its own thumbnail", () => {
-  const series = ORIGINAL_PROMOTION_SERIES[3];
-  const group = (label: string, id: string, thumbUrl: string | null) => ({
-    key: label, parshaKey: label, jewishYear: 5787, label,
-    editions: [{ id, seriesId: series.publicationId!, seriesTitle: series.title, thumbUrl }],
-  });
-  const older = group("Vayetzei", "older", "/older.png");
-  const newest = group("Vayishlach", "newest", null);
-  expect(latestPromotionEdition(series, [newest, older])?.edition.id).toBe("newest");
-  expect(selectPromotionCovers([newest, older])[0]).toMatchObject({ editionId: "older", label: "Vayetzei" });
-  expect(selectPromotionCovers([group("Vayishlach", "newest", "/newest.png"), older])[0]).toMatchObject({ editionId: "newest", thumbUrl: "/newest.png" });
+it("has a distinct, valid permanent 4:5 WebP asset for every original", () => {
+  expect(new Set(ORIGINAL_PROMOTION_SERIES.map((series) => series.coverSrc)).size).toBe(7);
+  for (const series of ORIGINAL_PROMOTION_SERIES) {
+    expect(series.coverSrc).toMatch(/^\/original-series-covers\/[a-z-]+\.[0-9a-f]{10}\.webp$/);
+    const bytes = readFileSync(resolve(process.cwd(), "public", series.coverSrc.slice(1)));
+    expect(bytes.subarray(0, 4).toString("ascii")).toBe("RIFF");
+    expect(bytes.subarray(8, 12).toString("ascii")).toBe("WEBP");
+    expect(bytes.subarray(12, 16).toString("ascii")).toBe("VP8 ");
+    expect(bytes.readUInt16LE(26) & 0x3fff).toBe(320);
+    expect(bytes.readUInt16LE(28) & 0x3fff).toBe(400);
+    expect(bytes.length).toBeLessThan(40000);
+  }
 });
