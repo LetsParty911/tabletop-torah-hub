@@ -23,7 +23,7 @@ import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
-import { canShowOriginalsLaunch, NEW_ORIGINAL_SERIES, ORIGINAL_PROMOTION_SERIES } from "@/lib/originals-promotion";
+import { canShowOriginalsLaunch, NEW_ORIGINAL_SERIES, ORIGINAL_PROMOTION_SERIES, resolveListingCover } from "@/lib/originals-promotion";
 import { OriginalSeriesCover } from "@/components/OriginalSeriesCover";
 import { weeklyCardBadges } from "@/lib/weekly-card-badges";
 import { publicationLabel } from "@/lib/badges";
@@ -82,9 +82,9 @@ type Resource = {
   small_thumb_url?: string | null;
 };
 
-// First-page preview for every publication; also acts as a tracked PDF-open link.
+// Listing cover (permanent series artwork or first-page PDF preview); tracked PDF-open link.
 /** Visible "New" pill whose accessible text reads "(New series)" after the title. */
-function StarterThumb({ src, smallSrc, alt, title, href, onOpen, compactOnMobile = false }: {
+function StarterThumb({ src, smallSrc, alt, title, href, onOpen, compactOnMobile = false, seriesCover = false }: {
   src: string;
   smallSrc?: string | null;
   alt: string;
@@ -92,11 +92,15 @@ function StarterThumb({ src, smallSrc, alt, title, href, onOpen, compactOnMobile
   href: string;
   onOpen: (event: React.MouseEvent<HTMLAnchorElement>) => void;
   compactOnMobile?: boolean;
+  seriesCover?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
+  const sizeClass = seriesCover
+    ? (compactOnMobile ? "h-[100px] w-20 sm:h-[140px] sm:w-28" : "h-[140px] w-28")
+    : (compactOnMobile ? "h-[104px] w-20 sm:h-[145px] sm:w-28" : "h-[145px] w-28");
   if (failed) {
     return (
-      <div role="img" aria-label={`Cover unavailable for ${title}`} className={`flex shrink-0 items-center justify-center rounded-lg bg-accent/12 text-primary ${compactOnMobile ? "h-[104px] w-20 sm:h-[145px] sm:w-28" : "h-[145px] w-28"}`}>
+      <div role="img" aria-label={`Cover unavailable for ${title}`} className={`flex shrink-0 items-center justify-center rounded-lg bg-accent/12 text-primary ${sizeClass}`}>
         <FileText className="h-5 w-5" aria-hidden="true" />
       </div>
     );
@@ -109,7 +113,7 @@ function StarterThumb({ src, smallSrc, alt, title, href, onOpen, compactOnMobile
       aria-label={`Open PDF in a new tab: ${title}`}
       title={`Open PDF: ${title}`}
       onClick={onOpen}
-      className={`block shrink-0 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${compactOnMobile ? "h-[104px] w-20 sm:h-[145px] sm:w-28" : "h-[145px] w-28"}`}
+      className={`block shrink-0 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${sizeClass}`}
     >
       <SmallPdfImage
         key={src}
@@ -117,11 +121,11 @@ function StarterThumb({ src, smallSrc, alt, title, href, onOpen, compactOnMobile
         verifiedSmallSrc={smallSrc}
         alt={alt}
         width={112}
-        height={145}
+        height={seriesCover ? 140 : 145}
         loading="lazy"
         decoding="async"
         onUnavailable={() => setFailed(true)}
-        className={`rounded-sm border border-accent/40 bg-card object-contain shadow-sm hover:border-accent ${compactOnMobile ? "h-[104px] w-20 sm:h-[145px] sm:w-28" : "h-[145px] w-28"}`}
+        className={`rounded-sm border border-accent/40 bg-card object-contain shadow-sm hover:border-accent ${sizeClass}`}
       />
     </a>
   );
@@ -625,17 +629,22 @@ function Index() {
         { key: "originals", heading: "Our Original Publications", items: filteredResources.filter(isTfttOriginal) },
         { key: "additional", heading: "More Divrei Torah for Your Table", items: filteredResources.filter((r) => !isTfttOriginal(r)) },
       ].filter((group) => group.items.length > 0);
-  // Display the correct uploaded PDF cover on all publication cards in ALL
-  // homepage states, including when last week's collection is shown as fallback.
+  // The seven originals keep their series artwork in every homepage listing,
+  // including the previous-collection fallback and issues without PDF previews.
   const originalCover = (r: Resource, compactOnMobile = false) => {
-    if (!r.thumb_url) return null;
+    const cover = resolveListingCover(r.publication_id, r.thumb_url, r.small_thumb_url);
+    const isMiKaamcha = r.publication_id === "bd544c49-a810-478d-bf5c-38b94a81bc31";
+    const src = isMiKaamcha && cover.src ? "/publication-covers/mi-kaamcha-yisroel-permanent.jpg" : cover.src;
+    if (!src) return null;
     const href = pdfActionHrefs(r.id).open;
     return (
       <StarterThumb
+        key={src}
         compactOnMobile={compactOnMobile}
-        smallSrc={r.small_thumb_url}
-        src={r.publication_id === "bd544c49-a810-478d-bf5c-38b94a81bc31" ? "/publication-covers/mi-kaamcha-yisroel-permanent.jpg" : r.thumb_url}
-        alt={r.publication_id === "bd544c49-a810-478d-bf5c-38b94a81bc31" ? "Mi Ka'amcha Yisroel permanent cover" : `Cover for ${displayTitle(r)} for ${r.parsha_key ?? displayedParshaKey ?? "this week"}`}
+        seriesCover={Boolean(cover.series)}
+        smallSrc={isMiKaamcha ? null : cover.smallSrc}
+        src={src}
+        alt={cover.series ? `${cover.series.title} permanent cover` : isMiKaamcha ? "Mi Ka'amcha Yisroel permanent cover" : `Cover for ${displayTitle(r)} for ${r.parsha_key ?? displayedParshaKey ?? "this week"}`}
         title={displayTitle(r)}
         href={href}
         onOpen={(event) => recordPdfAction(event, "open_pdf", href, {
@@ -1110,7 +1119,7 @@ function Index() {
                       parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey ?? null}
                     >
                       <div className="flex flex-1 items-start gap-3">
-                        {r.thumb_url ? originalCover(r, true) : (
+                        {originalCover(r, true) ?? (
                           <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-accent/12 text-primary shrink-0">
                             <FileText className="h-5 w-5" aria-hidden="true" />
                           </div>
