@@ -11,7 +11,7 @@ import {
   type OriginalEditionCard,
   type OriginalEditionGroup,
 } from "@/lib/original-editions";
-import { ORIGINAL_PROMOTION_SERIES, originalsPromotionDescription, promotionSeriesById, latestPromotionEdition } from "@/lib/originals-promotion";
+import { ORIGINAL_PROMOTION_SERIES, originalsPromotionDescription, promotionSeriesById, latestPromotionEdition, resolveListingCover } from "@/lib/originals-promotion";
 
 export const Route = createFileRoute("/originals")({
   component: ResourcesPage,
@@ -150,7 +150,7 @@ function trackOpen(
 
 function EditionCover({ edition, group, historical = false }: { edition: OriginalEditionCard; group: OriginalEditionGroup; historical?: boolean }) {
   const seriesTitle = promotionSeriesById(edition.seriesId)?.title ?? edition.seriesTitle;
-  const seriesCover = historical ? undefined : promotionSeriesById(edition.seriesId);
+  const seriesCover = resolveListingCover(edition.seriesId, edition.thumbUrl, null, historical ? "archive" : "listing").series;
   const [failed, setFailed] = useState(false);
   const showImage = !!edition.thumbUrl && !failed;
   return (
