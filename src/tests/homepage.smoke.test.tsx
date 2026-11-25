@@ -172,7 +172,12 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(document.querySelectorAll("#this-weeks-collection")).toHaveLength(1);
     expect(screen.queryByText(/Also Available This Week/)).toBeNull();
     expect(screen.queryByText(/Recommended Picks/)).toBeNull();
-    expect(screen.getAllByRole("heading", { name: "Our Four Original Weekly Series" })).toHaveLength(1);
+    const promotion = screen.getByRole("region", { name: "Seven Original Weekly Torah Publications" });
+    expect(document.querySelectorAll("#our-originals")).toHaveLength(1);
+    expect(promotion.compareDocumentPosition(document.getElementById("this-weeks-collection")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Our Original Publications" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "More Divrei Torah for Your Table" })).toBeTruthy();
+    expect(screen.queryByText("Introducing Three New Weekly Series")).toBeNull();
     expect(screen.getByRole("link", { name: "Explore Our Original Series" }).getAttribute("href")).toBe("/originals");
   });
 
