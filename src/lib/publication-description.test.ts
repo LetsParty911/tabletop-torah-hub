@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { leadWithPublicationTitle } from "./publication-description";
+import { originalDescriptionFallback } from "./tftt-originals";
 
 describe("title-first publication descriptions", () => {
   it("replaces generic subjects while preserving the verb and meaning", () => {
@@ -49,5 +50,16 @@ describe("file-name leftovers in descriptions", () => {
       .toBe("Torah Tavlin — Corrected Vision: a parsha essay.");
     expect(leadWithPublicationTitle("Torah Tavlin", "Torah Tavlin on how Yaakov corrected the record."))
       .toBe("Torah Tavlin on how Yaakov corrected the record.");
+  });
+});
+
+describe("approved Originals description fallback", () => {
+  const ramban = "81b9fadd-3f96-43a2-b21d-6619567e8b1b";
+  it("uses the approved series copy only when a description is missing", () => {
+    expect(originalDescriptionFallback(ramban, null)).toBe("One Ramban fully unpacked, with one meaningful question for the Shabbos table.");
+    expect(originalDescriptionFallback(ramban, "  ")).toBe(originalDescriptionFallback(ramban, null));
+    expect(originalDescriptionFallback(ramban, "Specific edition description.")).toBe("Specific edition description.");
+    expect(originalDescriptionFallback(null, null)).toBeNull();
+    expect(originalDescriptionFallback("unknown", null)).toBeNull();
   });
 });
