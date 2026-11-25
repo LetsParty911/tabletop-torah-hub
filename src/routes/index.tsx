@@ -2,7 +2,7 @@ import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/reac
 import { Fragment, useEffect, useState } from "react";
 import { isPostShabbosWindow } from "@/lib/post-shabbos";
 import { weeklyReleaseAt } from "@/lib/weekly-release";
-import { BookOpen, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { BookOpen, FileText, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
@@ -681,22 +681,22 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       <AnnouncementBanner initialBanner={Route.useLoaderData().announcement} />
-      <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
+      <div className="mx-auto max-w-5xl px-3 py-3 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-3 sm:space-y-6 md:space-y-8">
         <section className="border-b border-accent/30">
-          <div className="px-2 pb-3 pt-1 text-center sm:px-4 sm:pb-5 sm:pt-3">
+          <div className="px-2 pb-2 pt-1 text-center sm:px-4 sm:pb-5 sm:pt-3">
             <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-accent-readable sm:text-xs">
               {isCurrentYomKippur ? "Yom Kippur Resources" : "This Week's Parsha"}
             </p>
-            <h1 className="mt-1 font-serif text-xl font-bold leading-tight text-primary sm:text-3xl">
+            <h1 className="mt-1 text-balance font-serif text-xl font-bold leading-tight text-primary sm:text-3xl">
               {isCurrentYomKippur
                 ? "Yom Kippur Divrei Torah"
                 : isSukkosSeason
                   ? sukkosSeasonTitle
                   : isFallback
                     ? `${currentLabel} — This Week's Parsha`
-                    : `${currentLabel} — Weekly Divrei Torah`}
+                    : <><span className="block sm:inline">{currentLabel}</span><span className="hidden sm:inline"> — </span><span className="block text-base sm:inline sm:text-inherit">Weekly Divrei Torah</span></>}
             </h1>
-            <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+            <p className={`mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base ${!isFallback && !postShabbos && resources.length > 0 ? "hidden sm:block" : ""}`}>
               {isFallback
                 ? "This week's Divrei Torah are being prepared. New selections every Thursday."
                 : postShabbos
@@ -714,13 +714,13 @@ function Index() {
               </p>
             )}
             {resources.length > 0 && (
-              <Button onClick={browseAllSelections} className="mt-3 h-auto min-h-11 max-w-full whitespace-normal rounded-full px-5 py-2.5 font-serif text-sm font-semibold sm:text-base">
+              <Button onClick={browseAllSelections} className="mt-2 h-auto min-h-11 max-w-full whitespace-normal rounded-full px-5 py-2.5 font-serif text-sm font-semibold sm:mt-3 sm:text-base">
                 {isFallback
                   ? `Browse Earlier Collection: ${displayedLabel} (${resources.length})`
                   : `Browse ${resources.length} Available Selections`}
               </Button>
             )}
-            <nav aria-label="Other Torah collections" className="mt-1 flex flex-wrap items-center justify-center gap-x-4">
+            <nav aria-label="Other Torah collections" className="mt-1 flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-4">
               <Link to="/divrei-torah-parsha" className="inline-flex min-h-11 items-center text-xs font-semibold text-primary underline decoration-accent/60 underline-offset-4 sm:text-sm">Browse Earlier Parshas</Link>
               {!isCurrentYomKippur && <Link to="/originals" className="inline-flex min-h-11 items-center text-xs font-semibold text-primary underline decoration-accent/60 underline-offset-4 sm:text-sm">Our Seven Original Series</Link>}
             </nav>
@@ -752,7 +752,7 @@ function Index() {
               <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-muted-foreground">
                 {isFallback
                   ? `These ${resources.length} selections are from ${displayedLabel}, not ${currentLabel}. This week's PDFs will appear once published. Choose a title to read or print an earlier edition.`
-                  : "Select a title for details or tap Read Now to open the PDF in a new tab. No account needed."}
+                  : <><span className="sm:hidden">Tap a title for details or Read Now for the PDF. No account needed.</span><span className="hidden sm:inline">Select a title for details or tap Read Now to open the PDF in a new tab. No account needed.</span></>}
               </p>
             )}
             <>
@@ -796,8 +796,14 @@ function Index() {
                 </div>
 
                 <div id="filters" aria-label="Weekly collection filters" className="mt-3 scroll-mt-24 rounded-lg border border-accent/35 bg-card/60 px-2 py-2 sm:mt-4 sm:rounded-xl sm:px-4 sm:py-3">
-                  <div className="flex flex-wrap items-center gap-1.5 sm:hidden" role="group" aria-label="Quick filters">
-                    {(["All", "Children", "Families", "Adults"] as const).filter((audience) => audience === "All" || sortedResources.some((r) => matchesAudience(r, audience))).map((audience) => {
+                  <div className="space-y-1.5 sm:hidden" role="group" aria-label="Quick filters">
+                    {([["All", "Children", "Families"], ["Adults"]] as const).map((row, rowIndex) => {
+                      const visibleAudiences = row.filter((audience) => audience === "All" || sortedResources.some((r) => matchesAudience(r, audience)));
+                      const showBriefInsights = rowIndex === 1 && contentTypeOptions.includes("Brief Insights");
+                      if (!visibleAudiences.length && !showBriefInsights) return null;
+                      return (
+                        <div key={rowIndex} className="flex flex-wrap items-center justify-center gap-1.5">
+                    {visibleAudiences.map((audience) => {
                       const active = audience === "All" ? activeFilterCount === 0 : audienceFilter === audience;
                       return (
                         <button key={audience} type="button" aria-pressed={active} onClick={() => {
@@ -808,7 +814,7 @@ function Index() {
                         }} className={`min-h-11 rounded-full border px-3 py-1 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${active ? "border-primary bg-primary text-primary-foreground" : "border-accent/45 bg-background text-primary hover:bg-accent/10"}`}>{audienceLabel(audience)}</button>
                       );
                     })}
-                    {contentTypeOptions.includes("Brief Insights") && (
+                    {showBriefInsights && (
                       <button type="button" aria-pressed={contentTypeFilter === "Brief Insights"} onClick={() => {
                         const next = contentTypeFilter === "Brief Insights" ? "All" : "Brief Insights";
                         clearFilters();
@@ -816,18 +822,22 @@ function Index() {
                         trackFp("filter_change", { metadata: { filter: "content_type", value: next } });
                       }} className={`min-h-11 rounded-full border px-3 py-1 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${contentTypeFilter === "Brief Insights" ? "border-primary bg-primary text-primary-foreground" : "border-accent/45 bg-background text-primary hover:bg-accent/10"}`}>Brief Insights</button>
                     )}
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="mt-1 flex items-center justify-between gap-2 sm:hidden">
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 border-t border-accent/25 pt-1 sm:hidden">
                     <button
                       type="button"
                       aria-expanded={filtersOpen}
                       aria-controls="weekly-filter-options"
                       onClick={() => setFiltersOpen((open) => !open)}
-                      className="min-h-11 rounded-full border border-accent/45 bg-background px-3 py-1.5 text-left text-xs font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-semibold text-primary hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                     >
+                      <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
                       {filtersOpen ? "Fewer filters" : "More filters"}{activeFilterCount > 0 ? ` · ${activeFilterCount} active` : ""}
                     </button>
-                    <span role="status" className="text-xs text-muted-foreground">{`${filteredResources.length} ${filteredResources.length === 1 ? "selection" : "selections"}`}</span>
+                    <span role="status" className="ml-auto whitespace-nowrap text-xs text-muted-foreground">{`${filteredResources.length} ${filteredResources.length === 1 ? "selection" : "selections"}`}</span>
                     {activeFilterCount > 0 && (
                       <button
                         type="button"
@@ -1001,14 +1011,14 @@ function Index() {
                     {group.items.map((r) => (
                     <PublicationCardTracker
                       key={r.id}
-                      className="h-full rounded-xl border border-accent/40 bg-card p-2.5 sm:p-4 hover:border-accent/70 hover:shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
+                      className="h-full rounded-xl border border-accent/40 bg-card p-2 sm:p-4 hover:border-accent/70 hover:shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
                       publication_id={r.id}
                       publication_title={r.title}
                       publication_series={r.publication ?? null}
                       publisher={r.publisher ?? null}
                       parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey ?? null}
                     >
-                      <div className="flex flex-1 items-start gap-3">
+                      <div className="flex flex-1 items-start gap-2.5 sm:gap-3">
                         {originalCover(r, true) ?? (
                           <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-accent/12 text-primary shrink-0">
                             <FileText className="h-5 w-5" aria-hidden="true" />
