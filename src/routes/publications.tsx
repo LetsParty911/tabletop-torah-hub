@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { BookOpen, ArrowLeft } from "lucide-react";
 import { listPublicationPages, type PublicationPageSummary } from "@/integrations/supabase/publication-pages.functions";
 import { normalizeAudience, audienceLabel } from "@/lib/audience";
@@ -34,10 +35,12 @@ export const Route = createFileRoute("/publications")({
 
 function PublicationsPage() {
   const { publications } = Route.useLoaderData();
+  const [query, setQuery] = useState("");
+  const matches = (p: PublicationPageSummary) => [tfttOriginalSeriesById(p.id)?.title, p.name, p.publisher, p.default_description].filter(Boolean).join(" ").toLowerCase().includes(query.trim().toLowerCase());
   const originalPublications = TFTT_ORIGINAL_EDITION_SERIES.flatMap((series) =>
-    publications.filter((publication) => publication.id === series.id),
+    publications.filter((publication) => publication.id === series.id && matches(publication)),
   );
-  const otherPublications = publications.filter((publication) => !tfttOriginalSeriesById(publication.id));
+  const otherPublications = publications.filter((publication) => !TFTT_ORIGINAL_EDITION_SERIES.some(series => series.id === publication.id) && matches(publication)).sort((a,b) => (tfttOriginalSeriesById(a.id)?.title ?? a.name).localeCompare(tfttOriginalSeriesById(b.id)?.title ?? b.name));
 
   return (
     <div className="min-h-screen bg-background">
@@ -64,6 +67,8 @@ function PublicationsPage() {
           </div>
         </section>
 
+        <div className="mt-6"><label htmlFor="publication-search" className="block text-sm font-medium text-primary">Find a publication</label><input id="publication-search" type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by title or publisher" className="mt-2 w-full rounded-md border border-accent/40 bg-background px-3 py-2 text-base" /></div>
+        <p role="status" className="mt-2 text-sm text-muted-foreground">{originalPublications.length + otherPublications.length} matching publications</p>
         {originalPublications.length > 0 && (
           <section className="mt-8" aria-labelledby="original-series-heading">
             <h2 id="original-series-heading" className="font-serif text-2xl font-bold text-primary">Our Originals</h2>
@@ -110,12 +115,12 @@ function renderPublicationCards(publications: PublicationPageSummary[]) {
               >
                 <div className="flex items-start gap-3">
                   <div className={`${cover.series ? "h-20" : "h-[83px]"} w-16 shrink-0 overflow-hidden rounded-sm border border-accent/40 bg-card`}>
-                    {cover.src ? <img src={cover.src} alt={cover.series ? `${cover.series.title} permanent cover` : `Latest cover of ${publication.name}`} width={64} height={cover.series ? 80 : 83} loading="lazy" decoding="async" className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center"><BookOpen className="h-5 w-5" /></div>}
+                    {cover.src ? <img src={cover.src} alt="" width={64} height={cover.series ? 80 : 83} loading="lazy" decoding="async" className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center"><BookOpen className="h-5 w-5" /></div>}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h2 className="font-serif text-lg sm:text-xl font-bold text-primary group-hover:text-accent group-hover:underline">
+                    <h3 className="font-serif text-lg sm:text-xl font-bold text-primary group-hover:text-accent group-hover:underline">
                       {original?.title ?? publication.name}
-                    </h2>
+                    </h3>
                     {publication.publisher && (
                       <p className="mt-0.5 text-xs text-muted-foreground">Published by {publication.publisher}</p>
                     )}
