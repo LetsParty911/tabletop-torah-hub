@@ -462,8 +462,7 @@ function ViewPdf() {
           <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" aria-hidden="true" />
         </Link>
 
-        {relatedParsha.length === 0 && (
-        {pdf.parsha_key && !isYomTovReading(pdf.parsha_key) && (
+        {relatedParsha.length === 0 && pdf.parsha_key && !isYomTovReading(pdf.parsha_key) && (
           <section className="mt-5 rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
             <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable">
               More on this parsha
@@ -480,8 +479,6 @@ function ViewPdf() {
               .
             </p>
           </section>
-        )}
-
         )}
 
         {relatedParsha.length > 0 && (
