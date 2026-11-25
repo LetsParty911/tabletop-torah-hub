@@ -253,7 +253,7 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.queryByRole("button", { name: /View all 8/ })).toBeNull();
   });
 
-  it("keeps four mobile category choices without a redundant recommended-picks link", () => {
+  it("keeps five mobile category choices without a redundant recommended-picks link", () => {
     setHomepage(false);
     state.loader.resources = [1, 2, 3, 4, 5, 6].map((n) => example(n, "Lech-Lecha"));
     render(<Homepage />);
@@ -261,6 +261,9 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.getByRole("button", { name: "Family Table" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Children" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Stories" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Deeper Learning", exact: true })).toBeTruthy();
+    expect(document.getElementById("filters")?.className).not.toContain("sticky");
+    expect(screen.getByText("Divrei Torah in Hebrew — Coming Soon").compareDocumentPosition(document.getElementById("this-weeks-collection")!) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
     expect(screen.queryByRole("link", { name: /Not sure\\? See our recommended picks/i })).toBeNull();
     expect(screen.queryByRole("link", { name: /Browse all available Divrei Torah/i })).toBeNull();
   });
