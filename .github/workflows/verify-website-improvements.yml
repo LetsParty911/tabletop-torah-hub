@@ -26,6 +26,11 @@ on:
       - "src/routes/short-vorts.tsx"
       - "src/routes/view.$id.tsx"
       - "src/routes/index.tsx"
+      - "src/routes/originals.tsx"
+      - "src/lib/originals-promotion*.ts"
+      - "src/lib/tftt-originals.ts"
+      - "src/components/OriginalSeriesCover*.tsx"
+      - "vitest.ux.config.ts"
       - "src/tests/homepage.smoke.test.tsx"
       - "src/components/UpdateCountdown.tsx"
       - "src/components/UpdateCountdown.test.tsx"
@@ -77,5 +82,7 @@ jobs:
         run: bunx vitest run src/lib/maintenance.test.ts src/lib/vpn-block.test.ts src/lib/ip-geo.test.ts
       - name: Run isolated homepage interaction smoke tests
         run: bunx vitest run --config vitest.signup.config.ts src/tests/homepage.smoke.test.tsx
+      - name: Verify Originals catalog and real publication ownership
+        run: bunx vitest run --config vitest.ux.config.ts src/lib/originals-promotion.test.ts src/lib/original-editions.test.ts src/lib/parsha-detective.test.ts
       - name: Build application
         run: bun run build
