@@ -44,7 +44,7 @@ export function PdfCoverThumbnail({
   const permanentCover = normalizedSeries === "torah wellsprings"
     ? "/publication-covers/torah-wellsprings-plaque-v2.jpg"
     : isMiKaamchaCover
-      ? "/publication-covers/mi-kaamcha-yisroel-permanent.jpg"
+      ? "/publication-covers/mi-kaamcha-yisroel-logo-v1.webp"
       : null;
   const cover = resolveListingCover(seriesPublicationId, thumbnailUrl, smallThumbnailUrl, coverContext);
   const usingLegacyPermanent = !cover.series && Boolean(permanentCover && !permanentFailed);

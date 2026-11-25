@@ -17,11 +17,11 @@ describe("small preview fallback", () => {
     expect(image.getAttribute("src")).toBe(src);
   });
   it("tries the bundled permanent cover then its original exactly once", () => {
-    const src = "/publication-covers/mi-kaamcha-yisroel-permanent.jpg";
+    const src = "/publication-covers/mi-kaamcha-yisroel-logo-v1.webp";
     const unavailable = vi.fn();
     render(<SmallPdfImage src={src} alt="First page" onUnavailable={unavailable} />);
     const image = screen.getByRole("img");
-    expect(image.getAttribute("src")).toBe("/publication-covers/mi-kaamcha-yisroel-small.webp");
+    expect(image.getAttribute("src")).toBe("/publication-covers/mi-kaamcha-yisroel-logo-small-v1.webp");
     fireEvent.error(image);
     expect(image.getAttribute("src")).toBe(src);
     expect(unavailable).not.toHaveBeenCalled();
@@ -29,7 +29,7 @@ describe("small preview fallback", () => {
     expect(unavailable).toHaveBeenCalledTimes(1);
   });
   it("preserves permanent cover sources with small copies", () => {
-    expect(smallThumbnailUrl("/publication-covers/mi-kaamcha-yisroel-permanent.jpg")).toBe("/publication-covers/mi-kaamcha-yisroel-small.webp");
+    expect(smallThumbnailUrl("/publication-covers/mi-kaamcha-yisroel-logo-v1.webp")).toBe("/publication-covers/mi-kaamcha-yisroel-logo-small-v1.webp");
     expect(smallThumbnailUrl("/publication-covers/torah-wellsprings-plaque-v2.jpg")).toBe("/publication-covers/torah-wellsprings-small.webp");
   });
   it("never converts arbitrary URLs to paid transformations", () => {
