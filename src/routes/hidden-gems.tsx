@@ -30,13 +30,15 @@ function HiddenGemsArchive() {
         <p className="text-sm text-accent-readable">Torah For The Table</p>
         <h1 className="mt-2 font-serif text-3xl font-bold text-primary sm:text-4xl">{HIDDEN_GEMS_NAME}</h1>
         <p className="mt-3 text-base text-muted-foreground">{HIDDEN_GEMS_TAGLINE}</p>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">Discover small details in the Torah, including gematria (the numerical values of Hebrew letters) and insights from the Baal HaTurim, with questions to discuss at the Shabbos table.</p>
+        <p className="mt-2 text-sm font-medium text-primary">{hiddenGemEditions.length} {hiddenGemEditions.length === 1 ? "selection" : "selections"} in this collection</p>
         {hiddenGemEditions.map((gem) => (
           <article key={gem.slug} className="mt-8 rounded-lg border border-accent/30 bg-card/50 p-5 sm:p-6">
             <p className="text-sm text-accent-readable">{gem.subseries} · {gem.parshaLabel}</p>
             <h2 className="mt-2 font-serif text-2xl font-bold text-primary">{gem.title}</h2>
             <p className="mt-3 text-sm text-foreground">{gem.opening}</p>
             <GematriaMotif gem={gem} compact />
-            <Button asChild className="min-h-11"><Link to="/hidden-gems/$slug" params={{ slug: gem.slug }}>Read &amp; Print <ArrowRight aria-hidden="true" /></Link></Button>
+            <Button asChild className="min-h-11"><Link to="/hidden-gems/$slug" params={{ slug: gem.slug }} aria-label={`Read and print ${gem.title}`}>Read &amp; Print <ArrowRight aria-hidden="true" /></Link></Button>
           </article>
         ))}
         <div className="mt-8 flex justify-center sm:justify-start">
