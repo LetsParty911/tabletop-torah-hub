@@ -1,5 +1,6 @@
 import { TFTT_ORIGINAL_EDITION_SERIES, tfttOriginalSeriesById, renameLegacySeriesText } from "@/lib/tftt-originals";
 import { activeOriginalSeriesIds, groupOriginalEditions, type OriginalEditionRow } from "@/lib/original-editions";
+import { selectPromotionCovers, type OriginalPromotionCover } from "@/lib/originals-promotion";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
@@ -703,27 +704,40 @@ export function pdfThumbUrl(id: string, publicationId?: string | null): string |
   return `${base.replace(/\/$/, "")}/storage/v1/object/public/pdf-thumbs/${id}.png`;
 }
 
-// /originals: recent published editions of the three canonical TFTT series,
-// keyed strictly by publication_id and grouped by each row's own parsha/year.
+// /originals and homepage: use the same real, published series covers.
 export const listOriginalEditions = createServerFn({ method: "GET" }).handler(async () => {
+  const empty = { groups: [] as ReturnType<typeof groupOriginalEditions>, activeSeriesIds: [] as string[], promotionCovers: [] as OriginalPromotionCover[] };
   try {
     const admin = getSupabaseAdmin();
-    const { data, error } = await admin
-      .from("pdfs")
-      .select("id, parsha_key, jewish_year, publication_id, created_at")
-      .eq("published", true)
-      .in("publication_id", TFTT_ORIGINAL_EDITION_SERIES.map((s) => s.id))
-      .order("created_at", { ascending: false })
-      .limit(300);
+    const { readThumbnailInventory } = await import("@/lib/verified-thumbnails.server");
+    const { verifiedSmallThumbnailUrl } = await import("@/lib/verified-thumbnails");
+    const [{ data, error }, inventory] = await Promise.all([
+      admin.from("pdfs")
+        .select("id, parsha_key, jewish_year, publication_id, created_at")
+        .eq("published", true)
+        .in("publication_id", TFTT_ORIGINAL_EDITION_SERIES.map((s) => s.id))
+        .order("created_at", { ascending: false })
+        .limit(300),
+      readThumbnailInventory(admin),
+    ]);
     if (error) {
       console.error("listOriginalEditions error", error.message);
-      return { groups: [], activeSeriesIds: [] as string[] };
+      return empty;
     }
     const rows = (data as OriginalEditionRow[]) ?? [];
-    return { groups: groupOriginalEditions(rows, pdfThumbUrl), activeSeriesIds: activeOriginalSeriesIds(rows) };
+    // The shared cached inventory distinguishes missing PNGs from real ones;
+    // on a storage outage preserve the previous original-URL behavior.
+    const allGroups = groupOriginalEditions(rows, (id) =>
+      inventory.originalIds === null || inventory.originalIds.has(id) ? pdfThumbUrl(id) : null, 300);
+    return {
+      groups: allGroups.slice(0, 12),
+      activeSeriesIds: activeOriginalSeriesIds(rows),
+      promotionCovers: selectPromotionCovers(allGroups, (id, url) =>
+        verifiedSmallThumbnailUrl(url, id, inventory.smallPaths)),
+    };
   } catch (e) {
     console.error("listOriginalEditions failed", e instanceof Error ? e.message : e);
-    return { groups: [], activeSeriesIds: [] as string[] };
+    return empty;
   }
 });
 
