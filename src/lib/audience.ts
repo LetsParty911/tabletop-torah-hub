@@ -33,7 +33,7 @@ export function normalizeAudience(
   }
   if (v.startsWith("child") || v.startsWith("kid") || v.startsWith("youth")) return "Children";
   if (v.startsWith("famil")) return "Families";
-  if (v.startsWith("adult") || v.startsWith("teen")) return "Adults";
+  if (v.startsWith("adult") || v.startsWith("teen") || v === "deeper learning") return "Adults";
   return null;
 }
 

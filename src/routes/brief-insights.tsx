@@ -68,7 +68,7 @@ export const Route = createFileRoute("/brief-insights")({
     const url = "https://torahforthetable.com/brief-insights";
     const image = "https://torahforthetable.com/og-image.png";
 
-    const all = (loaderData?.current?.length ? loaderData.current : (VORTS[0]?.vorts ?? [])).slice(
+    const all = (loaderData?.current ?? []).slice(
       0,
       20,
     );
@@ -228,7 +228,7 @@ function ParshaSection({
             <div className="parchment-frame">
               <div className="parchment-panel text-center">
                 <p className="font-serif text-lg font-bold text-primary">{publishedPdf.title}</p>
-                <p className="mt-1 text-sm text-muted-foreground">This publication is ready to read or print. Use Read PDF above to open it.</p>
+                <p className="mt-1 text-sm text-muted-foreground">This edition is available as a printable PDF. Open it using Read PDF above.</p>
               </div>
             </div>
           ) : (
@@ -326,12 +326,12 @@ function ShortVortsPage() {
             {isYomTov ? `Brief Insights: Short Divrei Torah for ${label}` : "Brief Insights: Short Divrei Torah on Parshas Hashavua"}
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Short Divrei Torah for the weekly parsha that you can say over at the Shabbos table — drawn from Rashi,
-            Midrash and Chazal. Short enough to remember, sharp enough to start a conversation.
+            Short Divrei Torah to share at the Shabbos table. Read available insights here, or open a published printable edition.
           </p>
         </header>
 
-        <div className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+        <div className="mt-4 text-center"><Link to="/archive" search={{ type: "Brief Insights" }} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline decoration-accent/60 underline-offset-4">Browse previously published Brief Insights</Link></div>
+        {sections.length > 1 && <div className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
           <label
             htmlFor="parsha-jump"
             className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
@@ -351,7 +351,7 @@ function ShortVortsPage() {
               </option>
             ))}
           </select>
-        </div>
+        </div>}
 
         <div className="mt-8 space-y-4">
           {sections.map((s) => (

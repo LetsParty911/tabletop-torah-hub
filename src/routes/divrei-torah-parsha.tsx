@@ -48,6 +48,7 @@ export const Route = createFileRoute("/divrei-torah-parsha")({
 function DivreiTorahParshaPage() {
   const parshiyos = Route.useLoaderData();
   const available = parshiyos.filter((p) => p.count > 0);
+  const totalSelections = available.reduce((sum, reading) => sum + reading.count, 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -67,29 +68,21 @@ function DivreiTorahParshaPage() {
         </header>
 
         <section className="mt-10 rounded-2xl border border-accent/25 bg-card/30 p-5 sm:p-7">
-          <h2 className="font-serif text-2xl font-bold text-primary">Browse by Parsha</h2>
+          <h2 className="font-serif text-2xl font-bold text-primary">Browse by Parsha or Yom Tov</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Choose a parsha to see all available Torah for that week. Pages remain available
-            year-round, so you can return to the same parsha URL each year.
+            Choose a reading to explore its published selections across available years. Combined Parshiyos and Yom Tov collections are included.
           </p>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {available.map((parsha) => (
-              <Link
-                key={parsha.slug}
-                to="/parsha/$slug"
-                params={{ slug: parsha.slug }}
-                className="group flex items-center justify-between gap-3 rounded-xl border border-accent/25 bg-background/70 p-4 transition-colors hover:border-accent/60 hover:bg-accent/5"
-              >
-                <div className="min-w-0">
-                  <h2 className="font-serif text-lg font-bold text-primary">{parsha.label}</h2>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {`${parsha.count} ${parsha.count === 1 ? "selection" : "selections"}${parsha.years.length ? ` · ${parsha.years.length} ${parsha.years.length === 1 ? "year" : "years"}` : ""}`}
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-accent transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            ))}
+            {available.map((parsha) => {
+              const className = "group flex items-center justify-between gap-3 rounded-xl border border-accent/25 bg-background/70 p-4 transition-colors hover:border-accent/60 hover:bg-accent/5";
+              const card = <><div className="min-w-0"><h3 className="font-serif text-lg font-bold text-primary">{parsha.label}</h3><p className="mt-1 text-xs text-muted-foreground">{`${parsha.count} ${parsha.count === 1 ? "selection" : "selections"} · ${parsha.years.length} ${parsha.years.length === 1 ? "year" : "years"}`}</p></div><ChevronRight aria-hidden="true" className="h-4 w-4 shrink-0 text-accent transition-transform group-hover:translate-x-0.5" /></>;
+              return parsha.permanentParsha ? (
+                <Link key={parsha.slug} to="/parsha/$slug" params={{ slug: parsha.slug }} className={className}>{card}</Link>
+              ) : (
+                <Link key={parsha.slug} to="/archive" search={{ parsha: parsha.parsha_key }} className={className}>{card}</Link>
+              );
+            })}
           </div>
           <p className="mt-5 text-sm text-muted-foreground">
             Additional parsha pages will appear automatically as material is added to the archive.
@@ -117,8 +110,7 @@ function DivreiTorahParshaPage() {
 
         {available.length > 0 && (
           <p className="mt-8 text-center text-xs text-muted-foreground">
-            Currently available across {available.length} parsha pages. Additional collections are
-            added as the weekly library grows.
+            {`${totalSelections} published selections across ${available.length} reading collections. Additional collections appear as the library grows.`}
           </p>
         )}
       </div>

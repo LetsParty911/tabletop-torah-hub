@@ -32,7 +32,7 @@ export type ArchivePdfAll = {
 };
 
 export type ArchiveParshaAll = { parshaKey: string; pdfs: ArchivePdfAll[] };
-export type ArchiveYearAll = { year: number; parshiyos: ArchiveParshaAll[] };
+export type ArchiveYearAll = { year: number; parshiyos: ArchiveParshaAll[]; totalPdfs?: number; totalParshiyos?: number };
 
 export type ArchivePageInput = {
   year: string;
@@ -232,6 +232,13 @@ export const listArchiveAll = createServerFn({ method: "GET" })
       return a.title.localeCompare(b.title);
     });
 
+    const yearTotals = new Map<number, { count: number; readings: Set<string> }>();
+    for (const row of filtered) {
+      const entry = yearTotals.get(row.year) ?? { count: 0, readings: new Set<string>() };
+      entry.count += 1;
+      entry.readings.add(toParshaComparableKey(row.parshaKey));
+      yearTotals.set(row.year, entry);
+    }
     const totalPdfs = filtered.length;
     const totalPages = Math.max(1, Math.ceil(totalPdfs / PAGE_SIZE));
     const safePage = Math.min(data.page, totalPages);
@@ -264,6 +271,8 @@ export const listArchiveAll = createServerFn({ method: "GET" })
 
     const years: ArchiveYearAll[] = Array.from(yearMap.entries()).map(([year, parshaMap]) => ({
       year,
+      totalPdfs: yearTotals.get(year)?.count,
+      totalParshiyos: yearTotals.get(year)?.readings.size,
       parshiyos: Array.from(parshaMap.entries()).map(([parshaKey, pdfs]) => ({
         parshaKey,
         pdfs,
