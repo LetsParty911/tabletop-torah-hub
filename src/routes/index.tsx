@@ -602,6 +602,9 @@ function Index() {
         : publicationLabel(r.publication || r.title) || r.title);
 
   const isTfttOriginal = (r: Resource) => Boolean(tfttOriginalSeriesById(r.publication_id));
+  // Keep series discovery available when the weekly collection is incomplete,
+  // but avoid repeating the same seven covers when all are already displayed.
+  const allOriginalSeriesVisible = ORIGINAL_PROMOTION_SERIES.every((series) => sortedResources.some((r) => r.publication_id === series.publicationId));
   // Preserve the recommendation order in guided mode; otherwise partition
   // the already-filtered list by verified publication ownership, exactly once.
   const weeklyResourceGroups = isCurrentYomKippur
@@ -682,9 +685,9 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       <AnnouncementBanner initialBanner={Route.useLoaderData().announcement} />
-      <div className="mx-auto max-w-5xl px-3 py-3 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-3 sm:space-y-6 md:space-y-8">
+      <div className="mx-auto max-w-5xl px-3 py-3 sm:px-4 sm:py-4 md:px-8 md:py-5 space-y-3 sm:space-y-4 md:space-y-5">
         <section className="border-b border-accent/30">
-          <div className="px-2 pb-2 pt-1 text-center sm:px-4 sm:pb-5 sm:pt-3">
+          <div className="px-2 pb-2 pt-1 text-center sm:px-4 sm:pb-3 sm:pt-1">
             <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-accent-readable sm:text-xs">
               {isCurrentYomKippur ? "Yom Kippur Resources" : "This Week's Parsha"}
             </p>
@@ -707,7 +710,7 @@ function Index() {
                     : "New Divrei Torah will appear here as soon as they are published."}
             </p>
             {heroDateLine && (
-              <p className="mt-1 text-xs text-muted-foreground">{heroDateLine}</p>
+              <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">{heroDateLine}</p>
             )}
             {showMoreComingNotice && (
               <p aria-label="Upcoming Divrei Torah" className="mx-auto mt-2 max-w-xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
@@ -742,7 +745,7 @@ function Index() {
         {(resources.length === 0 || showCompleteCollection) && (
         <section id="this-weeks-collection" tabIndex={-1} className="scroll-mt-24">
           <div className="px-1 sm:px-2">
-            <h2 ref={weeklyHeadingRef} className="font-serif text-xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
+            <h2 ref={weeklyHeadingRef} className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-primary text-center">
               {isFallback
                 ? `Previous Collection — ${displayedLabel}`
                 : isCurrentYomKippur
@@ -797,14 +800,14 @@ function Index() {
                 </div>
 
                 <div id="filters" aria-label="Weekly collection filters" className="mt-3 scroll-mt-24 rounded-lg border border-accent/35 bg-card/60 px-2 py-2 sm:mt-4 sm:rounded-xl sm:px-4 sm:py-3">
-                  <div className="space-y-1.5 sm:hidden" role="group" aria-label="Quick filters">
+                  <div className="space-y-1.5 sm:flex sm:flex-wrap sm:items-center sm:gap-2 sm:space-y-0" role="group" aria-label="Quick filters">
                     {([["All", "Children", "Families"], ["Adults", "Brief Insights"]] as const).map((row, rowIndex) => {
                       const available = row.filter((choice) => choice === "All" || (choice === "Brief Insights"
                         ? contentTypeOptions.includes("Brief Insights")
                         : sortedResources.some((r) => matchesAudience(r, choice))));
                       if (available.length === 0) return null;
                       return (
-                        <div key={rowIndex} className={`grid gap-1.5 ${available.length === 3 ? "grid-cols-3" : available.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
+                        <div key={rowIndex} className={`grid gap-1.5 sm:contents ${available.length === 3 ? "grid-cols-3" : available.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
                           {available.map((choice) => {
                             const isBrief = choice === "Brief Insights";
                             const active = choice === "All" ? activeFilterCount === 0 : isBrief ? contentTypeFilter === "Brief Insights" : audienceFilter === choice;
@@ -827,7 +830,7 @@ function Index() {
                       );
                     })}
                   </div>
-                  <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 border-t border-accent/25 pt-1 sm:hidden">
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 border-t border-accent/25 pt-1 sm:mt-1">
                     <button
                       type="button"
                       aria-expanded={filtersOpen}
@@ -838,7 +841,7 @@ function Index() {
                       <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
                       {filtersOpen ? "Fewer filters" : "More filters"}{activeFilterCount > 0 ? ` · ${activeFilterCount} active` : ""}
                     </button>
-                    <span role="status" className="ml-auto whitespace-nowrap text-xs text-muted-foreground">{`${filteredResources.length} ${filteredResources.length === 1 ? "selection" : "selections"}`}</span>
+                    <span role="status" className="ml-auto whitespace-nowrap text-xs text-muted-foreground">{filteredResources.length === sortedResources.length ? `${filteredResources.length} ${filteredResources.length === 1 ? "selection" : "selections"}` : `Showing ${filteredResources.length} of ${sortedResources.length} selections`}</span>
                     {activeFilterCount > 0 && (
                       <button
                         type="button"
@@ -851,52 +854,7 @@ function Index() {
                   </div>
 
 
-                  <div id="weekly-filter-options" className={`${filtersOpen ? "block" : "hidden"} mt-3 space-y-3 sm:mt-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:items-start sm:gap-4 sm:space-y-0`}>
-                    {activeFilterCount > 0 && (
-                      <div className="hidden justify-end sm:col-span-3 sm:flex">
-                        <button
-                          type="button"
-                          onClick={clearFilters}
-                          className="text-xs font-serif text-accent-readable hover:text-primary hover:underline transition-colors"
-                        >
-                          Clear filters
-                        </button>
-                      </div>
-                    )}
-
-                    {sortedResources.length > 0 && (
-                      <div className="hidden sm:block">
-                        <span className="block text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By audience</span>
-                        <div className="mt-1.5 flex flex-wrap justify-start gap-2">
-                          {(["All", "Children", "Families", "Adults"] as const)
-                            .map((audience) => {
-                              const active = audienceFilter === audience;
-                              return (
-                                <button
-                                  key={audience}
-                                  type="button"
-                                  aria-pressed={active}
-                                  aria-label={`Filter by audience: ${audienceLabel(audience)}`}
-                                  onClick={() => {
-                                    setSelectedChooser(null);
-                                    const next = active ? "All" : audience;
-                                    setAudienceFilter(next);
-                                    trackFp("filter_change", { metadata: { filter: "audience", value: next } });
-                                  }}
-                                  className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
-                                    active
-                                      ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                                      : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
-                                  }`}
-                                >
-                                  {audienceLabel(audience)}
-                                </button>
-                              );
-                            })}
-                        </div>
-                      </div>
-                    )}
-
+                  <div id="weekly-filter-options" hidden={!filtersOpen} className={`${filtersOpen ? "block sm:grid" : "hidden"} mt-3 space-y-3 sm:grid-cols-2 lg:grid-cols-3 sm:items-start sm:gap-4 sm:space-y-0`}>
                     {lengthHasChoice && (
                       <div>
                         <span className="block text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By length</span>
@@ -904,7 +862,7 @@ function Index() {
                           {(() => {
                             const options = LENGTH_OPTIONS.map((option) => ({ ...option,
                               count: lengthScoped.filter((r) => matchesPageLength(r.page_count, option.key)).length,
-                            })).filter((o) => o.key === "All" || o.count > 0);
+                            })).filter((o) => o.key === "All" || sortedResources.some((r) => matchesPageLength(r.page_count, o.key)));
                             return options.map((o) => {
                               const active = lengthFilter === o.key;
                               return (
@@ -913,13 +871,15 @@ function Index() {
                                   type="button"
                                   aria-pressed={active}
                                   aria-label={`Filter by length: ${o.label}`}
+                                  disabled={o.key !== "All" && o.count === 0 && !active}
+                                  title={`${o.count} matching selections`}
                                   onClick={() => {
                                     setSelectedChooser(null);
                                     const next = active ? "All" : o.key;
                                     setLengthFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "length", value: next } });
                                   }}
-                                  className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
+                                  className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                                     active
                                       ? "border-accent bg-accent text-accent-foreground shadow-sm"
                                       : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
@@ -967,7 +927,6 @@ function Index() {
                               count: contentTypeScoped.filter((r) => resourceContentType(r) === t).length,
                             })),
                           ]
-                            .filter((o) => o.key === "All" || o.count > 0)
                             .map((o) => {
                               const active = contentTypeFilter === o.key;
                               return (
@@ -976,13 +935,15 @@ function Index() {
                                   type="button"
                                   aria-pressed={active}
                                   aria-label={`Filter by content type: ${o.label}`}
+                                  disabled={o.key !== "All" && o.count === 0 && !active}
+                                  title={`${o.count} matching selections`}
                                   onClick={() => {
                                     setSelectedChooser(null);
                                     const next = active ? "All" : o.key;
                                     setContentTypeFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "content_type", value: next } });
                                   }}
-                                  className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
+                                  className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                                     active
                                       ? "border-accent bg-accent text-accent-foreground shadow-sm"
                                       : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
@@ -1098,6 +1059,14 @@ function Index() {
         </section>
         )}
 
+        <section aria-label="Stay connected" className="mx-auto max-w-2xl">
+          <WeeklyEmailSignup
+            sourceId="homepage"
+            heading="Receive the Weekly Shabbos Collection"
+            description="Receive our seven original weekly series and additional Divrei Torah in your inbox, ready to read or print before Shabbos."
+          />
+        </section>
+
         {!isCurrentYomKippur && (
           <section
             ref={originalsRef}
@@ -1115,6 +1084,7 @@ function Index() {
             <p className="mx-auto mt-2 max-w-xl font-serif text-sm italic leading-relaxed text-[#17304d]">
               Discover our original weekly printable Divrei Torah.
             </p>
+            {!allOriginalSeriesVisible && (<>
             <ul id="original-series-strip" aria-label="Explore the original series" className="mx-auto mt-4 flex max-w-[46rem] snap-x snap-mandatory gap-3 overflow-x-auto pb-2 text-left sm:flex-wrap sm:justify-center sm:overflow-visible sm:pb-0">
               {ORIGINAL_PROMOTION_SERIES.map((series) => (
                 <li key={series.key} className="w-[44vw] max-w-[160px] shrink-0 snap-start sm:w-[calc(25%-0.75rem)] sm:max-w-none">
@@ -1130,6 +1100,7 @@ function Index() {
               <span className="text-xs text-[#5d513a]">Swipe or use arrows to explore all series.</span>
               <button type="button" aria-label="Scroll publications right" aria-controls="original-series-strip" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#b99a5b] focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => { const list = document.getElementById("original-series-strip"); if (list) list.scrollBy({ left: list.clientWidth * 0.75, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); }}><ChevronRight className="h-5 w-5" aria-hidden="true" /></button>
             </div>
+            </>)}
             <Link
               to="/originals"
               className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#17304d] px-5 py-2.5 font-serif text-sm font-bold text-[#fff8e9] transition-colors hover:bg-[#284b73] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#17304d]"
@@ -1188,13 +1159,7 @@ function Index() {
               initialNow={loaderData.renderedAt ?? Date.now()}
             />
 
-        <section aria-label="Stay connected" className="mx-auto max-w-2xl">
-          <WeeklyEmailSignup
-            sourceId="homepage"
-            heading="Receive the Weekly Shabbos Collection"
-            description="Receive our seven original weekly series and additional Divrei Torah in your inbox, ready to read or print before Shabbos."
-          />
-        </section>
+
 
         <section className="mx-auto max-w-2xl text-center">
           <Link
