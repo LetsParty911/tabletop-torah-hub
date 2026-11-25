@@ -30,6 +30,10 @@ on:
       - "src/pwa-register*.ts"
       - "src/routes/sitemap*.ts"
       - "src/lib/sitemap-lastmod*.ts"
+      - "src/lib/publication-slug*.ts"
+      - "src/integrations/supabase/publication-pages.functions.ts"
+      - "src/integrations/supabase/item-page.functions.ts"
+      - "src/routes/resources.tsx"
       - "src/lib/public-label-sizing.test.ts"
       - "src/lib/publication-thumbnail-fit.test.ts"
       - "src/routes/publications.tsx"
@@ -95,7 +99,7 @@ jobs:
       - name: Verify accepted mobile typography improvements
         run: bunx vitest run --config vitest.ux.config.ts src/lib/public-label-sizing.test.ts
       - name: Verify sitemap modification dates
-        run: bunx vitest run --config vitest.ux.config.ts src/lib/sitemap-lastmod.test.ts
+        run: bunx vitest run --config vitest.ux.config.ts src/lib/sitemap-lastmod.test.ts src/lib/publication-slug.test.ts
       - name: Verify emergency PWA cache reset
         run: bunx vitest run --config vitest.ux.config.ts src/pwa-register.test.ts
       - name: Verify individual PDF titles

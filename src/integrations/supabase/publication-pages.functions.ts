@@ -1,15 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
-import { publicationSlug } from "@/lib/publication-slug";
+import { canonicalPublicationName, canonicalPublicationSlug, findPublicationBySlug } from "@/lib/publication-slug";
 import { standardizeCopy } from "@/lib/standardize-copy";
-import { tfttOriginalSeriesById, renameLegacySeriesText } from "@/lib/tftt-originals";
+import { renameLegacySeriesText } from "@/lib/tftt-originals";
 import { pdfThumbUrl } from "@/integrations/supabase/api.functions";
 import { readThumbnailInventory } from "@/lib/verified-thumbnails.server";
-
-function publicPublicationName(p: { id: string; name: string }): string {
-  return tfttOriginalSeriesById(p.id)?.title ?? renameLegacySeriesText(p.name);
-}
 
 export type PublicationEdition = {
   id: string;
@@ -79,8 +75,8 @@ export const listPublicationPages = createServerFn({ method: "GET" }).handler(
       publications: (pubs ?? [])
         .map((p: any) => ({
           id: p.id as string,
-          name: publicPublicationName(p),
-          slug: publicationSlug(publicPublicationName(p)),
+          name: canonicalPublicationName(p),
+          slug: canonicalPublicationSlug(p),
           publisher: (p.publisher as string | null) ?? null,
           default_audience: (p.default_audience as string | null) ?? null,
           default_format_type: (p.default_format_type as string | null) ?? null,
@@ -109,9 +105,7 @@ export const getPublicationPage = createServerFn({ method: "GET" })
       return { publication: null, editions: [] as PublicationEdition[] };
     }
 
-    const publication = (pubs ?? []).find(
-      (p: any) => publicationSlug(p.name as string) === data.slug || publicationSlug(publicPublicationName(p)) === data.slug,
-    );
+    const publication = findPublicationBySlug(pubs ?? [], data.slug);
     if (!publication) {
       return { publication: null, editions: [] as PublicationEdition[] };
     }
@@ -133,8 +127,8 @@ export const getPublicationPage = createServerFn({ method: "GET" })
     return {
       publication: {
         id: publication.id as string,
-        name: publicPublicationName(publication),
-        slug: publicationSlug(publicPublicationName(publication)),
+        name: canonicalPublicationName(publication),
+        slug: canonicalPublicationSlug(publication),
         publisher: (publication.publisher as string | null) ?? null,
         default_audience: (publication.default_audience as string | null) ?? null,
         default_format_type: (publication.default_format_type as string | null) ?? null,

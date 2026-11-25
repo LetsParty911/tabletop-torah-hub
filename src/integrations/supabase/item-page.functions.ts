@@ -2,9 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
-import { publicationSlug } from "@/lib/publication-slug";
+import { canonicalPublicationName, canonicalPublicationSlug } from "@/lib/publication-slug";
 import { standardizeCopy } from "@/lib/standardize-copy";
-import { tfttOriginalSeriesById, renameLegacySeriesText } from "@/lib/tftt-originals";
+import { renameLegacySeriesText } from "@/lib/tftt-originals";
 
 export type ItemPublicationContext = {
   id: string;
@@ -73,8 +73,8 @@ export const getItemPublicationContext = createServerFn({ method: "GET" })
     return {
       publication: {
         id: publication.id as string,
-        name: tfttOriginalSeriesById(publication.id as string)?.title ?? renameLegacySeriesText(publication.name as string),
-        slug: publicationSlug(tfttOriginalSeriesById(publication.id as string)?.title ?? renameLegacySeriesText(publication.name as string)),
+        name: canonicalPublicationName(publication),
+        slug: canonicalPublicationSlug(publication),
         publisher: (publication.publisher as string | null) ?? null,
       },
       related: (rows ?? []).map((row: any) => ({
