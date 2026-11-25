@@ -118,26 +118,42 @@ const maintenanceTraffic = createMiddleware().server(async ({ next, request }) =
   return result;
 });
 
-// Short OurKehilla announcement link. Handle it at the request boundary,
-// independent of generated file-route registration, to avoid a /k 404.
-const ourKehillaShortLink = createMiddleware().server(async ({ next, request }) => {
+// Recover known historical public links at the request boundary on every host.
+const legacyPublicLinks = createMiddleware().server(async ({ next, request }) => {
   const url = new URL(request.url);
-  if (request.method === "GET" && url.pathname === "/k") {
-    return {
-      response: new Response(null, {
-        status: 302,
-        headers: {
-          Location: K_REDIRECT_TARGET,
-          "Cache-Control": "no-store",
-          "X-Robots-Tag": "noindex",
-        },
-      }),
-    } as never;
+  if (request.method !== "GET" && request.method !== "HEAD") return next();
+  const path = url.pathname.replace(/\/$/, "").toLowerCase();
+  let target: string | null = null;
+  let status = 301;
+  if (path === "/k" || path === "/k*") {
+    target = K_REDIRECT_TARGET;
+    status = 302;
+  } else if (path === "/sn") {
+    target = "https://torahforthetable.com/?utm_source=sender.net&utm_medium=email&utm_campaign=toldos_5787";
+    status = 302;
+  } else if (path === "/your-toldos-page") {
+    const destination = new URL("https://torahforthetable.com/parsha/toldos/5787");
+    destination.search = url.search;
+    target = destination.toString();
+  } else if (path === "/vayetzei/parsha-q-a-1") {
+    const destination = new URL("https://torahforthetable.com/view/72dd2c29-aa71-4341-8d32-2711b9a4f3a2");
+    destination.search = url.search;
+    target = destination.toString();
   }
-  return next();
+  if (!target) return next();
+  return {
+    response: new Response(null, {
+      status,
+      headers: {
+        Location: target,
+        "Cache-Control": "no-store",
+        "X-Robots-Tag": "noindex",
+      },
+    }),
+  } as never;
 });
 
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [countryGate, dotOrgRedirect, ourKehillaShortLink, vpnGate, geoBlock, maintenanceTraffic, cacheControl],
+  requestMiddleware: [countryGate, dotOrgRedirect, legacyPublicLinks, vpnGate, geoBlock, maintenanceTraffic, cacheControl],
 }));
