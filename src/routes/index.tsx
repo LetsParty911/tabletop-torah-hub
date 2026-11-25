@@ -15,9 +15,6 @@ import { trackFp } from "@/lib/first-party-analytics";
 import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { SITE_URL } from "@/lib/site-url";
 import { HomepageShare } from "@/components/HomepageShare";
-import { FeaturedAudioBookCard } from "@/components/FeaturedAudioBookCard";
-import { listPublishedAudioBooks } from "@/integrations/supabase/parsha-audio-books.functions";
-import type { AudioBook } from "@/lib/parsha-audio-book";
 
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -141,7 +138,6 @@ type LoaderData = {
   readingDate: string | null;
   upcomingAfterYomTovKey: string | null;
   announcement: AnnouncementBannerData;
-  featuredAudioBook: AudioBook | null;
   progressFillStep?: number | null;
   progressEta?: string | null;
   renderedAt?: number;
@@ -149,13 +145,6 @@ type LoaderData = {
 
 async function loadCurrentWeek(): Promise<LoaderData> {
   const announcementPromise = getAnnouncementBanner().catch(() => ({ enabled: false, text: null, linkUrl: null, linkLabel: null }));
-  // Only advertise an actually published audiobook; failures must not block the PDF homepage.
-  const featuredAudioBookPromise = listPublishedAudioBooks()
-    .then((books) => books.find((book) => book.parsha_key === "vayetzei" && book.jewish_year === 5787 && book.cover_path) ?? null)
-    .catch((error) => {
-      console.error("Unable to load featured Parsha Audio Book", error);
-      return null;
-    });
   const subscriberCountPromise = getActiveSubscriberCount().catch((e) => {
     console.error("Failed to load subscriber count", e);
     return { count: 0 };
@@ -236,7 +225,6 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     readingDate,
     upcomingAfterYomTovKey,
     announcement,
-    featuredAudioBook: await featuredAudioBookPromise,
     progressFillStep,
     progressEta,
     renderedAt: Date.now(),
@@ -1205,9 +1193,6 @@ function Index() {
         </section>
         )}
 
-        {loaderData.featuredAudioBook && (
-          <FeaturedAudioBookCard book={loaderData.featuredAudioBook} />
-        )}
         {!isFallback && tableThought && (
           <section
             aria-labelledby="table-thought-heading"
