@@ -176,7 +176,8 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.queryByText(/Recommended Picks/)).toBeNull();
     const promotion = screen.getByRole("region", { name: "Our Original Weekly Publications" });
     expect(document.querySelectorAll("#our-originals")).toHaveLength(1);
-    expect(promotion.compareDocumentPosition(document.getElementById("this-weeks-collection")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(document.getElementById("this-weeks-collection")!.compareDocumentPosition(promotion) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Our Seven Original Series" }).getAttribute("href")).toBe("/originals");
     expect(screen.getByRole("heading", { name: "Our Original Publications" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "More Divrei Torah for Your Table" })).toBeTruthy();
     expect(screen.queryByText("Introducing Three New Weekly Series")).toBeNull();
@@ -253,18 +254,30 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.queryByRole("button", { name: /View all 8/ })).toBeNull();
   });
 
-  it("keeps five mobile category choices without a redundant recommended-picks link", () => {
+  it("uses one compact mobile filter surface and filters actual published selections", () => {
     setHomepage(false);
     state.loader.resources = [1, 2, 3, 4, 5, 6].map((n) => example(n, "Lech-Lecha"));
+    state.loader.resources[4] = { ...state.loader.resources[4], audience: "Adults" };
+    state.loader.resources[5] = { ...state.loader.resources[5], format_type: "Short Vorts", content_type: "Brief Insights" };
     render(<Homepage />);
-    expect(screen.getByRole("button", { name: "Brief Insights" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Family Table" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Children" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Stories" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Deeper Learning", exact: true })).toBeTruthy();
-    expect(document.getElementById("filters")?.className).not.toContain("sticky");
+    const filters = document.getElementById("filters")!;
+    const quick = within(screen.getByRole("group", { name: "Quick filters" }));
+    expect(quick.getByRole("button", { name: "All" }).getAttribute("aria-pressed")).toBe("true");
+    expect(quick.getByRole("button", { name: "Children" })).toBeTruthy();
+    expect(quick.getByRole("button", { name: "Families" })).toBeTruthy();
+    expect(quick.getByRole("button", { name: "Deeper Learning" })).toBeTruthy();
+    expect(quick.getByRole("button", { name: "Brief Insights" })).toBeTruthy();
+    fireEvent.click(quick.getByRole("button", { name: "Children" }));
+    expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(2);
+    fireEvent.click(quick.getByRole("button", { name: "Brief Insights" }));
+    expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(1);
+    fireEvent.click(quick.getByRole("button", { name: "All" }));
+    expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(6);
+    expect(within(filters).getByRole("button", { name: "More filters" })).toBeTruthy();
+    expect(filters.className).not.toContain("sticky");
+    expect(document.querySelectorAll("#filters")).toHaveLength(1);
+    expect(document.querySelectorAll("#weekly-filter-options")).toHaveLength(1);
     expect(screen.getByText("Divrei Torah in Hebrew — Coming Soon").compareDocumentPosition(document.getElementById("this-weeks-collection")!) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
-    expect(screen.queryByRole("link", { name: /Not sure\\? See our recommended picks/i })).toBeNull();
     expect(screen.queryByRole("link", { name: /Browse all available Divrei Torah/i })).toBeNull();
   });
 

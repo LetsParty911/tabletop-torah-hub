@@ -55,7 +55,7 @@ import { trackEvent } from "@/lib/analytics";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { TableChooser } from "@/components/TableChooser";
-import { CHOOSERS, pickRecommendations, pickStarterSelections, type ChooserKey } from "@/lib/table-chooser";
+import { pickStarterSelections, type ChooserKey } from "@/lib/table-chooser";
 
 type Resource = {
   id: string;
@@ -484,7 +484,6 @@ function Index() {
   const [activeChooser, setActiveChooser] = useState<string | null>(null);
   const [selectedChooser, setSelectedChooser] = useState<ChooserKey | null>(null);
   const [showRecommendationChooser, setShowRecommendationChooser] = useState(false);
-  const [mobileQuickChoice, setMobileQuickChoice] = useState<ChooserKey | null>(null);
 
   const sortedResources = resources;
   // Start-here showcase: only this week's published TFTT originals (matched by
@@ -522,11 +521,9 @@ function Index() {
     new Set(sortedResources.map((r) => resourceContentType(r)).filter((v): v is string => !!v)),
   ).sort((a, b) => a.localeCompare(b));
 
-  const filteredResources = mobileQuickChoice
-    ? pickRecommendations(sortedResources, mobileQuickChoice)
-    : sortedResources.filter(
-        (r) => matchesAudience(r) && matchesLength(r) && matchesContentType(r) && matchesPublication(r),
-      );
+  const filteredResources = sortedResources.filter(
+    (r) => matchesAudience(r) && matchesLength(r) && matchesContentType(r) && matchesPublication(r),
+  );
 
   const lengthHasChoice = LENGTH_OPTIONS.filter((option) => option.key !== "All" &&
     sortedResources.some((r) => matchesPageLength(r.page_count, option.key))).length > 1;
@@ -557,10 +554,6 @@ function Index() {
       setPublicationFilter("All");
     }
 
-    // A quick selection with no matching PDFs must never leave an empty list.
-    if (mobileQuickChoice && pickRecommendations(sortedResources, mobileQuickChoice).length === 0) {
-      setMobileQuickChoice(null);
-    }
   }, [
     sortedResources,
     audienceFilter,
@@ -568,24 +561,9 @@ function Index() {
     contentTypeFilter,
     contentTypeOptions,
     publicationFilter,
-    mobileQuickChoice,
   ]);
 
-  const activeFilterCount = mobileQuickChoice
-    ? 1
-    : Number(audienceFilter !== "All") + Number(lengthFilter !== "All") + Number(contentTypeFilter !== "All") + Number(publicationFilter !== "All");
-
-  const quickChoices = (["quick", "family", "kids", "deeper", "story"] as const).map((key) => {
-    const chooser = CHOOSERS.find((option) => option.key === key);
-    const labels: Record<(typeof key), string> = {
-      quick: "Brief Insights",
-      family: "Family Table",
-      kids: "Children",
-      deeper: "Deeper Learning",
-      story: "Stories",
-    };
-    return { key, label: labels[key], trackingLabel: chooser?.label ?? labels[key] };
-  });
+  const activeFilterCount = Number(audienceFilter !== "All") + Number(lengthFilter !== "All") + Number(contentTypeFilter !== "All") + Number(publicationFilter !== "All");
 
   const pageCountLabel = (r: Resource) => {
     if (typeof r.page_count !== "number") return null;
@@ -625,7 +603,7 @@ function Index() {
   const isTfttOriginal = (r: Resource) => Boolean(tfttOriginalSeriesById(r.publication_id));
   // Preserve the recommendation order in guided mode; otherwise partition
   // the already-filtered list by verified publication ownership, exactly once.
-  const weeklyResourceGroups = mobileQuickChoice || isCurrentYomKippur
+  const weeklyResourceGroups = isCurrentYomKippur
     ? [{ key: "all", heading: null, items: filteredResources }]
     : [
         { key: "originals", heading: "Our Original Publications", items: filteredResources.filter(isTfttOriginal) },
@@ -664,7 +642,6 @@ function Index() {
 
   const clearFilters = () => {
     setSelectedChooser(null);
-    setMobileQuickChoice(null);
     setAudienceFilter("All");
     setLengthFilter("All");
     setContentTypeFilter("All");
@@ -705,8 +682,8 @@ function Index() {
     <div className="min-h-screen bg-background">
       <AnnouncementBanner initialBanner={Route.useLoaderData().announcement} />
       <div className="mx-auto max-w-5xl px-3 py-4 sm:px-4 sm:py-7 md:px-8 md:py-10 space-y-4 sm:space-y-6 md:space-y-8">
-        <section className="parchment-frame">
-          <div className="parchment-panel px-4 py-4 text-center sm:py-6">
+        <section className="border-b border-accent/30">
+          <div className="px-2 pb-3 pt-1 text-center sm:px-4 sm:pb-5 sm:pt-3">
             <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-accent-readable sm:text-xs">
               {isCurrentYomKippur ? "Yom Kippur Resources" : "This Week's Parsha"}
             </p>
@@ -732,31 +709,21 @@ function Index() {
               <p className="mt-1 text-xs text-muted-foreground">{heroDateLine}</p>
             )}
             {showMoreComingNotice && (
-              <aside aria-label="Upcoming Divrei Torah" className="mx-auto mt-4 max-w-xl rounded-xl border border-accent/50 bg-background/80 px-4 py-3 text-center shadow-sm sm:px-5">
-                <h2 className="font-serif text-base font-bold text-primary sm:text-lg">
-                  More Divrei Torah Coming This Week!
-                </h2>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                  Additional Divrei Torah will be uploaded throughout the week, with new selections added through{" "}
-                  <strong className="font-semibold text-primary">Thursday at 8:00 PM ET</strong>.
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Please check back for updates. Thank you for visiting Torah For The Table!
-                </p>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                  Earlier weeks' Divrei Torah are always available in the{" "}
-                  <Link to="/archive" className="font-semibold text-primary underline decoration-accent/60 underline-offset-4 hover:text-accent">Archive</Link>.
-                </p>
-              </aside>
+              <p aria-label="Upcoming Divrei Torah" className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                More Divrei Torah will be added through <strong className="font-semibold text-primary">Thursday at 8:00 PM ET.</strong>
+              </p>
             )}
             {resources.length > 0 && (
-              <Button onClick={browseAllSelections} className="mt-4 h-auto min-h-11 max-w-full whitespace-normal rounded-full px-6 py-3 font-serif text-base font-semibold">
+              <Button onClick={browseAllSelections} className="mt-3 h-auto min-h-11 max-w-full whitespace-normal rounded-full px-5 py-2.5 font-serif text-sm font-semibold sm:text-base">
                 {isFallback
                   ? `Browse Earlier Collection: ${displayedLabel} (${resources.length})`
                   : `Browse ${resources.length} Available Selections`}
               </Button>
             )}
-            {!showMoreComingNotice && <div><Link to="/divrei-torah-parsha" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline decoration-accent/60 underline-offset-4">Browse Earlier Parshas</Link></div>}
+            <nav aria-label="Other Torah collections" className="mt-1 flex flex-wrap items-center justify-center gap-x-4">
+              <Link to="/divrei-torah-parsha" className="inline-flex min-h-11 items-center text-xs font-semibold text-primary underline decoration-accent/60 underline-offset-4 sm:text-sm">Browse Earlier Parshas</Link>
+              {!isCurrentYomKippur && <Link to="/originals" className="inline-flex min-h-11 items-center text-xs font-semibold text-primary underline decoration-accent/60 underline-offset-4 sm:text-sm">Our Seven Original Series</Link>}
+            </nav>
           </div>
         </section>
         {(isFallback || resources.length === 0) && (
@@ -771,58 +738,10 @@ function Index() {
           />
         )}
 
-        {!isCurrentYomKippur && (
-          <section
-            ref={originalsRef}
-            id="our-originals"
-            tabIndex={-1}
-            aria-labelledby="starter-selections-heading"
-            className="relative scroll-mt-24 overflow-hidden rounded-2xl border border-[#b99a5b] bg-[#fbefda] px-4 py-4 text-center text-[#17304d] shadow-sm sm:px-6 sm:py-5"
-          >
-            <div className="mx-auto flex max-w-2xl items-center justify-center gap-2">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#b99a5b]/70 text-[#8d6b30]" aria-hidden="true">
-                <BookOpen className="h-4 w-4" />
-              </span>
-              <h2 id="starter-selections-heading" className="font-serif text-xl font-bold leading-tight text-[#17304d] sm:text-3xl">Our Original Weekly Publications</h2>
-            </div>
-            <p className="mx-auto mt-2 max-w-xl font-serif text-sm italic leading-relaxed text-[#17304d]">
-              Discover our original weekly printable Divrei Torah.
-            </p>
-            <ul id="original-series-strip" aria-label="Explore the original series" className="mx-auto mt-4 flex max-w-[46rem] snap-x snap-mandatory gap-3 overflow-x-auto pb-2 text-left sm:flex-wrap sm:justify-center sm:overflow-visible sm:pb-0">
-              {ORIGINAL_PROMOTION_SERIES.map((series, index) => (
-                <li key={series.key} className="w-[44vw] max-w-[160px] shrink-0 snap-start sm:w-[calc(25%-0.75rem)] sm:max-w-none">
-                  <Link to="/originals" hash={`series-${series.key}`} aria-label={`Explore ${series.title}`} className="block rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#17304d]">
-                    <OriginalSeriesCover series={series} eager={index < 2} />
-                    <p className="mt-1 text-center break-words font-serif text-xs font-semibold leading-tight text-[#17304d]">{series.title}</p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-1 flex items-center justify-center gap-3 text-[#17304d] sm:hidden">
-              <button type="button" aria-label="Scroll publications left" aria-controls="original-series-strip" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#b99a5b] focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => { const list = document.getElementById("original-series-strip"); if (list) list.scrollBy({ left: -list.clientWidth * 0.75, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); }}><ChevronLeft className="h-5 w-5" aria-hidden="true" /></button>
-              <span className="text-xs text-[#5d513a]">Swipe or use arrows to explore all series.</span>
-              <button type="button" aria-label="Scroll publications right" aria-controls="original-series-strip" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#b99a5b] focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => { const list = document.getElementById("original-series-strip"); if (list) list.scrollBy({ left: list.clientWidth * 0.75, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); }}><ChevronRight className="h-5 w-5" aria-hidden="true" /></button>
-            </div>
-            <Link
-              to="/originals"
-              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#17304d] px-5 py-2.5 font-serif text-sm font-bold text-[#fff8e9] transition-colors hover:bg-[#284b73] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#17304d]"
-            >
-              Explore Our Original Series
-            </Link>
-            {!isFallback && canShowOriginalsLaunch(resources.flatMap((resource) => resource.publication_id ? [resource.publication_id] : [])) && (
-              <aside aria-label="New original series" className="mx-auto mt-4 max-w-xl border-t border-[#d9b875]/40 pt-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#8d6b30]">Introducing Three New Weekly Series</p>
-                <p className="mt-1 font-serif text-lg font-bold">More Torah. More Discovery.</p>
-                <p className="mt-1 text-sm text-[#e9dfcb]">{NEW_ORIGINAL_SERIES.map((series) => series.title).join(" · ")}</p>
-              </aside>
-            )}
-          </section>
-        )}
-
         {(resources.length === 0 || showCompleteCollection) && (
         <section id="this-weeks-collection" tabIndex={-1} className="scroll-mt-24">
           <div className="px-1 sm:px-2">
-            <h2 ref={weeklyHeadingRef} className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
+            <h2 ref={weeklyHeadingRef} className="font-serif text-xl sm:text-3xl md:text-4xl font-bold text-primary text-center">
               {isFallback
                 ? `Previous Collection — ${displayedLabel}`
                 : isCurrentYomKippur
@@ -833,57 +752,9 @@ function Index() {
               <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-muted-foreground">
                 {isFallback
                   ? `These ${resources.length} selections are from ${displayedLabel}, not ${currentLabel}. This week's PDFs will appear once published. Choose a title to read or print an earlier edition.`
-                  : "Our weekly originals and selections from respected Torah publishers. Select a title for details, or tap Read Now to open the PDF in a new tab — no account needed."}
+                  : "Select a title for details or tap Read Now to open the PDF in a new tab. No account needed."}
               </p>
             )}
-        {resources.length >= 6 && (
-          <section aria-labelledby="mobile-quick-choices" className="mt-4 rounded-xl border border-accent/35 bg-card/60 p-3 sm:hidden">
-            <h3 id="mobile-quick-choices" className="mb-1 font-serif text-sm font-bold text-primary">Choose what fits your table</h3>
-            <p className="mb-2 text-xs text-muted-foreground">Choose a category for suggested selections, or browse everything below.</p>
-            <div className="grid grid-cols-2 gap-2">
-              {quickChoices.map((choice) => {
-                const active = mobileQuickChoice === choice.key;
-                return (
-                  <button
-                    key={choice.key}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => {
-                      setSelectedChooser(null);
-                      setActiveChooser(null);
-                      setAudienceFilter("All");
-                      setContentTypeFilter("All");
-                      setLengthFilter("All");
-                      setPublicationFilter("All");
-                      setMobileQuickChoice(active ? null : choice.key);
-                      setShowAllResources(true);
-                      setFiltersOpen(false);
-                      trackFp("filter_change", {
-                        metadata: { filter: "mobile_quick_choice", value: active ? "All" : choice.key },
-                      });
-                      window.requestAnimationFrame(() => {
-                        document.getElementById("weekly-publication-list")?.scrollIntoView?.({
-                          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                            ? "auto"
-                            : "smooth",
-                          block: "start",
-                        });
-                      });
-                    }}
-                    className={`${choice.key === "story" ? "col-span-2 " : ""}min-h-11 min-w-0 rounded-lg border px-3 py-2.5 font-serif text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-                      active
-                        ? "border-accent bg-accent/15 text-primary shadow-sm"
-                        : "border-accent/40 bg-background/70 text-primary hover:bg-accent/10"
-                    }`}
-                  >
-                    {choice.label}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
             <>
             {resources.length === 0 ? (
               <p className="mt-6 text-center text-muted-foreground max-w-md mx-auto">
@@ -924,24 +795,46 @@ function Index() {
                   )}
                 </div>
 
-                <div id="filters" className="mt-4 scroll-mt-24 rounded-xl border border-accent/35 bg-card/60 px-3 py-3 sm:px-4">
-                  <div className="flex items-center justify-between gap-3 sm:hidden">
+                <div id="filters" aria-label="Weekly collection filters" className="mt-3 scroll-mt-24 rounded-lg border border-accent/35 bg-card/60 px-2 py-2 sm:mt-4 sm:rounded-xl sm:px-4 sm:py-3">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:hidden" role="group" aria-label="Quick filters">
+                    {(["All", "Children", "Families", "Adults"] as const).filter((audience) => audience === "All" || sortedResources.some((r) => matchesAudience(r, audience))).map((audience) => {
+                      const active = audience === "All" ? activeFilterCount === 0 : audienceFilter === audience;
+                      return (
+                        <button key={audience} type="button" aria-pressed={active} onClick={() => {
+                          clearFilters();
+                          const next = active ? "All" : audience;
+                          setAudienceFilter(next);
+                          trackFp("filter_change", { metadata: { filter: "audience", value: next } });
+                        }} className={`min-h-11 rounded-full border px-3 py-1 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${active ? "border-primary bg-primary text-primary-foreground" : "border-accent/45 bg-background text-primary hover:bg-accent/10"}`}>{audienceLabel(audience)}</button>
+                      );
+                    })}
+                    {contentTypeOptions.includes("Brief Insights") && (
+                      <button type="button" aria-pressed={contentTypeFilter === "Brief Insights"} onClick={() => {
+                        const next = contentTypeFilter === "Brief Insights" ? "All" : "Brief Insights";
+                        clearFilters();
+                        setContentTypeFilter(next);
+                        trackFp("filter_change", { metadata: { filter: "content_type", value: next } });
+                      }} className={`min-h-11 rounded-full border px-3 py-1 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${contentTypeFilter === "Brief Insights" ? "border-primary bg-primary text-primary-foreground" : "border-accent/45 bg-background text-primary hover:bg-accent/10"}`}>Brief Insights</button>
+                    )}
+                  </div>
+                  <div className="mt-1 flex items-center justify-between gap-2 sm:hidden">
                     <button
                       type="button"
                       aria-expanded={filtersOpen}
                       aria-controls="weekly-filter-options"
                       onClick={() => setFiltersOpen((open) => !open)}
-                      className="min-h-11 flex-1 rounded-full border border-accent/45 bg-background px-4 py-2 text-left font-serif text-sm font-semibold text-primary shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                      className="min-h-11 rounded-full border border-accent/45 bg-background px-3 py-1.5 text-left text-xs font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                     >
-                      Filter {filteredResources.length} available selections{activeFilterCount > 0 ? ` · ${activeFilterCount} active` : ""}
+                      {filtersOpen ? "Fewer filters" : "More filters"}{activeFilterCount > 0 ? ` · ${activeFilterCount} active` : ""}
                     </button>
+                    <span role="status" className="text-xs text-muted-foreground">{`${filteredResources.length} ${filteredResources.length === 1 ? "selection" : "selections"}`}</span>
                     {activeFilterCount > 0 && (
                       <button
                         type="button"
                         onClick={clearFilters}
                         className="inline-flex min-h-11 items-center text-xs font-serif text-accent-readable hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                       >
-                        Clear
+                        Clear filters
                       </button>
                     )}
                   </div>
@@ -961,7 +854,7 @@ function Index() {
                     )}
 
                     {sortedResources.length > 0 && (
-                      <div>
+                      <div className="hidden sm:block">
                         <span className="block text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By audience</span>
                         <div className="mt-1.5 flex flex-wrap justify-start gap-2">
                           {(["All", "Children", "Families", "Adults"] as const)
@@ -975,7 +868,6 @@ function Index() {
                                   aria-label={`Filter by audience: ${audienceLabel(audience)}`}
                                   onClick={() => {
                                     setSelectedChooser(null);
-                                    setMobileQuickChoice(null);
                                     const next = active ? "All" : audience;
                                     setAudienceFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "audience", value: next } });
@@ -1012,7 +904,6 @@ function Index() {
                                   aria-label={`Filter by length: ${o.label}`}
                                   onClick={() => {
                                     setSelectedChooser(null);
-                                    setMobileQuickChoice(null);
                                     const next = active ? "All" : o.key;
                                     setLengthFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "length", value: next } });
@@ -1040,7 +931,6 @@ function Index() {
                           value={publicationFilter}
                           onChange={(e) => {
                             setSelectedChooser(null);
-                            setMobileQuickChoice(null);
                             setPublicationFilter(e.target.value);
                             trackFp("filter_change", { metadata: { filter: "publication", value: e.target.value } });
                           }}
@@ -1077,7 +967,6 @@ function Index() {
                                   aria-label={`Filter by content type: ${o.label}`}
                                   onClick={() => {
                                     setSelectedChooser(null);
-                                    setMobileQuickChoice(null);
                                     const next = active ? "All" : o.key;
                                     setContentTypeFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "content_type", value: next } });
@@ -1101,7 +990,7 @@ function Index() {
                   </>
                 )}
 
-                <div id="weekly-publication-list" className="mt-5 scroll-mt-24 grid grid-cols-1 gap-3 sm:mt-6 sm:grid-cols-2 sm:gap-4">
+                <div id="weekly-publication-list" className="mt-3 scroll-mt-24 grid grid-cols-1 gap-2 sm:mt-6 sm:grid-cols-2 sm:gap-4">
                   {weeklyResourceGroups.map((group) => (
                     <Fragment key={group.key}>
                     {group.heading && (
@@ -1112,7 +1001,7 @@ function Index() {
                     {group.items.map((r) => (
                     <PublicationCardTracker
                       key={r.id}
-                      className="h-full rounded-xl border border-accent/40 bg-card p-3 sm:p-4 hover:border-accent/70 hover:shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
+                      className="h-full rounded-xl border border-accent/40 bg-card p-2.5 sm:p-4 hover:border-accent/70 hover:shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 flex flex-col"
                       publication_id={r.id}
                       publication_title={r.title}
                       publication_series={r.publication ?? null}
@@ -1152,13 +1041,13 @@ function Index() {
                           {(() => {
                             const summary = r.summary_quick || r.subtitle || r.description;
                             return summary ? (
-                              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground sm:mt-2">{summary}</p>
+                              <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:mt-2 sm:line-clamp-none sm:text-sm">{summary}</p>
                             ) : null;
                           })()}
                         </div>
                       </div>
 
-                      <div className="mt-auto pt-3 sm:pt-4">
+                      <div className="mt-auto pt-2 sm:pt-4">
                         <DownloadAndPrintButtons
                           href={`/view/${r.id}/pdf`}
                           publicationId={r.id}
@@ -1169,7 +1058,7 @@ function Index() {
                           parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
                           className="w-full px-3 py-2.5 lg:py-2"
                         />
-                        <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                        <div className="mt-0.5 flex flex-wrap items-center justify-center gap-2 sm:mt-2">
                           <SharePublicationButton
                             pdfId={r.id}
                             title={r.title}
@@ -1196,6 +1085,54 @@ function Index() {
 
           </div>
         </section>
+        )}
+
+        {!isCurrentYomKippur && (
+          <section
+            ref={originalsRef}
+            id="our-originals"
+            tabIndex={-1}
+            aria-labelledby="starter-selections-heading"
+            className="relative scroll-mt-24 overflow-hidden rounded-2xl border border-[#b99a5b] bg-[#fbefda] px-4 py-4 text-center text-[#17304d] shadow-sm sm:px-6 sm:py-5"
+          >
+            <div className="mx-auto flex max-w-2xl items-center justify-center gap-2">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#b99a5b]/70 text-[#8d6b30]" aria-hidden="true">
+                <BookOpen className="h-4 w-4" />
+              </span>
+              <h2 id="starter-selections-heading" className="font-serif text-xl font-bold leading-tight text-[#17304d] sm:text-3xl">Our Original Weekly Publications</h2>
+            </div>
+            <p className="mx-auto mt-2 max-w-xl font-serif text-sm italic leading-relaxed text-[#17304d]">
+              Discover our original weekly printable Divrei Torah.
+            </p>
+            <ul id="original-series-strip" aria-label="Explore the original series" className="mx-auto mt-4 flex max-w-[46rem] snap-x snap-mandatory gap-3 overflow-x-auto pb-2 text-left sm:flex-wrap sm:justify-center sm:overflow-visible sm:pb-0">
+              {ORIGINAL_PROMOTION_SERIES.map((series) => (
+                <li key={series.key} className="w-[44vw] max-w-[160px] shrink-0 snap-start sm:w-[calc(25%-0.75rem)] sm:max-w-none">
+                  <Link to="/originals" hash={`series-${series.key}`} aria-label={`Explore ${series.title}`} className="block rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#17304d]">
+                    <OriginalSeriesCover series={series} eager={false} />
+                    <p className="mt-1 text-center break-words font-serif text-xs font-semibold leading-tight text-[#17304d]">{series.title}</p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-1 flex items-center justify-center gap-3 text-[#17304d] sm:hidden">
+              <button type="button" aria-label="Scroll publications left" aria-controls="original-series-strip" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#b99a5b] focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => { const list = document.getElementById("original-series-strip"); if (list) list.scrollBy({ left: -list.clientWidth * 0.75, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); }}><ChevronLeft className="h-5 w-5" aria-hidden="true" /></button>
+              <span className="text-xs text-[#5d513a]">Swipe or use arrows to explore all series.</span>
+              <button type="button" aria-label="Scroll publications right" aria-controls="original-series-strip" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#b99a5b] focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => { const list = document.getElementById("original-series-strip"); if (list) list.scrollBy({ left: list.clientWidth * 0.75, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); }}><ChevronRight className="h-5 w-5" aria-hidden="true" /></button>
+            </div>
+            <Link
+              to="/originals"
+              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#17304d] px-5 py-2.5 font-serif text-sm font-bold text-[#fff8e9] transition-colors hover:bg-[#284b73] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#17304d]"
+            >
+              Explore Our Original Series
+            </Link>
+            {!isFallback && canShowOriginalsLaunch(resources.flatMap((resource) => resource.publication_id ? [resource.publication_id] : [])) && (
+              <aside aria-label="New original series" className="mx-auto mt-4 max-w-xl border-t border-[#d9b875]/40 pt-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#8d6b30]">Introducing Three New Weekly Series</p>
+                <p className="mt-1 font-serif text-lg font-bold">More Torah. More Discovery.</p>
+                <p className="mt-1 text-sm text-[#17304d]">{NEW_ORIGINAL_SERIES.map((series) => series.title).join(" · ")}</p>
+              </aside>
+            )}
+          </section>
         )}
 
         {!isFallback && tableThought && (
@@ -1323,9 +1260,9 @@ function Index() {
         </section>
 
         <p className="text-center text-xs text-muted-foreground">Divrei Torah in Hebrew — Coming Soon</p>
+        <BackToTop collectionId={showCompleteCollection ? "this-weeks-collection" : "starter-selections-heading"} />
         <SiteFooter />
       </div>
-      <BackToTop collectionId={showCompleteCollection ? "this-weeks-collection" : "starter-selections-heading"} />
     </div>
   );
 }

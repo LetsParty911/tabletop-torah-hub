@@ -17,6 +17,7 @@ on:
       - "src/lib/audience.ts"
       - "src/components/HeaderSearchToggle*.tsx"
       - "src/components/SharePublicationButton.tsx"
+      - "src/components/BackToTop.tsx"
       - "src/components/WeeklyEmailSignup.tsx"
       - "src/lib/pdf-display-title*.ts"
       - "src/integrations/supabase/api.functions.ts"

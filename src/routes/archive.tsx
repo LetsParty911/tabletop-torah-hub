@@ -776,9 +776,9 @@ function ArchivePage() {
           </nav>
         )}
 
+        <BackToTop collectionId="archive-results" />
         <SiteFooter />
       </div>
-      <BackToTop collectionId="archive-results" />
     </div>
   );
 }

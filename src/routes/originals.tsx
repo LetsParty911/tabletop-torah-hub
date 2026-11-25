@@ -269,13 +269,13 @@ function ResourcesPage() {
               </p>
             </div>
 
-            <div className="mt-8 max-w-2xl mx-auto text-left font-serif text-base sm:text-lg text-foreground leading-relaxed">
+            <div className="mt-4 max-w-2xl mx-auto text-center font-serif text-sm sm:text-base text-foreground leading-relaxed">
               <p>
-                Every week, Torah For The Table creates original, printable Torah publications designed to spark meaningful discussion, deepen understanding of the Parsha, and enrich your Shabbos table. From engaging questions and inspiring stories to carefully selected insights from our classical Meforshim, discover seven distinctive ways to connect with the weekly Parsha.
+                Seven original weekly series for children, families, and deeper learning. Discover questions, stories, and insights from our classical Meforshim.
               </p>
             </div>
 
-            <h2 className="mt-10 text-center font-serif text-2xl font-bold text-primary">Our Original Weekly Series</h2>
+            <h2 className="mt-6 text-center font-serif text-2xl font-bold text-primary">Our Original Weekly Series</h2>
             <p className="mt-2 text-center text-sm text-muted-foreground">New editions every Thursday. Explore the series, or open a published issue below.</p>
             <OriginalSeriesGrid groups={groups} activeSeriesIds={activeSeriesIds ?? []} />
             <OriginalEditions groups={groups} />
