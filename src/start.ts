@@ -26,6 +26,13 @@ const countryGate = createMiddleware().server(async ({ next, request }) => {
  * Permanent domain consolidation: torahforthetable.org (and www) is not a
  * separate site — every path 308-redirects to the same path on the .com apex.
  */
+const humanGate = createMiddleware().server(async ({ next, request }) => {
+  const { checkHumanGate } = await import("@/lib/human-gate.server");
+  const denied = await checkHumanGate(request);
+  if (denied) return { response: denied } as never;
+  return next();
+});
+
 const dotOrgRedirect = createMiddleware().server(async ({ next, request }) => {
   try {
     const url = new URL(request.url);
@@ -139,5 +146,5 @@ const ourKehillaShortLink = createMiddleware().server(async ({ next, request }) 
 
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [countryGate, dotOrgRedirect, ourKehillaShortLink, vpnGate, geoBlock, maintenanceTraffic, cacheControl],
+  requestMiddleware: [countryGate, dotOrgRedirect, humanGate, ourKehillaShortLink, vpnGate, geoBlock, maintenanceTraffic, cacheControl],
 }));
