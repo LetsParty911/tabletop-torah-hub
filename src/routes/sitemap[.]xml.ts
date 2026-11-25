@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { publicationSlug } from "@/lib/publication-slug";
 import { readingPagePath, readingSlug } from "@/lib/reading-page";
-import { PARSHIYOS_54 } from "@/lib/parshiyos";
+import { PARSHIYOS, YOM_TOV_KEYS } from "@/lib/parshiyos";
 import { latestSitemapDate } from "@/lib/sitemap-lastmod";
 
 const SITE_URL = "https://torahforthetable.com";
@@ -141,7 +141,7 @@ export const Route = createFileRoute("/sitemap.xml")({
               const path = readingPagePath(row.parsha_key, row.jewish_year);
               collectionDates.set(path, latestSitemapDate(collectionDates.get(path) ?? null, changed));
               const slug = readingSlug(row.parsha_key);
-              if (PARSHIYOS_54.some((name) => readingSlug(name) === slug)) {
+              if (PARSHIYOS.some((name) => !YOM_TOV_KEYS.includes(name) && readingSlug(name) === slug)) {
                 permanentParshaDates.set(slug, latestSitemapDate(permanentParshaDates.get(slug) ?? null, changed));
               }
             }
