@@ -36,9 +36,6 @@ export function SiteFooter() {
         <Link to="/originals" className={linkClass}>
           Our Originals
         </Link>
-        <Link to="/parsha-audio-book" className={linkClass}>
-          Parsha Audio Book
-        </Link>
         <Link to="/hidden-gems" className={linkClass}>
           Hidden Gems
         </Link>
