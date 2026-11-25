@@ -1,6 +1,7 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Menu, Search, X } from "lucide-react";
+import { Menu, Search, X, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { HeaderSearchToggle } from "@/components/HeaderSearchToggle";
 
 import { Button } from "@/components/ui/button";
@@ -393,13 +394,16 @@ function SiteNav() {
             >
               This Week
             </Link>
-            <Link
-              to="/archive"
-              className={linkCls}
-              activeProps={{ className: `${linkCls} ${activeCls}` }}
-            >
-              Archive
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger className={`${linkCls} inline-flex items-center gap-1`}>Browse <ChevronDown className="h-4 w-4" aria-hidden="true" /></DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem asChild><Link to="/divrei-torah-parsha">Browse by Parsha</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link to="/divrei-torah-parsha" hash="yom-tov">Browse by Yom Tov</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link to="/publications">Browse by Publication</Link></DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild><Link to="/archive">Complete Archive</Link></DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Link
               to="/brief-insights"
               className={linkCls}
@@ -454,7 +458,8 @@ function SiteNav() {
             <div className="grid gap-1">
               <Link to="/" hash="this-weeks-collection" onClick={() => { setMobileOpen(false); if (pathname === "/") requestWeeklyCollection(); }} className={mobileLinkCls}>This Week</Link>
               <Link to="/archive" className={mobileLinkCls}>Archive</Link>
-              <Link to="/divrei-torah-parsha" className={mobileLinkCls}>Divrei Torah by Parsha</Link>
+              <Link to="/divrei-torah-parsha" className={mobileLinkCls}>Browse by Parsha</Link>
+              <Link to="/divrei-torah-parsha" hash="yom-tov" className={mobileLinkCls}>Browse by Yom Tov</Link>
               <Link to="/publications" className={mobileLinkCls}>Publications</Link>
               <Link to="/brief-insights" className={mobileLinkCls}>Brief Insights</Link>
               <Link to="/originals" className={mobileLinkCls}>Our Originals</Link>
