@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
-import { PARSHIYOS_54, formatReadingLabel } from "@/lib/parshiyos";
+import { PARSHIYOS, YOM_TOV_KEYS, formatReadingLabel } from "@/lib/parshiyos";
 import { readingSlug } from "@/lib/reading-page";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { renameLegacySeriesText } from "@/lib/tftt-originals";
@@ -29,8 +29,10 @@ export type ParshaSeoPage = {
   type_counts: Record<string, number>;
 };
 
+const PARSHA_HUB_KEYS = PARSHIYOS.filter((name) => !YOM_TOV_KEYS.includes(name));
+
 function canonicalParshaForSlug(slug: string): string | null {
-  return PARSHIYOS_54.find((name) => readingSlug(name) === slug) ?? null;
+  return PARSHA_HUB_KEYS.find((name) => readingSlug(name) === slug) ?? null;
 }
 
 export const getParshaSeoPage = createServerFn({ method: "GET" })
@@ -127,7 +129,7 @@ export const listParshaSeoSummaries = createServerFn({ method: "GET" }).handler(
     if (!error) {
       for (const row of data ?? []) {
         const slug = readingSlug(String((row as any).parsha_key ?? ""));
-        if (!PARSHIYOS_54.some((name) => readingSlug(name) === slug)) continue;
+        if (!PARSHA_HUB_KEYS.some((name) => readingSlug(name) === slug)) continue;
         const entry = counts.get(slug) ?? { count: 0, years: new Set<number>() };
         entry.count += 1;
         const year = (row as any).jewish_year as number | null;
@@ -138,7 +140,7 @@ export const listParshaSeoSummaries = createServerFn({ method: "GET" }).handler(
       console.error("listParshaSeoSummaries error", error);
     }
 
-    return PARSHIYOS_54.map((parsha_key) => {
+    return PARSHA_HUB_KEYS.map((parsha_key) => {
       const slug = readingSlug(parsha_key);
       const entry = counts.get(slug);
       return {
