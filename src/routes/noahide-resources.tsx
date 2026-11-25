@@ -43,13 +43,13 @@ const RESOURCES: NoahideResource[] = [
   {
     wordmark: "Ask Noah International",
     domain: "asknoah.org",
-    blurb: "Dedicated guidance and learning about the Seven Noahide Commandments.",
+    blurb: "For further study: dedicated guidance and learning about the Seven Noahide Commandments.",
     href: "https://asknoah.org/7-commandments",
   },
   {
     wordmark: "Chabad.org",
     domain: "chabad.org",
-    blurb: "An accessible introduction to the Seven Laws of Noah.",
+    blurb: "Start here for an accessible introduction to the Seven Laws of Noah.",
     href: "https://www.chabad.org/library/article_cdo/aid/5559665/jewish/The-Seven-Laws-of-Noah.htm",
   },
 ];

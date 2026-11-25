@@ -40,6 +40,7 @@ function ContactPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [topic, setTopic] = useState("General question");
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [errors, setErrors] = useState<{ email?: string; message?: string }>({});
@@ -51,10 +52,12 @@ function ContactPage() {
     const nextErrors: { email?: string; message?: string } = {};
     const trimmedEmail = email.trim();
     const trimmedMessage = message.trim();
+    const submittedMessage = `[${topic}]\n${trimmedMessage}`;
     if (!trimmedEmail) nextErrors.email = "Email is required.";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail))
       nextErrors.email = "Please enter a valid email.";
     if (!trimmedMessage) nextErrors.message = "Message cannot be empty.";
+    else if (submittedMessage.length > 5000) nextErrors.message = "Please shorten your message or send it by email.";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
@@ -64,7 +67,7 @@ function ContactPage() {
         data: {
           name: name.trim() || undefined,
           email: trimmedEmail,
-          message: trimmedMessage,
+          message: submittedMessage,
         },
       });
       if (res.ok) {
@@ -72,6 +75,7 @@ function ContactPage() {
         setName("");
         setEmail("");
         setMessage("");
+        setTopic("General question");
         trackEvent("contact_submit", {
           form_name: "contact_form",
         });
@@ -97,9 +101,14 @@ function ContactPage() {
           </p>
         </header>
 
+        <section className="rounded-xl border border-accent/25 p-4">
+          <h2 className="font-serif text-xl font-bold text-primary">Submitting a Dvar Torah</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Please include the Parsha or Yom Tov, title, author attribution and Torah sources. Paste a short selection below, or email longer documents to the address on this page. Submissions are reviewed for Torah content, source clarity and print readiness; submission does not guarantee publication. We will contact you if further information is needed.</p>
+        </section>
         <section className="parchment-frame">
           <div className="parchment-panel">
             <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+              <div><label htmlFor="contact-topic" className="block text-sm font-medium text-primary mb-1.5">Topic</label><select id="contact-topic" value={topic} onChange={e => setTopic(e.target.value)} disabled={submitting} className="w-full rounded-md border-2 border-accent/40 bg-background px-3 py-2 text-base">{["General question", "Dvar Torah submission", "Correction", "Suggestion", "Technical issue"].map(option => <option key={option}>{option}</option>)}</select></div>
               <div>
                 <label
                   htmlFor="contact-name"
@@ -135,9 +144,10 @@ function ContactPage() {
                   maxLength={254}
                   disabled={submitting}
                   aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? "contact-email-error" : undefined}
                 />
                 {errors.email && (
-                  <p className="mt-1 text-sm text-destructive">{errors.email}</p>
+                  <p id="contact-email-error" className="mt-1 text-sm text-destructive">{errors.email}</p>
                 )}
               </div>
 
@@ -157,9 +167,10 @@ function ContactPage() {
                   maxLength={5000}
                   disabled={submitting}
                   aria-invalid={!!errors.message}
+                  aria-describedby={errors.message ? "contact-message-error" : undefined}
                 />
                 {errors.message && (
-                  <p className="mt-1 text-sm text-destructive">{errors.message}</p>
+                  <p id="contact-message-error" className="mt-1 text-sm text-destructive">{errors.message}</p>
                 )}
               </div>
 
