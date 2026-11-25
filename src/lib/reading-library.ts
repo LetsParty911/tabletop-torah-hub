@@ -29,3 +29,24 @@ export function summarizeReadingLibrary(rows: readonly ReadingRow[]) {
     return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi) || a.label.localeCompare(b.label);
   }).map(group => ({ ...group, years: [...group.years].sort((a,b) => b-a) }));
 }
+
+export const READING_LIBRARY_GROUPS = [
+  { id: "bereishis", label: "Bereishis — בראשית", start: "Bereishis" },
+  { id: "shemos", label: "Shemos — שמות", start: "Shemos" },
+  { id: "vayikra", label: "Vayikra — ויקרא", start: "Vayikra" },
+  { id: "bamidbar", label: "Bamidbar — במדבר", start: "Bamidbar" },
+  { id: "devarim", label: "Devarim — דברים", start: "Devarim" },
+  { id: "yom-tov", label: "Yom Tov", start: null },
+  { id: "other-readings", label: "Other collections", start: null },
+] as const;
+
+export function readingLibraryGroup(raw: string): typeof READING_LIBRARY_GROUPS[number]["id"] {
+  const canonical = canonicalLibraryReading(raw);
+  if (isYomTovReading(canonical ?? raw)) return "yom-tov";
+  const index = canonical ? PARSHIYOS.indexOf(canonical) : -1;
+  if (index < 0) return "other-readings";
+  for (const group of [...READING_LIBRARY_GROUPS].reverse()) {
+    if (group.start && index >= PARSHIYOS.indexOf(group.start)) return group.id;
+  }
+  return "other-readings";
+}
