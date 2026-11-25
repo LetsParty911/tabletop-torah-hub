@@ -201,6 +201,28 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(1);
   });
 
+  it("uses permanent artwork for all seven weekly listings including new issues without previews", () => {
+    setHomepage(false);
+    state.loader.resources = [
+      ...ORIGINAL_PROMOTION_SERIES.map((series, index) => ({
+        ...example(index + 1, "Lech-Lecha"),
+        title: series.title,
+        publication_id: series.publicationId,
+        thumb_url: index % 2 ? "/weekly-issue.png" : null,
+        small_thumb_url: "/weekly-small.webp",
+      })),
+      { ...example(8, "Lech-Lecha"), thumb_url: "/external.png" },
+    ];
+    render(<Homepage />);
+    const weekly = within(document.getElementById("this-weeks-collection")!);
+    for (const series of ORIGINAL_PROMOTION_SERIES) {
+      const image = weekly.getByRole("img", { name: series.title + " permanent cover" });
+      expect(image.getAttribute("src")).toBe(series.coverSrc);
+      expect(image.getAttribute("height")).toBe("140");
+    }
+    expect(weekly.getByRole("img", { name: /Cover for Sample Torah Sheet 8/ }).getAttribute("src")).toBe("/external.png");
+  });
+
   it("opens a weekly PDF without displaying an audiobook promotion", () => {
     setHomepage(false);
     state.loader.featuredAudioBook = { id: "book-1", title: "Sample Parsha Audio Book" };

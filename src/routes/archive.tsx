@@ -667,7 +667,7 @@ function ArchivePage() {
                               parsha={p.parshaKey ?? null}
                             >
                               <div className="flex items-start gap-2.5 sm:gap-3">
-                                <PdfCoverThumbnail pdfId={r.id} thumbnailUrl={r.thumb_url} smallThumbnailUrl={r.small_thumb_url} title={r.title} publicationName={r.publication} publisher={r.publisher} parsha={p.parshaKey} jewishYear={y.year} />
+                                <PdfCoverThumbnail pdfId={r.id} coverContext="archive" thumbnailUrl={r.thumb_url} smallThumbnailUrl={r.small_thumb_url} title={r.title} publicationName={r.publication} publisher={r.publisher} parsha={p.parshaKey} jewishYear={y.year} />
                                 <div className="min-w-0 flex-1">
                                   <div className="flex min-w-0 flex-col items-start gap-1.5 sm:flex-row sm:justify-between sm:gap-2">
                                     <h4 className="min-w-0 w-full flex-1 break-words font-serif text-base font-bold leading-snug text-primary sm:text-lg">

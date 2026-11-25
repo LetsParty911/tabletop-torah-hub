@@ -3,15 +3,19 @@ import { useState } from "react";
 import { FileText } from "lucide-react";
 import { recordPdfAction } from "@/components/DownloadToPrintButton";
 import { pdfActionLabel } from "@/lib/pdf-action-label";
+import { resolveListingCover, type ListingCoverContext } from "@/lib/originals-promotion";
 
 /**
- * Shows a PDF's first page by default. Torah Wellsprings is the sole exception:
- * its timeless cover is reused for every weekly edition.
+ * Public cards for the seven TFTT originals use canonical permanent artwork.
+ * Historical archives retain actual issue previews. Existing independent
+ * series cover exceptions are preserved.
  * Clicking a cover is the same tracked PDF-open action as the Open PDF button.
  * A missing or failed preview falls back to the existing document icon.
  */
 export function PdfCoverThumbnail({
   pdfId,
+  seriesPublicationId,
+  coverContext = "listing",
   thumbnailUrl,
   smallThumbnailUrl,
   title,
@@ -21,6 +25,8 @@ export function PdfCoverThumbnail({
   jewishYear,
 }: {
   pdfId: string;
+  seriesPublicationId?: string | null;
+  coverContext?: ListingCoverContext;
   thumbnailUrl?: string | null;
   smallThumbnailUrl?: string | null;
   title: string;
@@ -40,8 +46,11 @@ export function PdfCoverThumbnail({
     : isMiKaamchaCover
       ? "/publication-covers/mi-kaamcha-yisroel-permanent.jpg"
       : null;
-  const usingPermanent = Boolean(permanentCover && !permanentFailed);
-  const imageUrl = usingPermanent ? permanentCover : thumbnailUrl;
+  const cover = resolveListingCover(seriesPublicationId, thumbnailUrl, smallThumbnailUrl, coverContext);
+  const usingLegacyPermanent = !cover.series && Boolean(permanentCover && !permanentFailed);
+  const usingPermanent = Boolean(cover.series) || usingLegacyPermanent;
+  const imageUrl = usingLegacyPermanent ? permanentCover : cover.src;
+  const dimensions = cover.series ? "h-20 w-16" : "h-[83px] w-16";
 
   if (!imageUrl || failed) {
     return (
@@ -80,22 +89,22 @@ export function PdfCoverThumbnail({
           "thumbnail",
         )
       }
-      className="block h-[83px] w-16 shrink-0 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className={`block ${dimensions} shrink-0 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`}
     >
       <SmallPdfImage
         key={imageUrl}
         src={imageUrl}
-        verifiedSmallSrc={usingPermanent ? null : smallThumbnailUrl}
-        alt={usingPermanent ? `${publicationName ?? title} permanent cover` : `First page of ${title}`}
+        verifiedSmallSrc={usingPermanent ? null : cover.smallSrc}
+        alt={usingPermanent ? `${cover.series?.title ?? publicationName ?? title} permanent cover` : `First page of ${title}`}
         width={64}
-        height={83}
+        height={cover.series ? 80 : 83}
         loading="lazy"
         decoding="async"
         onUnavailable={() => {
-          if (usingPermanent) setPermanentFailed(true);
+          if (usingLegacyPermanent) setPermanentFailed(true);
           else setFailed(true);
         }}
-        className="h-[83px] w-16 rounded-sm border border-accent/40 bg-card object-contain shadow-sm hover:border-accent"
+        className={`${dimensions} rounded-sm border border-accent/40 bg-card object-contain shadow-sm hover:border-accent`}
       />
     </a>
   );

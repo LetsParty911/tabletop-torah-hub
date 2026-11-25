@@ -96,6 +96,28 @@ export function promotionSeriesById(id: string | null | undefined): OriginalProm
   return id ? ORIGINAL_PROMOTION_SERIES.find((series) => series.publicationId === id) : undefined;
 }
 
+/**
+ * Permanent public listing artwork policy. Match the canonical publication ID,
+ * never a title or the weekly PDF ID. New issue uploads must not change these
+ * covers. Historical edition archives and the actual PDF preview are exceptions.
+ * Keep this UI selection separate from storage, PDF URLs, and issue thumbnails.
+ */
+export type ListingCoverContext = "listing" | "archive";
+
+export function resolveListingCover(
+  publicationId: string | null | undefined,
+  thumbnailUrl?: string | null,
+  smallThumbnailUrl?: string | null,
+  context: ListingCoverContext = "listing",
+) {
+  const series = context === "listing" ? promotionSeriesById(publicationId) : undefined;
+  return {
+    series,
+    src: series?.coverSrc ?? thumbnailUrl ?? null,
+    smallSrc: series ? null : smallThumbnailUrl ?? null,
+  };
+}
+
 export const NEW_ORIGINAL_SERIES = ORIGINAL_PROMOTION_SERIES.filter((series) =>
   ["chizkuni", "medrash", "questions"].includes(series.key),
 );

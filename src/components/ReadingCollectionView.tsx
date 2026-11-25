@@ -220,7 +220,7 @@ export function ReadingCollectionView({
                 className="flex h-full flex-col rounded-xl border border-accent/35 bg-background/60 p-4 sm:p-5"
               >
                 <div className="flex items-start gap-3">
-                  <PdfCoverThumbnail pdfId={resource.id} thumbnailUrl={resource.thumb_url} title={resource.title} publicationName={resource.publication_name} publisher={resource.publisher} parsha={resource.parsha_key} jewishYear={resource.jewish_year} />
+                  <PdfCoverThumbnail pdfId={resource.id} seriesPublicationId={resource.publication_id} thumbnailUrl={resource.thumb_url} title={resource.title} publicationName={resource.publication_name} publisher={resource.publisher} parsha={resource.parsha_key} jewishYear={resource.jewish_year} />
                   <div className="min-w-0 flex-1">
                     <h2 className="font-serif text-lg font-bold leading-snug text-primary">
                       <Link to="/view/$id" params={{ id: resource.id }} className="hover:text-accent hover:underline">
