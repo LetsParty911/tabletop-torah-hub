@@ -267,6 +267,12 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(quick.getByRole("button", { name: "Families" })).toBeTruthy();
     expect(quick.getByRole("button", { name: "Deeper Learning" })).toBeTruthy();
     expect(quick.getByRole("button", { name: "Brief Insights" })).toBeTruthy();
+    const firstRow = quick.getByRole("button", { name: "All" }).parentElement!;
+    const secondRow = quick.getByRole("button", { name: "Deeper Learning" }).parentElement!;
+    expect(firstRow.className).toContain("grid-cols-3");
+    expect(secondRow.className).toContain("grid-cols-2");
+    expect(within(firstRow).getAllByRole("button").map((button) => button.textContent)).toEqual(["All", "Children", "Families"]);
+    expect(within(secondRow).getAllByRole("button").map((button) => button.textContent)).toEqual(["Deeper Learning", "Brief Insights"]);
     fireEvent.click(quick.getByRole("button", { name: "Children" }));
     expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(2);
     fireEvent.click(quick.getByRole("button", { name: "Brief Insights" }));
@@ -279,6 +285,15 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(document.querySelectorAll("#weekly-filter-options")).toHaveLength(1);
     expect(screen.getByText("Divrei Torah in Hebrew — Coming Soon").compareDocumentPosition(document.getElementById("this-weeks-collection")!) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
     expect(screen.queryByRole("link", { name: /Browse all available Divrei Torah/i })).toBeNull();
+  });
+
+  it("does not leave empty mobile filter columns when categories are unavailable", () => {
+    setHomepage(false);
+    state.loader.resources = [1, 2, 3, 4, 5, 6].map((n) => ({ ...example(n, "Lech-Lecha"), audience: "Children" }));
+    render(<Homepage />);
+    const quick = within(screen.getByRole("group", { name: "Quick filters" }));
+    expect(quick.getAllByRole("button").map((button) => button.textContent)).toEqual(["All", "Children"]);
+    expect(quick.getByRole("button", { name: "All" }).parentElement!.className).toContain("grid-cols-2");
   });
 
   it("reveals the complete PDF selection on explicit request", () => {
