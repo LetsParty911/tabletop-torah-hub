@@ -181,16 +181,15 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.getByRole("link", { name: "Explore Our Original Series" }).getAttribute("href")).toBe("/originals");
   });
 
-  it("opens a PDF from the weekly list and shows the audiobook below it", () => {
+  it("opens a weekly PDF without displaying an audiobook promotion", () => {
     setHomepage(false);
     state.loader.featuredAudioBook = { id: "book-1", title: "Sample Parsha Audio Book" };
     render(<Homepage />);
     const firstOpen = screen.getAllByRole("link", { name: "Open PDF" })[0];
     expect(firstOpen.getAttribute("href")).toBe("/view/example-1/pdf");
-    const collection = document.getElementById("this-weeks-collection")!;
-    const audio = screen.getByRole("region", { name: "Featured Parsha Audio Book" });
-    expect(collection.contains(firstOpen)).toBe(true);
-    expect(collection.compareDocumentPosition(audio) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(document.getElementById("this-weeks-collection")!.contains(firstOpen)).toBe(true);
+    expect(screen.queryByRole("region", { name: "Featured Parsha Audio Book" })).toBeNull();
+    expect(screen.queryByText("Sample Parsha Audio Book")).toBeNull();
   });
 
   it("shows every PDF and one stable collection anchor for small weekly releases", () => {
