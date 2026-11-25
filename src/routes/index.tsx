@@ -23,7 +23,7 @@ import { normalizeAudience, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
-import { canShowOriginalsLaunch, NEW_ORIGINAL_SERIES, ORIGINAL_PROMOTION_SERIES } from "@/lib/originals-promotion";
+import { canShowOriginalsLaunch, NEW_ORIGINAL_SERIES, ORIGINAL_PROMOTION_SERIES, type OriginalPromotionCover } from "@/lib/originals-promotion";
 import { OriginalSeriesCover } from "@/components/OriginalSeriesCover";
 import { weeklyCardBadges } from "@/lib/weekly-card-badges";
 import { publicationLabel } from "@/lib/badges";
@@ -45,6 +45,7 @@ import { formatReadingLabel } from "@/lib/parshiyos";
 import { isYomTovReading, readingSlug } from "@/lib/reading-page";
 import {
   listHomepageWeek,
+  listOriginalEditions,
   getParshaOverride,
   getActiveSubscriberCount,
   getAnnouncementBanner,
@@ -141,9 +142,11 @@ type LoaderData = {
   progressFillStep?: number | null;
   progressEta?: string | null;
   renderedAt?: number;
+  promotionCovers?: OriginalPromotionCover[];
 };
 
 async function loadCurrentWeek(): Promise<LoaderData> {
+  const originalsPromise = listOriginalEditions().catch(() => ({ promotionCovers: [] as OriginalPromotionCover[] }));
   const announcementPromise = getAnnouncementBanner().catch(() => ({ enabled: false, text: null, linkUrl: null, linkLabel: null }));
   const subscriberCountPromise = getActiveSubscriberCount().catch((e) => {
     console.error("Failed to load subscriber count", e);
@@ -228,6 +231,7 @@ async function loadCurrentWeek(): Promise<LoaderData> {
     progressFillStep,
     progressEta,
     renderedAt: Date.now(),
+    promotionCovers: (await originalsPromise).promotionCovers,
   };
 }
 
@@ -336,6 +340,7 @@ function Index() {
   // `resources` was implicated in a production ReferenceError, so the value is
   // read explicitly where it is used instead.
   const loaderData = Route.useLoaderData() as LoaderData;
+  const promotionCovers = loaderData.promotionCovers ?? [];
   const currentLabel = loaderData.label;
   const currentParshaKey = loaderData.parshaKey;
   const isFallback = loaderData.isFallback;
@@ -783,16 +788,20 @@ function Index() {
             <p className="mt-1 font-serif text-sm italic text-[#f0d18b]">Enriching your Shabbos table, one Parsha at a time.</p>
             <ul aria-label="Explore the seven series" className="mx-auto mt-4 flex max-w-3xl flex-wrap justify-center gap-x-2 gap-y-3 sm:flex-nowrap sm:gap-3">
               {ORIGINAL_PROMOTION_SERIES.map((series) => {
+                const cover = promotionCovers.find((item) => item.seriesId === series.publicationId);
                 const resource = series.publicationId ? resources.find((item) => item.publication_id === series.publicationId) : undefined;
                 return (
                   <li key={series.key} className="w-[21%] min-w-0 max-w-[92px] sm:w-[14%]">
-                    <OriginalSeriesCover series={series} src={resource?.thumb_url} smallSrc={resource?.small_thumb_url} editionLabel={resource?.parsha_key} published={Boolean(resource)} mini />
+                    <OriginalSeriesCover series={series} src={cover?.thumbUrl ?? resource?.thumb_url} smallSrc={cover ? cover.smallThumbUrl : resource?.small_thumb_url} editionLabel={cover?.label ?? resource?.parsha_key} published={Boolean(cover || resource)} mini />
                     <p className="mt-1 break-words font-serif text-[10px] font-semibold leading-tight text-[#fff8e9] sm:text-xs">{series.title}</p>
                   </li>
                 );
               })}
             </ul>
-            <p className="mt-2 text-[10px] leading-snug text-[#e9dfcb]">Published cover previews where available; forthcoming series are shown with their series identities.</p>
+            {ORIGINAL_PROMOTION_SERIES.some((series) => !promotionCovers.some((cover) => cover.seriesId === series.publicationId) &&
+              !resources.some((resource) => series.publicationId && resource.publication_id === series.publicationId && resource.thumb_url)) && (
+              <p className="mt-2 text-[10px] leading-snug text-[#e9dfcb]">Published cover previews where available; forthcoming series are shown with their series identities.</p>
+            )}
             <Link
               to="/originals"
               className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#d9b875] px-5 py-2.5 font-serif text-sm font-bold text-[#11243c] transition-colors hover:bg-[#f0d18b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#fff8e9]"
