@@ -48,8 +48,42 @@ export function seriesBrief(series: TfttOriginalSeries): string {
   return series.brief ?? series.expectation;
 }
 
-/** The active four series used for all homepage and /originals edition grids. */
-export const TFTT_ORIGINAL_EDITION_SERIES: readonly TfttOriginalSeries[] = TFTT_ORIGINAL_SERIES;
+/**
+ * One registration point for the forthcoming Originals. Bind each value only
+ * after the owner creates the publication record and its real ID is verified.
+ * No title-based ownership guessing and no synthetic publication IDs.
+ */
+export const FORTHCOMING_TFTT_ORIGINALS: Record<"chizkuni" | "medrash" | "questions", Omit<TfttOriginalSeries, "id"> & { id: string | null }> = {
+  chizkuni: {
+    id: null,
+    title: "Chizkuni Insights",
+    brief: "Distinctive explanations of familiar pesukim",
+    shortDescription: "Explore the Chizkuni's distinctive readings of the Torah and the textual difficulties his explanations address.",
+    expectation: "Focused insights from the Chizkuni's commentary.",
+  },
+  medrash: {
+    id: null,
+    title: "Treasures from the Medrash",
+    brief: "Discover the teachings behind the Parsha",
+    shortDescription: "Discover teachings from the Medrash that illuminate the people, events, and meaning of the weekly Parsha.",
+    expectation: "Source-based teachings from Chazal.",
+  },
+  questions: {
+    id: null,
+    title: "Questions Beneath the Surface",
+    brief: "Difficult questions and source-based answers",
+    shortDescription: "Explore challenging Parsha questions through carefully researched Torah sources and clear reasoning.",
+    expectation: "In-depth questions, analysis, and answers.",
+  },
+};
+
+/** Only verified registered publication IDs are eligible to supply editions. */
+export const TFTT_ORIGINAL_EDITION_SERIES: readonly TfttOriginalSeries[] = [
+  ...TFTT_ORIGINAL_SERIES,
+  ...Object.values(FORTHCOMING_TFTT_ORIGINALS).flatMap((s) =>
+    s.id ? [{ ...s, id: s.id }] : [],
+  ),
+];
 
 /**
  * Legacy detective editions remain in the archive and may appear in a
@@ -81,7 +115,7 @@ export function renameLegacySeriesText<T extends string | null | undefined>(valu
 /** Ownership label lookup includes archived Detective only for historical attribution. */
 export function tfttOriginalSeriesById(publicationId: string | null | undefined): TfttOriginalSeries | null {
   if (!publicationId) return null;
-  const current = TFTT_ORIGINAL_SERIES.find((series) => series.id === publicationId);
+  const current = TFTT_ORIGINAL_EDITION_SERIES.find((series) => series.id === publicationId);
   if (current) return current;
   return publicationId === PARSHA_DETECTIVE_PUBLICATION_ID
     ? { id: PARSHA_DETECTIVE_PUBLICATION_ID, ...PARSHA_DETECTIVE_SERIES_COPY }

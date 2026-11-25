@@ -172,20 +172,24 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(document.querySelectorAll("#this-weeks-collection")).toHaveLength(1);
     expect(screen.queryByText(/Also Available This Week/)).toBeNull();
     expect(screen.queryByText(/Recommended Picks/)).toBeNull();
-    expect(screen.getAllByRole("heading", { name: "Our Four Original Weekly Series" })).toHaveLength(1);
+    const promotion = screen.getByRole("region", { name: "Seven Original Weekly Torah Publications" });
+    expect(document.querySelectorAll("#our-originals")).toHaveLength(1);
+    expect(promotion.compareDocumentPosition(document.getElementById("this-weeks-collection")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Our Original Publications" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "More Divrei Torah for Your Table" })).toBeTruthy();
+    expect(screen.queryByText("Introducing Three New Weekly Series")).toBeNull();
     expect(screen.getByRole("link", { name: "Explore Our Original Series" }).getAttribute("href")).toBe("/originals");
   });
 
-  it("opens a PDF from the weekly list and shows the audiobook below it", () => {
+  it("opens a weekly PDF without displaying an audiobook promotion", () => {
     setHomepage(false);
     state.loader.featuredAudioBook = { id: "book-1", title: "Sample Parsha Audio Book" };
     render(<Homepage />);
     const firstOpen = screen.getAllByRole("link", { name: "Open PDF" })[0];
     expect(firstOpen.getAttribute("href")).toBe("/view/example-1/pdf");
-    const collection = document.getElementById("this-weeks-collection")!;
-    const audio = screen.getByRole("region", { name: "Featured Parsha Audio Book" });
-    expect(collection.contains(firstOpen)).toBe(true);
-    expect(collection.compareDocumentPosition(audio) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(document.getElementById("this-weeks-collection")!.contains(firstOpen)).toBe(true);
+    expect(screen.queryByRole("region", { name: "Featured Parsha Audio Book" })).toBeNull();
+    expect(screen.queryByText("Sample Parsha Audio Book")).toBeNull();
   });
 
   it("shows every PDF and one stable collection anchor for small weekly releases", () => {
