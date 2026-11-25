@@ -16,6 +16,7 @@ const alias = (title: string, id: string) => {
 };
 alias("Parsha Challenge", TFTT_ORIGINAL_SERIES[0].id);
 alias("Parsha Questions and Answers", TFTT_ORIGINAL_SERIES[0].id);
+alias("Parsha Pearls", TFTT_ORIGINAL_SERIES[3].id);
 alias("Parsha Pearls from the Ramban", TFTT_ORIGINAL_SERIES[3].id);
 alias("Parsha Pearls on the Ramban", TFTT_ORIGINAL_SERIES[3].id);
 alias("Treasures of the Medrash", TFTT_ORIGINAL_EDITION_SERIES.find(s => s.title === "Treasures from the Medrash")?.id ?? "");
