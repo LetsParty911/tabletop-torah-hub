@@ -24,7 +24,7 @@ describe("homepage originals intro lines", () => {
       ["Parsha Questions & Answers", "20 Rashi-based questions and answers"],
       ["Stories for the Shabbos Table", "Three source-based stories, each with a question"],
       ["In the Margins", "Three insights from classical mefarshim"],
-      ["Parsha Pearls", "One Ramban explained in depth"],
+      ["Parsha Pearls from the Ramban", "One Ramban explained in depth"],
       ["Chizkuni Insights", "Distinctive explanations of familiar pesukim"],
       ["Treasures from the Medrash", "Discover the teachings behind the Parsha"],
       ["Questions Beneath the Surface", "Difficult questions and source-based answers"],

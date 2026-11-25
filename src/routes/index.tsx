@@ -2,7 +2,7 @@ import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/reac
 import { Fragment, useEffect, useState } from "react";
 import { isPostShabbosWindow } from "@/lib/post-shabbos";
 import { weeklyReleaseAt } from "@/lib/weekly-release";
-import { BookOpen, FileText } from "lucide-react";
+import { BookOpen, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
@@ -756,6 +756,7 @@ function Index() {
                   : `Browse ${resources.length} Available Selections`}
               </Button>
             )}
+            {!showMoreComingNotice && <div><Link to="/divrei-torah-parsha" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline decoration-accent/60 underline-offset-4">Browse Earlier Parshas</Link></div>}
           </div>
         </section>
         {(isFallback || resources.length === 0) && (
@@ -787,7 +788,7 @@ function Index() {
             <p className="mx-auto mt-2 max-w-xl font-serif text-sm italic leading-relaxed text-[#17304d]">
               Discover our original weekly printable Divrei Torah.
             </p>
-            <ul aria-label="Explore the original series" className="mx-auto mt-4 flex max-w-[46rem] snap-x snap-mandatory gap-3 overflow-x-auto pb-2 text-left sm:flex-wrap sm:justify-center sm:overflow-visible sm:pb-0">
+            <ul id="original-series-strip" aria-label="Explore the original series" className="mx-auto mt-4 flex max-w-[46rem] snap-x snap-mandatory gap-3 overflow-x-auto pb-2 text-left sm:flex-wrap sm:justify-center sm:overflow-visible sm:pb-0">
               {ORIGINAL_PROMOTION_SERIES.map((series, index) => (
                 <li key={series.key} className="w-[44vw] max-w-[160px] shrink-0 snap-start sm:w-[calc(25%-0.75rem)] sm:max-w-none">
                   <Link to="/originals" hash={`series-${series.key}`} aria-label={`Explore ${series.title}`} className="block rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#17304d]">
@@ -797,7 +798,11 @@ function Index() {
                 </li>
               ))}
             </ul>
-            <p className="mt-1 text-xs text-[#5d513a] sm:hidden">Swipe to explore all series.</p>
+            <div className="mt-1 flex items-center justify-center gap-3 text-[#17304d] sm:hidden">
+              <button type="button" aria-label="Scroll publications left" aria-controls="original-series-strip" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#b99a5b] focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => { const list = document.getElementById("original-series-strip"); if (list) list.scrollBy({ left: -list.clientWidth * 0.75, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); }}><ChevronLeft className="h-5 w-5" aria-hidden="true" /></button>
+              <span className="text-xs text-[#5d513a]">Swipe or use arrows to explore all series.</span>
+              <button type="button" aria-label="Scroll publications right" aria-controls="original-series-strip" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#b99a5b] focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => { const list = document.getElementById("original-series-strip"); if (list) list.scrollBy({ left: list.clientWidth * 0.75, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); }}><ChevronRight className="h-5 w-5" aria-hidden="true" /></button>
+            </div>
             <Link
               to="/originals"
               className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#17304d] px-5 py-2.5 font-serif text-sm font-bold text-[#fff8e9] transition-colors hover:bg-[#284b73] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#17304d]"
@@ -828,7 +833,7 @@ function Index() {
               <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-muted-foreground">
                 {isFallback
                   ? `These ${resources.length} selections are from ${displayedLabel}, not ${currentLabel}. This week's PDFs will appear once published. Choose a title to read or print an earlier edition.`
-                  : "Our weekly originals and selections from respected Torah publishers. Choose a title and tap Read Now to open its PDF — no account needed."}
+                  : "Our weekly originals and selections from respected Torah publishers. Select a title for details, or tap Read Now to open the PDF in a new tab — no account needed."}
               </p>
             )}
         {resources.length >= 6 && (

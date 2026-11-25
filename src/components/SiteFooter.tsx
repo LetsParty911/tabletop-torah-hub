@@ -60,7 +60,7 @@ export function SiteFooter() {
         </Link>
       </div>
       <p className="text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} Torah For The Table
+        {`© ${new Date().getFullYear()} Torah For The Table`}
       </p>
       <p className="text-center text-xs text-muted-foreground">
         <Link
