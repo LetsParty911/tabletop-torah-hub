@@ -2,23 +2,22 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/SiteFooter";
 import { fitPageTitle } from "@/lib/page-title";
 import { useState } from "react";
-import { BookOpen } from "lucide-react";
+import { BookOpen, BookText, Gem, HelpCircle, PenLine, ScrollText, Search, Library } from "lucide-react";
 import { listOriginalEditions } from "@/integrations/supabase/api.functions";
 import { recordPdfAction } from "@/components/DownloadToPrintButton";
 import { pdfActionHrefs } from "@/lib/collection-status";
 import {
-  originalsPageDescription,
-  visibleOriginalSeries,
   type OriginalEditionCard,
   type OriginalEditionGroup,
 } from "@/lib/original-editions";
+import { ORIGINAL_PROMOTION_SERIES, originalsPromotionDescription, promotionSeriesById } from "@/lib/originals-promotion";
 
 export const Route = createFileRoute("/originals")({
   component: ResourcesPage,
   loader: () => listOriginalEditions(),
-  head: ({ loaderData }) => {
+  head: () => {
     const title = fitPageTitle("Our Originals", " — In-House Torah Learning Resources");
-    const description = originalsPageDescription(visibleOriginalSeries(loaderData?.activeSeriesIds));
+    const description = originalsPromotionDescription();
     const url = "https://torahforthetable.com/originals";
     const image = "https://torahforthetable.com/og-image.png";
     return {
@@ -50,17 +49,57 @@ type SeriesCard = {
   cta: string;
 };
 
-// Every configured Torah For The Table original is listed here. Edition
-// cards below still appear only when a real weekly PDF has been published.
-function originalSeriesCards(activeSeriesIds: readonly string[] | undefined): SeriesCard[] {
-  return visibleOriginalSeries(activeSeriesIds).map((series) => ({
-    title: series.title,
-    description: series.shortDescription,
-    sample: series.expectation,
-    linkTo: "/archive",
-    linkSearch: { q: series.title },
-    cta: `Browse ${series.title} →`,
-  }));
+const SERIES_ICONS = {
+  qa: HelpCircle,
+  stories: BookOpen,
+  margins: PenLine,
+  ramban: Gem,
+  chizkuni: Library,
+  medrash: ScrollText,
+  questions: Search,
+} as const;
+
+function OriginalSeriesGrid({ groups, activeSeriesIds }: { groups: OriginalEditionGroup[]; activeSeriesIds: readonly string[] }) {
+  return (
+    <div className="mx-auto mt-6 grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {ORIGINAL_PROMOTION_SERIES.map((series) => {
+        const Icon = SERIES_ICONS[series.key as keyof typeof SERIES_ICONS] ?? BookText;
+        const latestGroup = series.publicationId ? groups.find((group) => group.editions.some((edition) => edition.seriesId === series.publicationId)) : undefined;
+        const latest = latestGroup?.editions.find((edition) => edition.seriesId === series.publicationId);
+        const hasPublished = series.publicationId !== null && activeSeriesIds.includes(series.publicationId);
+        return (
+          <article key={series.key} className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-accent/40 bg-card shadow-sm">
+            <div className="flex min-h-28 flex-col items-center justify-center gap-2 border-b border-[#d9b875]/50 bg-[#11243c] px-4 py-4 text-center">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d9b875]/60 text-[#f0d18b]" aria-hidden="true"><Icon className="h-5 w-5" /></span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#f0d18b]">TFTT Original</span>
+              <h3 className="font-serif text-lg font-bold leading-tight text-[#fff8e9]">{series.title}</h3>
+            </div>
+            <div className="flex flex-1 flex-col p-4">
+              <p className="font-serif text-sm font-semibold italic text-primary">{series.tagline}</p>
+              <p className="mt-2 text-sm leading-relaxed text-foreground">{series.description}</p>
+              <p className="mt-3 text-xs font-medium text-muted-foreground">{series.audience}</p>
+              <div className="mt-auto pt-4">
+                {latest && latestGroup && (
+                  <a
+                    href={pdfActionHrefs(latest.id).open}
+                    target="_blank"
+                    rel="nofollow noopener noreferrer"
+                    onClick={(event) => trackOpen(event, latest, latestGroup, "button")}
+                    className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-accent hover:text-accent-foreground"
+                    aria-label={`Read latest: ${series.title}, ${latestGroup.label}`}
+                  >Read Latest</a>
+                )}
+                {hasPublished && series.archiveQuery && (
+                  <Link to="/archive" search={{ q: series.archiveQuery }} className="mt-2 block text-center text-sm font-semibold text-primary underline decoration-accent/60 underline-offset-4 hover:text-accent">Browse Archive</Link>
+                )}
+                {!hasPublished && !latest && <p className="rounded-md border border-accent/30 bg-background px-3 py-2 text-center text-sm font-medium text-muted-foreground">Coming Soon</p>}
+              </div>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
 }
 
 const FEATURED_SERIES: SeriesCard[] = [
@@ -116,6 +155,7 @@ function trackOpen(
 }
 
 function EditionCover({ edition, group }: { edition: OriginalEditionCard; group: OriginalEditionGroup }) {
+  const seriesTitle = promotionSeriesById(edition.seriesId)?.title ?? edition.seriesTitle;
   const [failed, setFailed] = useState(false);
   const showImage = !!edition.thumbUrl && !failed;
   return (
@@ -124,14 +164,14 @@ function EditionCover({ edition, group }: { edition: OriginalEditionCard; group:
       target="_blank"
       rel="nofollow noopener noreferrer"
       onClick={(event) => trackOpen(event, edition, group, "thumbnail")}
-      aria-label={`Open PDF in a new tab: ${edition.seriesTitle}, ${group.label}`}
+      aria-label={`Open PDF in a new tab: ${seriesTitle}, ${group.label}`}
       className="group block rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <div className="aspect-[17/22] w-full overflow-hidden rounded-md border border-accent/40 bg-card shadow-sm transition-colors group-hover:border-accent">
         {showImage ? (
           <img
             src={edition.thumbUrl ?? undefined}
-            alt={`First page of ${edition.seriesTitle}, ${group.label}`}
+            alt={`First page of ${seriesTitle}, ${group.label}`}
             width={340}
             height={440}
             loading="lazy"
@@ -142,7 +182,7 @@ function EditionCover({ edition, group }: { edition: OriginalEditionCard; group:
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-b from-card to-background px-3 text-center">
             <BookOpen className="h-6 w-6 text-accent" aria-hidden="true" />
-            <span className="font-serif text-sm font-bold leading-snug text-primary">{edition.seriesTitle}</span>
+            <span className="font-serif text-sm font-bold leading-snug text-primary">{seriesTitle}</span>
             <span className="text-[11px] text-muted-foreground">{group.label}</span>
           </div>
         )}
@@ -162,14 +202,14 @@ function EditionGroup({ group }: { group: OriginalEditionGroup }) {
         {group.editions.map((edition) => (
           <li key={edition.id} className="flex min-w-0 flex-col rounded-xl border border-accent/30 bg-background/60 p-3">
             <EditionCover edition={edition} group={group} />
-            <p className="mt-3 font-serif text-sm sm:text-base font-bold leading-snug text-primary">{edition.seriesTitle}</p>
+            <p className="mt-3 font-serif text-sm sm:text-base font-bold leading-snug text-primary">{promotionSeriesById(edition.seriesId)?.title ?? edition.seriesTitle}</p>
             <p className="mt-0.5 flex-1 text-xs text-muted-foreground">{group.label}</p>
             <a
               href={pdfActionHrefs(edition.id).open}
               target="_blank"
               rel="nofollow noopener noreferrer"
               onClick={(event) => trackOpen(event, edition, group, "button")}
-              aria-label={`Read Now in a new tab: ${edition.seriesTitle}, ${group.label}`}
+              aria-label={`Read Now in a new tab: ${promotionSeriesById(edition.seriesId)?.title ?? edition.seriesTitle}, ${group.label}`}
               className="mt-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -191,7 +231,7 @@ function OriginalEditions({ groups }: { groups: OriginalEditionGroup[] }) {
     <div className="mt-8 max-w-2xl mx-auto">
       <h2 className="text-center font-serif text-2xl font-bold text-primary">Our Original Editions</h2>
       <p className="mt-2 text-center font-serif text-sm sm:text-base text-muted-foreground">
-        The latest published editions of our four weekly series, ready to read or print.
+        The latest published editions of our original weekly series, ready to read or print.
       </p>
       {recent.map((group) => <EditionGroup key={group.key} group={group} />)}
       {earlier.length > 0 && (
@@ -214,10 +254,9 @@ function OriginalEditions({ groups }: { groups: OriginalEditionGroup[] }) {
 
 function ResourcesPage() {
   const { groups, activeSeriesIds } = Route.useLoaderData();
-  const seriesCards = originalSeriesCards(activeSeriesIds);
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-3xl px-3 py-5 sm:px-4 sm:py-8 md:px-8 md:py-14 space-y-6 sm:space-y-8">
+      <div className="mx-auto max-w-5xl px-3 py-5 sm:px-4 sm:py-8 md:px-8 md:py-14 space-y-6 sm:space-y-8">
         <section className="parchment-frame">
           <div className="parchment-panel">
             <div className="text-center">
@@ -228,24 +267,22 @@ function ResourcesPage() {
                 ← Back to Home
               </Link>
               <h1 className="mt-4 font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-primary">
-                Our Originals
+                Torah For The Table Originals
               </h1>
               <p className="mt-3 font-serif italic text-base sm:text-lg text-accent">
-                In-house Torah learning material, made for the Shabbos table.
+                Seven Original Weekly Torah Publications. One Mission.
               </p>
             </div>
 
             <div className="mt-8 max-w-2xl mx-auto text-left font-serif text-base sm:text-lg text-foreground leading-relaxed">
               <p>
-                Torah For The Table does more than collect and share Torah publications each
-                week. Our team creates original educational material designed specifically for
-                the Shabbos table. These series are part of our religious and educational mission.
+                Every week, Torah For The Table creates original, printable Torah publications designed to spark meaningful discussion, deepen understanding of the Parsha, and enrich your Shabbos table. From engaging questions and inspiring stories to carefully selected insights from our classical Meforshim, discover seven distinctive ways to connect with the weekly Parsha.
               </p>
             </div>
 
-            <h2 className="mt-10 text-center font-serif text-2xl font-bold text-primary">Our Four Original Weekly Series</h2>
+            <h2 className="mt-10 text-center font-serif text-2xl font-bold text-primary">Our Seven Original Weekly Series</h2>
             <p className="mt-2 text-center text-sm text-muted-foreground">New editions every Thursday. Explore the series, or open a published issue below.</p>
-            <SeriesGrid items={seriesCards} />
+            <OriginalSeriesGrid groups={groups} activeSeriesIds={activeSeriesIds ?? []} />
             <OriginalEditions groups={groups} />
 
             <h2 className="mt-10 text-center font-serif text-2xl font-bold text-primary">Featured Independent Series</h2>
