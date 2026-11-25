@@ -1,4 +1,4 @@
-import { TFTT_ORIGINAL_EDITION_SERIES, tfttOriginalSeriesById, renameLegacySeriesText } from "@/lib/tftt-originals";
+import { TFTT_ORIGINAL_EDITION_SERIES, tfttOriginalSeriesById, renameLegacySeriesText, originalDescriptionFallback } from "@/lib/tftt-originals";
 import { originalPublicationError, originalPublicationEditError } from "@/lib/original-upload-validation";
 import { publicationQualityError, publishedMetadataEditError } from "@/lib/publication-quality";
 import { activeOriginalSeriesIds, groupOriginalEditions, type OriginalEditionRow } from "@/lib/original-editions";
@@ -257,6 +257,8 @@ type PdfResource = {
   summary_audio_path: string | null;
   primary_category: string | null;
   publication: string | null;
+  publication_name: string | null;
+  publication_id?: string | null;
   tags: string[];
   description: string | null;
   audience: string | null;
@@ -364,9 +366,10 @@ async function buildResources(
         summary_audio_path: r.summary_audio_path ?? null,
         primary_category: (r.primary_category as string | null) ?? null,
         publication: renameLegacySeriesText((r.publication as string | null) ?? null),
+        publication_name: tfttOriginalSeriesById(r.publication_id)?.title ?? canonical.get(r.id as string)?.name ?? null,
         publication_id: (r.publication_id as string | null) ?? null,
         tags: Array.isArray(r.tags) ? (r.tags as string[]) : [],
-        description: renameLegacySeriesText(standardizeCopy((r.description as string | null) ?? null)),
+        description: originalDescriptionFallback(r.publication_id, renameLegacySeriesText(standardizeCopy((r.description as string | null) ?? null))),
         audience: (r.audience as string | null) ?? null,
         format_type: (r.format_type as string | null) ?? null,
         content_type: (r.content_type as string | null) ?? null,
@@ -633,7 +636,7 @@ export const listArchive = createServerFn({ method: "GET" }).handler(
           renameLegacySeriesText((r.publication as string | null) ?? null),
         subtitle: renameLegacySeriesText(standardizeCopy(r.subtitle)),
         summary_quick: renameLegacySeriesText(r.summary_quick),
-        description: renameLegacySeriesText(standardizeCopy((r.description as string | null) ?? null)),
+        description: originalDescriptionFallback(r.publication_id, renameLegacySeriesText(standardizeCopy((r.description as string | null) ?? null))),
         audience: (r.audience as string | null) ?? null,
         format_type: (r.format_type as string | null) ?? null,
         content_type: (r.content_type as string | null) ?? null,
@@ -844,7 +847,7 @@ export const getPdfById = createServerFn({ method: "GET" })
         createdAt: row.created_at ?? null,
         updatedAt: row.updated_at ?? null,
         weekOf: row.week_of ?? null,
-        description: renameLegacySeriesText(standardizeCopy(row.description ?? null)),
+        description: originalDescriptionFallback(publicationId, renameLegacySeriesText(standardizeCopy(row.description ?? null))),
         audience: row.audience ?? null,
         format_type: row.format_type ?? null,
         page_count: typeof row.page_count === "number" ? row.page_count : null,
