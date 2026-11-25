@@ -61,3 +61,22 @@ describe("exact edge country policy", () => {
     }))?.headers.get("content-type")).toContain("text/plain");
   });
 });
+
+describe("early Henrico abuse IP denial", () => {
+  it.each(["47.253.4.207", "47.253.152.120"] )("denies %s on pages and APIs", (ip) => {
+    for (const path of ["/", "/api/events", "/_serverFn/action", "/admin"]) {
+      for (const method of ["GET", "HEAD", "POST"]) {
+        const result = checkCountryBlock(new Request("https://example.test" + path, {
+          method, headers: { "cf-connecting-ip": ip, "cf-ipcountry": "US" },
+        }));
+        expect(result?.status).toBe(403);
+        expect(result?.headers.get("cache-control")).toContain("no-store");
+      }
+    }
+  });
+  it("allows nearby addresses and ignores untrusted forwarded IP claims", () => {
+    expect(checkCountryBlock(new Request("https://example.test/", { headers: {
+      "cf-connecting-ip": "47.253.4.208", "cf-ipcountry": "US", "x-forwarded-for": "47.253.4.207",
+    } }))).toBeNull();
+  });
+});
