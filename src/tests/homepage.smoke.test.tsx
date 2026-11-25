@@ -32,6 +32,7 @@ vi.mock("@tanstack/react-router", async () => {
 });
 
 vi.mock("@/integrations/supabase/api.functions", () => ({
+  listOriginalEditions: vi.fn(async () => ({ groups: [], activeSeriesIds: [], promotionCovers: [] })),
   getParshaOverride: vi.fn(async () => ({ override: null, isActive: false })),
   getActiveSubscriberCount: vi.fn(async () => ({ count: 0 })),
   getAnnouncementBanner: vi.fn(async () => ({ enabled: false })),
