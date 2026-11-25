@@ -190,7 +190,7 @@ function ViewPdf() {
     pdf.publication?.trim().toLowerCase() === "mikaamcha";
   const detailThumbnailUrl = isTorahWellsprings
     ? "/publication-covers/torah-wellsprings-plaque-v2.jpg"
-    : isMiKaamcha ? "/publication-covers/mi-kaamcha-yisroel-permanent.jpg" : pdf.thumb_url;
+    : isMiKaamcha ? "/publication-covers/mi-kaamcha-yisroel-logo-v1.webp" : pdf.thumb_url;
   const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=Fit`;
   const isMobile = useIsMobile();
   const [mounted, setMounted] = useState(false);

@@ -2,7 +2,7 @@
 export function smallThumbnailUrl(source: string | null | undefined, verified?: string | null): string | null {
   if (!source) return null;
   if (source === "/publication-covers/torah-wellsprings-plaque-v2.jpg") return "/publication-covers/torah-wellsprings-small.webp";
-  if (source === "/publication-covers/mi-kaamcha-yisroel-permanent.jpg") return "/publication-covers/mi-kaamcha-yisroel-small.webp";
+  if (source === "/publication-covers/mi-kaamcha-yisroel-logo-v1.webp") return "/publication-covers/mi-kaamcha-yisroel-logo-small-v1.webp";
   if (verified) {
     try {
       const original = new URL(source);

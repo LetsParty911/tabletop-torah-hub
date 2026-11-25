@@ -696,7 +696,7 @@ export type PublicPdf = {
 // Other publishers continue displaying the uploaded PDF's actual first page.
 const PERMANENT_COVERS_BY_PUBLICATION_ID: Record<string, string> = {
   "0ba2f4bb-cd60-409b-b268-47ac4aae8c4f": "/publication-covers/torah-wellsprings-plaque-v2.jpg",
-  "bd544c49-a810-478d-bf5c-38b94a81bc31": "/publication-covers/mi-kaamcha-yisroel-permanent.jpg",
+  "bd544c49-a810-478d-bf5c-38b94a81bc31": "/publication-covers/mi-kaamcha-yisroel-logo-v1.webp",
 };
 
 export function pdfThumbUrl(id: string, publicationId?: string | null, version?: string): string | null {

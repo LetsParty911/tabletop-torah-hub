@@ -614,7 +614,7 @@ function Index() {
   const originalCover = (r: Resource, compactOnMobile = false) => {
     const cover = resolveListingCover(r.publication_id, r.thumb_url, r.small_thumb_url);
     const isMiKaamcha = r.publication_id === "bd544c49-a810-478d-bf5c-38b94a81bc31";
-    const src = isMiKaamcha && cover.src ? "/publication-covers/mi-kaamcha-yisroel-permanent.jpg" : cover.src;
+    const src = isMiKaamcha && cover.src ? "/publication-covers/mi-kaamcha-yisroel-logo-v1.webp" : cover.src;
     if (!src) return null;
     const href = pdfActionHrefs(r.id).open;
     return (
