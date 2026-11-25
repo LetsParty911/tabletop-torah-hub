@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { hebrewYearOf, readerBackLink } from "./reader-back-link";
 
 describe("reader page back link", () => {
@@ -34,5 +35,21 @@ describe("reader page back link", () => {
     expect(hebrewYearOf("2026-11-21")).toBe(5787);
     expect(hebrewYearOf("2026-09-05")).toBe(5786);
     expect(hebrewYearOf("not a date")).toBeNull();
+  });
+});
+
+
+describe("reader action order", () => {
+  const source = readFileSync("src/routes/view.$id.tsx", "utf8");
+  it("places PDF actions before preview and secondary discovery", () => {
+    const actions = source.indexOf("<DownloadToPrintButton");
+    expect(actions).toBeGreaterThan(source.indexOf("<h1 className=\"font-serif text-2xl"));
+    expect(actions).toBeLessThan(source.indexOf("<iframe"));
+    expect(actions).toBeLessThan(source.indexOf("What you'll find"));
+    expect(actions).toBeLessThan(source.indexOf("Explore All This Week’s Divrei Torah"));
+  });
+  it("makes WhatsApp sharing explicit", () => {
+    const share = readFileSync("src/components/SharePublicationButton.tsx", "utf8");
+    expect(share).toContain("Share on WhatsApp");
   });
 });
