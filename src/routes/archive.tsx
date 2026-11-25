@@ -10,6 +10,7 @@ import {
 } from "@/lib/archive-search";
 import { claimHardReload, isStaleBuildError, withNavigationTimeout } from "@/lib/navigation-recovery";
 import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
+import { publicFilterTone, PUBLIC_FILTER_FIELD_TONE, PUBLIC_FILTER_COUNT_TONE, PUBLIC_ARCHIVE_SEARCH_PLACEHOLDER } from "@/lib/public-filter-styles";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type ArchiveYearAll as ArchiveYear, type ArchiveParshaAll as ArchiveParsha, type ArchivePdfAll as ArchivePdf } from "@/integrations/supabase/archive-all.functions";
 import { listArchiveAll, type ArchivePageInput } from "@/integrations/supabase/archive-all.functions";
@@ -346,11 +347,11 @@ function ArchivePage() {
               <div className="sm:hidden">
                 <label htmlFor="archive-mobile-search" className="mb-1.5 block text-xs font-semibold text-primary">Search Divrei Torah</label>
                 <div className="relative">
-                  <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-accent/70" />
+                  <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input id="archive-mobile-search" type="search" value={queryDraft}
                     onChange={(event) => setQueryDraft(event.target.value)}
-                    placeholder="Search publication, publisher, or topic"
-                    className="min-h-11 w-full rounded-lg border-2 border-accent/40 bg-background/60 py-2 pl-9 pr-3 text-sm text-foreground focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" />
+                    placeholder={PUBLIC_ARCHIVE_SEARCH_PLACEHOLDER}
+                    className={`min-h-11 w-full rounded-lg border-2 py-2 pl-9 pr-3 text-sm ${PUBLIC_FILTER_FIELD_TONE}`} />
                 </div>
                 <button type="button" aria-expanded={mobileFiltersOpen} aria-controls="archive-mobile-filter-options"
                   onClick={() => setMobileFiltersOpen((open) => !open)}
@@ -388,11 +389,7 @@ function ArchivePage() {
                         type="button"
                         aria-pressed={active}
                         onClick={() => setParshaFilter(active ? "all" : holiday)}
-                        className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-                          active
-                            ? "border-accent bg-accent text-accent-foreground"
-                            : "border-accent/40 bg-background/70 text-primary hover:bg-accent/10"
-                        }`}
+                        className={`min-h-11 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${publicFilterTone(active)}`}
                       >
                         {holiday}
                       </button>
@@ -409,7 +406,7 @@ function ArchivePage() {
                   <select
                     value={yearFilter}
                     onChange={(e) => setYearFilter(e.target.value)}
-                    className="min-h-11 w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    className={`min-h-11 w-full rounded-lg border-2 px-3 py-2 font-serif text-sm ${PUBLIC_FILTER_FIELD_TONE}`}
                   >
                     <option value="all">All years</option>
                     {yearOptions.map((year) => (
@@ -426,7 +423,7 @@ function ArchivePage() {
                   <select
                     value={parshaFilter}
                     onChange={(e) => setParshaFilter(e.target.value)}
-                    className="min-h-11 w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    className={`min-h-11 w-full rounded-lg border-2 px-3 py-2 font-serif text-sm ${PUBLIC_FILTER_FIELD_TONE}`}
                   >
                     <option value="all">All Parshas</option>
                     {allParshiyos.map((p) => (
@@ -441,13 +438,13 @@ function ArchivePage() {
                     Search
                   </span>
                   <div className="relative">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-accent/70" />
+                    <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <input
                       type="search"
                       value={queryDraft}
                       onChange={(e) => setQueryDraft(e.target.value)}
-                      placeholder="Search publication, publisher, or description…"
-                      className="min-h-11 w-full rounded-lg border-2 border-accent/40 bg-background/60 pl-9 pr-3 py-2 font-serif text-sm text-foreground focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                      placeholder={PUBLIC_ARCHIVE_SEARCH_PLACEHOLDER}
+                      className={`min-h-11 w-full rounded-lg border-2 pl-9 pr-3 py-2 font-serif text-sm ${PUBLIC_FILTER_FIELD_TONE}`}
                     />
                   </div>
                 </label>
@@ -471,17 +468,13 @@ function ArchivePage() {
                           aria-label={`Filter by audience: ${audienceLabel(audience)}, ${selectionCountLabel(count)}`}
                           onClick={() => setAudienceFilter(active ? "All" : audience)}
                           className={`inline-flex min-h-11 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
-                            active
-                              ? "bg-accent text-accent-foreground shadow-sm"
-                              : "text-primary hover:bg-accent/12"
+                            publicFilterTone(active, "segmented")
                           }`}
                         >
                           {audienceLabel(audience)}
                           <span
                             className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none tabular-nums ${
-                              active
-                                ? "bg-accent-foreground/20 text-accent-foreground"
-                                : "bg-accent/15 text-accent"
+                              PUBLIC_FILTER_COUNT_TONE(active)
                             }`}
                           >
                             {count}
@@ -510,9 +503,7 @@ function ArchivePage() {
                         aria-pressed={active}
                         onClick={() => setLengthFilter(active ? "All" : value)}
                         className={`min-h-11 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
-                          active
-                            ? "bg-accent text-accent-foreground shadow-sm"
-                            : "text-primary hover:bg-accent/12"
+                          publicFilterTone(active, "segmented")
                         }`}
                       >
                         {label}
@@ -532,7 +523,7 @@ function ArchivePage() {
                       <select
                         value={typeFilter}
                         onChange={(e) => setTypeFilter(e.target.value)}
-                        className="min-h-11 w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        className={`min-h-11 w-full rounded-lg border-2 px-3 py-2 font-serif text-sm ${PUBLIC_FILTER_FIELD_TONE}`}
                       >
                         <option value="All">All content types</option>
                         {typeOptions.map((t) => (
@@ -551,7 +542,7 @@ function ArchivePage() {
                       <select
                         value={pubFilter}
                         onChange={(e) => setPubFilter(e.target.value)}
-                        className="min-h-11 w-full rounded-lg border-2 border-accent/40 bg-background/60 px-3 py-2 font-serif text-sm text-foreground focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        className={`min-h-11 w-full rounded-lg border-2 px-3 py-2 font-serif text-sm ${PUBLIC_FILTER_FIELD_TONE}`}
                       >
                         <option value="All">All publications</option>
                         {publicationOptions.map((p) => (
@@ -763,7 +754,7 @@ function ArchivePage() {
             <span className="text-sm text-muted-foreground">
               {`Page ${safePage} of ${totalPages} · ${totalPdfs} results`}
             </span>
-            <label className="flex items-center gap-2 text-sm text-primary">Go to page<select aria-label="Go to archive page" value={safePage} onChange={(event) => setSearch({ page: Number(event.target.value) })} className="min-h-11 rounded-md border border-accent/45 bg-background px-2 text-primary">{Array.from({ length: totalPages }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}</select></label>
+            <label className="flex items-center gap-2 text-sm text-primary">Go to page<select aria-label="Go to archive page" value={safePage} onChange={(event) => setSearch({ page: Number(event.target.value) })} className={`min-h-11 rounded-md border px-2 ${PUBLIC_FILTER_FIELD_TONE}`}>{Array.from({ length: totalPages }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}</select></label>
             {safePage < totalPages && (
               <button
                 type="button"
