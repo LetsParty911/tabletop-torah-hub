@@ -5,17 +5,27 @@ import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
 import { DownloadToPrintButton } from "@/components/DownloadToPrintButton";
 import { resolveHebcalParsha } from "@/lib/hebcal";
-import { getParshaOverride, listPublishedPdfs } from "@/integrations/supabase/api.functions";
+import { getParshaOverride, listHomepageWeek } from "@/integrations/supabase/api.functions";
 import { VORTS, getVortsForParsha, type Vort } from "@/data/vorts";
 import { PARSHIYOS, formatReadingLabel, YOM_TOV_KEYS } from "@/lib/parshiyos";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { isYomTovReading, readingSlug } from "@/lib/reading-page";
+import { currentBriefInsights } from "@/lib/collection-status";
+
+type BriefInsightsPdf = {
+  id: string;
+  title: string;
+  description: string | null;
+  publisher: string | null;
+  parsha_key: string | null;
+  publication_name: string | null;
+};
 
 type LoaderData = {
   label: string;
   parshaKey: string | null;
   current: Vort[];
-  publishedPdf: { id: string; title: string } | null;
+  publishedPdfs: BriefInsightsPdf[];
 };
 
 async function loadVortsWeek(): Promise<LoaderData> {
@@ -38,24 +48,26 @@ async function loadVortsWeek(): Promise<LoaderData> {
     label = resolved.label;
   }
 
-  // A published Short Vorts PDF for the current reading always wins over the
-  // "In preparation" placeholder.
-  let publishedPdf: { id: string; title: string } | null = null;
+  // Reuse the year-scoped weekly collection and the same format filter as the homepage.
+  // Historical fallback PDFs belong in the archive, not under a current-week heading.
+  let publishedPdfs: BriefInsightsPdf[] = [];
   if (parshaKey) {
     try {
-      const { resources } = await listPublishedPdfs({ data: { parshaKey } });
-      const hit = resources.find(
-        (r: any) =>
-          r.content_type !== "Questions & Answers" &&
-          (r.format_type === "Short Vorts" || /short\s+vort/i.test(r.title ?? "")),
-      );
-      if (hit) publishedPdf = { id: hit.id, title: hit.title };
+      const week = await listHomepageWeek({ data: { parshaKey } });
+      publishedPdfs = currentBriefInsights(week).map(r => ({
+        id: r.id,
+        title: r.title,
+        description: r.description || r.summary_quick || r.subtitle || null,
+        publisher: r.publisher ?? null,
+        parsha_key: r.parsha_key ?? null,
+        publication_name: r.publication_name ?? r.publication ?? null,
+      }));
     } catch {
-      // ignore — fall back to the placeholder
+      // Keep the archive link and existing authored HTML available on a failed load.
     }
   }
 
-  return { label, parshaKey, current: getVortsForParsha(parshaKey), publishedPdf };
+  return { label, parshaKey, current: getVortsForParsha(parshaKey), publishedPdfs };
 }
 
 export const Route = createFileRoute("/brief-insights")({
@@ -139,9 +151,9 @@ function ParshaSection({
   vorts,
   defaultOpen,
   emptyLabel,
-  publishedPdf,
+  publishedPdfs,
 }: {
-  publishedPdf?: { id: string; title: string } | null;
+  publishedPdfs: BriefInsightsPdf[];
   id: string;
   heading: string;
   vorts: Vort[];
@@ -163,14 +175,9 @@ function ParshaSection({
           <span className="font-serif text-lg font-bold text-primary sm:text-xl">{heading}</span>
           <span className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {vorts.length === 0 && publishedPdf && <FileText className="h-4 w-4" aria-hidden="true" />}
-              {vorts.length > 0
-                ? `${vorts.length} ${vorts.length === 1 ? "vort" : "vorts"}`
-                : publishedPdf
-                  ? "PDF available"
-                  : /sukk/i.test(emptyLabel ?? heading)
-                    ? "Available"
-                    : "Preparing"}
+              {publishedPdfs.length > 0 && <FileText className="h-4 w-4" aria-hidden="true" />}
+              {[vorts.length > 0 ? `${vorts.length} ${vorts.length === 1 ? "vort" : "vorts"}` : null,
+                publishedPdfs.length > 0 ? `${publishedPdfs.length} ${publishedPdfs.length === 1 ? "PDF" : "PDFs"}` : null].filter(Boolean).join(" · ") || "Browse archive"}
             </span>
             <ChevronDown
               className={`h-5 w-5 text-accent transition-transform ${open ? "rotate-180" : ""}`}
@@ -179,18 +186,7 @@ function ParshaSection({
           </span>
         </button>
       </h2>
-      {publishedPdf && (
-        <div className="border-t border-border/50 px-4 py-3">
-          <DownloadToPrintButton
-            label="Read PDF"
-            href={`/view/${publishedPdf.id}/pdf`}
-            publicationId={publishedPdf.id}
-            publicationTitle={publishedPdf.title}
-            className="max-w-sm"
-          />
-        </div>
-      )}
-      {(vorts.length > 0 || !!publishedPdf) && !isYomTovReading(emptyLabel ?? heading) && (
+      {(vorts.length > 0 || publishedPdfs.length > 0) && !isYomTovReading(emptyLabel ?? heading) && (
         <div className="px-4 pb-3 text-center">
           <Link
             to="/parsha/$slug"
@@ -203,47 +199,30 @@ function ParshaSection({
       )}
       {open && (
         <div id={`${id}-panel`} className="px-4 pb-5">
-          {vorts.length > 0 ? (
-            <div className="grid gap-5 sm:grid-cols-2">
-              {vorts.map((v) => (
-                <VortCard key={v.id} vort={v} />
+          {publishedPdfs.length > 0 && (
+            <div className="grid gap-3 pt-3 sm:grid-cols-2">
+              {publishedPdfs.map(pdf => (
+                <article key={pdf.id} className="flex flex-col gap-2 rounded-lg border border-border bg-background p-4">
+                  <h3 className="font-serif text-lg font-bold text-primary"><Link to="/view/$id" params={{ id: pdf.id }} className="hover:underline">{pdf.title}</Link></h3>
+                  {pdf.publisher && <p className="text-sm text-muted-foreground">By {pdf.publisher}</p>}
+                  {pdf.description && <p className="text-sm leading-relaxed text-muted-foreground">{pdf.description}</p>}
+                  <div className="mt-auto pt-2">
+                    <DownloadToPrintButton href={`/view/${pdf.id}/pdf`} publicationId={pdf.id} publicationTitle={pdf.title} publisher={pdf.publisher} parsha={pdf.parsha_key} publicationSeries={pdf.publication_name} />
+                  </div>
+                </article>
               ))}
             </div>
-          ) : /sukk/i.test(emptyLabel ?? heading) ? (
-            <div className="parchment-frame">
-              <div className="parchment-panel text-center">
-                <p className="font-serif text-lg font-bold text-primary">Brief Insights for Sukkos</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Available now in this week's collection — open the PDF there to read or print.
-                </p>
-                <Link
-                  to="/"
-                  className="mt-4 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                  Open the Sukkos collection
-                </Link>
-              </div>
+          )}
+          {vorts.length > 0 && (
+            <div className="grid gap-5 pt-3 sm:grid-cols-2">
+              {vorts.map(v => <VortCard key={v.id} vort={v} />)}
             </div>
-          ) : publishedPdf ? (
+          )}
+          {vorts.length === 0 && publishedPdfs.length === 0 && (
             <div className="parchment-frame">
               <div className="parchment-panel text-center">
-                <p className="font-serif text-lg font-bold text-primary">{publishedPdf.title}</p>
-                <p className="mt-1 text-sm text-muted-foreground">This edition is available as a printable PDF. Open it using Read PDF above.</p>
-              </div>
-            </div>
-          ) : (
-            <div className="parchment-frame">
-              <div className="parchment-panel text-center">
-                <p className="text-sm text-muted-foreground">
-                  New Brief Insights for {emptyLabel ?? heading} are being prepared. In the meantime, explore previously published Brief Insights that are ready to read or print.
-                </p>
-                <Link
-                  to="/archive"
-                  search={{ type: "Brief Insights" }}
-                  className="mt-4 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                  Browse available Brief Insights
-                </Link>
+                <p className="text-sm text-muted-foreground">Explore previously published Brief Insights ready to read or print in the archive.</p>
+                <Link to="/archive" search={{ type: "Brief Insights" }} className="mt-4 inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">Browse available Brief Insights</Link>
               </div>
             </div>
           )}
@@ -261,7 +240,7 @@ function sectionId(key: string): string {
 }
 
 function ShortVortsPage() {
-  const { label, parshaKey, current, publishedPdf } = Route.useLoaderData();
+  const { label, parshaKey, current, publishedPdfs } = Route.useLoaderData();
   const isYomTov =
     !!parshaKey && YOM_TOV_KEYS.includes(parshaKey.replace(/^parshas\s+/i, "").trim());
   const normalizedCurrent = (parshaKey ?? "")
@@ -289,12 +268,12 @@ function ShortVortsPage() {
     {
       key: "current",
       heading:
-        current.length > 0 || publishedPdf || /sukk/i.test(label)
+        current.length > 0 || publishedPdfs.length > 0
           ? isYomTov
             ? label
             : `This Week — ${label}`
-          : `${label} — In preparation`,
-      publishedPdf,
+          : `${label} — Brief Insights`,
+      publishedPdfs,
       vorts: current,
       defaultOpen: true,
       emptyLabel: label,
@@ -305,7 +284,7 @@ function ShortVortsPage() {
       vorts: p.vorts,
       defaultOpen: false,
       emptyLabel: formatReadingLabel(p.parshaKey),
-      publishedPdf: null,
+      publishedPdfs: [] as BriefInsightsPdf[],
     })),
   ].map((s) => ({ ...s, id: sectionId(s.key) }));
 
@@ -362,7 +341,7 @@ function ShortVortsPage() {
               vorts={s.vorts}
               defaultOpen={s.defaultOpen}
               emptyLabel={s.emptyLabel}
-              publishedPdf={s.publishedPdf}
+              publishedPdfs={s.publishedPdfs}
             />
           ))}
         </div>
