@@ -10,8 +10,11 @@ export function pdfActionLabel(
   title: string,
   parsha?: string | null,
   jewishYear?: number | null,
+  visibleLabel?: string,
 ): string {
-  const verb = action === "open" ? "Open PDF in a new tab" : "Download PDF";
+  const verb = action === "open"
+    ? visibleLabel?.trim() ? `${visibleLabel.trim()} (opens PDF in a new tab)` : "Open PDF in a new tab"
+    : "Download PDF";
   const reading = parsha?.trim() ? formatReadingLabel(parsha.trim()) : null;
   const readingName = reading?.replace(/^Parshas\s+/i, "") ?? "";
   const showReading = reading && !title.toLowerCase().includes(readingName.toLowerCase());
