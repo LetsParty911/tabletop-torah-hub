@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "events": {
+    "project.bundle_download_action": {
+      "event_schema_version": 1,
+      "description": "Visitor activates Download Combined PDF after successful preparation; not proof of saving or printing.",
+      "privacy": {
+        "contains_pii": false,
+        "purpose": "product_analytics"
+      },
+      "properties_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "bundle_key": {
+            "enum": [
+              "children",
+              "family",
+              "deeper"
+            ],
+            "type": "string"
+          },
+          "bundle_name": {
+            "type": "string"
+          },
+          "constituent_count": {
+            "type": "number"
+          },
+          "jewish_year": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "page_count": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "parsha": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "bundle_key",
+          "bundle_name",
+          "parsha",
+          "jewish_year",
+          "constituent_count",
+          "page_count"
+        ],
+        "type": "object"
+      }
+    }
+  }
+}

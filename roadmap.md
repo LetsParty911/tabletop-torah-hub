@@ -149,4 +149,9 @@
 - [x] Exclude only the unapproved thumbnail ZIP, retaining its historical commit and all original artwork
 - [x] Run focused bundle/homepage/analytics/freshness regressions and verify the current release scope (56 tests passed; automatic build OK; fresh basic security checks passed)
 - [x] Publish the approved implementation and visibility correction through the existing Lovable project (release commit 1e062637; includes 97045cb6 and 414171bb)
+
+## 2026-11-26 independent bundle analytics
+- [x] Audit ingestion/idempotency and existing reports; retain canonical bundle_download, add name/year/constituent edition IDs, separate human-qualified counts/details in active Overview and PDFs & Publications tabs; mirror same action to built-in analytics
+- [x] Test per-bundle counts, retries, failures, individual isolation and current editions without artificial production writes (43 focused + 3 attribution + 43 signup/homepage + 39 weekly = 128 passed; schema valid; automatic build OK; real-data signed-in owner report verified; desktop/mobile downloads 5/2/3 pages and enriched intercepted payloads)
+- [ ] Publish the scoped fix and verify public payloads/freshness and authorized owner report where accessible
 - [x] Verify the public custom domain on desktop/mobile: HTTP 200, build mwx0tguh replaces mwwsdn1b, private/no-store HTML and server responses, warm reload current; bundle section y=372/313, seven 4:5 covers/current Vayishlach reader links, downloads 5/2/3 pages on both sizes, seven originals total ten pages, separate bundle events intercepted with no individual PDF events, no overflow/runtime errors, filters preserve bundles, one signup/catalogue, excluded ZIP HTTP 404. Focused 38 + analytics 3 + signup/homepage 43 + weekly 39 = 123 passing tests; automatic build OK. No database, security, reader, artwork or hosting changes.

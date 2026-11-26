@@ -62,6 +62,7 @@ import { pickStarterSelections, type ChooserKey } from "@/lib/table-chooser";
 type Resource = {
   id: string;
   parsha_key: string | null;
+  jewish_year?: number | null;
   title: string;
   publisher: string | null;
   subtitle: string | null;

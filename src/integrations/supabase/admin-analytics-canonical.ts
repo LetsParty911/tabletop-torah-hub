@@ -1,4 +1,5 @@
 import { publicationPdfActivity, type PdfCatalogEntry } from "@/lib/publication-pdf-activity";
+import { summarizeBundleDownloads } from "@/lib/bundle-reporting";
 import { isClientNewVisitorEvidence, isClientReturningEvidence } from "@/lib/visitor-return-evidence";
 import { summarizeNoahideResources } from "@/lib/noahide-resources-analytics";
 import { countSukkahSignDownloads } from "@/lib/sukkah-sign-downloads";
@@ -643,6 +644,7 @@ export function buildAnalyticsReport(rows: EventRow[], priorVisitors: Set<string
     geoInsights: summarizeGeoInsights(keptRows),
     noahideResources: summarizeNoahideResources(rows, priorVisitors, classified),
     homepageSharing: summarizeHomepageSharing(keptRows, countedRows),
+    bundleDownloads: summarizeBundleDownloads(keptRows),
     readingJourney: buildReadingJourney(rows, keptIds),
     metrics: {
       people: canonical.uniqueVisitors,

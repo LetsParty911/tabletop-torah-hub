@@ -118,15 +118,33 @@ export function OriginalBundleChooser({
                     <a
                       href={preparation.url}
                       download={originalBundleFilename(bundle, collectionLabel)}
-                      onClick={() => trackFp("bundle_download", {
-                        parsha: parshaKey,
-                        metadata: {
-                          action: "bundle_download",
+                      onClick={() => {
+                        const year = bundle.items[0]?.resource?.jewish_year ?? null;
+                        const pageCount = preparation.pageCount ?? null;
+                        trackFp("bundle_download", {
+                          parsha: parshaKey,
+                          jewish_year: year,
+                          metadata: {
+                            action: "bundle_download",
+                            bundle_key: bundle.key,
+                            bundle_name: bundle.title,
+                            jewish_year: year,
+                            edition_label: collectionLabel,
+                            constituent_ids: bundle.items.flatMap(item => item.resource ? [item.resource.id] : []),
+                            constituent_count: bundle.items.length,
+                            page_count: pageCount,
+                          },
+                        });
+                        // Mirror this same action to built-in analytics, not a second canonical row.
+                        window.__lovableEvents?.track?.("project.bundle_download_action", {
                           bundle_key: bundle.key,
+                          bundle_name: bundle.title,
+                          parsha: parshaKey,
+                          jewish_year: year,
                           constituent_count: bundle.items.length,
-                          page_count: preparation.pageCount ?? null,
-                        },
-                      })}
+                          page_count: pageCount,
+                        });
+                      }}
                       className={ACTION_CLASS}
                       aria-label={`Download combined ${bundle.title} for ${collectionLabel}`}
                     >

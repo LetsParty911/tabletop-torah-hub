@@ -5,6 +5,7 @@ export type OriginalBundleResource = {
   title: string;
   url: string;
   parsha_key: string | null;
+  jewish_year?: number | null;
   publication_id?: string | null;
 };
 

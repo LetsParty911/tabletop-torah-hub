@@ -18,6 +18,18 @@ const event = (overrides: Partial<EventRow> = {}): EventRow => ({
 });
 
 describe("canonical since-last PDF activity summary", () => {
+  it('reports qualified bundle actions independently without altering publication or Used Torah metrics', () => {
+    const baseline = event({ event_name: 'share_click', publication_id: null, publication_title: null });
+    const bundle = event({ event_id: 'bundle-one', event_name: 'bundle_download', publication_id: null, publication_title: null, parsha: 'Vayishlach', metadata: { bundle_key: 'children', jewish_year: 5787 } });
+    const excluded = { ...bundle, event_id: 'internal-bundle', session_id: 'internal', is_internal: true };
+    const before = buildAnalyticsReport([baseline], new Set());
+    const after = buildAnalyticsReport([baseline, bundle, { ...bundle }, excluded], new Set());
+    expect(after.bundleDownloads.bundles.map(b => b.count)).toEqual([1, 0, 0]);
+    expect(after.metrics.downloads).toBe(before.metrics.downloads);
+    expect(after.metrics.countedPdfOpens).toBe(before.metrics.countedPdfOpens);
+    expect(after.metrics.usedTorah).toBe(before.metrics.usedTorah);
+    expect(after.publications).toEqual(before.publications);
+  });
   it("partitions visitor headlines when a first and returning session occur in the same window", () => {
     const rows = [
       event({ event_id: "first", visitor_id: "mixed", session_id: "first-session", is_new_visitor: true }),

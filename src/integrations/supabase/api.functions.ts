@@ -358,6 +358,7 @@ async function buildResources(
       return {
         id: r.id,
         parsha_key: (r.parsha_key as string | null) ?? null,
+        jewish_year: typeof r.jewish_year === 'number' ? r.jewish_year : null,
         title: displayTitle(r),
         publisher: canonical.get(r.id as string)?.publisher ?? null,
         subtitle: renameLegacySeriesText(standardizeCopy(r.subtitle)),
