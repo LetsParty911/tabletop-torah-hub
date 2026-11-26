@@ -4,6 +4,10 @@ import { mergeLabelCounts } from "./label-counts";
 import { audienceLabel, normalizeAudience } from "./audience";
 
 describe("PDF action accessible names", () => {
+  it("includes the visible Read Now label in the accessible name", () => {
+    expect(pdfActionLabel("open", "Torah Tavlin", "Vayishlach", 5787, "Read Now"))
+      .toBe("Read Now (opens PDF in a new tab): Torah Tavlin, Parshas Vayishlach 5787");
+  });
   it("names the PDF, its parsha and year so repeated weekly titles stay distinct", () => {
     expect(pdfActionLabel("open", "Parsha Questions & Answers", "Toldos", 5787))
       .toBe("Open PDF in a new tab: Parsha Questions & Answers, Parshas Toldos 5787");
