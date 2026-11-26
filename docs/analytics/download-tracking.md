@@ -11,3 +11,5 @@
 - Root cause fixed: the `download` event omitted metadata.action_id, so it never paired with `download_served`; reports counted both rows (about 2x) and the matching health check saw zero actions. The reader also passed the edition year only as an accessible label, so jewish_year was null.
 - Saving/printing a file is never observable; a served row means a redirect was issued.
 - Internal (signed marker) browsers are dropped at ingest and on both routes.
+
+- Individual reader pages also expose an explicit native-viewer fallback for iPhone/iPad: Open PDF to Save or Print. This uses the existing validated inline PDF route and records a normal deliberate open with entry_point=save_or_print, not a download or confirmed save. Collection cards remain unchanged. No user-agent gating is required.

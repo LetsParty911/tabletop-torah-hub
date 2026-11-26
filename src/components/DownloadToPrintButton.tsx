@@ -33,7 +33,7 @@ export function recordPdfAction(
   actionType: "open_pdf" | "download",
   openHref: string,
   { publicationId, publicationName, publicationTitle, publicationSeries, publisher, parsha, jewishYear }: PdfActionContext,
-  entryPoint: "button" | "thumbnail" = "button",
+  entryPoint: "button" | "thumbnail" | "save_or_print" = "button",
 ) {
   // One action ID is shared by the client event (metadata.action_id) and the
   // server route (?a=) so download/download_served and open/pdf_route_result
@@ -94,15 +94,19 @@ export function DownloadToPrintButton({
     : href.replace(/\/download(?:\?.*)?$/, "/pdf");
   const title = publicationTitle || publicationName || "PDF";
 
-  const recordOpen = (event: React.MouseEvent<HTMLAnchorElement>, actionType: "open_pdf" | "download") => {
+  const recordOpen = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    actionType: "open_pdf" | "download",
+    entryPoint: "button" | "save_or_print" = "button",
+  ) => {
     recordPdfAction(event, actionType, openHref, {
       publicationId, publicationName, publicationTitle, publicationSeries, publisher, parsha,
       jewishYear: jewishYear ?? labelYear ?? null,
-    });
+    }, entryPoint);
   };
 
   return (
-    <div className={["flex w-full items-center gap-2", className].join(" ")}>
+    <div className={["flex w-full items-center gap-2", showDownload && publicationId ? "flex-wrap" : "", className].join(" ")}>
       <a
         href={openHref}
         target="_blank"
@@ -125,6 +129,22 @@ export function DownloadToPrintButton({
           <Download className="h-4 w-4" aria-hidden="true" />
           <span>Download PDF</span>
         </a>
+      )}
+      {showDownload && publicationId && (
+        <div className="w-full rounded-lg border border-accent/30 bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+          <p className="font-semibold text-foreground">Saving or printing on iPhone or iPad?</p>
+          <a
+            href={openHref}
+            target="_blank"
+            rel="nofollow noopener noreferrer"
+            onClick={(event) => recordOpen(event, "open_pdf", "save_or_print")}
+            aria-label={`Open PDF to save or print on iPhone or iPad: ${title}`}
+            className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            Open PDF to Save or Print
+          </a>
+          <p>In the PDF viewer, tap Share, then choose Save to Files or Print. If you are using an in-app browser, try opening this page in Safari.</p>
+        </div>
       )}
     </div>
   );
