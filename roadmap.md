@@ -138,3 +138,9 @@
 - [x] Add lazy on-demand PDF merging, truthful partial states, individual reader/archive access, and separate bundle-only analytics
 - [x] Verify matching, merge page order/counts, analytics regressions, desktop/mobile flows, typecheck and production build
 - [x] Commit one reversible trial on baseline 2d8001f5; do not publish production
+
+## 2026-11-26 bundle visibility correction (preview only)
+- [x] Diagnose default real-data placement: bundles buried below catalogue (desktop 5,780px / mobile 8,020px), no seven-cover suppression or feature flag
+- [x] Move the existing bundle section before the catalogue; preserve filters, individual access and merger
+- [x] Local real-data desktop/mobile: default bundle section at y=372/313, 7 covers loaded, individual expander closed, filters preserve availability, merged PDFs 5/2/3 pages each; no overflow or runtime errors. Signup/homepage 43 and focused bundle/freshness/reader/PDF-click tests 38 pass; automatic build OK. External browser redirects to Lovable login; app session cannot authorize hosting; no connected preview viewer. Hosted browser render remains unverified.
+- [x] Commit scoped correction for platform synchronization; do not publish

@@ -176,7 +176,9 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(screen.queryByText(/Recommended Picks/)).toBeNull();
     const promotion = screen.getByRole("region", { name: "Something for Every Shabbos Table" });
     expect(document.querySelectorAll("#our-originals")).toHaveLength(1);
-    expect(document.getElementById("this-weeks-collection")!.compareDocumentPosition(promotion) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const collection = document.getElementById("this-weeks-collection");
+    if (!collection) throw new Error("Missing weekly collection");
+    expect(promotion.compareDocumentPosition(collection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole("link", { name: "Our Seven Original Series" }).getAttribute("href")).toBe("/originals");
     expect(screen.getByRole("heading", { name: "Our Original Publications" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "More Divrei Torah for Your Table" })).toBeTruthy();
@@ -345,6 +347,28 @@ it("keeps advanced options available when another filter leaves zero matches", (
   expect((brief as HTMLButtonElement).disabled).toBe(true);
   fireEvent.click(screen.getByRole("button", { name: /Fewer filters/ }));
   expect(advanced.hidden).toBe(true);
+});
+
+it("keeps all current-week bundles available when audience filters narrow the seven originals", () => {
+  setHomepage(false);
+  state.loader.parshaKey = "Vayishlach";
+  state.loader.label = "Parshas Vayishlach";
+  state.loader.readingDate = "2026-11-28";
+  state.loader.resources = ORIGINAL_PROMOTION_SERIES.map((series, index) => ({
+    ...example(index + 1, "Vayishlach"),
+    title: series.title,
+    publication_id: series.publicationId,
+  }));
+  render(<Homepage />);
+  const region = within(screen.getByRole("region", { name: "Something for Every Shabbos Table" }));
+  const prepareButtons = region.getAllByRole("button", { name: /^Prepare combined/ });
+  expect(prepareButtons).toHaveLength(3);
+  expect(prepareButtons.every((button) => !(button as HTMLButtonElement).disabled)).toBe(true);
+  fireEvent.click(within(screen.getByRole("group", { name: "Quick filters" })).getByRole("button", { name: "Children" }));
+  expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(4);
+  expect(region.getAllByText("2 of 2 PDFs available for Parshas Vayishlach")).toHaveLength(2);
+  expect(region.getByText("3 of 3 PDFs available for Parshas Vayishlach")).toBeTruthy();
+  expect(prepareButtons.every((button) => !(button as HTMLButtonElement).disabled)).toBe(true);
 });
 
 it("polls actual publications and invalidates when the first current PDF goes live", async () => {

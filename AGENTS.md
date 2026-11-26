@@ -28,4 +28,4 @@
 
 - Original upload identity is mandatory for reserved TFTT series titles (including historical name aliases). Validate on the client and server before storage writes and before individual/bulk publication; metadata edits must not detach an original or mislink a reserved title. Never discard publication_id in legacy metadata retries. Exact title checks are a guardrail only, not ownership attribution; actual listing ownership remains ID-based. Preserve custom outside publications and linked historical holiday editions.
 
-- Homepage redundant promotional artwork is hidden only when all canonical original-series cards are in the visible filtered list. Why: collection-wide existence cannot prove artwork is already displayed.
+- Homepage audience-bundle trial renders before the weekly catalogue, independently of filters and cover completeness; only individual choices expand. Why: the default bundle entry must remain discoverable even when all originals are listed.

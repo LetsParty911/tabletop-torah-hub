@@ -742,6 +742,44 @@ function Index() {
           />
         )}
 
+        {!isCurrentYomKippur && (
+          <section
+            ref={originalsRef}
+            id="our-originals"
+            tabIndex={-1}
+            aria-labelledby="starter-selections-heading"
+            className="relative scroll-mt-24 overflow-hidden rounded-2xl border border-[#b99a5b] bg-[#fbefda] px-4 py-4 text-center text-[#17304d] shadow-sm sm:px-6 sm:py-5"
+          >
+            <div className="mx-auto flex max-w-2xl items-center justify-center gap-2">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#b99a5b]/70 text-[#8d6b30]" aria-hidden="true">
+                <BookOpen className="h-4 w-4" />
+              </span>
+              <h2 id="starter-selections-heading" className="font-serif text-xl font-bold leading-tight text-[#17304d] sm:text-3xl">Something for Every Shabbos Table</h2>
+            </div>
+            <p className="mx-auto mt-2 max-w-xl font-serif text-sm italic leading-relaxed text-[#17304d]">
+              Choose an audience bundle, or open any publication on its own.
+            </p>
+            <OriginalBundleChooser
+              bundles={originalBundles}
+              collectionLabel={currentLabel}
+              parshaKey={currentParshaKey}
+            />
+            <Link
+              to="/originals"
+              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#17304d] px-5 py-2.5 font-serif text-sm font-bold text-[#fff8e9] transition-colors hover:bg-[#284b73] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#17304d]"
+            >
+              Explore Our Original Series
+            </Link>
+            {!isFallback && canShowOriginalsLaunch(resources.flatMap((resource) => resource.publication_id ? [resource.publication_id] : [])) && (
+              <aside aria-label="New original series" className="mx-auto mt-4 max-w-xl border-t border-[#d9b875]/40 pt-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#8d6b30]">Introducing Three New Weekly Series</p>
+                <p className="mt-1 font-serif text-lg font-bold">More Torah. More Discovery.</p>
+                <p className="mt-1 text-sm text-[#17304d]">{NEW_ORIGINAL_SERIES.map((series) => series.title).join(" · ")}</p>
+              </aside>
+            )}
+          </section>
+        )}
+
         {(resources.length === 0 || showCompleteCollection) && (
         <section id="this-weeks-collection" tabIndex={-1} className="scroll-mt-24">
           <div className="px-1 sm:px-2">
@@ -1065,43 +1103,7 @@ function Index() {
           />
         </section>
 
-        {!isCurrentYomKippur && (
-          <section
-            ref={originalsRef}
-            id="our-originals"
-            tabIndex={-1}
-            aria-labelledby="starter-selections-heading"
-            className="relative scroll-mt-24 overflow-hidden rounded-2xl border border-[#b99a5b] bg-[#fbefda] px-4 py-4 text-center text-[#17304d] shadow-sm sm:px-6 sm:py-5"
-          >
-            <div className="mx-auto flex max-w-2xl items-center justify-center gap-2">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#b99a5b]/70 text-[#8d6b30]" aria-hidden="true">
-                <BookOpen className="h-4 w-4" />
-              </span>
-              <h2 id="starter-selections-heading" className="font-serif text-xl font-bold leading-tight text-[#17304d] sm:text-3xl">Something for Every Shabbos Table</h2>
-            </div>
-            <p className="mx-auto mt-2 max-w-xl font-serif text-sm italic leading-relaxed text-[#17304d]">
-              Choose an audience bundle, or open any publication on its own.
-            </p>
-            <OriginalBundleChooser
-              bundles={originalBundles}
-              collectionLabel={currentLabel}
-              parshaKey={currentParshaKey}
-            />
-            <Link
-              to="/originals"
-              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#17304d] px-5 py-2.5 font-serif text-sm font-bold text-[#fff8e9] transition-colors hover:bg-[#284b73] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#17304d]"
-            >
-              Explore Our Original Series
-            </Link>
-            {!isFallback && canShowOriginalsLaunch(resources.flatMap((resource) => resource.publication_id ? [resource.publication_id] : [])) && (
-              <aside aria-label="New original series" className="mx-auto mt-4 max-w-xl border-t border-[#d9b875]/40 pt-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#8d6b30]">Introducing Three New Weekly Series</p>
-                <p className="mt-1 font-serif text-lg font-bold">More Torah. More Discovery.</p>
-                <p className="mt-1 text-sm text-[#17304d]">{NEW_ORIGINAL_SERIES.map((series) => series.title).join(" · ")}</p>
-              </aside>
-            )}
-          </section>
-        )}
+
 
         {!isFallback && tableThought && (
           <section
