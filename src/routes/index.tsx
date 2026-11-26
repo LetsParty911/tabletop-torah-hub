@@ -1066,6 +1066,7 @@ function Index() {
                           publisher={r.publisher}
                           publicationSeries={r.publication}
                           parsha={(r as { parsha_key?: string | null }).parsha_key ?? displayedParshaKey}
+                          jewishYear={r.jewish_year ?? null}
                           className="w-full px-3 py-2.5 lg:py-2"
                         />
                         <div className="mt-0.5 flex flex-wrap items-center justify-center gap-2 sm:mt-2">

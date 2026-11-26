@@ -259,6 +259,7 @@ export function TableChooser({
                       publisher={r.publisher}
                       publicationSeries={r.publication}
                       parsha={parshaKey}
+                      jewishYear={r.jewish_year ?? null}
                       className="w-full px-4 py-2.5 text-sm font-semibold"
                     />
                   </div>

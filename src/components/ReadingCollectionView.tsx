@@ -258,6 +258,7 @@ export function ReadingCollectionView({
                       publisher={resource.publisher}
                       publicationSeries={resource.publication_name}
                       parsha={resource.parsha_key}
+                      jewishYear={resource.jewish_year}
                       className="w-full px-4 py-2.5"
                     />
                   </div>

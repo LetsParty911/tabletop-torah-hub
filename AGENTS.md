@@ -30,4 +30,4 @@
 
 - Homepage audience-bundle trial renders before the weekly catalogue, independently of filters and cover completeness; only individual choices expand. Why: the default bundle entry must remain discoverable even when all originals are listed.
 - Bundle reports aggregate only existing human-qualified canonical bundle_download rows by stable bundle key and edition, deduplicating event IDs; built-in analytics mirrors the action without adding canonical rows. Why: preparation and bundle actions must never inflate individual publication metrics.
-- PDF actions share one client action UUID between the analytics event (metadata.action_id) and the /pdf or /download `a` param; server rows take parsha/year from the validated catalogue row and correlate only via readCorrelation. Why: actions and served redirects must dedupe to one count without trusting client claims (docs/analytics/download-tracking.md).
+- PDF action events and /pdf|/download `a` share one action UUID; server rows use catalogue parsha/year via readCorrelation. Why: one count, no trusted client claims.

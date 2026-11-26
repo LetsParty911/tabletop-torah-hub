@@ -23,6 +23,7 @@ export type ChooserResource = {
   audience: string | null;
   format_type: string | null;
   page_count: number | null;
+  jewish_year?: number | null;
   featured_slot: string | null;
 };
 
