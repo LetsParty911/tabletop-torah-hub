@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { canonicalPublicationSlug } from "@/lib/publication-slug";
 import { readingPagePath, readingSlug } from "@/lib/reading-page";
-import { PARSHIYOS_54 } from "@/lib/parshiyos";
+import { canonicalLibraryReading } from "@/lib/reading-library";
+import { isYomTovReading } from "@/lib/reading-page";
 import { latestSitemapDate } from "@/lib/sitemap-lastmod";
 
 const SITE_URL = "https://torahforthetable.com";
@@ -138,10 +139,12 @@ export const Route = createFileRoute("/sitemap.xml")({
               // A reading date is not a modification timestamp. Only use real
               // updated/created timestamps for the containing page's lastmod.
               const changed = toLastmod(row.updated_at) ?? toLastmod(row.created_at);
-              const path = readingPagePath(row.parsha_key, row.jewish_year);
+              const canonical = canonicalLibraryReading(row.parsha_key);
+              const reading = canonical ?? row.parsha_key;
+              const path = readingPagePath(reading, row.jewish_year);
               collectionDates.set(path, latestSitemapDate(collectionDates.get(path) ?? null, changed));
-              const slug = readingSlug(row.parsha_key);
-              if (PARSHIYOS_54.some((name) => readingSlug(name) === slug)) {
+              const slug = readingSlug(reading);
+              if (canonical && !isYomTovReading(reading)) {
                 permanentParshaDates.set(slug, latestSitemapDate(permanentParshaDates.get(slug) ?? null, changed));
               }
             }
