@@ -78,9 +78,9 @@ export function OriginalBundleChooser({
           const availability = `${bundle.availableCount} of ${bundle.items.length} PDFs available for ${collectionLabel}`;
           return (
             <li key={bundle.key} className="flex min-w-0 flex-col rounded-xl border border-accent/40 bg-card/75 p-3 shadow-sm">
-              <div className="-mx-3 -mt-3 rounded-t-xl bg-gold-decorative/10 px-3 pb-2.5 pt-3 text-center md:min-h-[6.5rem]">
-                <h3 className="border-b border-gold-decorative/80 pb-1.5 font-serif text-[clamp(1.375rem,6.2vw,1.875rem)] font-bold leading-tight text-primary text-balance md:text-xl lg:text-2xl">{bundle.title}</h3>
-                <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{bundle.description}</p>
+              <div className="-mx-3 -mt-3 overflow-hidden rounded-t-xl text-center">
+                <h3 className="border-b-2 border-gold-decorative bg-primary px-2.5 py-2.5 font-serif text-[clamp(1.375rem,6.5vw,1.875rem)] font-bold leading-tight text-primary-foreground text-balance md:flex md:min-h-16 md:items-center md:justify-center md:text-xl lg:text-2xl">{bundle.title}</h3>
+                <p className="px-3 pt-2.5 text-xs leading-relaxed text-muted-foreground md:min-h-11">{bundle.description}</p>
               </div>
               <ul aria-label={`${bundle.title} publications`} className="mt-3 flex items-start justify-center gap-2">
                 {bundle.items.map(({ series, resource }) => (
