@@ -72,7 +72,7 @@ export function OriginalBundleChooser({
 
   return (
     <>
-      <ul aria-label="Original publication bundles" className="mt-4 grid gap-3 text-left md:grid-cols-3">
+      <ul aria-label="Original publication bundles" className="mt-4 grid gap-3 text-left md:grid-cols-[2fr_2fr_3fr]">
         {bundles.map((bundle) => {
           const preparation = preparations[bundle.key] ?? { status: "idle" } as Preparation;
           const availability = `${bundle.availableCount} of ${bundle.items.length} PDFs available for ${collectionLabel}`;
@@ -82,9 +82,9 @@ export function OriginalBundleChooser({
                 <h3 className="border-b-2 border-gold-decorative bg-primary px-2.5 py-2.5 font-serif text-[clamp(1.375rem,6.5vw,1.875rem)] font-bold leading-tight text-primary-foreground text-balance md:flex md:min-h-16 md:items-center md:justify-center md:text-xl lg:text-2xl">{bundle.title}</h3>
                 <p className="px-3 pt-2.5 text-xs leading-relaxed text-muted-foreground md:min-h-11">{bundle.description}</p>
               </div>
-              <ul aria-label={`${bundle.title} publications`} className="mt-3 flex items-start justify-center gap-2">
+              <ul aria-label={`${bundle.title} publications`} className="mt-3 flex flex-wrap items-start justify-center gap-2">
                 {bundle.items.map(({ series, resource }) => (
-                  <li key={series.key} className="min-w-0 flex-1">
+                  <li key={series.key} className="min-w-0 w-[calc(50%-0.25rem)] max-w-36 md:w-auto md:max-w-none md:flex-1">
                     {resource ? (
                       <Link
                         to="/view/$id"
