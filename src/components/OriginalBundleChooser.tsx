@@ -12,7 +12,7 @@ type Preparation = {
   progress?: string;
 };
 
-const ACTION_CLASS = "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-3 py-2.5 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-55";
+const ACTION_CLASS = "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-[#9e772d] bg-[#e8c879] px-3 py-2.5 text-center text-sm font-semibold text-[#102d50] transition-colors hover:bg-[#f0d894] active:bg-[#d8b661] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-55";
 
 export function OriginalBundleChooser({
   bundles,
@@ -79,7 +79,7 @@ export function OriginalBundleChooser({
           return (
             <li key={bundle.key} className="flex min-w-0 flex-col rounded-xl border border-accent/40 bg-card/75 p-3 shadow-sm">
               <div className="-mx-3 -mt-3 overflow-hidden rounded-t-xl text-center">
-                <h3 className="border-b-2 border-gold-decorative bg-primary px-2.5 py-2.5 font-serif text-[clamp(1.375rem,6.5vw,1.875rem)] font-bold leading-tight text-primary-foreground text-balance md:flex md:min-h-16 md:items-center md:justify-center md:text-xl lg:text-2xl">{bundle.title}</h3>
+                <h3 className="border-b-2 border-gold-decorative bg-background px-2.5 py-2.5 font-serif text-[clamp(1.375rem,6.5vw,1.875rem)] font-bold leading-tight text-primary text-balance md:flex md:min-h-16 md:items-center md:justify-center md:text-xl lg:text-2xl">{bundle.title}</h3>
                 <p className="px-3 pt-2.5 text-xs leading-relaxed text-muted-foreground md:min-h-11">{bundle.description}</p>
               </div>
               <ul aria-label={`${bundle.title} publications`} className="mt-3 flex items-start justify-center gap-2">
