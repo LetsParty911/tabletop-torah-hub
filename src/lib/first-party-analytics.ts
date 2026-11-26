@@ -38,6 +38,7 @@ export type FpEventName =
   | "chooser_select"
   | "recommendation_view"
   | "recommendation_click"
+  | "bundle_download"
   | "my_table_add"
   | "my_table_remove"
   | "my_table_open"
@@ -504,6 +505,7 @@ let flushTimer: ReturnType<typeof setTimeout> | null = null;
 const IMMEDIATE: ReadonlySet<string> = new Set<string>([
   "session_start",
   "download",
+  "bundle_download",
   "print_click",
   "pdf_open",
   "signup",

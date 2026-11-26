@@ -174,7 +174,7 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(document.querySelectorAll("#this-weeks-collection")).toHaveLength(1);
     expect(screen.queryByText(/Also Available This Week/)).toBeNull();
     expect(screen.queryByText(/Recommended Picks/)).toBeNull();
-    const promotion = screen.getByRole("region", { name: "Our Original Weekly Publications" });
+    const promotion = screen.getByRole("region", { name: "Something for Every Shabbos Table" });
     expect(document.querySelectorAll("#our-originals")).toHaveLength(1);
     expect(document.getElementById("this-weeks-collection")!.compareDocumentPosition(promotion) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole("link", { name: "Our Seven Original Series" }).getAttribute("href")).toBe("/originals");
@@ -188,14 +188,14 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     setHomepage(false);
     state.loader.resources = [example(1, "Lech-Lecha")];
     render(<Homepage />);
-    const promotion = screen.getByRole("region", { name: "Our Original Weekly Publications" });
+    const promotion = screen.getByRole("region", { name: "Something for Every Shabbos Table" });
     expect(within(promotion).getAllByRole("img")).toHaveLength(7);
     for (const series of ORIGINAL_PROMOTION_SERIES) {
       const image = within(promotion).getByRole("img", { name: "Promotional cover of " + series.title });
       expect(image.getAttribute("src")).toBe(series.coverSrc);
       expect(image.getAttribute("width")).toBe("320");
       expect(image.getAttribute("height")).toBe("400");
-      expect(within(promotion).getByRole("link", { name: "Explore " + series.title })).toBeTruthy();
+      expect(within(promotion).getByRole("link", { name: "View " + series.title + " series archive" })).toBeTruthy();
     }
     expect(within(promotion).queryByText(/Coming Soon/)).toBeNull();
     expect(within(promotion).queryByText(/Published cover previews/)).toBeNull();

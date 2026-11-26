@@ -132,3 +132,9 @@
 - [x] Run regressions and desktop/mobile real-data preview checks (41/41); signup 42, weekly 39, safeguards 53 passed; UX 214 passed/one pre-existing unrelated failure
 - [x] Commit a0a9fc5d for platform GitHub sync; basic security checks passed; published via Lovable; production 41/41 desktop/mobile checks passed, new build marker and no-store verified
 - [x] Report exact scope, pre-existing Hidden Gems failure, pending platform GitHub sync and non-final credit measurement (8.20 recorded at lookup)
+
+## 2026-11-26 homepage audience-bundle UX trial (preview only)
+- [x] Replace only the seven-choice originals strip with three current-week audience bundles and an accessible all-seven expander
+- [x] Add lazy on-demand PDF merging, truthful partial states, individual reader/archive access, and separate bundle-only analytics
+- [x] Verify matching, merge page order/counts, analytics regressions, desktop/mobile flows, typecheck and production build
+- [x] Commit one reversible trial on baseline 2d8001f5; do not publish production

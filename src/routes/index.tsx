@@ -2,7 +2,7 @@ import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/reac
 import { Fragment, useEffect, useState } from "react";
 import { isPostShabbosWindow } from "@/lib/post-shabbos";
 import { weeklyReleaseAt } from "@/lib/weekly-release";
-import { BookOpen, FileText, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
+import { BookOpen, FileText, SlidersHorizontal } from "lucide-react";
 import { ThursdayProgressMeter } from "@/components/ThursdayProgressMeter";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { UpdateCountdown } from "@/components/UpdateCountdown";
@@ -24,7 +24,8 @@ import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
 import { canShowOriginalsLaunch, NEW_ORIGINAL_SERIES, ORIGINAL_PROMOTION_SERIES, resolveListingCover, promotionSeriesById } from "@/lib/originals-promotion";
-import { OriginalSeriesCover } from "@/components/OriginalSeriesCover";
+import { OriginalBundleChooser } from "@/components/OriginalBundleChooser";
+import { currentOriginalBundles } from "@/lib/original-bundles";
 import { weeklyCardBadges } from "@/lib/weekly-card-badges";
 import { publicationLabel } from "@/lib/badges";
 import { publicationFilterName } from "@/lib/publication-filter";
@@ -33,7 +34,6 @@ import { SmallPdfImage } from "@/components/SmallPdfImage";
 import { LENGTH_OPTIONS, matchesPageLength, type LengthFilter } from "@/lib/length-filter";
 import { isWeeklyCollectionHash, scrollToWeeklyCollection, WEEKLY_COLLECTION_REQUEST } from "@/lib/weekly-navigation";
 import { publicFilterTone, PUBLIC_FILTER_FIELD_TONE } from "@/lib/public-filter-styles";
-import { hasAllOriginalCovers } from "@/lib/homepage-original-covers";
 import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
 import { trackHomepageJourneyStart, useHomepageSectionImpression } from "@/hooks/use-homepage-section-impression";
 
@@ -494,6 +494,7 @@ function Index() {
   // third-party substitute for an absent series.
   const starterSelections = isFallback ? [] : pickStarterSelections(sortedResources);
   const starterCardCount = starterSelections.length;
+  const originalBundles = currentOriginalBundles(sortedResources, currentParshaKey, isFallback);
   // Show all this week's publications by default; Browse All is a shortcut, not a gate.
   const showCompleteCollection = resources.length > 0 || isWeeklyCollectionHash(collectionHash) || showAllResources || isCurrentYomKippur;
   // Section views are passive; they do not establish human engagement.
@@ -604,9 +605,6 @@ function Index() {
         : publicationLabel(r.publication || r.title) || r.title);
 
   const isTfttOriginal = (r: Resource) => Boolean(tfttOriginalSeriesById(r.publication_id));
-  // Keep series discovery available when the weekly collection is incomplete,
-  // but avoid repeating the same seven covers when all are already displayed.
-  const allOriginalSeriesVisible = hasAllOriginalCovers(filteredResources, ORIGINAL_PROMOTION_SERIES);
   // Preserve the recommendation order in guided mode; otherwise partition
   // the already-filtered list by verified publication ownership, exactly once.
   const weeklyResourceGroups = isCurrentYomKippur
@@ -1079,28 +1077,16 @@ function Index() {
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#b99a5b]/70 text-[#8d6b30]" aria-hidden="true">
                 <BookOpen className="h-4 w-4" />
               </span>
-              <h2 id="starter-selections-heading" className="font-serif text-xl font-bold leading-tight text-[#17304d] sm:text-3xl">Our Original Weekly Publications</h2>
+              <h2 id="starter-selections-heading" className="font-serif text-xl font-bold leading-tight text-[#17304d] sm:text-3xl">Something for Every Shabbos Table</h2>
             </div>
             <p className="mx-auto mt-2 max-w-xl font-serif text-sm italic leading-relaxed text-[#17304d]">
-              Discover our original weekly printable Divrei Torah.
+              Choose an audience bundle, or open any publication on its own.
             </p>
-            {!allOriginalSeriesVisible && (<>
-            <ul id="original-series-strip" aria-label="Explore the original series" className="mx-auto mt-4 flex max-w-[46rem] snap-x snap-mandatory gap-3 overflow-x-auto pb-2 text-left sm:flex-wrap sm:justify-center sm:overflow-visible sm:pb-0">
-              {ORIGINAL_PROMOTION_SERIES.map((series) => (
-                <li key={series.key} className="w-[44vw] max-w-[160px] shrink-0 snap-start sm:w-[calc(25%-0.75rem)] sm:max-w-none">
-                  <Link to="/originals" hash={`series-${series.key}`} aria-label={`Explore ${series.title}`} className="block rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#17304d]">
-                    <OriginalSeriesCover series={series} eager={false} />
-                    <p className="mt-1 text-center break-words font-serif text-xs font-semibold leading-tight text-[#17304d]">{series.title}</p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-1 flex items-center justify-center gap-3 text-[#17304d] sm:hidden">
-              <button type="button" aria-label="Scroll publications left" aria-controls="original-series-strip" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#b99a5b] focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => { const list = document.getElementById("original-series-strip"); if (list) list.scrollBy({ left: -list.clientWidth * 0.75, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); }}><ChevronLeft className="h-5 w-5" aria-hidden="true" /></button>
-              <span className="text-xs text-[#5d513a]">Swipe or use arrows to explore all series.</span>
-              <button type="button" aria-label="Scroll publications right" aria-controls="original-series-strip" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#b99a5b] focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => { const list = document.getElementById("original-series-strip"); if (list) list.scrollBy({ left: list.clientWidth * 0.75, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); }}><ChevronRight className="h-5 w-5" aria-hidden="true" /></button>
-            </div>
-            </>)}
+            <OriginalBundleChooser
+              bundles={originalBundles}
+              collectionLabel={currentLabel}
+              parshaKey={currentParshaKey}
+            />
             <Link
               to="/originals"
               className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#17304d] px-5 py-2.5 font-serif text-sm font-bold text-[#fff8e9] transition-colors hover:bg-[#284b73] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#17304d]"

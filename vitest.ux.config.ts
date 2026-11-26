@@ -24,6 +24,7 @@ export default defineConfig({
     "src/lib/weekly-card-badges.test.ts", "src/components/HeaderSearchToggle.test.tsx",
     "src/components/FeaturedAudioBookCard.test.tsx",
     "src/lib/homepage-original-covers.test.ts",
+    "src/lib/original-bundles.test.ts", "src/lib/original-bundle-pdf.test.ts",
     "src/lib/publication-filter.test.ts", "src/lib/publication-quality.test.ts", "src/lib/publication-slug.test.ts",
   ] },
 });
