@@ -101,8 +101,8 @@ export function DownloadToPrintButton({
         target="_blank"
         onClick={(event) => { recordOpen(event, "open_pdf"); onClick?.(); }}
         rel="nofollow noopener noreferrer"
-        aria-label={pdfActionLabel("open", title, parsha, jewishYear ?? labelYear)}
-        className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        aria-label={pdfActionLabel("open", title, parsha, jewishYear ?? labelYear, label)}
+        className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
         <span>{label}</span>
@@ -113,7 +113,7 @@ export function DownloadToPrintButton({
           onClick={(event) => recordOpen(event, "download")}
           aria-label={pdfActionLabel("download", title, parsha, jewishYear ?? labelYear)}
           title="Download PDF to save or print"
-          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-accent/50 bg-background px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-accent/10"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-accent/50 bg-background px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           <Download className="h-4 w-4" aria-hidden="true" />
           <span>Download PDF</span>
