@@ -1,5 +1,6 @@
 import { createStart, createMiddleware } from "@tanstack/react-start";
 import { K_REDIRECT_TARGET } from "@/lib/k-redirect";
+import { getSenderNetRedirectTarget } from "@/lib/sender-net-redirects";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 // All methods and paths reaching Start, before redirects/auth/security/telemetry.
@@ -137,7 +138,29 @@ const ourKehillaShortLink = createMiddleware().server(async ({ next, request }) 
   return next();
 });
 
+// Sender.net email links redirect before rendering; only the tagged homepage
+// load is attributed, with no analytics event for the short path itself.
+const senderNetShortLinks = createMiddleware().server(async ({ next, request }) => {
+  const url = new URL(request.url);
+  const target = request.method === "GET"
+    ? getSenderNetRedirectTarget(url.pathname)
+    : undefined;
+  if (target) {
+    return {
+      response: new Response(null, {
+        status: 302,
+        headers: {
+          Location: target,
+          "Cache-Control": "no-store",
+          "X-Robots-Tag": "noindex",
+        },
+      }),
+    } as never;
+  }
+  return next();
+});
+
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [countryGate, dotOrgRedirect, ourKehillaShortLink, vpnGate, geoBlock, maintenanceTraffic, cacheControl],
+  requestMiddleware: [countryGate, dotOrgRedirect, ourKehillaShortLink, senderNetShortLinks, vpnGate, geoBlock, maintenanceTraffic, cacheControl],
 }));

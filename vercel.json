@@ -12,6 +12,31 @@
       "permanent": false
     },
     {
+      "source": "/sn-family",
+      "destination": "https://torahforthetable.com/?utm_source=sender.net&utm_medium=email&utm_campaign=vayishlach_bundles&utm_content=family",
+      "permanent": false
+    },
+    {
+      "source": "/sn-children",
+      "destination": "https://torahforthetable.com/?utm_source=sender.net&utm_medium=email&utm_campaign=vayishlach_bundles&utm_content=children",
+      "permanent": false
+    },
+    {
+      "source": "/sn-deeper",
+      "destination": "https://torahforthetable.com/?utm_source=sender.net&utm_medium=email&utm_campaign=vayishlach_bundles&utm_content=deeper",
+      "permanent": false
+    },
+    {
+      "source": "/sn-main",
+      "destination": "https://torahforthetable.com/?utm_source=sender.net&utm_medium=email&utm_campaign=vayishlach_bundles&utm_content=main_button",
+      "permanent": false
+    },
+    {
+      "source": "/sn-footer",
+      "destination": "https://torahforthetable.com/?utm_source=sender.net&utm_medium=email&utm_campaign=vayishlach_bundles&utm_content=footer",
+      "permanent": false
+    },
+    {
       "source": "/:path*",
       "has": [
         {
