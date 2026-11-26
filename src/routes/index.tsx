@@ -826,7 +826,7 @@ function Index() {
                                   setAudienceFilter(next);
                                   trackFp("filter_change", { metadata: { filter: "audience", value: next } });
                                 }
-                              }} className={`min-h-11 min-w-0 rounded-full border px-2 py-1.5 text-center text-xs font-semibold leading-tight focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${publicFilterTone(active)}`}>{isBrief ? "Brief Insights" : audienceLabel(choice)}</button>
+                              }} className={`min-h-11 min-w-0 rounded-full border px-2 py-1.5 text-center text-xs font-semibold leading-tight focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${publicFilterTone(active)}`}>{isBrief ? "Brief Insights" : audienceLabel(choice)}</Button>
                             );
                           })}
                         </div>
@@ -859,50 +859,7 @@ function Index() {
                   </div>
 
 
-                  <div id="weekly-filter-options" className={`${filtersOpen ? "block" : "hidden"} mt-3 space-y-3 sm:mt-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:items-start sm:gap-4 sm:space-y-0`}>
-                    {activeFilterCount > 0 && (
-                      <div className="hidden justify-end sm:col-span-3 sm:flex">
-                        <button
-                          type="button"
-                          onClick={clearFilters}
-                          className="text-xs font-serif text-accent-readable hover:text-primary hover:underline transition-colors"
-                        >
-                          Clear filters
-                        </button>
-                      </div>
-                    )}
-
-                    {sortedResources.length > 0 && (
-                      <div className="hidden sm:block">
-                        <span className="block text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By audience</span>
-                        <div className="mt-1.5 flex flex-wrap justify-start gap-2">
-                          {(["All", "Children", "Families", "Adults"] as const)
-                            .map((audience) => {
-                              const active = audienceFilter === audience;
-                              return (
-                                <button
-                                  key={audience}
-                                  type="button"
-                                  aria-pressed={active}
-                                  aria-label={`Filter by audience: ${audienceLabel(audience)}`}
-                                  onClick={() => {
-                                    setSelectedChooser(null);
-                                    const next = active ? "All" : audience;
-                                    setAudienceFilter(next);
-                                    trackFp("filter_change", { metadata: { filter: "audience", value: next } });
-                                  }}
-                                  className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
-                                    publicFilterTone(active)
-                                  }`}
-                                >
-                                  {audienceLabel(audience)}
-                                </button>
-                              );
-                            })}
-                        </div>
-                      </div>
-                    )}
-
+                  <div id="weekly-filter-options" hidden={!filtersOpen} className={`${filtersOpen ? "block sm:grid" : "hidden"} mt-3 space-y-3 sm:grid-cols-2 lg:grid-cols-3 sm:items-start sm:gap-4 sm:space-y-0`}>
                     {lengthHasChoice && (
                       <div>
                         <span className="block text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By length</span>
@@ -927,7 +884,7 @@ function Index() {
                                     setLengthFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "length", value: next } });
                                   }}
-                                  className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
+                                  className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                                     publicFilterTone(active)
                                   }`}
                                 >
@@ -989,7 +946,7 @@ function Index() {
                                     setContentTypeFilter(next);
                                     trackFp("filter_change", { metadata: { filter: "content_type", value: next } });
                                   }}
-                                  className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
+                                  className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                                     publicFilterTone(active)
                                   }`}
                                 >
