@@ -1,17 +1,18 @@
-# Vayetzei 5787 PDF replacement — feasibility (read-only, no changes)
+# Homepage audience-bundle UX trial
 
-## Answers
-- Private Google Drive link (agent not signed in): No. The agent can only read Drive files through a Google Drive connection linked by the owner. Without one, the link opens a sign-in page. Options: share each file as "Anyone with the link", or connect Google Drive in workspace connector settings.
-- ChatGPT sandbox URLs (sandbox:/mnt/data/...): No. They only exist inside ChatGPT and cannot be reached from outside.
-- Storage: Yes, Supabase. The external catalog's `pdfs` table and `pdfs` bucket; covers go in the `pdf-thumbs` bucket as `<row id>.png`, plus small WebP versions.
-- Replacing an existing row (admin "Replace file"): uploads a new file, updates only `file_path`, deletes the old file and clears the PDF cache. Row ID, title, description, `summary_quick` and analytics stay the same.
-  - Thumbnails: not regenerated automatically. Use the admin thumbnail action afterwards, which overwrites `<id>.png`.
-  - Summaries/descriptions: not updated. They need a separate edit, ideally written after reading the new PDF.
+Baseline: commit `2d8001f5`. Keep the trial isolated so reverting its single new commit restores the current homepage.
 
-## If approved later (separate request)
-Owner provides public Drive links or a linked Drive connection, plus the four row IDs. Then: download, check, replace each file, regenerate covers, review descriptions, and read everything back from the catalog to confirm. No publishing is needed because the site reads from the catalog.
+## Changes
+- Replace only the existing seven-choice Original Weekly Publications strip with three audience bundles under “Something for Every Shabbos Table”; retain the weekly collection, filters, signup, Phase 4B/4C behavior, and all unrelated sections.
+- Match constituents by canonical publication ID against the currently published, non-fallback homepage collection. Use the existing artwork and individual reader links; never substitute another week or an unpublished PDF.
+- Add compact responsive bundle cards with one primary combined-PDF action. Enable it only when every constituent is available; otherwise show exact availability and individual access without claiming completeness.
+- Merge the existing PDF bytes in the browser on demand using a lazy-loaded `pdf-lib` module. Preserve page order and printability, show progress/errors, avoid accounts and recurring jobs, and keep individual PDF analytics unchanged.
+- Add an accessible expand/collapse containing all seven individual current-week reader links and Originals archive links, collapsed by default.
+- Record a distinct bundle action through the existing first-party event stream only if accepted without schema changes; never emit individual open/download events for bundle constituents.
 
-## Drive check result (2026-11-20, read-only)
-- Workspace has no Google Drive connection, so files shared with thisisyouai@gmail.com cannot be read.
-- Direct download test for all 4 IDs returned a Google sign-in page (HTML), not PDF bytes. Nothing was downloaded or changed.
-- To make it possible: (a) create a Google Drive connection signed in as thisisyouai@gmail.com: https://lovable.dev/connectors/google_drive/connect?workspace=aTRHZjS8mpX9gO3ybIRs or (b) set the 4 files to "Anyone with the link can view". Then I'd download, check the files start with %PDF, and record size and SHA-256 before any replacement.
+## Verification
+- Unit-test exact matching, complete/partial/missing bundles, ordering, and download eligibility.
+- Test the merge with real current PDFs and verify merged page counts/content.
+- Run existing homepage, analytics, UX, signup, typecheck, and production-build checks.
+- Browser-check desktop/mobile layout, all seven reader/archive links, expansion, real downloads, failures, console errors, and unchanged individual analytics.
+- Commit the isolated trial and report changed files, preview URL, results, limitations, and rollback commit. Do not publish or deploy production.
