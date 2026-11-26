@@ -35,7 +35,6 @@ import { isWeeklyCollectionHash, scrollToWeeklyCollection, WEEKLY_COLLECTION_REQ
 import { publicFilterTone, PUBLIC_FILTER_FIELD_TONE } from "@/lib/public-filter-styles";
 import { hasAllOriginalCovers } from "@/lib/homepage-original-covers";
 import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
-import { publicFilterTone, PUBLIC_FILTER_FIELD_TONE } from "@/lib/public-filter-styles";
 import { trackHomepageJourneyStart, useHomepageSectionImpression } from "@/hooks/use-homepage-section-impression";
 
 import {
