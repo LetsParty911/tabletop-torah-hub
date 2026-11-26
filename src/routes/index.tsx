@@ -702,6 +702,11 @@ function Index() {
                     ? `${currentLabel} — This Week's Parsha`
                     : <><span className="block sm:inline">{currentLabel}</span><span className="hidden sm:inline"> — </span><span className="block text-base sm:inline sm:text-inherit">Weekly Divrei Torah</span></>}
             </h1>
+            {!isCurrentYomKippur && (
+              <p className="mx-auto mt-1 max-w-xl text-sm font-medium leading-snug text-primary sm:text-base">
+                Printable Divrei Torah, stories and questions for your Shabbos table.
+              </p>
+            )}
             <p className={`mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base ${!isFallback && !postShabbos && resources.length > 0 ? "hidden sm:block" : ""}`}>
               {isFallback
                 ? "This week's Divrei Torah are being prepared. New selections every Thursday."
@@ -796,7 +801,7 @@ function Index() {
               <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-muted-foreground">
                 {isFallback
                   ? `These ${resources.length} selections are from ${displayedLabel}, not ${currentLabel}. This week's PDFs will appear once published. Choose a title to read or print an earlier edition.`
-                  : <><span className="sm:hidden">Tap a title for details or Read Now for the PDF. No account needed.</span><span className="hidden sm:inline">Select a title for details or tap Read Now to open the PDF in a new tab. No account needed.</span></>}
+                  : "Choose any publication to read, download or print. No account needed."}
               </p>
             )}
             <>

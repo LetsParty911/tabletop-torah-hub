@@ -18,7 +18,7 @@ describe('bundle action tracking', () => {
     const builtin = vi.fn(); window.__lovableEvents = { track: builtin };
     render(<OriginalBundleChooser bundles={currentOriginalBundles(resources, 'Vayishlach', false)} collectionLabel="Parshas Vayishlach" parshaKey="Vayishlach" />);
     for (const [key, name, count] of [['children', "Children's Bundle", 2], ['family', 'Family Bundle', 2], ['deeper', 'Deeper Learning Bundle', 3]] as const) {
-      fireEvent.click(screen.getByRole('button', { name: `Prepare combined ${name} for Parshas Vayishlach` }));
+      fireEvent.click(screen.getByRole('button', { name: `Get Bundle PDF: ${name} for Parshas Vayishlach` }));
       const link = await screen.findByRole('link', { name: `Download combined ${name} for Parshas Vayishlach` });
       const before = track.mock.calls.length;
       fireEvent.click(link);
@@ -31,7 +31,7 @@ describe('bundle action tracking', () => {
   it('does not emit for failed preparation or incomplete bundles', async () => {
     merge.mockRejectedValue(new Error('Unavailable'));
     render(<OriginalBundleChooser bundles={currentOriginalBundles(resources, 'Vayishlach', false)} collectionLabel="Parshas Vayishlach" parshaKey="Vayishlach" />);
-    fireEvent.click(screen.getByRole('button', { name: "Prepare combined Children's Bundle for Parshas Vayishlach" }));
+    fireEvent.click(screen.getByRole('button', { name: "Get Bundle PDF: Children's Bundle for Parshas Vayishlach" }));
     await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
     expect(track).not.toHaveBeenCalled();
     cleanup();

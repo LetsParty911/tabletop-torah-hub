@@ -161,10 +161,10 @@ export function OriginalBundleChooser({
                     disabled={!bundle.isComplete || preparation.status === "preparing"}
                     onClick={() => void prepare(bundle)}
                     className={ACTION_CLASS}
-                    aria-label={`${preparation.status === "error" ? "Retry" : "Prepare"} combined ${bundle.title} for ${collectionLabel}`}
+                    aria-label={bundle.isComplete && preparation.status === "idle" ? `Get Bundle PDF: ${bundle.title} for ${collectionLabel}` : `${preparation.status === "error" ? "Retry" : "Prepare"} combined ${bundle.title} for ${collectionLabel}`}
                   >
                     {preparation.status === "preparing" && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />}
-                    {!bundle.isComplete ? "Combined PDF unavailable yet" : preparation.status === "preparing" ? "Preparing Combined PDF…" : preparation.status === "error" ? "Try Preparing Again" : "Prepare Combined PDF"}
+                    {!bundle.isComplete ? "Combined PDF unavailable yet" : preparation.status === "preparing" ? "Preparing Combined PDF…" : preparation.status === "error" ? "Try Preparing Again" : "Get Bundle PDF"}
                   </button>
                 )}
                 {preparation.status === "error" && (

@@ -361,7 +361,7 @@ it("keeps all current-week bundles available when audience filters narrow the se
   }));
   render(<Homepage />);
   const region = within(screen.getByRole("region", { name: "Something for Every Shabbos Table" }));
-  const prepareButtons = region.getAllByRole("button", { name: /^Prepare combined/ });
+  const prepareButtons = region.getAllByRole("button", { name: /^Get Bundle PDF:/ });
   expect(prepareButtons).toHaveLength(3);
   expect(prepareButtons.every((button) => !(button as HTMLButtonElement).disabled)).toBe(true);
   fireEvent.click(within(screen.getByRole("group", { name: "Quick filters" })).getByRole("button", { name: "Children" }));
