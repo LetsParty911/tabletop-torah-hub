@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
+import { publicFilterTone } from "@/lib/public-filter-styles";
 import type {
   ReadingCollectionSummary,
   ReadingResource,
@@ -79,11 +80,7 @@ export function ReadingCollectionView({
   };
 
   const filterClass = (active: boolean) =>
-    `inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
-      active
-        ? "border-accent bg-accent text-accent-foreground"
-        : "border-accent/40 bg-background text-primary hover:border-accent hover:bg-accent/10"
-    }`;
+    `inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${publicFilterTone(active)}`;
 
   return (
     <div className="min-h-screen bg-background">

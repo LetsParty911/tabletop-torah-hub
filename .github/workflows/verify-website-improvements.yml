@@ -36,6 +36,7 @@ on:
       - "src/integrations/supabase/item-page.functions.ts"
       - "src/routes/resources.tsx"
       - "src/lib/public-label-sizing.test.ts"
+      - "src/lib/public-filter-styles*.ts"
       - "src/lib/publication-thumbnail-fit.test.ts"
       - "src/routes/publications.tsx"
       - "src/components/CategoryBadge.tsx"
@@ -102,7 +103,7 @@ jobs:
       - name: Verify publication thumbnail fit
         run: bunx vitest run --config vitest.ux.config.ts src/lib/publication-thumbnail-fit.test.ts
       - name: Verify accepted mobile typography improvements
-        run: bunx vitest run --config vitest.ux.config.ts src/lib/public-label-sizing.test.ts
+        run: bunx vitest run --config vitest.ux.config.ts src/lib/public-label-sizing.test.ts src/lib/public-filter-styles.test.ts
       - name: Verify sitemap modification dates
         run: bunx vitest run --config vitest.ux.config.ts src/lib/sitemap-lastmod.test.ts src/lib/publication-slug.test.ts
       - name: Verify emergency PWA cache reset

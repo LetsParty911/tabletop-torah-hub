@@ -33,6 +33,7 @@ import { SmallPdfImage } from "@/components/SmallPdfImage";
 import { LENGTH_OPTIONS, matchesPageLength, type LengthFilter } from "@/lib/length-filter";
 import { isWeeklyCollectionHash, scrollToWeeklyCollection, WEEKLY_COLLECTION_REQUEST } from "@/lib/weekly-navigation";
 import { PdfCoverThumbnail } from "@/components/PdfCoverThumbnail";
+import { publicFilterTone, PUBLIC_FILTER_FIELD_TONE } from "@/lib/public-filter-styles";
 import { trackHomepageJourneyStart, useHomepageSectionImpression } from "@/hooks/use-homepage-section-impression";
 
 import {
@@ -820,7 +821,7 @@ function Index() {
                                   setAudienceFilter(next);
                                   trackFp("filter_change", { metadata: { filter: "audience", value: next } });
                                 }
-                              }} className={`min-h-11 min-w-0 rounded-full border px-2 py-1.5 text-center text-xs font-semibold leading-tight focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${active ? "border-primary bg-primary text-primary-foreground" : "border-accent/45 bg-background text-primary hover:bg-accent/10"}`}>{isBrief ? "Brief Insights" : audienceLabel(choice)}</button>
+                              }} className={`min-h-11 min-w-0 rounded-full border px-2 py-1.5 text-center text-xs font-semibold leading-tight focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${publicFilterTone(active)}`}>{isBrief ? "Brief Insights" : audienceLabel(choice)}</button>
                             );
                           })}
                         </div>
@@ -884,9 +885,7 @@ function Index() {
                                     trackFp("filter_change", { metadata: { filter: "audience", value: next } });
                                   }}
                                   className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
-                                    active
-                                      ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                                      : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
+                                    publicFilterTone(active)
                                   }`}
                                 >
                                   {audienceLabel(audience)}
@@ -920,9 +919,7 @@ function Index() {
                                     trackFp("filter_change", { metadata: { filter: "length", value: next } });
                                   }}
                                   className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
-                                    active
-                                      ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                                      : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
+                                    publicFilterTone(active)
                                   }`}
                                 >
                                   {o.label}
@@ -945,7 +942,7 @@ function Index() {
                             setPublicationFilter(e.target.value);
                             trackFp("filter_change", { metadata: { filter: "publication", value: e.target.value } });
                           }}
-                          className="mt-1.5 w-full min-h-11 rounded-lg border border-accent/45 bg-background/70 px-3 py-2 text-sm text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                          className={`mt-1.5 w-full min-h-11 rounded-lg border px-3 py-2 text-sm ${PUBLIC_FILTER_FIELD_TONE}`}
                         >
                           <option value="All">All publications</option>
                           {publicationOptions.map((name) => (
@@ -983,9 +980,7 @@ function Index() {
                                     trackFp("filter_change", { metadata: { filter: "content_type", value: next } });
                                   }}
                                   className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-0 ${
-                                    active
-                                      ? "border-accent bg-accent text-accent-foreground shadow-sm"
-                                      : "border-accent/45 bg-background/70 text-primary hover:border-accent hover:bg-accent/10"
+                                    publicFilterTone(active)
                                   }`}
                                 >
                                   {o.label}
