@@ -24,6 +24,7 @@ import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { SiteFooter } from "@/components/SiteFooter";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
+import { promotionSeriesById } from "@/lib/originals-promotion";
 import { hebrewYearOf, readerBackLink, type ReaderBackLink } from "@/lib/reader-back-link";
 
 /** Contextual "Back" link: this week's homepage list, the PDF's own year collection, or the Archive. */
@@ -193,9 +194,11 @@ function ViewPdf() {
   const isMiKaamcha = publication?.id === "bd544c49-a810-478d-bf5c-38b94a81bc31" ||
     displayPublicationName.trim().toLowerCase() === "mi ka'amcha yisroel" ||
     pdf.publication?.trim().toLowerCase() === "mikaamcha";
-  const detailThumbnailUrl = isTorahWellsprings
+  const originalCover = promotionSeriesById(publication?.id);
+  const permanentCover = originalCover?.coverSrc ?? (isTorahWellsprings
     ? "/publication-covers/torah-wellsprings-plaque-v2.jpg"
-    : isMiKaamcha ? "/publication-covers/mi-kaamcha-yisroel-logo-v1.webp" : pdf.thumb_url;
+    : isMiKaamcha ? "/publication-covers/mi-kaamcha-yisroel-logo-v1.webp" : null);
+  const detailThumbnailUrl = permanentCover ?? pdf.thumb_url;
   const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=Fit`;
   const isMobile = useIsMobile();
   const [mounted, setMounted] = useState(false);
@@ -289,6 +292,11 @@ function ViewPdf() {
           {backLink.label}
         </ReaderBack>
         <div className="flex items-start gap-3">
+          {permanentCover && !thumbFailed && (
+            <img src={permanentCover} alt={`${displayPublicationName} permanent cover`}
+              onError={() => setThumbFailed(true)}
+              className="hidden w-24 shrink-0 rounded-md border border-accent/40 bg-background object-contain sm:block" />
+          )}
           <div className="min-w-0 flex-1">
             {(pdf.parsha_key || shabbosDate) && (
               <p className="mb-2 text-sm font-semibold text-accent-readable">
@@ -331,6 +339,27 @@ function ViewPdf() {
               </p>
             )}
           </div>
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <DownloadToPrintButton
+            href={`/view/${pdf.id}/pdf`}
+            publicationId={pdf.id}
+            showDownload
+            publicationName={publication?.name ?? pdf.publication ?? pdf.title}
+            publicationTitle={pdf.title}
+            parsha={pdf.parsha_key}
+            publisher={publication?.publisher ?? pdf.publisher}
+            publicationSeries={publication?.name ?? pdf.publication}
+            labelYear={pdf.jewish_year}
+            className="min-w-[180px] px-5 py-2.5"
+          />
+          <SharePublicationButton
+            pdfId={pdf.id}
+            title={pdf.title}
+            parsha={pdf.parsha_key}
+            variant="inline"
+          />
         </div>
 
         {/* Visible early on mobile: direct-link readers can discover the whole site. */}
@@ -409,26 +438,6 @@ function ViewPdf() {
           </section>
         )}
 
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <DownloadToPrintButton
-            href={`/view/${pdf.id}/pdf`}
-            publicationId={pdf.id}
-            showDownload
-            publicationName={publication?.name ?? pdf.publication ?? pdf.title}
-            publicationTitle={pdf.title}
-            parsha={pdf.parsha_key}
-            publisher={publication?.publisher ?? pdf.publisher}
-            publicationSeries={publication?.name ?? pdf.publication}
-            labelYear={pdf.jewish_year}
-            className="min-w-[180px] px-5 py-2.5"
-          />
-          <SharePublicationButton
-            pdfId={pdf.id}
-            title={pdf.title}
-            parsha={pdf.parsha_key}
-            variant="inline"
-          />
-        </div>
 
         <div className="mt-6">
           {canEmbed ? (
@@ -463,7 +472,7 @@ function ViewPdf() {
           ) : (
             <div className="rounded-lg border border-accent/40 bg-accent/10 p-6 text-center">
               <h2 className="font-serif text-lg sm:text-xl font-semibold text-primary mb-3">
-                Preview
+                {permanentCover ? "Publication cover" : "Preview"}
               </h2>
               {typeof pdf.page_count === "number" && (
                 <p className="text-sm text-muted-foreground">
@@ -473,7 +482,7 @@ function ViewPdf() {
               {detailThumbnailUrl && !thumbFailed ? (
                 <img
                   src={detailThumbnailUrl}
-                  alt={isTorahWellsprings ? "Torah Wellsprings permanent cover" : isMiKaamcha ? "Mi Ka'amcha Yisroel permanent cover" : `First page preview of ${pdf.title}`}
+                  alt={permanentCover ? `${displayPublicationName} permanent cover` : `First page preview of ${pdf.title}`}
                   loading="lazy"
                   onError={() => setThumbFailed(true)}
                   className="mx-auto mt-3 w-full max-w-sm rounded-md border border-accent/40 bg-background shadow-sm"
