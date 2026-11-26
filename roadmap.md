@@ -144,3 +144,9 @@
 - [x] Move the existing bundle section before the catalogue; preserve filters, individual access and merger
 - [x] Local real-data desktop/mobile: default bundle section at y=372/313, 7 covers loaded, individual expander closed, filters preserve availability, merged PDFs 5/2/3 pages each; no overflow or runtime errors. Signup/homepage 43 and focused bundle/freshness/reader/PDF-click tests 38 pass; automatic build OK. External browser redirects to Lovable login; app session cannot authorize hosting; no connected preview viewer. Hosted browser render remains unverified.
 - [x] Commit scoped correction for platform synchronization; do not publish
+
+## 2026-11-26 approved bundle production release
+- [x] Exclude only the unapproved thumbnail ZIP, retaining its historical commit and all original artwork
+- [x] Run focused bundle/homepage/analytics/freshness regressions and verify the current release scope (56 tests passed; automatic build OK; fresh basic security checks passed)
+- [ ] Publish the approved implementation and visibility correction through the existing Lovable project
+- [ ] Verify the public custom domain on desktop/mobile: freshness, default placement, seven links, real merged PDFs, analytics isolation and excluded ZIP
