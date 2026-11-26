@@ -148,5 +148,5 @@
 ## 2026-11-26 approved bundle production release
 - [x] Exclude only the unapproved thumbnail ZIP, retaining its historical commit and all original artwork
 - [x] Run focused bundle/homepage/analytics/freshness regressions and verify the current release scope (56 tests passed; automatic build OK; fresh basic security checks passed)
-- [ ] Publish the approved implementation and visibility correction through the existing Lovable project
-- [ ] Verify the public custom domain on desktop/mobile: freshness, default placement, seven links, real merged PDFs, analytics isolation and excluded ZIP
+- [x] Publish the approved implementation and visibility correction through the existing Lovable project (release commit 1e062637; includes 97045cb6 and 414171bb)
+- [x] Verify the public custom domain on desktop/mobile: HTTP 200, build mwx0tguh replaces mwwsdn1b, private/no-store HTML and server responses, warm reload current; bundle section y=372/313, seven 4:5 covers/current Vayishlach reader links, downloads 5/2/3 pages on both sizes, seven originals total ten pages, separate bundle events intercepted with no individual PDF events, no overflow/runtime errors, filters preserve bundles, one signup/catalogue, excluded ZIP HTTP 404. Focused 38 + analytics 3 + signup/homepage 43 + weekly 39 = 123 passing tests; automatic build OK. No database, security, reader, artwork or hosting changes.
