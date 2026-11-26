@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ChevronDown, Download, LoaderCircle } from "lucide-react";
 import { OriginalSeriesCover } from "@/components/OriginalSeriesCover";
-import { trackFp } from "@/lib/first-party-analytics";
+import { newActionId, trackFp } from "@/lib/first-party-analytics";
+import { BundlePdfError, type BundleFailureCode } from "@/lib/bundle-diagnostics";
 import { originalBundleFilename, type OriginalBundle } from "@/lib/original-bundles";
 
 type Preparation = {
@@ -10,7 +11,32 @@ type Preparation = {
   url?: string;
   pageCount?: number;
   progress?: string;
+  preparationId?: string;
+  reportedFailure?: boolean;
 };
+
+type BundleDiagnosticStage = "prepare_started" | "prepare_ready" | "prepare_failed" | "open_fallback" | "reported_failure";
+
+function trackBundleDiagnostic(
+  bundle: OriginalBundle, parshaKey: string | null, collectionLabel: string,
+  preparationId: string | undefined, stage: BundleDiagnosticStage,
+  details: Record<string, unknown> = {},
+) {
+  const year = bundle.items[0]?.resource?.jewish_year ?? null;
+  trackFp("bundle_diagnostic", {
+    parsha: parshaKey,
+    jewish_year: year,
+    metadata: {
+      bundle_key: bundle.key,
+      bundle_name: bundle.title,
+      edition_label: collectionLabel,
+      jewish_year: year,
+      preparation_id: preparationId ?? null,
+      stage,
+      ...details,
+    },
+  });
+}
 
 const ACTION_CLASS = "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-3 py-2.5 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-55";
 
@@ -26,10 +52,12 @@ export function OriginalBundleChooser({
   const [expanded, setExpanded] = useState(false);
   const [preparations, setPreparations] = useState<Record<string, Preparation>>({});
   const objectUrls = useRef(new Set<string>());
+  const lastDownloadIds = useRef(new Map<string, string>());
   const version = bundles.map((bundle) => bundle.items.map((item) => item.resource?.id ?? "missing").join(",")).join("|");
 
   useEffect(() => {
     setPreparations({});
+    lastDownloadIds.current.clear();
     objectUrls.current.forEach((url) => URL.revokeObjectURL(url));
     objectUrls.current.clear();
   }, [version]);
@@ -41,31 +69,45 @@ export function OriginalBundleChooser({
 
   const prepare = async (bundle: OriginalBundle) => {
     if (!bundle.isComplete) return;
+    const preparationId = newActionId();
+    lastDownloadIds.current.delete(bundle.key);
+    trackBundleDiagnostic(bundle, parshaKey, collectionLabel, preparationId, "prepare_started");
     setPreparations((current) => ({
       ...current,
-      [bundle.key]: { status: "preparing", progress: "Loading the PDF library…" },
+      [bundle.key]: { status: "preparing", preparationId, progress: "Loading the PDF library…" },
     }));
+    let failureCode: BundleFailureCode = "library_load_failed";
     try {
       const { mergeOriginalBundlePdf } = await import("@/lib/original-bundle-pdf");
+      failureCode = "merge_failed";
       const result = await mergeOriginalBundlePdf(bundle, ({ completed, total, title }) => {
         setPreparations((current) => ({
           ...current,
           [bundle.key]: {
             status: "preparing",
+            preparationId,
             progress: completed === total ? "Finishing your combined PDF…" : `Preparing ${completed + 1} of ${total}: ${title}`,
           },
         }));
       });
+      failureCode = "object_url_failed";
       const url = URL.createObjectURL(result.blob);
       objectUrls.current.add(url);
       setPreparations((current) => ({
         ...current,
-        [bundle.key]: { status: "ready", url, pageCount: result.pageCount },
+        [bundle.key]: { status: "ready", url, preparationId, pageCount: result.pageCount },
       }));
-    } catch {
+      trackBundleDiagnostic(bundle, parshaKey, collectionLabel, preparationId, "prepare_ready", {
+        page_count: result.pageCount, byte_count: result.blob.size,
+      });
+    } catch (error) {
+      const details = error instanceof BundlePdfError
+        ? { failure_code: error.code, constituent_id: error.publicationId ?? null, http_status: error.httpStatus ?? null }
+        : { failure_code: failureCode };
+      trackBundleDiagnostic(bundle, parshaKey, collectionLabel, preparationId, "prepare_failed", details);
       setPreparations((current) => ({
         ...current,
-        [bundle.key]: { status: "error" },
+        [bundle.key]: { status: "error", preparationId },
       }));
     }
   };
@@ -121,11 +163,20 @@ export function OriginalBundleChooser({
                       onClick={() => {
                         const year = bundle.items[0]?.resource?.jewish_year ?? null;
                         const pageCount = preparation.pageCount ?? null;
+                        const actionId = newActionId();
+                        lastDownloadIds.current.set(bundle.key, actionId);
+                        if (preparation.reportedFailure) {
+                          setPreparations(current => ({
+                            ...current, [bundle.key]: { ...preparation, reportedFailure: false },
+                          }));
+                        }
                         trackFp("bundle_download", {
                           parsha: parshaKey,
                           jewish_year: year,
                           metadata: {
                             action: "bundle_download",
+                            action_id: actionId,
+                            preparation_id: preparation.preparationId ?? null,
                             bundle_key: bundle.key,
                             bundle_name: bundle.title,
                             jewish_year: year,
@@ -152,8 +203,40 @@ export function OriginalBundleChooser({
                       Download Combined PDF
                     </a>
                     <p role="status" className="mt-2 text-center text-xs text-muted-foreground">
-                      Ready: {preparation.pageCount} pages to save or print.
+                      PDF ready: {preparation.pageCount} pages. Choose Download or Open &amp; Print.
                     </p>
+                    <div className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
+                      <a
+                        href={preparation.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-4"
+                        onClick={() => trackBundleDiagnostic(bundle, parshaKey, collectionLabel, preparation.preparationId, "open_fallback", {
+                          related_action_id: lastDownloadIds.current.get(bundle.key) ?? null,
+                        })}
+                        aria-label={`Open and print combined ${bundle.title} for ${collectionLabel}`}
+                      >Open &amp; Print PDF</a>
+                      <button
+                        type="button"
+                        disabled={preparation.reportedFailure}
+                        className="inline-flex min-h-11 items-center text-muted-foreground underline underline-offset-4 disabled:no-underline"
+                        aria-label={`Report a download problem with ${bundle.title}`}
+                        onClick={() => {
+                          trackBundleDiagnostic(bundle, parshaKey, collectionLabel, preparation.preparationId, "reported_failure", {
+                            related_action_id: lastDownloadIds.current.get(bundle.key) ?? null,
+                            failure_code: "visitor_reported_download_problem",
+                          });
+                          setPreparations(current => ({
+                            ...current, [bundle.key]: { ...preparation, reportedFailure: true },
+                          }));
+                        }}
+                      >Download didn't work?</button>
+                    </div>
+                    {preparation.reportedFailure && (
+                      <p role="status" className="mt-1 text-center text-xs text-muted-foreground">
+                        Problem reported. Try Open &amp; Print PDF, or open the individual publications above.
+                      </p>
+                    )}
                   </>
                 ) : (
                   <button

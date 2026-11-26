@@ -29,4 +29,17 @@ describe('bundle ingestion persistence contract with isolated storage', () => {
     expect([...mocks.persisted.values()].map(row => (row['metadata'] as Record<string, unknown>)['bundle_key'])).toEqual(['children', 'family', 'deeper']);
     expect(mocks.persisted.get('bundle-children')).toMatchObject({ publication_id: null, publication_title: null, visitor_id: 'qualified-browser', session_id: 'existing-session', parsha: 'Vayishlach', jewish_year: 5787, occurred_at: '2026-11-26T04:08:00.000Z', source_group: 'OurKehilla' });
   });
+  it('persists a diagnostic separately from a bundle download action', async () => {
+    mocks.persisted.clear();
+    mocks.upsert.mockImplementation(async (rows: Record<string, unknown>[]) => {
+      for (const row of rows) mocks.persisted.set(String(row['event_id']), row);
+      return { error: null };
+    });
+    const handler = mocks.handler;
+    if (!handler) throw new Error('Missing POST handler');
+    const event = { event_id: 'bundle-failure', event_name: 'bundle_diagnostic', visitor_id: 'qualified-browser', session_id: 'existing-session', path: '/', parsha: 'Vayishlach', jewish_year: 5787, metadata: { bundle_key: 'children', stage: 'prepare_failed', failure_code: 'http_error', http_status: 503, preparation_id: 'prep-1' } };
+    const response = await handler({ request: new Request('https://example.test/api/events', { method: 'POST', body: JSON.stringify({ events: [event] }) }) });
+    expect(response.status).toBe(204);
+    expect(mocks.persisted.get('bundle-failure')).toMatchObject({ event_name: 'bundle_diagnostic', metadata: event.metadata });
+  });
 });

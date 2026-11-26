@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { readCorrelation, resolveWaitUntil, runInBackground } from "@/lib/pdf-route-diagnostics.server";
+import { readCorrelation, recordDownloadRouteFailure, resolveWaitUntil, runInBackground } from "@/lib/pdf-route-diagnostics.server";
 import { buildDownloadServedRow, type DownloadCatalogRow } from "@/lib/download-served";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { buildDownloadFilename } from "@/lib/download-filename";
@@ -162,7 +162,12 @@ export const Route = createFileRoute("/view/$id/download")({
             .maybeSingle();
           routeTimings.push(`pdf_lookup;dur=${(performance.now() - lookupStarted).toFixed(1)}`);
 
-          if (error || !row || !row.published || !row.file_path) {
+          if (error) {
+            await recordDownloadRouteFailure(request, id, 500);
+            return new Response("Download temporarily unavailable", { status: 500, headers: { ...NOINDEX, "Server-Timing": routeTimings.join(", ") } });
+          }
+          if (!row || !row.published || !row.file_path) {
+            await recordDownloadRouteFailure(request, id, 404);
             return new Response("Not found", { status: 404, headers: { ...NOINDEX, "Server-Timing": routeTimings.join(", ") } });
           }
 
@@ -196,6 +201,7 @@ export const Route = createFileRoute("/view/$id/download")({
           });
         } catch (err) {
           console.error("[view/download] failed", err);
+          await recordDownloadRouteFailure(request, id, 500);
           return new Response("Download failed", { status: 500, headers: NOINDEX });
         }
       },

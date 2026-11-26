@@ -56,6 +56,16 @@ describe("mergeOriginalBundlePdf", () => {
       publication_id: series.publicationId,
     }));
     const bundle = currentOriginalBundles(resources, "vayetzei", false)[0]!;
-    await expect(mergeOriginalBundlePdf(bundle)).rejects.toThrow("did not return a valid PDF");
+    await expect(mergeOriginalBundlePdf(bundle)).rejects.toMatchObject({ code: "invalid_pdf", publicationId: "id-0" });
+  });
+
+  it("records a constituent HTTP status without exposing its URL or exception text", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 503 })));
+    const resources = ORIGINAL_PROMOTION_SERIES.slice(0, 2).map((series, index) => ({
+      id: `id-${index}`, title: series.title, url: "https://example.test/source.pdf",
+      parsha_key: "vayetzei", publication_id: series.publicationId,
+    }));
+    const bundle = currentOriginalBundles(resources, "vayetzei", false)[0]!;
+    await expect(mergeOriginalBundlePdf(bundle)).rejects.toMatchObject({ code: "http_error", httpStatus: 503, publicationId: "id-0" });
   });
 });

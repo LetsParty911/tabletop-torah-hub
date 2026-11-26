@@ -36,7 +36,7 @@ describe("reader PDF actions share one action ID with the server route", () => {
   it("Read Now stays a separate open_pdf click with its own action ID", () => {
     renderReader();
     fireEvent.click(screen.getByRole("link", { name: /download/i }));
-    const read = screen.getByRole("link", { name: /open|read/i }) as HTMLAnchorElement;
+    const read = screen.getByRole("link", { name: /^Open PDF in a new tab/i }) as HTMLAnchorElement;
     fireEvent.click(read);
     const [name, payload] = track.mock.calls[1]!;
     expect(name).toBe("publication_click");
@@ -44,5 +44,25 @@ describe("reader PDF actions share one action ID with the server route", () => {
     expect(new URL(read.href, "https://x.test").pathname).toBe(`/view/${ID}/pdf`);
     expect(payload.metadata.action_id).toBe(new URL(read.href, "https://x.test").searchParams.get("a"));
     expect(payload.metadata.action_id).not.toBe(track.mock.calls[0]![1].metadata.action_id);
+  });
+
+  it("offers a native PDF viewer fallback on the detail page without counting it as a download", () => {
+    renderReader();
+    const link = screen.getByRole("link", { name: /Open PDF to save or print on iPhone or iPad/i }) as HTMLAnchorElement;
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(screen.getByText(/tap Share, then choose Save to Files or Print/i)).toBeTruthy();
+    fireEvent.click(link);
+    const url = new URL(link.href, "https://x.test");
+    expect(url.pathname).toBe(`/view/${ID}/pdf`);
+    expect(track).toHaveBeenCalledTimes(1);
+    const [name, payload] = track.mock.calls[0]!;
+    expect(name).toBe("publication_click");
+    expect(payload.metadata).toMatchObject({ action: "open_pdf", entry_point: "save_or_print", action_id: url.searchParams.get("a") });
+  });
+
+  it("keeps the collection-card action unchanged", () => {
+    render(<DownloadToPrintButton href={`/view/${ID}/pdf`} publicationId={ID} publicationTitle="Against All Odds" />);
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(screen.queryByText(/Saving or printing on iPhone or iPad/i)).toBeNull();
   });
 });
