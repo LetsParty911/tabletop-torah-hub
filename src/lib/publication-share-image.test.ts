@@ -5,7 +5,7 @@ import { publicationShareImages, publicationShareImageMeta } from "./publication
 import { SITE_URL } from "./site-url";
 
 function webpDimensions(path: string) {
-  const bytes = readFileSync(new URL(`../../public${path}`, import.meta.url));
+  const bytes = readFileSync(`public${path}`);
   expect(bytes.toString("ascii", 0, 4)).toBe("RIFF");
   expect(bytes.toString("ascii", 8, 12)).toBe("WEBP");
   expect(bytes.length).toBeLessThan(600_000);

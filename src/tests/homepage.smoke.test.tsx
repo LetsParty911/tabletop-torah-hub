@@ -135,6 +135,27 @@ beforeEach(() => state.invalidate.mockClear());
 afterEach(() => cleanup());
 
 describe("homepage publication and discovery smoke test with isolated data", () => {
+  it("offers the packet only for current-week registered originals, not fallback or outside publications", () => {
+    setHomepage(false);
+    const originalRows = TFTT_ORIGINAL_SERIES.slice(0, 2).map((series, index) => ({
+      ...example(index + 1, "Lech-Lecha"),
+      id: `10000000-0000-4000-8000-00000000000${index + 1}`,
+      title: series.title,
+      publication_id: series.id,
+    }));
+    state.loader.resources = [...originalRows, example(3, "Lech-Lecha")];
+    const { unmount } = render(<Homepage />);
+    fireEvent.click(screen.getByRole("button", { name: "Build My Shabbos Packet" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getAllByRole("checkbox")).toHaveLength(2);
+    expect(within(dialog).queryByText("Sample Torah Sheet 3")).toBeNull();
+    unmount();
+    setHomepage(true);
+    state.loader.resources = originalRows.map(r => ({ ...r, parsha_key: "Noach" }));
+    render(<Homepage />);
+    expect(screen.queryByRole("button", { name: "Build My Shabbos Packet" })).toBeNull();
+  });
+
   it("keeps Noach PDFs available while countdown represents unpublished Lech-Lecha", () => {
     setHomepage(true);
     render(<Homepage />);

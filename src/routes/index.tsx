@@ -57,6 +57,8 @@ import { trackEvent } from "@/lib/analytics";
 import { WeeklyEmailSignup } from "@/components/WeeklyEmailSignup";
 import { usePrewarmDownloads } from "@/hooks/use-prewarm-downloads";
 import { TableChooser } from "@/components/TableChooser";
+import { MyShabbosPacket } from "@/components/MyShabbosPacket";
+import { packetCandidates } from "@/lib/shabbos-packet";
 import { pickStarterSelections, type ChooserKey } from "@/lib/table-chooser";
 
 type Resource = {
@@ -489,6 +491,10 @@ function Index() {
   const [showRecommendationChooser, setShowRecommendationChooser] = useState(false);
 
   const sortedResources = resources;
+  const packetEntries = packetCandidates(sortedResources, isFallback);
+  // Do not reuse a selection or a prepared download after a reading rollover,
+  // or when a publication disappears from the eligible current collection.
+  const packetCollectionKey = [readingDate, displayedParshaKey, ...packetEntries.map(entry => entry.id).sort()].join("|");
   // Start-here showcase: only this week's published TFTT originals (matched by
   // canonical publication_id). Never last week's fallback PDFs, never a
   // third-party substitute for an absent series.
@@ -768,6 +774,8 @@ function Index() {
               </p>
             ) : showCompleteCollection ? (
               <>
+                <MyShabbosPacket key={packetCollectionKey} entries={packetEntries}
+                  readingLabel={displayedLabel} readingDate={readingDate} />
                 {sortedResources.length >= 6 && (
                   <>
                 <div className="hidden text-center sm:block">

@@ -37,6 +37,8 @@ on:
       - "src/routes/resources.tsx"
       - "src/lib/public-label-sizing.test.ts"
       - "src/lib/public-filter-styles*.ts"
+      - "src/lib/shabbos-packet*.ts"
+      - "src/components/MyShabbosPacket*.tsx"
       - "src/lib/publication-thumbnail-fit.test.ts"
       - "src/routes/publications.tsx"
       - "src/components/CategoryBadge.tsx"
@@ -127,5 +129,7 @@ jobs:
         run: bunx vitest run --config vitest.ux.config.ts src/lib/reading-library.test.ts src/lib/publication-filter.test.ts src/lib/length-filter.test.ts src/components/HeaderSearchToggle.test.tsx
       - name: Verify reader returns and homepage originals visibility
         run: bunx vitest run --config vitest.ux.config.ts src/lib/reader-back-link.test.ts src/lib/homepage-original-covers.test.ts
+      - name: Verify packet eligibility, PDF assembly and selection dialog
+        run: bunx vitest run --config vitest.ux.config.ts src/lib/shabbos-packet.test.ts src/components/MyShabbosPacket.test.tsx
       - name: Build application
         run: bun run build
