@@ -7,6 +7,8 @@ export default defineConfig({
     "src/lib/length-filter.test.ts", "src/lib/weekly-navigation.test.ts", "src/lib/reading-library.test.ts",
     "src/lib/sitemap-lastmod.test.ts",
     "src/lib/public-label-sizing.test.ts",
+    "src/lib/public-filter-styles.test.ts", "src/lib/publication-share-image.test.ts",
+    "src/lib/shabbos-packet.test.ts", "src/components/MyShabbosPacket.test.tsx",
     "src/lib/publication-thumbnail-fit.test.ts",
     "src/lib/view-description.test.ts", "src/components/SmallPdfImage.test.tsx",
     "src/lib/table-chooser.starter.test.ts", "src/lib/original-editions.test.ts",
