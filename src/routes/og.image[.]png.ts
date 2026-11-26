@@ -239,11 +239,14 @@ export const Route = createFileRoute("/og/image.png")({
         const pubTitle = (url.searchParams.get("title") ?? "").slice(0, 120).trim() || null;
         // A card needs at least one of parsha / title to say anything useful.
         if (!raw && !pubTitle) return staticFallback(request);
-        const parshaLabel = !raw
+        // A publication card can pass an already-formatted reading label,
+        // including a Yom Tov or Jewish year. Preserve existing weekly cards.
+        const readingLabel = pubTitle ? (url.searchParams.get("reading") ?? "").slice(0, 80).trim() : "";
+        const parshaLabel = readingLabel || (!raw
           ? ""
           : /^(parshas|parashat)\s/i.test(raw)
             ? raw
-            : `Parshas ${raw}`;
+            : `Parshas ${raw}`);
 
         // Edge cache keyed on the full query so each card renders at most once.
         const cache = (globalThis as { caches?: { default?: Cache } }).caches?.default;
