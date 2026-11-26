@@ -639,6 +639,7 @@ function Index() {
           publicationSeries: r.publication,
           publisher: r.publisher,
           parsha: r.parsha_key ?? displayedParshaKey,
+          jewishYear: r.jewish_year ?? null,
         }, "thumbnail")}
       />
     );

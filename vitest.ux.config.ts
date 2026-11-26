@@ -26,7 +26,7 @@ export default defineConfig({
     "src/lib/homepage-original-covers.test.ts",
     "src/lib/original-bundles.test.ts", "src/lib/original-bundle-pdf.test.ts",
     "src/lib/bundle-reporting.test.ts", "src/components/OriginalBundleChooser.test.tsx",
-    "src/routes/api/-events.bundle.test.ts",
+    "src/routes/api/-events.bundle.test.ts", "src/components/DownloadToPrintButton.test.tsx", "src/lib/download-served.test.ts",
     "src/integrations/supabase/admin-analytics-canonical.test.ts",
     "src/lib/publication-filter.test.ts", "src/lib/publication-quality.test.ts", "src/lib/publication-slug.test.ts",
   ] },

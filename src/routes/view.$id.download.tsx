@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { resolveWaitUntil, runInBackground } from "@/lib/pdf-route-diagnostics.server";
+import { readCorrelation, resolveWaitUntil, runInBackground } from "@/lib/pdf-route-diagnostics.server";
+import { buildDownloadServedRow, type DownloadCatalogRow } from "@/lib/download-served";
 import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { buildDownloadFilename } from "@/lib/download-filename";
 
@@ -28,28 +29,19 @@ function publicDownloadUrl(admin: any, path: string, filename: string): string {
 // completion back to us.
 //
 // The client passes an action_id (plus its own visitor/session ids) on the
-// download link so this row can be correlated with the user-initiated
-// `download` event. Every client value is validated and length-capped here.
-const SAFE_ID = /^[A-Za-z0-9_-]{6,80}$/;
-
-function safeId(value: string | null): string | null {
-  const trimmed = value?.trim() ?? "";
-  return SAFE_ID.test(trimmed) ? trimmed : null;
-}
-
+// download link so this row correlates with the user-initiated `download`
+// event. Correlation is accepted only through the same validation as /pdf:
+// UUID action id and a visitor id matching the first-party tftt_vid cookie.
 async function recordDownloadServed(
   request: Request,
   publicationId: string,
   filename: string,
+  catalog: DownloadCatalogRow,
 ): Promise<void> {
   try {
-    const url = new URL(request.url);
-    const actionId = safeId(url.searchParams.get("a"));
-    if (!actionId) return; // Only correlate genuine, tagged download actions.
-
-    const sessionId = safeId(url.searchParams.get("s"));
-    const visitorId = safeId(url.searchParams.get("v"));
-    if (!sessionId || !visitorId) return;
+    const correlation = readCorrelation(request);
+    if (!correlation) return; // Only correlate genuine, tagged download actions.
+    const { sid: sessionId, vid: visitorId } = correlation;
 
     const { isAutomatedAgent } = await import("@/lib/request-telemetry.server");
     if (isAutomatedAgent(request.headers.get("user-agent") ?? "")) return;
@@ -93,19 +85,7 @@ async function recordDownloadServed(
           : "desktop";
     }
 
-    const row: Record<string, unknown> = {
-      ...context,
-      event_id: `served-${actionId}`,
-      event_name: "download_served",
-      occurred_at: new Date().toISOString(),
-      visitor_id: visitorId,
-      session_id: sessionId,
-      is_new_visitor: null,
-      path: `/view/${publicationId}/download`,
-      publication_id: publicationId,
-      is_internal: isInternal,
-      metadata: { action_id: actionId, filename },
-    };
+    const row = buildDownloadServedRow(correlation, publicationId, catalog, filename, context, new Date());
 
     const { error } = await admin
       .from("analytics_events")
@@ -124,9 +104,9 @@ async function recordDownloadServed(
 // Cloudflare's waitUntil keeps tracking alive after the redirect without
 // making the visitor wait. Never fall back to awaiting analytics here: a slow
 // Supabase read/write must not delay or prevent delivery of a valid PDF.
-async function queueDownloadTracking(request: Request, id: string, filename: string): Promise<void> {
+async function queueDownloadTracking(request: Request, id: string, filename: string, catalog: DownloadCatalogRow): Promise<void> {
   try {
-    await runInBackground(recordDownloadServed(request, id, filename), await resolveWaitUntil(request));
+    await runInBackground(recordDownloadServed(request, id, filename, catalog), await resolveWaitUntil(request));
   } catch (err) {
     // Tracking is best-effort. Keep the download working if scheduling fails.
     console.error("[view/download] unable to schedule tracking", err);
@@ -177,7 +157,7 @@ export const Route = createFileRoute("/view/$id/download")({
           const lookupStarted = performance.now();
           const { data: row, error } = await admin
             .from("pdfs")
-            .select("title, file_path, published, parsha_key, publication")
+            .select("title, file_path, published, parsha_key, publication, jewish_year")
             .eq("id", id)
             .maybeSingle();
           routeTimings.push(`pdf_lookup;dur=${(performance.now() - lookupStarted).toFixed(1)}`);
@@ -198,7 +178,7 @@ export const Route = createFileRoute("/view/$id/download")({
 
           // A validated redirect must never wait for analytics queries or writes.
           // Cloudflare continues this task after the response is returned.
-          await queueDownloadTracking(request, id, entry.filename);
+          await queueDownloadTracking(request, id, entry.filename, row);
           if (adminBypass && request.headers.get("X-Admin-Link") === "1") {
             return Response.json({ url: deliveryUrl }, { headers: { ...NOINDEX, "Cache-Control": "no-store", "Server-Timing": routeTimings.join(", ") } });
           }

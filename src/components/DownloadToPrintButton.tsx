@@ -18,7 +18,7 @@ type DownloadToPrintButtonProps = {
   jewishYear?: number | null;
   publisher?: string | null;
   publicationSeries?: string | null;
-  /** Year shown in the accessible name only; never sent to analytics. */
+  /** Catalogue edition year; also used as the analytics jewish_year when jewishYear is omitted. */
   labelYear?: number | null;
 };
 
@@ -35,9 +35,13 @@ export function recordPdfAction(
   { publicationId, publicationName, publicationTitle, publicationSeries, publisher, parsha, jewishYear }: PdfActionContext,
   entryPoint: "button" | "thumbnail" = "button",
 ) {
-  // Keep navigation functional when analytics, storage or crypto is unavailable.
+  // One action ID is shared by the client event (metadata.action_id) and the
+  // server route (?a=) so download/download_served and open/pdf_route_result
+  // correlate and deduplicate. Navigation still works if crypto is missing.
+  let action: string | null = null;
+  try { action = crypto.randomUUID(); } catch { action = null; }
   try {
-    const action = crypto.randomUUID();
+    if (!action) throw new Error("no action id");
     const url = new URL(actionType === "download" && publicationId ? pdfActionHrefs(publicationId).download : openHref, window.location.origin);
     url.searchParams.set("a", action);
     url.searchParams.set("s", getSessionId());
@@ -53,7 +57,9 @@ export function recordPdfAction(
       publisher: publisher ?? null,
       parsha: parsha ?? null,
       jewish_year: jewishYear ?? null,
-      metadata: { action: actionType, entry_point: entryPoint },
+      metadata: action
+        ? { action: actionType, entry_point: entryPoint, action_id: action }
+        : { action: actionType, entry_point: entryPoint },
     });
   } catch { /* Never block the PDF link. */ }
 }
@@ -90,7 +96,8 @@ export function DownloadToPrintButton({
 
   const recordOpen = (event: React.MouseEvent<HTMLAnchorElement>, actionType: "open_pdf" | "download") => {
     recordPdfAction(event, actionType, openHref, {
-      publicationId, publicationName, publicationTitle, publicationSeries, publisher, parsha, jewishYear,
+      publicationId, publicationName, publicationTitle, publicationSeries, publisher, parsha,
+      jewishYear: jewishYear ?? labelYear ?? null,
     });
   };
 
