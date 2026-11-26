@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Share2, Link2, Check } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
@@ -82,17 +83,17 @@ export function SharePublicationButton({
 
   if (variant === "inline") {
     return (
-      <div className={`flex items-center gap-2 ${className}`}>
-        <button
+      <div className={`flex flex-wrap items-center gap-2 ${className}`}>
+        <Button variant="ghost"
           type="button"
           onClick={handleShare}
           className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-md border border-accent/60 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-accent/10 transition-colors"
           aria-label={`Share ${title} on WhatsApp`}
         >
           <Share2 className="h-4 w-4" />
-          Share
-        </button>
-        <button
+          Share on WhatsApp
+        </Button>
+        <Button variant="ghost"
           type="button"
           onClick={handleCopy}
           className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-md border border-accent/60 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-accent/10 transition-colors"
@@ -109,7 +110,7 @@ export function SharePublicationButton({
               Copy link
             </>
           )}
-        </button>
+        </Button>
       </div>
     );
   }

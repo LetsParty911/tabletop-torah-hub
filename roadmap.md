@@ -124,3 +124,11 @@
 - [x] Header search shows the word "Search" (or "Close") from 1024px up; icon only at tablet width
 - [x] Homepage originals intro lists each series with one short explanation line
 - [x] "TFTT Original" on weekly cards is a quiet label above the title; NEW stays a gold badge
+
+## 2026-11-25 Phase 4B and 4C only
+- [x] Inspect PR 173, Phase 4C branch and PR 171; reuse scoped presentation changes on current HEAD
+- [x] Reader action order, historical discovery, explicit WhatsApp; unchanged tracking
+- [x] Compact stable filters/counts, single earlier signup, conditional redundant artwork; owner confirmed current wording
+- [x] Run regressions and desktop/mobile real-data preview checks (41/41); signup 42, weekly 39, safeguards 53 passed; UX 214 passed/one pre-existing unrelated failure
+- [x] Commit a0a9fc5d for platform GitHub sync; basic security checks passed; published via Lovable; production 41/41 desktop/mobile checks passed, new build marker and no-store verified
+- [x] Report exact scope, pre-existing Hidden Gems failure, pending platform GitHub sync and non-final credit measurement (8.20 recorded at lookup)

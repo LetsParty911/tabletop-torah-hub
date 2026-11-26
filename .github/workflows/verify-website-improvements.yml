@@ -46,6 +46,9 @@ on:
       - "src/routes/publications.tsx"
       - "src/routes/short-vorts.tsx"
       - "src/routes/view.$id.tsx"
+      - "src/lib/reader-back-link*.ts"
+      - "src/lib/homepage-original-covers*.ts"
+      - "src/lib/public-filter-styles.ts"
       - "src/routes/index.tsx"
       - "src/routes/originals.tsx"
       - "src/lib/originals-promotion*.ts"
@@ -122,5 +125,7 @@ jobs:
         run: bunx vitest run --config vitest.ux.config.ts src/lib/original-upload-validation.test.ts src/lib/publication-quality.test.ts src/tests/admin-upload-form.test.tsx
       - name: Verify complete reading library, audience defaults and accessible search
         run: bunx vitest run --config vitest.ux.config.ts src/lib/reading-library.test.ts src/lib/publication-filter.test.ts src/lib/length-filter.test.ts src/components/HeaderSearchToggle.test.tsx
+      - name: Verify reader returns and homepage originals visibility
+        run: bunx vitest run --config vitest.ux.config.ts src/lib/reader-back-link.test.ts src/lib/homepage-original-covers.test.ts
       - name: Build application
         run: bun run build

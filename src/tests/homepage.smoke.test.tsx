@@ -329,6 +329,24 @@ describe("homepage publication and discovery smoke test with isolated data", () 
   });
 });
 
+it("keeps advanced options available when another filter leaves zero matches", () => {
+  setHomepage(false);
+  state.loader.resources = [1, 2, 3, 4, 5, 6].map((n) => example(n, "Lech-Lecha"));
+  state.loader.resources[5] = { ...state.loader.resources[5], content_type: "Brief Insights", format_type: "Short Vorts", audience: "Adults" };
+  render(<Homepage />);
+  fireEvent.click(screen.getByRole("button", { name: "More filters" }));
+  const advanced = document.getElementById("weekly-filter-options");
+  if (!advanced) throw new Error("Missing advanced options");
+  const brief = within(advanced).getByRole("button", { name: "Filter by content type: Brief Insights" });
+  expect((brief as HTMLButtonElement).disabled).toBe(false);
+  fireEvent.click(within(screen.getByRole("group", { name: "Quick filters" })).getByRole("button", { name: "Children" }));
+  expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(3);
+  expect(within(advanced).getByRole("button", { name: "Filter by content type: Brief Insights" })).toBe(brief);
+  expect((brief as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.click(screen.getByRole("button", { name: /Fewer filters/ }));
+  expect(advanced.hidden).toBe(true);
+});
+
 it("polls actual publications and invalidates when the first current PDF goes live", async () => {
   vi.useFakeTimers();
   try {

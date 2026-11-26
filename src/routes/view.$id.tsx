@@ -333,82 +333,6 @@ function ViewPdf() {
           </div>
         </div>
 
-        {/* Visible early on mobile: direct-link readers can discover the whole site. */}
-        <Link
-          to="/"
-          hash="this-weeks-collection"
-          onClick={trackExploreCollection}
-          className="group mt-5 flex min-h-16 w-full items-center justify-between gap-3 rounded-xl border border-accent/70 bg-primary px-4 py-3 text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:px-5"
-        >
-          <span className="flex min-w-0 flex-col gap-1">
-            <span className="text-base font-semibold leading-snug sm:text-lg">
-              Explore All This Week’s Divrei Torah
-            </span>
-            <span className="text-xs leading-snug text-primary-foreground/85 sm:text-sm">
-              Discover more Torah for your Shabbos table
-            </span>
-          </span>
-          <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" aria-hidden="true" />
-        </Link>
-
-        {pdf.parsha_key && !isYomTovReading(pdf.parsha_key) && (
-          <section className="mt-5 rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
-            <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable">
-              More on this parsha
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Browse more Divrei Torah, short vorts, stories and printable material for{" "}
-              <Link
-                to="/parsha/$slug"
-                params={{ slug: readingSlug(pdf.parsha_key) }}
-                className="font-semibold text-primary underline decoration-accent/60 underline-offset-4 hover:text-accent"
-              >
-                {formatReadingLabel(pdf.parsha_key)}
-              </Link>
-              .
-            </p>
-          </section>
-        )}
-
-        {pdf.description && (
-          <section className="mt-5 rounded-xl border border-accent/30 bg-accent/5 p-4 sm:p-5">
-            <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable">
-              What you'll find
-            </p>
-            <p className="mt-2 font-serif text-base leading-relaxed text-primary/85">
-              {leadWithPublicationTitle(pdf.title, pdf.description)}
-            </p>
-          </section>
-        )}
-
-        {showSummary && (
-          <section aria-labelledby="pdf-summary-heading" className="mt-5 rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
-            <h2
-              id="pdf-summary-heading"
-              className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable"
-            >
-              Summary
-            </h2>
-            <p className="mt-2 font-serif text-base leading-relaxed text-primary/85 whitespace-pre-line">
-              {leadWithPublicationTitle(pdf.title, chosenSummary)}
-            </p>
-          </section>
-        )}
-
-        {originalHtml?.text && (
-          <section aria-labelledby="original-text-heading" className="mt-5 rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
-            <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable">
-              Torah For The Table Original
-            </p>
-            <h2 id="original-text-heading" className="mt-2 font-serif text-xl font-bold text-primary">
-              Read the Torah online
-            </h2>
-            <div className="mt-3 whitespace-pre-line font-serif text-base leading-7 text-foreground">
-              {originalHtml.text}
-            </div>
-          </section>
-        )}
-
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <DownloadToPrintButton
             href={`/view/${pdf.id}/pdf`}
@@ -420,7 +344,7 @@ function ViewPdf() {
             publisher={publication?.publisher ?? pdf.publisher}
             publicationSeries={publication?.name ?? pdf.publication}
             labelYear={pdf.jewish_year}
-            className="min-w-[180px] px-5 py-2.5"
+            className="max-w-lg"
           />
           <SharePublicationButton
             pdfId={pdf.id}
@@ -487,6 +411,81 @@ function ViewPdf() {
           )}
         </div>
 
+        {pdf.description && (
+          <section className="mt-5 rounded-xl border border-accent/30 bg-accent/5 p-4 sm:p-5">
+            <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable">
+              What you'll find
+            </p>
+            <p className="mt-2 font-serif text-base leading-relaxed text-primary/85">
+              {leadWithPublicationTitle(pdf.title, pdf.description)}
+            </p>
+          </section>
+        )}
+
+        {showSummary && (
+          <section aria-labelledby="pdf-summary-heading" className="mt-5 rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
+            <h2
+              id="pdf-summary-heading"
+              className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable"
+            >
+              Summary
+            </h2>
+            <p className="mt-2 font-serif text-base leading-relaxed text-primary/85 whitespace-pre-line">
+              {leadWithPublicationTitle(pdf.title, chosenSummary)}
+            </p>
+          </section>
+        )}
+
+        {originalHtml?.text && (
+          <section aria-labelledby="original-text-heading" className="mt-5 rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
+            <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable">
+              Torah For The Table Original
+            </p>
+            <h2 id="original-text-heading" className="mt-2 font-serif text-xl font-bold text-primary">
+              Read the Torah online
+            </h2>
+            <div className="mt-3 whitespace-pre-line font-serif text-base leading-7 text-foreground">
+              {originalHtml.text}
+            </div>
+          </section>
+        )}
+
+        <Link
+          to="/"
+          hash="this-weeks-collection"
+          onClick={trackExploreCollection}
+          className="group mt-5 flex min-h-16 w-full items-center justify-between gap-3 rounded-xl border border-accent/70 bg-primary px-4 py-3 text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:px-5"
+        >
+          <span className="flex min-w-0 flex-col gap-1">
+            <span className="text-base font-semibold leading-snug sm:text-lg">
+              {backLink.kind === "current" ? "Explore All This Week’s Divrei Torah" : "Explore This Week’s Latest Divrei Torah"}
+            </span>
+            <span className="text-xs leading-snug text-primary-foreground/85 sm:text-sm">
+              {backLink.kind === "current" ? "Discover more Torah for your Shabbos table" : "Visit the current weekly collection"}
+            </span>
+          </span>
+          <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+        </Link>
+
+        {relatedParsha.length === 0 && pdf.parsha_key && !isYomTovReading(pdf.parsha_key) && (
+          <section className="mt-5 rounded-xl border border-accent/30 bg-background p-4 sm:p-5">
+            <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable">
+              More on this parsha
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Browse more Divrei Torah, short vorts, stories and printable material for{" "}
+              <Link
+                to="/parsha/$slug"
+                params={{ slug: readingSlug(pdf.parsha_key) }}
+                className="font-semibold text-primary underline decoration-accent/60 underline-offset-4 hover:text-accent"
+              >
+                {formatReadingLabel(pdf.parsha_key)}
+              </Link>
+              .
+            </p>
+          </section>
+        )}
+
         {relatedParsha.length > 0 && (
           <section className="mt-9 border-t border-accent/25 pt-7">
             <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable">
@@ -539,10 +538,7 @@ function ViewPdf() {
           <section className="mt-9 border-t border-accent/25 pt-7">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-accent-readable">
-                  More from this publication
-                </p>
-                <h2 className="mt-1 font-serif text-2xl font-bold text-primary">{publication.name}</h2>
+                <h2 className="font-serif text-xl font-bold text-primary">More from this publication</h2>
               </div>
               <Link
                 to="/publication/$slug"

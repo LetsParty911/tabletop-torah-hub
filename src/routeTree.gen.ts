@@ -62,9 +62,9 @@ import { Route as ApiVpnDiagnosticRouteImport } from './routes/api/vpn-diagnosti
 import { Route as HiddenGemsSlugRouteImport } from './routes/hidden-gems_.$slug'
 import { Route as ManageTableTokenRouteImport } from './routes/manage-table.$token'
 import { Route as OgImageDotpngRouteImport } from './routes/og.image[.]png'
+import { Route as ParshaIndexRouteImport } from './routes/parsha.index'
 import { Route as ParshaSlugRouteImport } from './routes/parsha.$slug'
 import { Route as PublicationSlugRouteImport } from './routes/publication.$slug'
-import { Route as ParshaIndexRouteImport } from './routes/parsha.index'
 import { Route as UnsubscribeIndexRouteImport } from './routes/unsubscribe.index'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as ViewIdRouteImport } from './routes/view.$id'
@@ -343,6 +343,11 @@ const OgImageDotpngRoute = OgImageDotpngRouteImport.update({
   path: '/og/image.png',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ParshaIndexRoute = ParshaIndexRouteImport.update({
+  id: '/parsha/',
+  path: '/parsha/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ParshaSlugRoute = ParshaSlugRouteImport.update({
   id: '/parsha/$slug',
   path: '/parsha/$slug',
@@ -351,11 +356,6 @@ const ParshaSlugRoute = ParshaSlugRouteImport.update({
 const PublicationSlugRoute = PublicationSlugRouteImport.update({
   id: '/publication/$slug',
   path: '/publication/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ParshaIndexRoute = ParshaIndexRouteImport.update({
-  id: '/parsha/',
-  path: '/parsha/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UnsubscribeIndexRoute = UnsubscribeIndexRouteImport.update({
@@ -1261,6 +1261,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OgImageDotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/parsha/': {
+      id: '/parsha/'
+      path: '/parsha'
+      fullPath: '/parsha/'
+      preLoaderRoute: typeof ParshaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/parsha/$slug': {
       id: '/parsha/$slug'
       path: '/parsha/$slug'
@@ -1273,13 +1280,6 @@ declare module '@tanstack/react-router' {
       path: '/publication/$slug'
       fullPath: '/publication/$slug'
       preLoaderRoute: typeof PublicationSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/parsha/': {
-      id: '/parsha/'
-      path: '/parsha'
-      fullPath: '/parsha/'
-      preLoaderRoute: typeof ParshaIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/unsubscribe/': {
