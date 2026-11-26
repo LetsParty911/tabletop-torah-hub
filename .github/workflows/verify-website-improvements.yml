@@ -133,6 +133,6 @@ jobs:
       - name: Verify reader returns and homepage originals visibility
         run: bunx vitest run --config vitest.ux.config.ts src/lib/reader-back-link.test.ts src/lib/homepage-original-covers.test.ts
       - name: Verify homepage audience bundles and PDF merging
-        run: bunx vitest run --config vitest.ux.config.ts src/lib/original-bundles.test.ts src/lib/original-bundle-pdf.test.ts
+        run: bunx vitest run --config vitest.ux.config.ts src/lib/original-bundles.test.ts src/lib/original-bundle-pdf.test.ts src/components/OriginalBundleChooser.test.tsx src/routes/api/-events.bundle.test.ts src/lib/pdf-route-diagnostics.test.ts
       - name: Build application
         run: bun run build

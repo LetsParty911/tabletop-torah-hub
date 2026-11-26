@@ -47,6 +47,7 @@ const ALLOWED_EVENTS = new Set([
   "recommendation_view",
   "recommendation_click",
   "bundle_download",
+  "bundle_diagnostic",
   "my_table_add",
   "my_table_remove",
   "my_table_open",

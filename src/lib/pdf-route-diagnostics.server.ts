@@ -23,7 +23,7 @@ export type PdfRouteStatus = 302 | 404 | 500;
 
 export interface PdfOutcomeRow {
   event_id: string;
-  event_name: "pdf_route_result";
+  event_name: "pdf_route_result" | "download_route_failed";
   occurred_at: string;
   visitor_id: string;
   session_id: string;
@@ -72,16 +72,17 @@ export function buildOutcomeRow(
   status: PdfRouteStatus,
   internal: boolean,
   now: Date,
+  route: "pdf" | "download" = "pdf",
 ): PdfOutcomeRow {
   return {
-    event_id: "pdf-outcome-" + c.action,
-    event_name: "pdf_route_result",
+    event_id: (route === "download" ? "download-failed-" : "pdf-outcome-") + c.action,
+    event_name: route === "download" ? "download_route_failed" : "pdf_route_result",
     occurred_at: now.toISOString(),
     visitor_id: c.vid,
     session_id: c.sid,
     is_new_visitor: null,
     is_internal: internal,
-    path: "/view/" + publicationId + "/pdf",
+    path: "/view/" + publicationId + "/" + route,
     publication_id: publicationId,
     metadata: {
       action_id: c.action,
@@ -97,6 +98,7 @@ export async function writePdfOutcome(
   publicationId: string,
   status: PdfRouteStatus,
   deps: PdfOutcomeDeps,
+  route: "pdf" | "download" = "pdf",
 ): Promise<boolean> {
   try {
     const c = readCorrelation(request);
@@ -104,7 +106,8 @@ export async function writePdfOutcome(
     if (deps.isAutomated(request.headers.get("user-agent") ?? "")) return false;
     const internal = await deps.isInternal(request).catch(() => false);
     if (internal) return false;
-    await deps.write(buildOutcomeRow(c, publicationId, status, false, deps.now()));
+    if (route === "download" && status === 302) return false; // Success uses download_served.
+    await deps.write(buildOutcomeRow(c, publicationId, status, false, deps.now(), route));
     return true;
   } catch (e) {
     console.error("[pdf-route-diagnostics] write failed", e instanceof Error ? e.message : "unknown");
@@ -184,11 +187,17 @@ export async function recordPdfRouteOutcome(
   status: PdfRouteStatus,
   depsOverride?: PdfOutcomeDeps,
   waitUntilOverride?: WaitUntilFn | null,
+  route: "pdf" | "download" = "pdf",
 ): Promise<void> {
   try {
     if (!readCorrelation(request)) return;
-    const task = (async () => writePdfOutcome(request, publicationId, status, depsOverride ?? (await defaultDeps())))();
+    const task = (async () => writePdfOutcome(request, publicationId, status, depsOverride ?? (await defaultDeps()), route))();
     const wu = waitUntilOverride !== undefined ? waitUntilOverride : await resolveWaitUntil(request);
     await runInBackground(task, wu);
   } catch { /* never interfere with file delivery */ }
+}
+
+/** Only failures on the individual Download PDF route use this diagnostic. */
+export function recordDownloadRouteFailure(request: Request, publicationId: string, status: 404 | 500): Promise<void> {
+  return recordPdfRouteOutcome(request, publicationId, status, undefined, undefined, "download");
 }

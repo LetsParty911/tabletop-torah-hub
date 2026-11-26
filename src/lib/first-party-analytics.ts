@@ -39,6 +39,7 @@ export type FpEventName =
   | "recommendation_view"
   | "recommendation_click"
   | "bundle_download"
+  | "bundle_diagnostic"
   | "my_table_add"
   | "my_table_remove"
   | "my_table_open"
@@ -506,6 +507,7 @@ const IMMEDIATE: ReadonlySet<string> = new Set<string>([
   "session_start",
   "download",
   "bundle_download",
+  "bundle_diagnostic",
   "print_click",
   "pdf_open",
   "signup",

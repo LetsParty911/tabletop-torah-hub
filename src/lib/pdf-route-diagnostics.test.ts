@@ -55,6 +55,17 @@ describe("writePdfOutcome", () => {
     await writePdfOutcome(good(), PUB, 500, d);
     expect(write.mock.calls.map((c) => c[0].metadata.outcome)).toEqual(["route_failed", "route_failed"]);
   });
+  it("separately records individual download route failures without a success event", async () => {
+    const { write, d } = deps();
+    expect(await writePdfOutcome(good(), PUB, 404, d, "download")).toBe(true);
+    expect(write).toHaveBeenLastCalledWith(expect.objectContaining({
+      event_id: `download-failed-${ACTION}`, event_name: "download_route_failed",
+      path: `/view/${PUB}/download`,
+      metadata: { action_id: ACTION, http_status: 404, outcome: "route_failed" },
+    }));
+    expect(await writePdfOutcome(good(), PUB, 302, d, "download")).toBe(false);
+    expect(write).toHaveBeenCalledOnce();
+  });
   it("forged identifiers never write", async () => {
     const { write, d } = deps();
     expect(await writePdfOutcome(req({ a: ACTION, s: SID, v: VID }, "tftt_vid=someone-else-123"), PUB, 302, d)).toBe(false);
