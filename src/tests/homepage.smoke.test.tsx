@@ -287,7 +287,12 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(filters.className).not.toContain("sticky");
     expect(document.querySelectorAll("#filters")).toHaveLength(1);
     expect(document.querySelectorAll("#weekly-filter-options")).toHaveLength(1);
-    expect(screen.getByText("Divrei Torah in Hebrew — Coming Soon").compareDocumentPosition(document.getElementById("this-weeks-collection")!) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    const signup = screen.getByRole("form", { name: "Weekly Torah signup — homepage" });
+    const collection = document.getElementById("this-weeks-collection")!;
+    const bundles = document.getElementById("our-originals")!;
+    expect(bundles.compareDocumentPosition(signup) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(signup.compareDocumentPosition(collection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText("Divrei Torah in Hebrew — In Development").compareDocumentPosition(collection) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
     expect(screen.queryByRole("link", { name: /Browse all available Divrei Torah/i })).toBeNull();
   });
 

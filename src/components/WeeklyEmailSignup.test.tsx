@@ -22,14 +22,15 @@ describe("homepage weekly email signup", () => {
     expect(html).toContain("You can unsubscribe at any time.");
   });
 
-  it("renders exactly one homepage signup after the PDF collection", () => {
+  it("renders exactly one homepage signup between the bundle chooser and PDF collection", () => {
     const homepage = readFileSync("src/routes/index.tsx", "utf8");
     const countdown = readFileSync("src/components/UpdateCountdown.tsx", "utf8");
     expect((homepage.match(/<WeeklyEmailSignup\b/g) ?? []).length).toBe(1);
     expect(homepage).not.toContain('sourceId="homepage-top"');
     expect(homepage).toContain('sourceId="homepage"');
-    expect(homepage).toContain('heading="Receive the Weekly Shabbos Collection"');
-    expect(homepage.indexOf("<WeeklyEmailSignup")).toBeGreaterThan(homepage.indexOf("filteredResources.map"));
+    expect(homepage).toContain('heading="Bring Torah to Your Shabbos Table Every Week"');
+    expect(homepage.indexOf("<WeeklyEmailSignup")).toBeGreaterThan(homepage.indexOf("<OriginalBundleChooser"));
+    expect(homepage.indexOf("<WeeklyEmailSignup")).toBeLessThan(homepage.indexOf('id="this-weeks-collection"'));
     expect(homepage).toContain("Browse This Week's Printables");
     expect(homepage).toContain('selections"} available');
     expect(homepage).toContain("<DownloadAndPrintButtons");
