@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentOriginalBundles, originalBundleFilename, type OriginalBundleResource } from "@/lib/original-bundles";
+import { currentOriginalBundles, originalBundleFilename, originalBundlePageCount, originalBundlePrepareLabel, type OriginalBundleResource } from "@/lib/original-bundles";
 import { ORIGINAL_PROMOTION_SERIES } from "@/lib/originals-promotion";
 
 const currentResources = ORIGINAL_PROMOTION_SERIES.map((series, index) => ({
@@ -52,6 +52,16 @@ describe("currentOriginalBundles", () => {
     const result = bundle([impostor, canonical], "Vayetzei");
     expect(result[0]?.items[0]?.resource?.id).toBe(canonical.id);
     expect(result[0]?.availableCount).toBe(1);
+  });
+
+  it("uses only complete and valid page-count metadata and computes the action label from the publication count", () => {
+    const counted = currentResources.map(resource => ({ ...resource, page_count: 2 }));
+    expect(bundle(counted).map(originalBundlePageCount)).toEqual([4, 4, 6]);
+    expect(originalBundlePageCount(bundle(currentResources)[0]!)).toBeNull();
+    expect(originalBundlePageCount(bundle(counted.slice(1))[0]!)).toBeNull();
+    expect(originalBundlePrepareLabel(2)).toBe("Combine Both Publications into One PDF");
+    expect(originalBundlePrepareLabel(3)).toBe("Combine All Three Publications into One PDF");
+    expect(originalBundlePrepareLabel(4)).toBe("Combine 4 Publications into One PDF");
   });
 
   it("creates a clean descriptive PDF filename", () => {
