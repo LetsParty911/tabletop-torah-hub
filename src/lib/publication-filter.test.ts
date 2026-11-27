@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { KLEIN_PUBLICATION_FILTER, publicationFilterName } from "./publication-filter";
+import { KLEIN_PUBLICATION_FILTER, publicationFilterName, weeklyPublicationFilterName } from "./publication-filter";
 
 describe("publication/source filter grouping", () => {
   it("groups both canonical Klein weekly upload slots under one reader-facing label", () => {
@@ -55,5 +55,21 @@ describe("canonical weekly publication facets", () => {
   it("keeps the two Klein uploads in one facet despite canonical slot names", () => {
     expect(publicationFilterName({ publication_id: "4d5f000c-6e90-4d58-aa9f-fd73fc005115", publication_name: "R' Yehuda Zev Klein — Dvar Torah 1" })).toBe(KLEIN_PUBLICATION_FILTER);
     expect(publicationFilterName({ publication_id: "c3fa24ef-b7a8-42d1-a237-480bc24cba57", publication_name: "R' Yehuda Zev Klein — Dvar Torah 2" })).toBe(KLEIN_PUBLICATION_FILTER);
+  });
+});
+
+
+describe("weekly publication choices", () => {
+  it("offers each Klein article independently on the homepage while preserving the archive author facet", () => {
+    const first = { publication_id: "4d5f000c-6e90-4d58-aa9f-fd73fc005115", title: "Against All Odds - R' Yehuda Zev Klein" };
+    const second = { publication_id: "c3fa24ef-b7a8-42d1-a237-480bc24cba57", title: "The True Meaning of Chesed - R' Yehuda Zev Klein" };
+    expect(weeklyPublicationFilterName(first)).toBe(first.title);
+    expect(weeklyPublicationFilterName(second)).toBe(second.title);
+    expect(publicationFilterName(first)).toBe(publicationFilterName(second));
+  });
+  it("uses the visible article title for numbered poetry slots and leaves other series alone", () => {
+    expect(weeklyPublicationFilterName({ publication_name: "Parsha in Poetry 1", title: "Parsha Poetry - Nissi Merenstein" })).toBe("Parsha Poetry - Nissi Merenstein");
+    expect(weeklyPublicationFilterName({ publication_name: "Parsha in Poetry 2", title: "Torah is the Satan's true enemy - Nissi Merenstein" })).toBe("Torah is the Satan's true enemy - Nissi Merenstein");
+    expect(weeklyPublicationFilterName({ publication_name: "Toras Avigdor", title: "A weekly essay" })).toBe("Toras Avigdor");
   });
 });
