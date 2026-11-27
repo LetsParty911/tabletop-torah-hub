@@ -30,7 +30,8 @@ describe("homepage weekly email signup", () => {
     expect(homepage).toContain('sourceId="homepage"');
     expect(homepage).toContain('heading="Receive the Weekly Shabbos Collection"');
     expect(homepage.indexOf("<WeeklyEmailSignup")).toBeGreaterThan(homepage.indexOf("filteredResources.map"));
-    expect(homepage).toContain("Available Selections`");
+    expect(homepage).toContain("Browse This Week's Printables");
+    expect(homepage).toContain('selections"} available');
     expect(homepage).toContain("<DownloadAndPrintButtons");
     expect(countdown).not.toContain("#weekly-email-signup-top");
     expect((countdown.match(/href="#weekly-email-signup"/g) ?? []).length).toBe(2);

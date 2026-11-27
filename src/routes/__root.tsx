@@ -401,7 +401,7 @@ function SiteNav() {
               This Week
             </Link>
             <DropdownMenu>
-              <DropdownMenuTrigger className={`${linkCls} inline-flex items-center gap-1`}>Browse <ChevronDown className="h-4 w-4" aria-hidden="true" /></DropdownMenuTrigger>
+              <DropdownMenuTrigger className={`${linkCls} inline-flex items-center gap-1`}>Explore <ChevronDown className="h-4 w-4" aria-hidden="true" /></DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 <DropdownMenuItem asChild><Link to="/divrei-torah-parsha">Browse by Parsha</Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link to="/divrei-torah-parsha" hash="yom-tov">Browse by Yom Tov</Link></DropdownMenuItem>

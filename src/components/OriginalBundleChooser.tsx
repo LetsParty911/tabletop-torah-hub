@@ -4,7 +4,7 @@ import { ChevronDown, Download, LoaderCircle } from "lucide-react";
 import { OriginalSeriesCover } from "@/components/OriginalSeriesCover";
 import { newActionId, trackFp } from "@/lib/first-party-analytics";
 import { BundlePdfError, type BundleFailureCode } from "@/lib/bundle-diagnostics";
-import { originalBundleFilename, type OriginalBundle } from "@/lib/original-bundles";
+import { originalBundleFilename, originalBundlePageCount, originalBundlePrepareLabel, type OriginalBundle } from "@/lib/original-bundles";
 
 type Preparation = {
   status: "idle" | "preparing" | "ready" | "error";
@@ -37,6 +37,12 @@ function trackBundleDiagnostic(
     },
   });
 }
+
+const BUNDLE_TITLE_CLASSES: Record<OriginalBundle["key"], string> = {
+  children: "bg-[#e9c34f] text-[#292416]",
+  family: "bg-[#397b50] text-white",
+  deeper: "bg-[#a94343] text-white",
+};
 
 const ACTION_CLASS = "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-3 py-2.5 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-55";
 
@@ -117,12 +123,19 @@ export function OriginalBundleChooser({
       <ul aria-label="Original publication bundles" className="mt-4 grid gap-3 text-left md:grid-cols-[2fr_2fr_3fr]">
         {bundles.map((bundle) => {
           const preparation = preparations[bundle.key] ?? { status: "idle" } as Preparation;
-          const availability = `${bundle.availableCount} of ${bundle.items.length} PDFs available for ${collectionLabel}`;
+          const pageCount = preparation.pageCount ?? originalBundlePageCount(bundle);
+          const availability = bundle.isComplete
+            ? `${bundle.items.length} publications${pageCount == null ? "" : ` · ${pageCount} ${pageCount === 1 ? "page" : "pages"}`}`
+            : `${bundle.availableCount} of ${bundle.items.length} PDFs available for ${collectionLabel}`;
+          const prepareLabel = originalBundlePrepareLabel(bundle.items.length);
+          const buttonLabel = !bundle.isComplete ? "Combined PDF unavailable yet"
+            : preparation.status === "preparing" ? "Preparing Combined PDF…"
+            : preparation.status === "error" ? "Try Preparing Again" : prepareLabel;
           return (
             <li key={bundle.key} className="flex min-w-0 flex-col rounded-xl border border-accent/40 bg-card/75 p-3 shadow-sm">
               <div className="-mx-3 -mt-3 overflow-hidden rounded-t-xl text-center">
-                <h3 className="border-b-2 border-gold-decorative bg-primary px-2.5 py-2.5 font-serif text-[clamp(1.375rem,6.5vw,1.875rem)] font-bold leading-tight text-primary-foreground text-balance md:flex md:min-h-16 md:items-center md:justify-center md:text-xl lg:text-2xl">{bundle.title}</h3>
-                <p className="px-3 pt-2.5 text-xs leading-relaxed text-muted-foreground md:min-h-11">{bundle.description}</p>
+                <h3 className={`border-b-2 border-gold-decorative px-3 py-3 font-serif text-2xl font-bold leading-tight text-balance md:flex md:min-h-20 md:items-center md:justify-center md:text-xl lg:text-2xl ${BUNDLE_TITLE_CLASSES[bundle.key]}`}>{bundle.title}</h3>
+                <p className="px-3 pb-1 pt-3 text-sm leading-relaxed text-foreground md:min-h-24 lg:min-h-20">{bundle.description}</p>
               </div>
               <ul aria-label={`${bundle.title} publications`} className="mt-3 flex flex-wrap items-start justify-center gap-2">
                 {bundle.items.map(({ series, resource }) => (
@@ -135,7 +148,7 @@ export function OriginalBundleChooser({
                         className="block rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                       >
                         <OriginalSeriesCover series={series} />
-                        <span className="mt-1 block break-words text-center font-serif text-[11px] font-semibold leading-tight text-primary">{series.title}</span>
+                        <span className="mt-2 block break-words text-center font-serif text-sm font-semibold leading-snug text-primary">{series.title}</span>
                       </Link>
                     ) : (
                       <Link
@@ -145,14 +158,14 @@ export function OriginalBundleChooser({
                         className="block rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                       >
                         <OriginalSeriesCover series={series} />
-                        <span className="mt-1 block break-words text-center font-serif text-[11px] font-semibold leading-tight text-primary">{series.title}</span>
+                        <span className="mt-2 block break-words text-center font-serif text-sm font-semibold leading-snug text-primary">{series.title}</span>
                       </Link>
                     )}
                   </li>
                 ))}
               </ul>
               <div className="mt-auto pt-3">
-                <p className="mb-2 text-center text-xs font-medium text-muted-foreground" aria-live="polite">
+                <p className="mb-2 text-center text-sm font-medium text-muted-foreground" aria-live="polite">
                   {preparation.status === "preparing" ? preparation.progress : availability}
                 </p>
                 {preparation.status === "ready" && preparation.url ? (
@@ -244,10 +257,10 @@ export function OriginalBundleChooser({
                     disabled={!bundle.isComplete || preparation.status === "preparing"}
                     onClick={() => void prepare(bundle)}
                     className={ACTION_CLASS}
-                    aria-label={bundle.isComplete && preparation.status === "idle" ? `Get Bundle PDF: ${bundle.title} for ${collectionLabel}` : `${preparation.status === "error" ? "Retry" : "Prepare"} combined ${bundle.title} for ${collectionLabel}`}
+                    aria-label={`${buttonLabel}: ${bundle.title} for ${collectionLabel}`}
                   >
                     {preparation.status === "preparing" && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />}
-                    {!bundle.isComplete ? "Combined PDF unavailable yet" : preparation.status === "preparing" ? "Preparing Combined PDF…" : preparation.status === "error" ? "Try Preparing Again" : "Get Bundle PDF"}
+                    {buttonLabel}
                   </button>
                 )}
                 {preparation.status === "error" && (
@@ -260,6 +273,7 @@ export function OriginalBundleChooser({
           );
         })}
       </ul>
+      <p className="mx-auto mt-3 text-center text-sm text-muted-foreground">One convenient PDF, ready to print for Shabbos. No account needed.</p>
 
       <div className="mx-auto mt-4 max-w-3xl border-t border-accent/30 pt-3">
         <button

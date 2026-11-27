@@ -9,8 +9,16 @@ vi.mock('@/lib/original-bundle-pdf', () => ({ mergeOriginalBundlePdf: merge }));
 vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }));
 vi.mock('@/components/OriginalSeriesCover', () => ({ OriginalSeriesCover: () => null }));
 afterEach(() => { cleanup(); vi.clearAllMocks(); delete window.__lovableEvents; });
-const resources = ORIGINAL_PROMOTION_SERIES.map((series, i) => ({ id: `edition-${i}`, title: series.title, publication_id: series.publicationId, parsha_key: 'Vayishlach', jewish_year: 5787, url: 'https://example.test/source.pdf' }));
+const resources = ORIGINAL_PROMOTION_SERIES.map((series, i) => ({ id: `edition-${i}`, title: series.title, publication_id: series.publicationId, parsha_key: 'Vayishlach', jewish_year: 5787, page_count: i + 1, url: 'https://example.test/source.pdf' }));
 describe('bundle action tracking', () => {
+  it('shows audience descriptions, dynamic page totals and unambiguous preparation buttons', () => {
+    const bundles = currentOriginalBundles(resources, 'Vayishlach', false);
+    render(<OriginalBundleChooser bundles={bundles} collectionLabel="Parshas Vayishlach" parshaKey="Vayishlach" />);
+    expect(screen.getByRole('heading', { name: "Children's Bundle" })).toBeTruthy();
+    expect(screen.getByText(bundles[0]!.description)).toBeTruthy();
+    expect(screen.getByText('2 publications · 3 pages')).toBeTruthy();
+    expect(screen.getByRole('button', { name: "Combine All Three Publications into One PDF: Deeper Learning Bundle for Parshas Vayishlach" })).toBeTruthy();
+  });
   it('emits exactly one canonical action per ready download click with independent identity and edition', async () => {
     Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: vi.fn(() => 'blob:ready') });
     Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() });
@@ -18,7 +26,7 @@ describe('bundle action tracking', () => {
     const builtin = vi.fn(); window.__lovableEvents = { track: builtin };
     render(<OriginalBundleChooser bundles={currentOriginalBundles(resources, 'Vayishlach', false)} collectionLabel="Parshas Vayishlach" parshaKey="Vayishlach" />);
     for (const [key, name, count] of [['children', "Children's Bundle", 2], ['family', 'Family Bundle', 2], ['deeper', 'Deeper Learning Bundle', 3]] as const) {
-      fireEvent.click(screen.getByRole('button', { name: `Get Bundle PDF: ${name} for Parshas Vayishlach` }));
+      fireEvent.click(screen.getByRole('button', { name: `${count === 2 ? 'Combine Both Publications into One PDF' : 'Combine All Three Publications into One PDF'}: ${name} for Parshas Vayishlach` }));
       const link = await screen.findByRole('link', { name: `Download combined ${name} for Parshas Vayishlach` });
       const before = track.mock.calls.length;
       fireEvent.click(link);
@@ -33,7 +41,7 @@ describe('bundle action tracking', () => {
   it('records failed preparation separately and does not count incomplete bundles as attempts', async () => {
     merge.mockRejectedValue(new Error('Unavailable'));
     render(<OriginalBundleChooser bundles={currentOriginalBundles(resources, 'Vayishlach', false)} collectionLabel="Parshas Vayishlach" parshaKey="Vayishlach" />);
-    fireEvent.click(screen.getByRole('button', { name: "Get Bundle PDF: Children's Bundle for Parshas Vayishlach" }));
+    fireEvent.click(screen.getByRole('button', { name: "Combine Both Publications into One PDF: Children's Bundle for Parshas Vayishlach" }));
     await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
     expect(track.mock.calls.map(call => call[0])).toEqual(['bundle_diagnostic', 'bundle_diagnostic']);
     expect(track).toHaveBeenLastCalledWith('bundle_diagnostic', expect.objectContaining({
@@ -42,7 +50,7 @@ describe('bundle action tracking', () => {
     cleanup();
     track.mockClear();
     render(<OriginalBundleChooser bundles={currentOriginalBundles([], 'Vayishlach', false)} collectionLabel="Parshas Vayishlach" parshaKey="Vayishlach" />);
-    const button = screen.getByRole('button', { name: "Prepare combined Children's Bundle for Parshas Vayishlach" });
+    const button = screen.getByRole('button', { name: "Combined PDF unavailable yet: Children's Bundle for Parshas Vayishlach" });
     expect((button as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(button); expect(track).not.toHaveBeenCalled();
   });
@@ -51,7 +59,7 @@ describe('bundle action tracking', () => {
     Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() });
     merge.mockResolvedValue({ blob: new Blob(['pdf']), pageCount: 5 });
     render(<OriginalBundleChooser bundles={currentOriginalBundles(resources, 'Vayishlach', false)} collectionLabel="Parshas Vayishlach" parshaKey="Vayishlach" />);
-    fireEvent.click(screen.getByRole('button', { name: "Get Bundle PDF: Children's Bundle for Parshas Vayishlach" }));
+    fireEvent.click(screen.getByRole('button', { name: "Combine Both Publications into One PDF: Children's Bundle for Parshas Vayishlach" }));
     fireEvent.click(await screen.findByRole('link', { name: "Download combined Children's Bundle for Parshas Vayishlach" }));
     const attempt = track.mock.calls.find(call => call[0] === 'bundle_download')![1].metadata;
     expect(attempt.action_id).toEqual(expect.any(String));
