@@ -590,8 +590,14 @@ function ArchivePage() {
           )}
         </div>
 
-        <div aria-busy={isUpdating} className={`transition-opacity duration-150 ${isUpdating ? "opacity-50" : ""}`}>
-        {archiveTotal === 0 ? (
+        <div aria-busy={isUpdating}>
+        {isUpdating ? (
+          <div aria-hidden="true" className="min-h-48 space-y-4 rounded-xl border border-accent/30 bg-card/50 p-4 sm:p-6">
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={i} className="h-16 animate-pulse rounded-lg bg-muted motion-reduce:animate-none" />
+            ))}
+          </div>
+        ) : archiveTotal === 0 ? (
           <section className="parchment-frame">
             <div className="parchment-panel text-center">
               <p className="font-serif text-xl sm:text-2xl text-primary">
@@ -745,6 +751,7 @@ function ArchivePage() {
             {safePage > 1 && (
               <button
                 type="button"
+                disabled={isUpdating}
                 onClick={() => setSearch({ page: safePage - 1 })}
                 className="inline-flex min-h-11 items-center rounded-full border border-accent/45 bg-background px-4 py-2 text-sm font-semibold text-primary hover:bg-accent/10"
               >
@@ -752,12 +759,13 @@ function ArchivePage() {
               </button>
             )}
             <span className="text-sm text-muted-foreground">
-              {`Page ${safePage} of ${totalPages} · ${totalPdfs} results`}
+              {isUpdating ? `Loading page ${page}…` : `Page ${safePage} of ${totalPages} · ${totalPdfs} results`}
             </span>
-            <label className="flex items-center gap-2 text-sm text-primary">Go to page<select aria-label="Go to archive page" value={safePage} onChange={(event) => setSearch({ page: Number(event.target.value) })} className={`min-h-11 rounded-md border px-2 ${PUBLIC_FILTER_FIELD_TONE}`}>{Array.from({ length: totalPages }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}</select></label>
+            <label className="flex items-center gap-2 text-sm text-primary">Go to page<select aria-label="Go to archive page" disabled={isUpdating} value={safePage} onChange={(event) => setSearch({ page: Number(event.target.value) })} className={`min-h-11 rounded-md border px-2 ${PUBLIC_FILTER_FIELD_TONE}`}>{Array.from({ length: totalPages }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}</select></label>
             {safePage < totalPages && (
               <button
                 type="button"
+                disabled={isUpdating}
                 onClick={() => setSearch({ page: safePage + 1 })}
                 className="inline-flex min-h-11 items-center rounded-full border border-accent/45 bg-background px-4 py-2 text-sm font-semibold text-primary hover:bg-accent/10"
               >
