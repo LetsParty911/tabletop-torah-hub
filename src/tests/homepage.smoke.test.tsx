@@ -273,8 +273,10 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     const secondRow = quick.getByRole("button", { name: "Deeper Learning" }).parentElement!;
     expect(firstRow.className).toContain("grid-cols-3");
     expect(secondRow.className).toContain("grid-cols-2");
-    expect(within(firstRow).getAllByRole("button").map((button) => button.textContent)).toEqual(["All", "Children", "Families"]);
-    expect(within(secondRow).getAllByRole("button").map((button) => button.textContent)).toEqual(["Deeper Learning", "Brief Insights"]);
+    expect(within(firstRow).getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual(["All", "Children", "Families"]);
+    expect(quick.getByRole("button", { name: "All" }).textContent).toContain("(6)");
+    expect(quick.getByRole("button", { name: "Brief Insights" }).textContent).toContain("(1)");
+    expect(within(secondRow).getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual(["Deeper Learning", "Brief Insights"]);
     fireEvent.click(quick.getByRole("button", { name: "Children" }));
     expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(2);
     fireEvent.click(quick.getByRole("button", { name: "Brief Insights" }));
@@ -294,7 +296,8 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     state.loader.resources = [1, 2, 3, 4, 5, 6].map((n) => ({ ...example(n, "Lech-Lecha"), audience: "Children" }));
     render(<Homepage />);
     const quick = within(screen.getByRole("group", { name: "Quick filters" }));
-    expect(quick.getAllByRole("button").map((button) => button.textContent)).toEqual(["All", "Children"]);
+    expect(quick.getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual(["All", "Children"]);
+    expect(quick.getByRole("button", { name: "Children" }).textContent).toContain("(6)");
     expect(quick.getByRole("button", { name: "All" }).parentElement!.className).toContain("grid-cols-2");
   });
 

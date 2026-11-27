@@ -75,6 +75,8 @@ async def main():
         await page.wait_for_timeout(300)
         check(await status.count() == 1 and await selects.nth(1).input_value() == "Noach",
               "chosen parsha stays selected while results update")
+        check(await page.locator("#archive-results h4").count() == 0,
+              "stale publication cards are not displayed during a pending archive request")
         await page.wait_for_timeout(SLOW_MS + 2000)
         await step("clear parsha", lambda: page.get_by_role("button", name="Clear filters").click(),
                    lambda s: s["url"] == "/archive")

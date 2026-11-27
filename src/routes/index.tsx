@@ -28,7 +28,7 @@ import { OriginalBundleChooser } from "@/components/OriginalBundleChooser";
 import { currentOriginalBundles } from "@/lib/original-bundles";
 import { weeklyCardBadges } from "@/lib/weekly-card-badges";
 import { publicationLabel } from "@/lib/badges";
-import { publicationFilterName } from "@/lib/publication-filter";
+import { weeklyPublicationFilterName } from "@/lib/publication-filter";
 import { Button } from "@/components/ui/button";
 import { SmallPdfImage } from "@/components/SmallPdfImage";
 import { LENGTH_OPTIONS, matchesPageLength, type LengthFilter } from "@/lib/length-filter";
@@ -508,6 +508,35 @@ function Index() {
   usePrewarmDownloads(sortedResources.map((r) => r.id));
 
 
+  const isHaazinuWeek = normalizedCollectionKey === "ha'azinu";
+  const haazinuQaTitle = "Parsha Questions & Answers – Haazinu";
+  const duplicateTitleCounts = resources.reduce((counts, resource) => {
+    counts.set(resource.title, (counts.get(resource.title) ?? 0) + 1);
+    return counts;
+  }, new Map<string, number>());
+  const holidayQualifier = (r: Resource) => {
+    if (!isSukkosSeason || (duplicateTitleCounts.get(r.title) ?? 0) < 2) return null;
+    const key = (r.parsha_key ?? "").toLowerCase();
+    if (key === "sukkos") return "Sukkos";
+    if (key === "shemini atzeres" || key === "simchas torah") return "Shmini Atzeres & Simchas Torah";
+    return r.parsha_key;
+  };
+  const displayTitle = (r: Resource) => {
+    const series = promotionSeriesById(r.publication_id);
+    const base = series?.key === "ramban"
+      ? r.title.replace(/^Parsha Pearls(?:\s+(?:from|on)\s+the\s+Ramban)?\b/i, series.title)
+      : series?.key === "qa"
+        ? r.title.replace(/^Parsha Challenge/i, series.title)
+        : isHaazinuWeek && r.title === "Parsha Questions & Answers" ? haazinuQaTitle : r.title;
+    const qualifier = holidayQualifier(r);
+    return qualifier ? `${base} — ${qualifier}` : base;
+  };
+  const displayPublicationName = (r: Resource) =>
+    promotionSeriesById(r.publication_id)?.title ??
+      (isHaazinuWeek && r.title === "Parsha Questions & Answers"
+        ? haazinuQaTitle
+        : publicationLabel(r.publication || r.title) || r.title);
+
   const matchesAudience = (r: Resource, value = audienceFilter) =>
     value === "All" || normalizeAudience(r.audience, r.title, r.publication_id) === value;
   const matchesLength = (r: Resource, value = lengthFilter) => matchesPageLength(r.page_count, value);
@@ -515,9 +544,10 @@ function Index() {
     displayContentType(r.content_type, r.format_type, formatTypeLabel);
   const matchesContentType = (r: Resource, value = contentTypeFilter) =>
     value === "All" || resourceContentType(r) === value;
+  const weeklyPublicationName = (r: Resource) => weeklyPublicationFilterName({ ...r, title: displayTitle(r) });
   const matchesPublication = (r: Resource, value = publicationFilter) =>
-    value === "All" || publicationFilterName(r) === value;
-  const publicationOptions = Array.from(new Set(sortedResources.map(publicationFilterName).filter((v): v is string => Boolean(v)))).sort((a,b)=>a.localeCompare(b));
+    value === "All" || weeklyPublicationName(r) === value;
+  const publicationOptions = Array.from(new Set(sortedResources.map(weeklyPublicationName).filter((v): v is string => Boolean(v)))).sort((a,b)=>a.localeCompare(b));
 
   const lengthScoped = sortedResources.filter((r) => matchesAudience(r) && matchesContentType(r) && matchesPublication(r));
   const contentTypeScoped = sortedResources.filter((r) => matchesAudience(r) && matchesLength(r) && matchesPublication(r));
@@ -575,35 +605,6 @@ function Index() {
     const pages = `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`;
     return r.page_count >= 20 ? `Long Study · ${pages}` : pages;
   };
-
-  const isHaazinuWeek = normalizedCollectionKey === "ha'azinu";
-  const haazinuQaTitle = "Parsha Questions & Answers – Haazinu";
-  const duplicateTitleCounts = resources.reduce((counts, resource) => {
-    counts.set(resource.title, (counts.get(resource.title) ?? 0) + 1);
-    return counts;
-  }, new Map<string, number>());
-  const holidayQualifier = (r: Resource) => {
-    if (!isSukkosSeason || (duplicateTitleCounts.get(r.title) ?? 0) < 2) return null;
-    const key = (r.parsha_key ?? "").toLowerCase();
-    if (key === "sukkos") return "Sukkos";
-    if (key === "shemini atzeres" || key === "simchas torah") return "Shmini Atzeres & Simchas Torah";
-    return r.parsha_key;
-  };
-  const displayTitle = (r: Resource) => {
-    const series = promotionSeriesById(r.publication_id);
-    const base = series?.key === "ramban"
-      ? r.title.replace(/^Parsha Pearls(?:\s+(?:from|on)\s+the\s+Ramban)?\b/i, series.title)
-      : series?.key === "qa"
-        ? r.title.replace(/^Parsha Challenge/i, series.title)
-        : isHaazinuWeek && r.title === "Parsha Questions & Answers" ? haazinuQaTitle : r.title;
-    const qualifier = holidayQualifier(r);
-    return qualifier ? `${base} — ${qualifier}` : base;
-  };
-  const displayPublicationName = (r: Resource) =>
-    promotionSeriesById(r.publication_id)?.title ??
-      (isHaazinuWeek && r.title === "Parsha Questions & Answers"
-        ? haazinuQaTitle
-        : publicationLabel(r.publication || r.title) || r.title);
 
   const isTfttOriginal = (r: Resource) => Boolean(tfttOriginalSeriesById(r.publication_id));
   // Preserve the recommendation order in guided mode; otherwise partition
@@ -862,8 +863,10 @@ function Index() {
                           {available.map((choice) => {
                             const isBrief = choice === "Brief Insights";
                             const active = choice === "All" ? activeFilterCount === 0 : isBrief ? contentTypeFilter === "Brief Insights" : audienceFilter === choice;
+                            const label = isBrief ? "Brief Insights" : audienceLabel(choice);
+                            const count = choice === "All" ? sortedResources.length : isBrief ? sortedResources.filter((r) => matchesContentType(r, "Brief Insights")).length : sortedResources.filter((r) => matchesAudience(r, choice)).length;
                             return (
-                              <Button variant="ghost" key={choice} type="button" aria-pressed={active} onClick={() => {
+                              <Button variant="ghost" key={choice} type="button" aria-pressed={active} aria-label={label} aria-description={`${count} selections when this quick filter is chosen`} title={`${count} selections`} onClick={() => {
                                 clearFilters();
                                 if (isBrief) {
                                   const next = active ? "All" : "Brief Insights";
@@ -874,7 +877,7 @@ function Index() {
                                   setAudienceFilter(next);
                                   trackFp("filter_change", { metadata: { filter: "audience", value: next } });
                                 }
-                              }} className={`min-h-11 min-w-0 rounded-full border px-2 py-1.5 text-center text-xs font-semibold leading-tight focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${publicFilterTone(active)}`}>{isBrief ? "Brief Insights" : audienceLabel(choice)}</Button>
+                              }} className={`min-h-11 min-w-0 rounded-full border px-2 py-1.5 text-center text-xs font-semibold leading-tight focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${publicFilterTone(active)}`}>{label} <span aria-hidden="true" className="tabular-nums">({count})</span></Button>
                             );
                           })}
                         </div>
@@ -908,6 +911,7 @@ function Index() {
 
 
                   <div id="weekly-filter-options" hidden={!filtersOpen} className={`${filtersOpen ? "block sm:grid" : "hidden"} mt-3 space-y-3 sm:grid-cols-2 lg:grid-cols-3 sm:items-start sm:gap-4 sm:space-y-0`}>
+                    <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-3">Counts show how many selections each option would match with your other filters. Choosing All clears that filter only.</p>
                     {lengthHasChoice && (
                       <div>
                         <span className="block text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By length</span>
@@ -971,7 +975,7 @@ function Index() {
                         <span className="block text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">By content type</span>
                         <div className="mt-1.5 flex flex-wrap justify-start gap-2">
                           {[
-                            { key: "All", label: "All", count: contentTypeScoped.length },
+                            { key: "All", label: "All types", count: contentTypeScoped.length },
                             ...contentTypeOptions.map((t) => ({
                               key: t,
                               label: t,

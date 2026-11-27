@@ -49,3 +49,14 @@ export function publicationFilterName(r: PublicationFilterResource): string | nu
 
   return renameLegacySeriesText(publication) || null;
 }
+
+
+/** This week's list distinguishes separate article choices, while the archive
+ * retains stable series/author facets across editions and years. */
+export function weeklyPublicationFilterName(r: PublicationFilterResource): string | null {
+  const series = publicationFilterName(r);
+  if (series === KLEIN_PUBLICATION_FILTER || /^(?:nissimerenstein)?parshainpoetry[12]$/.test(normalized(series))) {
+    return renameLegacySeriesText(r.title?.trim() || "") || series;
+  }
+  return series;
+}
