@@ -508,6 +508,35 @@ function Index() {
   usePrewarmDownloads(sortedResources.map((r) => r.id));
 
 
+  const isHaazinuWeek = normalizedCollectionKey === "ha'azinu";
+  const haazinuQaTitle = "Parsha Questions & Answers – Haazinu";
+  const duplicateTitleCounts = resources.reduce((counts, resource) => {
+    counts.set(resource.title, (counts.get(resource.title) ?? 0) + 1);
+    return counts;
+  }, new Map<string, number>());
+  const holidayQualifier = (r: Resource) => {
+    if (!isSukkosSeason || (duplicateTitleCounts.get(r.title) ?? 0) < 2) return null;
+    const key = (r.parsha_key ?? "").toLowerCase();
+    if (key === "sukkos") return "Sukkos";
+    if (key === "shemini atzeres" || key === "simchas torah") return "Shmini Atzeres & Simchas Torah";
+    return r.parsha_key;
+  };
+  const displayTitle = (r: Resource) => {
+    const series = promotionSeriesById(r.publication_id);
+    const base = series?.key === "ramban"
+      ? r.title.replace(/^Parsha Pearls(?:\s+(?:from|on)\s+the\s+Ramban)?\b/i, series.title)
+      : series?.key === "qa"
+        ? r.title.replace(/^Parsha Challenge/i, series.title)
+        : isHaazinuWeek && r.title === "Parsha Questions & Answers" ? haazinuQaTitle : r.title;
+    const qualifier = holidayQualifier(r);
+    return qualifier ? `${base} — ${qualifier}` : base;
+  };
+  const displayPublicationName = (r: Resource) =>
+    promotionSeriesById(r.publication_id)?.title ??
+      (isHaazinuWeek && r.title === "Parsha Questions & Answers"
+        ? haazinuQaTitle
+        : publicationLabel(r.publication || r.title) || r.title);
+
   const matchesAudience = (r: Resource, value = audienceFilter) =>
     value === "All" || normalizeAudience(r.audience, r.title, r.publication_id) === value;
   const matchesLength = (r: Resource, value = lengthFilter) => matchesPageLength(r.page_count, value);
@@ -576,35 +605,6 @@ function Index() {
     const pages = `${r.page_count} ${r.page_count === 1 ? "page" : "pages"}`;
     return r.page_count >= 20 ? `Long Study · ${pages}` : pages;
   };
-
-  const isHaazinuWeek = normalizedCollectionKey === "ha'azinu";
-  const haazinuQaTitle = "Parsha Questions & Answers – Haazinu";
-  const duplicateTitleCounts = resources.reduce((counts, resource) => {
-    counts.set(resource.title, (counts.get(resource.title) ?? 0) + 1);
-    return counts;
-  }, new Map<string, number>());
-  const holidayQualifier = (r: Resource) => {
-    if (!isSukkosSeason || (duplicateTitleCounts.get(r.title) ?? 0) < 2) return null;
-    const key = (r.parsha_key ?? "").toLowerCase();
-    if (key === "sukkos") return "Sukkos";
-    if (key === "shemini atzeres" || key === "simchas torah") return "Shmini Atzeres & Simchas Torah";
-    return r.parsha_key;
-  };
-  const displayTitle = (r: Resource) => {
-    const series = promotionSeriesById(r.publication_id);
-    const base = series?.key === "ramban"
-      ? r.title.replace(/^Parsha Pearls(?:\s+(?:from|on)\s+the\s+Ramban)?\b/i, series.title)
-      : series?.key === "qa"
-        ? r.title.replace(/^Parsha Challenge/i, series.title)
-        : isHaazinuWeek && r.title === "Parsha Questions & Answers" ? haazinuQaTitle : r.title;
-    const qualifier = holidayQualifier(r);
-    return qualifier ? `${base} — ${qualifier}` : base;
-  };
-  const displayPublicationName = (r: Resource) =>
-    promotionSeriesById(r.publication_id)?.title ??
-      (isHaazinuWeek && r.title === "Parsha Questions & Answers"
-        ? haazinuQaTitle
-        : publicationLabel(r.publication || r.title) || r.title);
 
   const isTfttOriginal = (r: Resource) => Boolean(tfttOriginalSeriesById(r.publication_id));
   // Preserve the recommendation order in guided mode; otherwise partition
