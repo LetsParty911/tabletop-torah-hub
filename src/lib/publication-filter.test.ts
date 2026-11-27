@@ -70,6 +70,12 @@ describe("weekly publication choices", () => {
   it("uses the visible article title for numbered poetry slots and leaves other series alone", () => {
     expect(weeklyPublicationFilterName({ publication_name: "Parsha in Poetry 1", title: "Parsha Poetry - Nissi Merenstein" })).toBe("Parsha Poetry - Nissi Merenstein");
     expect(weeklyPublicationFilterName({ publication_name: "Parsha in Poetry 2", title: "Torah is the Satan's true enemy - Nissi Merenstein" })).toBe("Torah is the Satan's true enemy - Nissi Merenstein");
+    const first = { publication_name: "Nissi Merenstein — Parsha in Poetry 1", title: "Parsha Poetry - Nissi Merenstein" };
+    const second = { publication_name: "Nissi Merenstein — Parsha in Poetry 2", title: "Torah is the Satan's true enemy - Nissi Merenstein" };
+    expect(weeklyPublicationFilterName(first)).toBe(first.title);
+    expect(weeklyPublicationFilterName(second)).toBe(second.title);
+    expect(publicationFilterName(first)).toBe(first.publication_name);
+    expect(publicationFilterName(second)).toBe(second.publication_name);
     expect(weeklyPublicationFilterName({ publication_name: "Toras Avigdor", title: "A weekly essay" })).toBe("Toras Avigdor");
   });
 });
