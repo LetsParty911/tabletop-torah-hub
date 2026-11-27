@@ -531,6 +531,12 @@ function Index() {
     const qualifier = holidayQualifier(r);
     return qualifier ? `${base} — ${qualifier}` : base;
   };
+  // Keep the distinct original poem titles and weekly filter identities intact.
+  const poetrySeriesLabel = (r: Resource) => {
+    const series = (r.publication_name || r.publication || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+    const match = /^(?:nissimerenstein)?parshainpoetry([12])$/.exec(series);
+    return match ? `Parsha in Poetry — Part ${match[1]}` : null;
+  };
   const displayPublicationName = (r: Resource) =>
     promotionSeriesById(r.publication_id)?.title ??
       (isHaazinuWeek && r.title === "Parsha Questions & Answers"
@@ -794,6 +800,14 @@ function Index() {
           </section>
         )}
 
+        <section aria-label="Stay connected" className="mx-auto w-full max-w-2xl">
+          <WeeklyEmailSignup
+            sourceId="homepage"
+            heading="Bring Torah to Your Shabbos Table Every Week"
+            description="Receive our weekly Divrei Torah, stories and questions in your inbox every Thursday."
+          />
+        </section>
+
         {(resources.length === 0 || showCompleteCollection) && (
         <section id="this-weeks-collection" tabIndex={-1} className="scroll-mt-24">
           <div className="px-1 sm:px-2">
@@ -1052,12 +1066,17 @@ function Index() {
                               </p>
                             ) : null;
                           })()}
+                          {poetrySeriesLabel(r) && (
+                            <p className="mb-1 font-sans text-xs font-semibold text-primary">{poetrySeriesLabel(r)}</p>
+                          )}
                           <h4 className="min-w-0 break-words font-serif text-base font-bold leading-snug text-primary sm:text-xl">
                             <Link to="/view/$id" params={{ id: r.id }} className="hover:text-accent hover:underline transition-colors duration-150">
                               {displayTitle(r)}
                             </Link>
                           </h4>
-                          {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
+                          {r.publisher && !(isTfttOriginal(r) && r.publisher.trim().toLowerCase() === "torah for the table") && (
+                            <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>
+                          )}
                           <PublicationQuickFacts
                             audience={audienceLabel(normalizeAudience(r.audience, displayTitle(r), r.publication_id)) ?? r.audience}
                             format={resourceContentType(r)}
@@ -1112,14 +1131,6 @@ function Index() {
           </div>
         </section>
         )}
-
-        <section aria-label="Stay connected" className="mx-auto max-w-2xl">
-          <WeeklyEmailSignup
-            sourceId="homepage"
-            heading="Receive the Weekly Shabbos Collection"
-            description="Receive our seven original weekly series and additional Divrei Torah in your inbox, ready to read or print before Shabbos."
-          />
-        </section>
 
 
 
@@ -1241,7 +1252,7 @@ function Index() {
           </div>
         </section>
 
-        <p className="text-center text-xs text-muted-foreground">Divrei Torah in Hebrew — Coming Soon</p>
+        <p className="text-center text-xs text-muted-foreground">Divrei Torah in Hebrew — In Development</p>
         <BackToTop collectionId={showCompleteCollection ? "this-weeks-collection" : "starter-selections-heading"} />
         <SiteFooter />
       </div>
