@@ -29,6 +29,9 @@
 // images, so none of this ever touches legibility of the content itself -
 // only embedded photos/graphics.
 
+// Preserve small uploaded PDFs byte-for-byte. Repacking a 50 KB text PDF
+// saves little and can reintroduce structures that older viewers reject.
+export const PDF_OPTIMIZATION_MIN_BYTES = 1_000_000;
 const MIN_IMAGE_BYTES = 15_000; // below this, skip - not worth the overhead
 const MIN_SAVINGS_RATIO = 0.15; // only replace if at least 15% smaller
 const JPEG_QUALITY = 85;
@@ -151,6 +154,7 @@ async function optimizeOneImage(
  * was nothing safe to optimize.
  */
 export async function optimizePdfImages(buf: Buffer): Promise<Buffer> {
+  if (buf.length <= PDF_OPTIMIZATION_MIN_BYTES) return buf;
   try {
     const pdfLib = await import("pdf-lib");
     const { PDFDocument, PDFName, PDFRawStream } = pdfLib;
@@ -207,10 +211,12 @@ export async function optimizePdfImages(buf: Buffer): Promise<Buffer> {
       }
     }
 
-    // Always re-save with object-stream packing, even if no images qualified
-    // for recompression - this alone gives a modest, free, lossless size
-    // reduction (measured 1.5-7.3% across real sample PDFs) on every upload.
-    const outBytes = await doc.save({ useObjectStreams: true });
+    // No actual image savings: never change the uploaded PDF's structure.
+    if (optimizedCount === 0) return buf;
+    // Use conventional cross-reference tables instead of introducing object
+    // streams into otherwise compatible PDFs. The caller still requires a
+    // meaningful whole-file reduction before swapping the storage object.
+    const outBytes = await doc.save({ useObjectStreams: false });
     if (optimizedCount > 0) {
       console.log(
         `[optimizePdfImages] ${optimizedCount}/${candidateCount} images optimized, ` +
