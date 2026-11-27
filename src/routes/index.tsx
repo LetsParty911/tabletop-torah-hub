@@ -19,7 +19,7 @@ import { HomepageShare } from "@/components/HomepageShare";
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
 import { HiddenGemTeaser } from "@/components/HiddenGem";
-import { normalizeAudience, audienceLabel } from "@/lib/audience";
+import { normalizeAudiences, audienceDisplay, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { displayContentType, hasDisplayedCollectionChanged, isProgressForReading, isCollectionComplete } from "@/lib/collection-status";
 import { tfttOriginalSeriesById } from "@/lib/tftt-originals";
@@ -538,7 +538,7 @@ function Index() {
         : publicationLabel(r.publication || r.title) || r.title);
 
   const matchesAudience = (r: Resource, value = audienceFilter) =>
-    value === "All" || normalizeAudience(r.audience, r.title, r.publication_id) === value;
+    value === "All" || normalizeAudiences(r.audience, r.title, r.publication_id).includes(value);
   const matchesLength = (r: Resource, value = lengthFilter) => matchesPageLength(r.page_count, value);
   const resourceContentType = (r: Resource) =>
     displayContentType(r.content_type, r.format_type, formatTypeLabel);
@@ -569,7 +569,7 @@ function Index() {
   useEffect(() => {
     if (
       audienceFilter !== "All" &&
-      !sortedResources.some((r) => normalizeAudience(r.audience, r.title, r.publication_id) === audienceFilter)
+      !sortedResources.some((r) => normalizeAudiences(r.audience, r.title, r.publication_id).includes(audienceFilter))
     ) {
       setAudienceFilter("All");
     }
@@ -734,13 +734,15 @@ function Index() {
                       ? "Browse Yom Kippur Printables"
                       : "Browse This Week's Printables"}
                 </Button>
+                <p className="mt-1.5 text-xs font-medium text-muted-foreground sm:text-sm">No account needed. Browse, read and print.</p>
                 <p className="mt-1.5 text-sm text-muted-foreground">
                   {resources.length} {resources.length === 1 ? "selection" : "selections"} available {isFallback ? "in the earlier collection" : "this week"}
                 </p>
               </div>
             )}
             <nav aria-label="Other Torah collections" className="mt-1 flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-4">
-              <Link to="/divrei-torah-parsha" className="inline-flex min-h-11 items-center text-xs font-semibold text-primary underline decoration-accent/60 underline-offset-4 sm:text-sm">Browse Earlier Parshas</Link>
+              <Link to="/divrei-torah-parsha" className="inline-flex min-h-11 items-center text-xs font-semibold text-primary underline decoration-accent/60 underline-offset-4 sm:text-sm">Browse by Parsha</Link>
+              <Link to="/archive" className="inline-flex min-h-11 items-center text-xs font-semibold text-primary underline decoration-accent/60 underline-offset-4 sm:text-sm">Search Past Editions</Link>
             </nav>
           </div>
         </section>
@@ -794,6 +796,14 @@ function Index() {
           </section>
         )}
 
+        <section aria-label="Stay connected" className="mx-auto w-full max-w-2xl rounded-xl border border-accent/30 bg-card/60 px-3 py-3 sm:px-5">
+          <WeeklyEmailSignup
+            sourceId="homepage"
+            variant="compact"
+            ctaLabel="Get next week's Divrei Torah in your inbox."
+          />
+        </section>
+
         {(resources.length === 0 || showCompleteCollection) && (
         <section id="this-weeks-collection" tabIndex={-1} className="scroll-mt-24">
           <div className="px-1 sm:px-2">
@@ -808,7 +818,7 @@ function Index() {
               <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-muted-foreground">
                 {isFallback
                   ? `These ${resources.length} selections are from ${displayedLabel}, not ${currentLabel}. This week's PDFs will appear once published. Choose a title to read or print an earlier edition.`
-                  : "Choose any publication to read, download or print. No account needed."}
+                  : "Choose any publication to read, download or print."}
               </p>
             )}
             <>
@@ -1059,7 +1069,7 @@ function Index() {
                           </h4>
                           {r.publisher && <p className="mt-0.5 text-xs sm:text-sm font-normal text-muted-foreground">By {r.publisher}</p>}
                           <PublicationQuickFacts
-                            audience={audienceLabel(normalizeAudience(r.audience, displayTitle(r), r.publication_id)) ?? r.audience}
+                            audience={audienceDisplay(r.audience, displayTitle(r), r.publication_id)}
                             format={resourceContentType(r)}
                             length={pageCountLabel(r)}
                           />
@@ -1113,13 +1123,7 @@ function Index() {
         </section>
         )}
 
-        <section aria-label="Stay connected" className="mx-auto max-w-2xl">
-          <WeeklyEmailSignup
-            sourceId="homepage"
-            heading="Receive the Weekly Shabbos Collection"
-            description="Receive our seven original weekly series and additional Divrei Torah in your inbox, ready to read or print before Shabbos."
-          />
-        </section>
+
 
 
 
@@ -1172,14 +1176,14 @@ function Index() {
             to="/divrei-torah-parsha"
             className="inline-flex items-center justify-center rounded-full border border-accent/45 bg-background px-5 py-2.5 font-serif font-semibold text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
           >
-            Browse Available Parshas
+            Browse by Parsha
           </Link>
           <p className="mx-auto mt-2 max-w-xl text-xs leading-relaxed text-muted-foreground">
             Permanent parsha pages with short vorts, printable Torah sheets, family material and archive selections.
           </p>
           {displayedParshaKey && !isYomTovCollection && !isYomTovReading(displayedParshaKey) && (
             <div className="mt-6 border-t border-accent/25 pt-5">
-              <h2 className="font-serif text-xl font-bold text-primary">Browse Earlier Editions</h2>
+              <h2 className="font-serif text-xl font-bold text-primary">Past Collections</h2>
               <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
                 The archive of past weeks' Divrei Torah, from every available year, is open anytime.
               </p>
@@ -1188,7 +1192,7 @@ function Index() {
                   to="/archive"
                   className="inline-flex min-h-11 items-center justify-center rounded-full border border-accent/45 bg-background px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:border-accent hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
-                  Open the Archive
+                  Search Past Editions
                 </Link>
                 <Link
                   to="/parsha/$slug"

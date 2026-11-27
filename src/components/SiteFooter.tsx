@@ -22,7 +22,7 @@ export function SiteFooter() {
           Home
         </Link>
         <Link to="/archive" className={linkClass}>
-          Archive
+          Search Past Editions
         </Link>
         <Link to="/divrei-torah-parsha" className={linkClass}>
           Divrei Torah by Parsha

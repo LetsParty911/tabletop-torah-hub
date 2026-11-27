@@ -5,7 +5,7 @@ import { standardizeCopy } from "@/lib/standardize-copy";
 import { publicationLabel, PUBLICATION_LABELS } from "@/lib/badges";
 import { readingChronoIndex } from "@/lib/parshiyos";
 import { matchesParshaSearch, toParshaComparableKey } from "@/lib/parsha-normalize";
-import { normalizeAudience, type AudienceKey } from "@/lib/audience";
+import { normalizeAudiences, audienceDisplay, type AudienceKey } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { tfttOriginalSeriesById, renameLegacySeriesText, originalDescriptionFallback } from "@/lib/tftt-originals";
 import { matchesPageLength, type LengthFilter } from "@/lib/length-filter";
@@ -163,7 +163,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
         ),
         subtitle: renameLegacySeriesText(standardizeCopy((row.subtitle as string | null) ?? null)),
         description: originalDescriptionFallback(row.publication_id, renameLegacySeriesText(standardizeCopy((row.description as string | null) ?? null))),
-        audience: normalizeAudience(row.audience ?? null, row.title, row.publication_id) ?? row.audience ?? null,
+        audience: audienceDisplay(row.audience ?? null, row.title, row.publication_id),
         format_type: (row.format_type as string | null) ?? null,
         content_type: (row.content_type as string | null) ?? null,
         page_count: typeof row.page_count === "number" ? row.page_count : null,
@@ -197,7 +197,7 @@ export const listArchiveAll = createServerFn({ method: "GET" })
       if (
         includeAudience &&
         data.audience !== "All" &&
-        normalizeAudience(r.audience, r.title) !== data.audience
+        !normalizeAudiences(r.audience, r.title, r.publication_id).includes(data.audience)
       ) return false;
       return true;
     };
@@ -211,8 +211,9 @@ export const listArchiveAll = createServerFn({ method: "GET" })
     for (const r of all) {
       if (!baseMatches(r, false)) continue;
       audienceCounts.All += 1;
-      const audience = normalizeAudience(r.audience, r.title);
-      if (audience) audienceCounts[audience] += 1;
+      for (const audience of normalizeAudiences(r.audience, r.title, r.publication_id)) {
+        audienceCounts[audience] += 1;
+      }
     }
 
     const filtered = all.filter((r) => baseMatches(r, true));

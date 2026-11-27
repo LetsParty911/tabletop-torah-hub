@@ -8,7 +8,7 @@ import type {
   ReadingCollectionSummary,
   ReadingResource,
 } from "@/integrations/supabase/reading-pages.functions";
-import { normalizeAudience, audienceLabel } from "@/lib/audience";
+import { normalizeAudiences, audienceDisplay, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { PublicationQuickFacts } from "@/components/PublicationQuickFacts";
@@ -39,17 +39,17 @@ export function ReadingCollectionView({
 
   const filtered = resources.filter((r) => {
     const audienceMatch =
-      audience === "All" || normalizeAudience(r.audience, r.title) === audience;
+      audience === "All" || normalizeAudiences(r.audience, r.title, r.publication_id).includes(audience);
     const lengthMatch = matchesPageLength(r.page_count, length);
     const typeMatch = type === "All" || resourceType(r) === type;
     return audienceMatch && lengthMatch && typeMatch;
   });
 
   const quickKids = resources.find(
-    (r) => normalizeAudience(r.audience, r.title) === "Children",
+    (r) => normalizeAudiences(r.audience, r.title, r.publication_id).includes("Children"),
   );
   const quickFamily = resources.find(
-    (r) => normalizeAudience(r.audience, r.title) === "Families",
+    (r) => normalizeAudiences(r.audience, r.title, r.publication_id).includes("Families"),
   );
   const quickShort = [...resources]
     .filter((r) => typeof r.page_count === "number")
@@ -146,7 +146,7 @@ export function ReadingCollectionView({
                 {(["All", "Children", "Families", "Adults"] as const).map((value) => {
                   const available =
                     value === "All" ||
-                    resources.some((r) => normalizeAudience(r.audience, r.title) === value);
+                    resources.some((r) => normalizeAudiences(r.audience, r.title, r.publication_id).includes(value));
                   if (!available) return null;
                   return (
                     <button
@@ -236,7 +236,7 @@ export function ReadingCollectionView({
                       <p className="mt-0.5 text-xs text-muted-foreground">Published by {resource.publisher}</p>
                     )}
                     <PublicationQuickFacts
-                      audience={audienceLabel(normalizeAudience(resource.audience, resource.title)) ?? resource.audience}
+                      audience={audienceDisplay(resource.audience, resource.title, resource.publication_id)}
                       format={resourceType(resource)}
                       length={lengthLabel}
                     />

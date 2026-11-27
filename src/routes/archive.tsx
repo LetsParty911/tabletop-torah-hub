@@ -22,7 +22,7 @@ import { SharePublicationButton } from "@/components/SharePublicationButton";
 import { BackToTop } from "@/components/BackToTop";
 import { SiteFooter } from "@/components/SiteFooter";
 import { fitPageTitle } from "@/lib/page-title";
-import { normalizeAudience, audienceLabel } from "@/lib/audience";
+import { audienceDisplay, audienceLabel } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { PublicationQuickFacts } from "@/components/PublicationQuickFacts";
@@ -483,7 +483,7 @@ function ArchivePage() {
                       );
                     })}
                 </div>
-                {audienceCounts.All > audienceCounts.Children + audienceCounts.Families + audienceCounts.Adults && <p className="text-xs text-muted-foreground">{`${audienceCounts.All - audienceCounts.Children - audienceCounts.Families - audienceCounts.Adults} selections without a specified audience are included in All.`}</p>}
+                <p className="text-xs text-muted-foreground">A selection can fit more than one audience. All includes every selection.</p>
               </div>
 
               <div className="mt-4 flex flex-col items-center gap-2">
@@ -696,7 +696,7 @@ function ArchivePage() {
                                     </p>
                                   ) : null}
                                   <PublicationQuickFacts
-                                    audience={audienceLabel(normalizeAudience(r.audience, r.title)) ?? r.audience}
+                                    audience={audienceDisplay(r.audience, r.title)}
                                     format={resourceType(r)}
                                     length={typeof r.page_count === "number" && r.page_count > 0
                                       ? r.page_count >= 20

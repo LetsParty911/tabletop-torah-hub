@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-route
 import { BookOpen, ArrowLeft } from "lucide-react";
 import { getPublicationPage } from "@/integrations/supabase/publication-pages.functions";
 import { formatReadingLabel } from "@/lib/parshiyos";
-import { normalizeAudience, audienceLabel } from "@/lib/audience";
+import { audienceDisplay } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { publicationShareImages, publicationShareImageMeta } from "@/lib/publication-share-image";
@@ -100,10 +100,7 @@ function PublicationPage() {
   const latest = editions[0] ?? null;
   const earlier = editions.slice(1);
   const defaultMeta = [
-    publication.default_audience
-      ? audienceLabel(normalizeAudience(publication.default_audience, publication.name)) ??
-        publication.default_audience
-      : null,
+    audienceDisplay(publication.default_audience, publication.name, publication.id),
     formatTypeLabel(publication.default_format_type),
   ]
     .filter(Boolean)
@@ -111,9 +108,7 @@ function PublicationPage() {
 
   const editionMeta = (edition: (typeof editions)[number]) =>
     [
-      edition.audience
-        ? audienceLabel(normalizeAudience(edition.audience, edition.title)) ?? edition.audience
-        : null,
+      audienceDisplay(edition.audience, edition.title, publication.id),
       formatTypeLabel(edition.format_type),
       typeof edition.page_count === "number"
         ? edition.page_count === 1

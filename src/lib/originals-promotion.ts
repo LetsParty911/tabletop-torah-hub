@@ -38,7 +38,7 @@ export const ORIGINAL_PROMOTION_SERIES: readonly OriginalPromotionSeries[] = [
     tagline: "Stories that inspire. Lessons that last.",
     brief: "Three Torah stories and discussion questions",
     description: "Three meaningful, source-based Torah stories, each with a discussion question that brings its lesson to the Shabbos table.",
-    audience: "Families",
+    audience: "Children · Families",
   },
   {
     key: "margins", coverSrc: "/original-series-covers/in-the-margins.cbb7bf4a37.webp", accentColor: "#37552c",
@@ -88,7 +88,7 @@ export const ORIGINAL_PROMOTION_SERIES: readonly OriginalPromotionSeries[] = [
     tagline: "Look closer. Think deeper.",
     brief: "Deep questions and carefully researched answers",
     description: "Investigate challenging Parsha questions through carefully researched Torah sources and clear reasoning, for readers who want to think deeper.",
-    audience: "Deeper Learning",
+    audience: "Families · Deeper Learning",
   },
 ];
 

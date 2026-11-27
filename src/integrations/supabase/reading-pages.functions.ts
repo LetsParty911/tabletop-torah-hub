@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from "@/integrations/supabase/ext.server";
 import { readingSlug, isYomTovReading } from "@/lib/reading-page";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { canonicalLibraryReading } from "@/lib/reading-library";
-import { normalizeAudience } from "@/lib/audience";
+import { audienceDisplay } from "@/lib/audience";
 import { tfttOriginalSeriesById, originalDescriptionFallback } from "@/lib/tftt-originals";
 import { canonicalPublicationName, canonicalPublicationSlug } from "@/lib/publication-slug";
 import { standardizeCopy } from "@/lib/standardize-copy";
@@ -170,7 +170,7 @@ export const getReadingCollection = createServerFn({ method: "GET" })
         subtitle: standardizeCopy((r.subtitle as string | null) ?? null),
         description: originalDescriptionFallback(pubId, standardizeCopy((r.description as string | null) ?? null)),
         summary_quick: standardizeCopy((r.summary_quick as string | null) ?? null),
-        audience: normalizeAudience(r.audience ?? null, r.title, pubId) ?? r.audience ?? null,
+        audience: audienceDisplay(r.audience ?? null, r.title, pubId),
         format_type: (r.format_type as string | null) ?? null,
         content_type: (r.content_type as string | null) ?? null,
         page_count: typeof r.page_count === "number" ? r.page_count : null,

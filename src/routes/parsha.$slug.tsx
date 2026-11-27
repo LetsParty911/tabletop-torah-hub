@@ -8,7 +8,7 @@ import { readingSlug } from "@/lib/reading-page";
 import { PARSHIYOS_54, formatReadingLabel } from "@/lib/parshiyos";
 import { fitPageTitle } from "@/lib/page-title";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
-import { audienceLabel, normalizeAudience } from "@/lib/audience";
+import { audienceLabel, normalizeAudience, audienceDisplay } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { mergeLabelCounts } from "@/lib/label-counts";
 
@@ -238,7 +238,7 @@ function PermanentParshaPage() {
                 const description = resource.summary_quick || resource.description;
                 const meta = [
                   resource.audience
-                    ? audienceLabel(normalizeAudience(resource.audience, resource.title)) ?? resource.audience
+                    ? audienceDisplay(resource.audience, resource.title)
                     : null,
                   resource.content_type === "Questions & Answers"
                     ? resource.content_type

@@ -370,7 +370,12 @@ it("keeps all current-week bundles available when audience filters narrow the se
   expect(prepareButtons).toHaveLength(3);
   expect(prepareButtons.every((button) => !(button as HTMLButtonElement).disabled)).toBe(true);
   fireEvent.click(within(screen.getByRole("group", { name: "Quick filters" })).getByRole("button", { name: "Children" }));
+  expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(2);
+  expect(screen.getAllByText("For Children and Families")).toHaveLength(2);
+  fireEvent.click(within(screen.getByRole("group", { name: "Quick filters" })).getByRole("button", { name: "Families" }));
   expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(4);
+  fireEvent.click(within(screen.getByRole("group", { name: "Quick filters" })).getByRole("button", { name: "Deeper Learning" }));
+  expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(5);
   expect(region.getAllByText(/^2 publications · \d+ pages$/)).toHaveLength(2);
   expect(region.getByText(/^3 publications · \d+ pages$/)).toBeTruthy();
   expect(prepareButtons.every((button) => !(button as HTMLButtonElement).disabled)).toBe(true);

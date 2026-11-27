@@ -407,7 +407,7 @@ function SiteNav() {
                 <DropdownMenuItem asChild><Link to="/divrei-torah-parsha" hash="yom-tov">Browse by Yom Tov</Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link to="/publications">Browse by Publication</Link></DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild><Link to="/archive">Complete Archive</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link to="/archive">Search Past Editions</Link></DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Link
@@ -463,7 +463,7 @@ function SiteNav() {
             <SearchForm mobile />
             <div className="grid gap-1">
               <Link to="/" hash="this-weeks-collection" onClick={() => { setMobileOpen(false); if (pathname === "/") requestWeeklyCollection(); }} className={mobileLinkCls}>This Week</Link>
-              <Link to="/archive" className={mobileLinkCls}>Archive</Link>
+              <Link to="/archive" className={mobileLinkCls}>Search Past Editions</Link>
               <Link to="/divrei-torah-parsha" className={mobileLinkCls}>Browse by Parsha</Link>
               <Link to="/divrei-torah-parsha" hash="yom-tov" className={mobileLinkCls}>Browse by Yom Tov</Link>
               <Link to="/publications" className={mobileLinkCls}>Publications</Link>

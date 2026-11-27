@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { BookOpen, ArrowLeft } from "lucide-react";
 import { listPublicationPages, type PublicationPageSummary } from "@/integrations/supabase/publication-pages.functions";
-import { normalizeAudience, audienceLabel } from "@/lib/audience";
+import { audienceDisplay } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { leadWithPublicationTitle } from "@/lib/publication-description";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -96,10 +96,7 @@ function renderPublicationCards(publications: PublicationPageSummary[]) {
             const original = tfttOriginalSeriesById(publication.id);
             const cover = resolveListingCover(publication.id, publication.thumb_url);
             const meta = [
-              publication.default_audience
-                ? audienceLabel(normalizeAudience(publication.default_audience, publication.name)) ??
-                  publication.default_audience
-                : null,
+              audienceDisplay(publication.default_audience, publication.name, publication.id),
               formatTypeLabel(publication.default_format_type),
               `${publication.edition_count} ${publication.edition_count === 1 ? "edition" : "editions"}`,
             ]

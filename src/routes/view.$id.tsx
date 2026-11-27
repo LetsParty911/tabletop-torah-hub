@@ -14,7 +14,7 @@ import { resolveHebcalParsha } from "@/lib/hebcal";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { trackEvent } from "@/lib/analytics";
 import { trackFp } from "@/lib/first-party-analytics";
-import { normalizeAudience, audienceLabel } from "@/lib/audience";
+import { audienceDisplay } from "@/lib/audience";
 import { formatTypeLabel } from "@/lib/format-labels";
 import { formatReadingLabel } from "@/lib/parshiyos";
 import { isYomTovReading, readingSlug } from "@/lib/reading-page";
@@ -250,7 +250,7 @@ function ViewPdf() {
   })();
 
   const metaLine = [
-    audienceLabel(normalizeAudience(pdf.audience, pdf.title, publication?.id)) ?? pdf.audience,
+    audienceDisplay(pdf.audience, pdf.title, publication?.id),
     pdf.content_type === "Questions & Answers"
       ? "Questions & Answers"
       : formatTypeLabel(pdf.format_type),
@@ -498,7 +498,7 @@ function ViewPdf() {
               {relatedParsha.map((item) => {
                 const itemMeta = [
                   item.audience
-                    ? audienceLabel(normalizeAudience(item.audience, item.title)) ?? item.audience
+                    ? audienceDisplay(item.audience, item.title)
                     : null,
                   item.content_type === "Questions & Answers"
                     ? "Questions & Answers"
@@ -557,7 +557,7 @@ function ViewPdf() {
                 const label = edition.jewish_year ? `${reading} ${edition.jewish_year}` : reading;
                 const relatedMeta = [
                   edition.audience
-                    ? audienceLabel(normalizeAudience(edition.audience, edition.title)) ?? edition.audience
+                    ? audienceDisplay(edition.audience, edition.title, publication?.id)
                     : null,
                   edition.content_type === "Questions & Answers"
                     ? "Questions & Answers"

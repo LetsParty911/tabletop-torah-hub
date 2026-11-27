@@ -5,7 +5,7 @@ import { PARSHIYOS, formatReadingLabel } from "@/lib/parshiyos";
 import { readingSlug, isYomTovReading } from "@/lib/reading-page";
 import { toParshaComparableKey } from "@/lib/parsha-normalize";
 import { summarizeReadingLibrary } from "@/lib/reading-library";
-import { normalizeAudience } from "@/lib/audience";
+import { normalizeAudiences, audienceDisplay } from "@/lib/audience";
 import { tfttOriginalSeriesById, originalDescriptionFallback } from "@/lib/tftt-originals";
 import { standardizeCopy } from "@/lib/standardize-copy";
 import { renameLegacySeriesText } from "@/lib/tftt-originals";
@@ -89,8 +89,9 @@ export const getParshaSeoPage = createServerFn({ method: "GET" })
     const audience_counts: Record<string, number> = {};
     const type_counts: Record<string, number> = {};
     for (const row of matches) {
-      const audience = normalizeAudience(row.audience ?? null, row.title, row.publication_id) ?? String(row.audience ?? "").trim();
-      if (audience) audience_counts[audience] = (audience_counts[audience] ?? 0) + 1;
+      const audiences = normalizeAudiences(row.audience ?? null, row.title, row.publication_id);
+      const labels = audiences.length ? audiences : [String(row.audience ?? "").trim()].filter(Boolean);
+      for (const audience of labels) audience_counts[audience] = (audience_counts[audience] ?? 0) + 1;
       const type = String(
         (row as any).content_type === "Questions & Answers"
           ? (row as any).content_type
@@ -104,7 +105,7 @@ export const getParshaSeoPage = createServerFn({ method: "GET" })
       title: tfttOriginalSeriesById(row.publication_id)?.title ?? renameLegacySeriesText(row.title as string),
       description: originalDescriptionFallback(row.publication_id, renameLegacySeriesText(standardizeCopy((row.description as string | null) ?? null))),
       summary_quick: renameLegacySeriesText(standardizeCopy((row.summary_quick as string | null) ?? null)),
-      audience: normalizeAudience(row.audience ?? null, row.title, row.publication_id) ?? row.audience ?? null,
+      audience: audienceDisplay(row.audience ?? null, row.title, row.publication_id),
       format_type: (row.format_type as string | null) ?? null,
       content_type: (row.content_type as string | null) ?? null,
       page_count: typeof row.page_count === "number" ? row.page_count : null,
