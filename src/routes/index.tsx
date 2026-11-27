@@ -610,7 +610,10 @@ function Index() {
   // Preserve the recommendation order in guided mode; otherwise partition
   // the already-filtered list by verified publication ownership, exactly once.
   const weeklyResourceGroups = isCurrentYomKippur
-    ? [{ key: "all", heading: null, items: filteredResources }]
+    ? [{ key: "all", heading: null, items: [
+        ...filteredResources.filter(isTfttOriginal),
+        ...filteredResources.filter((r) => !isTfttOriginal(r)),
+      ] }]
     : [
         { key: "originals", heading: "Our Original Publications", items: filteredResources.filter(isTfttOriginal) },
         { key: "additional", heading: "More Divrei Torah for Your Table", items: filteredResources.filter((r) => !isTfttOriginal(r)) },
