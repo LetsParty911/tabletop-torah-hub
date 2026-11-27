@@ -196,7 +196,9 @@ function ViewPdf() {
   const detailThumbnailUrl = isTorahWellsprings
     ? "/publication-covers/torah-wellsprings-plaque-v2.jpg"
     : isMiKaamcha ? "/publication-covers/mi-kaamcha-yisroel-logo-v1.webp" : pdf.thumb_url;
-  const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=Fit`;
+  // Fit the available page width for reading instead of shrinking an entire page to the viewport height.
+  // Keep the native viewer, CDN redirects and original printable PDF bytes unchanged.
+  const viewerSrc = `/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=FitH`;
   const isMobile = useIsMobile();
   const [mounted, setMounted] = useState(false);
   const [thumbFailed, setThumbFailed] = useState(false);
@@ -360,6 +362,7 @@ function ViewPdf() {
               <h2 className="font-serif text-lg sm:text-xl font-semibold text-primary mb-3">
                 Preview
               </h2>
+              <p className="mb-3 text-xs text-muted-foreground">Use the viewer’s zoom controls to adjust text size. To save a copy with a descriptive filename, use Download PDF above.</p>
               {/* Keyed per PDF: changing an existing iframe's src adds a hidden history
                   entry, so browser Back would only rewind the iframe and leave this page. */}
               <iframe
