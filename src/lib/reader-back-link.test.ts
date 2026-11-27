@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { hebrewYearOf, readerBackLink } from "./reader-back-link";
 
 describe("reader page back link", () => {
@@ -34,5 +35,15 @@ describe("reader page back link", () => {
     expect(hebrewYearOf("2026-11-21")).toBe(5787);
     expect(hebrewYearOf("2026-09-05")).toBe(5786);
     expect(hebrewYearOf("not a date")).toBeNull();
+  });
+});
+
+
+describe("native PDF reader sizing", () => {
+  it("requests fit-to-width without replacing the existing PDF delivery route", () => {
+    const source = readFileSync("src/routes/view.$id.tsx", "utf8");
+    expect(source).toContain("/view/${pdf.id}/pdf#toolbar=1&navpanes=0&view=FitH");
+    expect(source).toContain("const canEmbed = mounted && !isMobile");
+    expect(source).toContain("key={pdf.id}");
   });
 });
