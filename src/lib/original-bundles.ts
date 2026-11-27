@@ -6,6 +6,7 @@ export type OriginalBundleResource = {
   url: string;
   parsha_key: string | null;
   jewish_year?: number | null;
+  page_count?: number | null;
   publication_id?: string | null;
 };
 
@@ -27,19 +28,19 @@ const DEFINITIONS = [
   {
     key: "children",
     title: "Children's Bundle",
-    description: "Questions and stories for young readers.",
+    description: "Engaging parsha questions and meaningful stories that bring the weekly parsha to life for children.",
     seriesKeys: ["qa", "stories"],
   },
   {
     key: "family",
     title: "Family Bundle",
-    description: "Medrash and thoughtful questions to discuss together.",
+    description: "Thought-provoking questions and inspiring insights to spark meaningful Torah discussions around the Shabbos table.",
     seriesKeys: ["medrash", "questions"],
   },
   {
     key: "deeper",
     title: "Deeper Learning Bundle",
-    description: "Classical commentaries for further study.",
+    description: "Explore the weekly parsha through classical meforshim, with deeper explanations and perspectives for thoughtful learning.",
     seriesKeys: ["margins", "ramban", "chizkuni"],
   },
 ] as const;
@@ -81,6 +82,20 @@ export function currentOriginalBundles(
       isComplete: availableCount === items.length,
     };
   });
+}
+
+/** The pre-merge page total is available only when every constituent has a valid catalogue count. */
+export function originalBundlePageCount(bundle: OriginalBundle): number | null {
+  if (!bundle.isComplete || !bundle.items.length) return null;
+  const counts = bundle.items.map(item => item.resource?.page_count);
+  if (!counts.every(count => typeof count === "number" && Number.isInteger(count) && count > 0)) return null;
+  return counts.reduce<number>((total, count) => total + (count ?? 0), 0);
+}
+
+export function originalBundlePrepareLabel(count: number): string {
+  if (count === 2) return "Combine Both Publications into One PDF";
+  if (count === 3) return "Combine All Three Publications into One PDF";
+  return `Combine ${count} Publications into One PDF`;
 }
 
 export function originalBundleFilename(bundle: OriginalBundle, collectionLabel: string): string {
