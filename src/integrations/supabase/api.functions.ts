@@ -463,6 +463,67 @@ export const listPublishedPdfs = createServerFn({ method: "GET" })
     return { resources };
   });
 
+// Weekly popularity is derived server-side from intentional Open PDF clicks.
+// Count each browser visitor once per edition; repeated attempts cannot inflate
+// the rank. Never expose raw analytics or visitor identifiers to the public.
+// Existing editorial order remains the stable tie-break and failure fallback.
+let homepagePopularityCache: { key: string; until: number; counts: Map<string, number> } | null = null;
+
+async function sortHomepageByPopularity(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  resources: PdfResource[],
+): Promise<PdfResource[]> {
+  if (resources.length < 2) return resources;
+  const ids = [...new Set(resources.map((r) => r.id))].sort();
+  const key = ids.join(",");
+  const sortWith = (counts: Map<string, number>) =>
+    [...resources].sort((a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0));
+
+  if (homepagePopularityCache?.key === key && homepagePopularityCache.until > Date.now()) {
+    return sortWith(homepagePopularityCache.counts);
+  }
+  try {
+    const { isSuspiciousEmailScannerOrigin } = await import("@/lib/traffic-confidence");
+    const readers = new Map<string, Set<string>>();
+    const pageSize = 1000;
+    // Chunk publication IDs to keep the REST URL bounded, then paginate
+    // deterministically. Each edition ID belongs to this displayed collection.
+    for (let start = 0; start < ids.length; start += 100) {
+      for (let offset = 0; ; offset += pageSize) {
+        const { data, error } = await admin
+          .from("analytics_events")
+          .select("id,publication_id,visitor_id,is_internal,referrer_host,user_agent,as_organization,metadata")
+          .eq("event_name", "publication_click")
+          .eq("metadata->>action", "open_pdf")
+          .in("publication_id", ids.slice(start, start + 100))
+          .order("id", { ascending: true })
+          .range(offset, offset + pageSize - 1);
+        if (error) throw error;
+        for (const row of data ?? []) {
+          const id = row.publication_id;
+          const visitor = row.visitor_id?.trim();
+          if (!id || !visitor || row.is_internal === true) continue;
+          const host = (row.referrer_host ?? "").trim().toLowerCase();
+          const firstTouch = String(row.metadata?.first_touch_referrer_host ?? "").trim().toLowerCase();
+          const preview = (value: string) => /(^|\\.)lovable\\.(app|dev)$/.test(value);
+          if (preview(host) || preview(firstTouch) || (row.user_agent ?? "").toLowerCase().includes("lovableapp/")) continue;
+          if (isSuspiciousEmailScannerOrigin(host || firstTouch, row.as_organization)) continue;
+          if (!readers.has(id)) readers.set(id, new Set<string>());
+          readers.get(id)!.add(visitor);
+        }
+        if (!data || data.length < pageSize) break;
+      }
+    }
+    const counts = new Map<string, number>([...readers].map(([id, visitors]) => [id, visitors.size]));
+    homepagePopularityCache = { key, until: Date.now() + 5 * 60_000, counts };
+    return sortWith(counts);
+  } catch (error) {
+    console.error("Homepage popularity ranking unavailable", error);
+    // Never hide a publication or fail the homepage because analytics are unavailable.
+    return homepagePopularityCache?.key === key ? sortWith(homepagePopularityCache.counts) : resources;
+  }
+}
+
 // Homepage loader: returns live-parsha collection, or the most recent
 // published collection as a fallback when the live parsha has no PDFs.
 export const listHomepageWeek = createServerFn({ method: "GET" })
@@ -484,7 +545,10 @@ export const listHomepageWeek = createServerFn({ method: "GET" })
     }
     const current = await resolveCurrentFeatured();
     const displayed = await resolveDisplayedCollection(admin, liveComparable, current.jewishYear);
-    const resources = await buildResources(admin, displayed.rows);
+    const editorialResources = await buildResources(admin, displayed.rows);
+    const resources = displayed.isFallback
+      ? editorialResources
+      : await sortHomepageByPopularity(admin, editorialResources);
     return {
       resources,
       isFallback: displayed.isFallback,
