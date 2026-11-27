@@ -29,5 +29,6 @@ export default defineConfig({
     "src/routes/api/-events.bundle.test.ts", "src/components/DownloadToPrintButton.test.tsx", "src/lib/download-served.test.ts",
     "src/integrations/supabase/admin-analytics-canonical.test.ts",
     "src/lib/publication-filter.test.ts", "src/lib/publication-quality.test.ts", "src/lib/publication-slug.test.ts",
+    "src/lib/pdf-image-optimize.test.ts",
   ] },
 });

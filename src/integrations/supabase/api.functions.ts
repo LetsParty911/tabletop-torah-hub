@@ -17,8 +17,8 @@ import { isSupabaseQuotaRestricted } from "@/lib/supabase-quota";
 import { isOverrideCurrent, validateParshaOverride } from "@/lib/parsha-override";
 import { bindCompletedProgressEta, currentYearRows } from "@/lib/collection-status";
 
-// Recompresses safe embedded JPEGs (grayscale/RGB, never CMYK) via MozJPEG
-// and losslessly repacks the file's internal structure. See
+// Recompresses safe embedded JPEGs (grayscale/RGB, never CMYK) via MozJPEG.
+// Small PDFs and files without actual image savings remain byte-identical. See
 // src/lib/pdf-image-optimize.server.ts for the full safety rules (SMask
 // protection, component-count detection from the JPEG bitstream itself,
 // minimum size/savings thresholds). Always falls back to the original bytes
@@ -1734,14 +1734,8 @@ export const adminRecompressExistingPdf = createServerFn({ method: "POST" })
     const originalBuf = Buffer.from(await blob.arrayBuffer());
     const optimizedBuf = await optimizePdfForStorage(originalBuf);
 
-    // A trivial byte-level reduction (e.g. a few hundred bytes purely from
-    // the incidental lossless structural repack, with no real image
-    // recompression happening underneath) isn't worth a full storage
-    // swap + cache purge/warm cycle, and reporting it as "Shrunk" would be
-    // misleading when it rounds to 0% smaller. Only proceed if the file is
-    // meaningfully smaller - this is what actually tells us whether real
-    // JPEG recompression found anything eligible (vs. e.g. all-CMYK images,
-    // which this pipeline deliberately never touches).
+    // Only swap when actual safe image optimization produced meaningful
+    // whole-file savings. Small and text-only PDFs remain byte-identical.
     const MIN_WHOLE_FILE_SAVINGS_RATIO = 0.03;
     const meaningfullySmaller =
       optimizedBuf.length <= originalBuf.length * (1 - MIN_WHOLE_FILE_SAVINGS_RATIO);
