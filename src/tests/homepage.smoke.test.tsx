@@ -174,12 +174,12 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     expect(document.querySelectorAll("#this-weeks-collection")).toHaveLength(1);
     expect(screen.queryByText(/Also Available This Week/)).toBeNull();
     expect(screen.queryByText(/Recommended Picks/)).toBeNull();
-    const promotion = screen.getByRole("region", { name: "Something for Every Shabbos Table" });
+    const promotion = screen.getByRole("region", { name: "Choose Your Shabbos Bundle" });
     expect(document.querySelectorAll("#our-originals")).toHaveLength(1);
     const collection = document.getElementById("this-weeks-collection");
     if (!collection) throw new Error("Missing weekly collection");
     expect(promotion.compareDocumentPosition(collection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Our Seven Original Series" }).getAttribute("href")).toBe("/originals");
+    expect(screen.queryByRole("link", { name: "Our Seven Original Series" })).toBeNull();
     expect(screen.getByRole("heading", { name: "Our Original Publications" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "More Divrei Torah for Your Table" })).toBeTruthy();
     expect(screen.queryByText("Introducing Three New Weekly Series")).toBeNull();
@@ -190,7 +190,7 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     setHomepage(false);
     state.loader.resources = [example(1, "Lech-Lecha")];
     render(<Homepage />);
-    const promotion = screen.getByRole("region", { name: "Something for Every Shabbos Table" });
+    const promotion = screen.getByRole("region", { name: "Choose Your Shabbos Bundle" });
     expect(within(promotion).getAllByRole("img")).toHaveLength(7);
     for (const series of ORIGINAL_PROMOTION_SERIES) {
       const image = within(promotion).getByRole("img", { name: "Promotional cover of " + series.title });
@@ -302,7 +302,8 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     setHomepage(true);
     render(<Homepage />);
     expect(screen.queryByTestId("table-chooser")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /Browse Earlier Collection: Parshas Noach \(4\)/ }));
+    expect(screen.getByText("4 selections available in the earlier collection")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Browse Earlier Collection: Parshas Noach" }));
     expect(screen.queryByTestId("table-chooser")).toBeNull();
     expect(screen.getAllByRole("link", { name: "Sample Torah Sheet 4" }).length).toBeGreaterThan(0);
     const openLinks = screen.getAllByRole("link", { name: "Open PDF" });
@@ -314,7 +315,8 @@ describe("homepage publication and discovery smoke test with isolated data", () 
     setHomepage(false);
     render(<Homepage />);
     expect(screen.queryByTestId("table-chooser")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Browse 4 Available Selections" }));
+    expect(screen.getByText("4 selections available this week")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Browse This Week's Printables" }));
     expect(screen.queryByTestId("table-chooser")).toBeNull();
   });
 
@@ -360,14 +362,14 @@ it("keeps all current-week bundles available when audience filters narrow the se
     publication_id: series.publicationId,
   }));
   render(<Homepage />);
-  const region = within(screen.getByRole("region", { name: "Something for Every Shabbos Table" }));
-  const prepareButtons = region.getAllByRole("button", { name: /^Get Bundle PDF:/ });
+  const region = within(screen.getByRole("region", { name: "Choose Your Shabbos Bundle" }));
+  const prepareButtons = region.getAllByRole("button", { name: /^Combine (Both|All Three) Publications into One PDF:/ });
   expect(prepareButtons).toHaveLength(3);
   expect(prepareButtons.every((button) => !(button as HTMLButtonElement).disabled)).toBe(true);
   fireEvent.click(within(screen.getByRole("group", { name: "Quick filters" })).getByRole("button", { name: "Children" }));
   expect(screen.getAllByRole("link", { name: "Open PDF" })).toHaveLength(4);
-  expect(region.getAllByText("2 of 2 PDFs available for Parshas Vayishlach")).toHaveLength(2);
-  expect(region.getByText("3 of 3 PDFs available for Parshas Vayishlach")).toBeTruthy();
+  expect(region.getAllByText(/^2 publications · \d+ pages$/)).toHaveLength(2);
+  expect(region.getByText(/^3 publications · \d+ pages$/)).toBeTruthy();
   expect(prepareButtons.every((button) => !(button as HTMLButtonElement).disabled)).toBe(true);
 });
 
