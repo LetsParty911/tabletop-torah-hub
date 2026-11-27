@@ -707,15 +707,15 @@ function Index() {
                 Printable Divrei Torah, stories and questions for your Shabbos table.
               </p>
             )}
-            <p className={`mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base ${!isFallback && !postShabbos && resources.length > 0 ? "hidden sm:block" : ""}`}>
-              {isFallback
-                ? "This week's Divrei Torah are being prepared. New selections every Thursday."
-                : postShabbos
-                  ? "These Torah sheets remain available to read or print."
-                  : resources.length > 0
-                    ? `${resources.length} selections available now.`
+            {(isFallback || postShabbos || resources.length === 0) && (
+              <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+                {isFallback
+                  ? "This week's Divrei Torah are being prepared. New selections every Thursday."
+                  : postShabbos
+                    ? "These Torah sheets remain available to read or print."
                     : "New Divrei Torah will appear here as soon as they are published."}
-            </p>
+              </p>
+            )}
             {heroDateLine && (
               <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">{heroDateLine}</p>
             )}
@@ -725,15 +725,21 @@ function Index() {
               </p>
             )}
             {resources.length > 0 && (
-              <Button onClick={browseAllSelections} className="mt-2 h-auto min-h-11 max-w-full whitespace-normal rounded-full px-5 py-2.5 font-serif text-sm font-semibold sm:mt-3 sm:text-base">
-                {isFallback
-                  ? `Browse Earlier Collection: ${displayedLabel} (${resources.length})`
-                  : `Browse ${resources.length} Available Selections`}
-              </Button>
+              <div className="mt-2 sm:mt-3">
+                <Button onClick={browseAllSelections} className="h-auto min-h-11 max-w-full whitespace-normal rounded-full px-5 py-2.5 font-serif text-base font-semibold">
+                  {isFallback
+                    ? `Browse Earlier Collection: ${displayedLabel}`
+                    : isCurrentYomKippur
+                      ? "Browse Yom Kippur Printables"
+                      : "Browse This Week's Printables"}
+                </Button>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  {resources.length} {resources.length === 1 ? "selection" : "selections"} available {isFallback ? "in the earlier collection" : "this week"}
+                </p>
+              </div>
             )}
             <nav aria-label="Other Torah collections" className="mt-1 flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-4">
               <Link to="/divrei-torah-parsha" className="inline-flex min-h-11 items-center text-xs font-semibold text-primary underline decoration-accent/60 underline-offset-4 sm:text-sm">Browse Earlier Parshas</Link>
-              {!isCurrentYomKippur && <Link to="/originals" className="inline-flex min-h-11 items-center text-xs font-semibold text-primary underline decoration-accent/60 underline-offset-4 sm:text-sm">Our Seven Original Series</Link>}
             </nav>
           </div>
         </section>
@@ -761,7 +767,7 @@ function Index() {
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#b99a5b]/70 text-[#8d6b30]" aria-hidden="true">
                 <BookOpen className="h-4 w-4" />
               </span>
-              <h2 id="starter-selections-heading" className="font-serif text-xl font-bold leading-tight text-[#17304d] sm:text-3xl">Something for Every Shabbos Table</h2>
+              <h2 id="starter-selections-heading" className="font-serif text-xl font-bold leading-tight text-[#17304d] sm:text-3xl">Choose Your Shabbos Bundle</h2>
             </div>
             <p className="mx-auto mt-2 max-w-xl font-serif text-sm italic leading-relaxed text-[#17304d]">
               Choose an audience bundle, or open any publication on its own.
@@ -773,7 +779,7 @@ function Index() {
             />
             <Link
               to="/originals"
-              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#17304d] px-5 py-2.5 font-serif text-sm font-bold text-[#fff8e9] transition-colors hover:bg-[#284b73] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#17304d]"
+              className="mt-3 inline-flex min-h-11 items-center justify-center px-3 font-serif text-sm font-semibold text-[#17304d] underline decoration-[#b99a5b] underline-offset-4 hover:text-[#284b73] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#17304d]"
             >
               Explore Our Original Series
             </Link>
