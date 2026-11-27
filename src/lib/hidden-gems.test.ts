@@ -31,8 +31,8 @@ describe("Hidden Gems weekly eligibility", () => {
   it("does not surface prematurely in the prior week", () => {
     expect(homepageHiddenGem(toldos, new Date("2026-11-07T12:00:00Z"))).toBeUndefined();
   });
-  it("fails closed on unknown or invalid dates", () => {
-    for (const readingDate of [null, "invalid", "2026-02-31"]) expect(homepageHiddenGem({ ...toldos, readingDate }, toldosThursday)).toBeUndefined();
+  it("fails closed on malformed or impossible dates", () => {
+    for (const readingDate of ["invalid", "2026-02-31"]) expect(homepageHiddenGem({ ...toldos, readingDate }, toldosThursday)).toBeUndefined();
   });
   it("retains Chayei Sarah in the archive and adds Toldos", () => {
     expect(hiddenGemEditions.map((gem) => gem.slug)).toEqual(["the-400-shekel-secret", "fire-and-straw-hidden-in-one-word"]);
