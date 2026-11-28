@@ -12,3 +12,19 @@ describe("sitemap hub lastmod aggregation", () => {
     expect(latestSitemapDate(null, "2026-11-05")).toBe("2026-11-05");
   });
 });
+
+
+describe("sitemap reading identities", () => {
+  it("reuses the public reading-library canonical identity for combined readings and aliases", async () => {
+    const { canonicalLibraryReading } = await import("./reading-library");
+    const { readingSlug, readingPagePath, isYomTovReading } = await import("./reading-page");
+    const { readFileSync } = await import("node:fs");
+    const source = readFileSync("src/routes/sitemap[.]xml.ts", "utf8");
+    expect(source).toContain("canonicalLibraryReading(row.parsha_key)");
+    expect(source).toContain("canonical && !isYomTovReading(reading)");
+    expect(source).toContain("readingPagePath(reading, row.jewish_year)");
+    expect(readingSlug(canonicalLibraryReading("Acharei Mot-Kedoshim")!)).toBe("acharei-mos-kedoshim");
+    expect(readingPagePath(canonicalLibraryReading("Vayeitzei")!, 5787)).toBe("/parsha/vayetzei/5787");
+    expect(isYomTovReading(canonicalLibraryReading("Sukkot")!)).toBe(true);
+  });
+});
